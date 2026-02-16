@@ -1,121 +1,165 @@
 ﻿/* ===========================
-   Fonts
+   ZA RAMKI — Brand Theme
    =========================== */
 
-@font-face {
-  font-family: 'Manasco';
-  src: url('./assets/fonts/Manasco.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
+/* ---------- Fonts (local) ---------- */
+/* IMPORTANT:
+   Put fonts here:
+   ./assets/fonts/Manasco.otf
+   ./assets/fonts/Roboto-Regular.ttf
+   ./assets/fonts/Roboto-Medium.ttf
+*/
 
-@font-face {
-  font-family: 'RobotoCustom';
-  src: url('./assets/fonts/Roboto-Regular.ttf') format('truetype');
+@font-face{
+  font-family: "Manasco";
+  src: url("./assets/fonts/Manasco.otf") format("opentype");
+  font-style: normal;
   font-weight: 400;
-  font-style: normal;
+  font-display: swap;
 }
 
-@font-face {
-  font-family: 'RobotoCustom';
-  src: url('./assets/fonts/Roboto-Medium.ttf') format('truetype');
+@font-face{
+  font-family: "RobotoCustom";
+  src: url("./assets/fonts/Roboto-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face{
+  font-family: "RobotoCustom";
+  src: url("./assets/fonts/Roboto-Medium.ttf") format("truetype");
+  font-style: normal;
   font-weight: 500;
-  font-style: normal;
+  font-display: swap;
 }
 
-/* ===========================
-   Typography
-   =========================== */
+/* ---------- Brand + overrides ---------- */
+:root{
+  /* Brand colors (from you) */
+  --brand-accent: #B43202;   /* accents, outline */
+  --brand-bg: #211F1C;       /* background */
+  --brand-headings: #FFF4EB; /* headings */
 
+  /* Text: make it lighter than BCB3AC to avoid low contrast */
+  --brand-text: #E7E0DA;
+
+  /* Muted text */
+  --brand-muted: rgba(231,224,218,.72);
+
+  /* Cards/panels: dense dark gray, no blue */
+  --brand-panel: rgba(33,31,28,.92);
+  --brand-card: rgba(33,31,28,.78);
+
+  /* Borders */
+  --brand-border: rgba(255,244,235,.10);
+  --brand-border-accent: rgba(180,50,2,.35);
+
+  /* Override tokens from styles.css (important) */
+  --bg: var(--brand-bg);
+  --panel: var(--brand-panel);
+  --card: var(--brand-card);
+  --text: var(--brand-text);
+  --muted: var(--brand-muted);
+  --accent: var(--brand-accent);
+  --border: var(--brand-border);
+}
+
+/* ---------- Base ---------- */
 body{
-  font-family: 'RobotoCustom', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "RobotoCustom", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
 }
 
-.article-title,
-.markdown h2,
-.markdown h3{
-  font-family: 'RobotoCustom', sans-serif;
-  font-weight: 500;
-}
-
+/* ---------- Header / Brand ---------- */
 .brand h1{
-  font-family: 'Manasco', sans-serif;
-  font-weight: normal;
+  font-family: "Manasco", "RobotoCustom", sans-serif;
+  font-weight: 400;
   letter-spacing: 2px;
   text-transform: uppercase;
 }
 
-/* ===========================
-   ZA RAMKI — Brand Theme
-   =========================== */
-
-:root{
-
-  /* Brand colors */
-  --brand-accent: #B43202;
-  --brand-bg: #211F1C;
-  --brand-text: #D6CEC8;      /* немного светлее, чем BCB3AC */
-  --brand-headings: #FFF4EB;
-
-  /* Derived */
-  --brand-border: rgba(180, 50, 2, 0.35);
-  --brand-border-soft: rgba(180, 50, 2, 0.15);
-  --brand-card: rgba(255, 244, 235, 0.03);
-
+.brand small{
+  color: var(--muted);
 }
 
-/* Base overrides */
-
-body{
-  background: var(--brand-bg);
-  color: var(--brand-text);
+/* Logo: smaller */
+.logo-img{
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  display:block;
 }
 
-/* Headings */
+/* ---------- Typography ---------- */
 .article-title,
-.brand h1,
 .markdown h2,
 .markdown h3{
   color: var(--brand-headings);
+  font-family: "RobotoCustom", sans-serif;
+  font-weight: 500;
 }
 
-/* Panels */
+.article-sub,
+.kv,
+.pill{
+  color: var(--muted);
+}
+
+/* ---------- Surfaces ---------- */
 .panel,
 .viewer{
-  background: var(--brand-card);
-  border: 1px solid var(--brand-border-soft);
+  background: var(--panel);
+  border: 1px solid var(--border);
 }
 
-/* Tabs */
+/* Make inner cards/list items match tone */
+.item{
+  background: rgba(33,31,28,.70);
+  border: 1px solid var(--border);
+}
+.item:hover{
+  border-color: var(--brand-border-accent);
+}
+
+/* Search field */
+.search{
+  background: rgba(33,31,28,.75);
+  border: 1px solid var(--border);
+}
+.search input{
+  color: var(--text);
+}
+
+/* ---------- Tabs / Tags ---------- */
 .tab{
-  border: 1px solid var(--brand-border-soft);
-  background: rgba(255, 244, 235, 0.03);
+  border: 1px solid var(--border);
+  background: rgba(33,31,28,.65);
+  color: var(--text);
+}
+.tab:hover{
+  border-color: var(--brand-border-accent);
 }
 .tab.is-active{
   border-color: var(--brand-accent);
-  box-shadow: 0 8px 24px rgba(180, 50, 2, 0.15);
+  box-shadow: 0 8px 24px rgba(180,50,2,.15);
 }
 
-/* List items */
-.item{
-  border: 1px solid var(--brand-border-soft);
-}
-.item:hover{
-  border-color: var(--brand-accent);
-}
-
-/* Tags */
 .tag{
-  border: 1px solid var(--brand-border-soft);
+  border: 1px solid var(--border);
+  color: var(--muted);
 }
 .tag.accent{
   border-color: var(--brand-accent);
   color: var(--brand-accent);
 }
 
-/* Buttons */
+/* ---------- Buttons ---------- */
 .btn{
-  border: 1px solid var(--brand-border-soft);
+  border: 1px solid var(--border);
+  background: rgba(33,31,28,.65);
+  color: var(--text);
 }
 .btn:hover{
   border-color: var(--brand-accent);
@@ -124,28 +168,25 @@ body{
   background: var(--brand-accent);
 }
 
-/* Blockquote */
+/* ---------- Markdown tweaks ---------- */
+.markdown a{
+  color: var(--brand-headings);
+  text-decoration-color: rgba(180,50,2,.55);
+}
 .markdown blockquote{
   border-left: 3px solid var(--brand-accent);
-  background: rgba(180, 50, 2, 0.05);
+  background: rgba(180,50,2,.06);
+  color: var(--brand-headings);
 }
 
-/* Inputs (form in template) */
+/* ---------- Forms (template page) ---------- */
 input, textarea{
-  border: 1px solid var(--brand-border-soft) !important;
-  background: rgba(255, 244, 235, 0.02) !important;
-  color: var(--brand-text) !important;
+  border: 1px solid var(--border) !important;
+  background: rgba(33,31,28,.60) !important;
+  color: var(--text) !important;
 }
-
 input:focus, textarea:focus{
   outline: none;
   border-color: var(--brand-accent) !important;
-  box-shadow: 0 0 0 2px rgba(180, 50, 2, 0.15);
+  box-shadow: 0 0 0 2px rgba(180,50,2,.15);
 }
-
-.logo-img{
-  height: 46px;
-  width: auto;
-  object-fit: contain;
-}
-

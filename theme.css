@@ -1,0 +1,97 @@
+﻿/* ===========================
+   ZA RAMKI — Brand Theme
+   =========================== */
+
+:root{
+
+  /* Brand colors */
+  --brand-accent: #B43202;
+  --brand-bg: #211F1C;
+  --brand-text: #D6CEC8;      /* немного светлее, чем BCB3AC */
+  --brand-headings: #FFF4EB;
+
+  /* Derived */
+  --brand-border: rgba(180, 50, 2, 0.35);
+  --brand-border-soft: rgba(180, 50, 2, 0.15);
+  --brand-card: rgba(255, 244, 235, 0.03);
+
+}
+
+/* Base overrides */
+
+body{
+  background: var(--brand-bg);
+  color: var(--brand-text);
+}
+
+/* Headings */
+.article-title,
+.brand h1,
+.markdown h2,
+.markdown h3{
+  color: var(--brand-headings);
+}
+
+/* Panels */
+.panel,
+.viewer{
+  background: var(--brand-card);
+  border: 1px solid var(--brand-border-soft);
+}
+
+/* Tabs */
+.tab{
+  border: 1px solid var(--brand-border-soft);
+  background: rgba(255, 244, 235, 0.03);
+}
+.tab.is-active{
+  border-color: var(--brand-accent);
+  box-shadow: 0 8px 24px rgba(180, 50, 2, 0.15);
+}
+
+/* List items */
+.item{
+  border: 1px solid var(--brand-border-soft);
+}
+.item:hover{
+  border-color: var(--brand-accent);
+}
+
+/* Tags */
+.tag{
+  border: 1px solid var(--brand-border-soft);
+}
+.tag.accent{
+  border-color: var(--brand-accent);
+  color: var(--brand-accent);
+}
+
+/* Buttons */
+.btn{
+  border: 1px solid var(--brand-border-soft);
+}
+.btn:hover{
+  border-color: var(--brand-accent);
+}
+.btn .dot{
+  background: var(--brand-accent);
+}
+
+/* Blockquote */
+.markdown blockquote{
+  border-left: 3px solid var(--brand-accent);
+  background: rgba(180, 50, 2, 0.05);
+}
+
+/* Inputs (form in template) */
+input, textarea{
+  border: 1px solid var(--brand-border-soft) !important;
+  background: rgba(255, 244, 235, 0.02) !important;
+  color: var(--brand-text) !important;
+}
+
+input:focus, textarea:focus{
+  outline: none;
+  border-color: var(--brand-accent) !important;
+  box-shadow: 0 0 0 2px rgba(180, 50, 2, 0.15);
+}

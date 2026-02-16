@@ -1,14 +1,4 @@
 ﻿[
-  {
-    "id": "brief_visualizer",
-    "title": "ТЗ для визуализатора (быстро заполнить)",
-    "format": "form",
-    "link": ""
-  },
-  {
-    "id": "site_report",
-    "title": "Отчёт по выезду / замерам (пример)",
-    "format": "link",
-    "link": "https://example.com"
-  }
+  { "id": "brief_visualizer", "title": "ТЗ для визуализатора (быстро заполнить)", "format": "form", "link": "" },
+  { "id": "brief_visualizer_pro", "title": "ТЗ для визуализатора — PRO (таблица квартиры)", "format": "form", "link": "" }
 ]

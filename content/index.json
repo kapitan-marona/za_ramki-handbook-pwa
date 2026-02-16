@@ -2,7 +2,7 @@
   "items": [
     {
       "id": "process-stages",
-      "title": "Этапы работы с заказчиком (коротко и по делу)",
+      "title": "Этапы работы с заказчиком",
       "category": "process",
       "roles": ["designer","pm","visualizer","procurement"],
       "tags": ["этапы","проект","коммуникация"],
@@ -25,7 +25,7 @@
     },
     {
       "id": "designer-brief-to-visualizer",
-      "title": "Как передать ТЗ визуализатору (чтобы не было 20 кругов правок)",
+      "title": "Как передать ТЗ визуализатору",
       "category": "designer_ops",
       "roles": ["designer","visualizer","pm"],
       "tags": ["ТЗ","визуализация","правки"],
@@ -39,7 +39,7 @@
 
     {
       "id": "designer-project-files",
-      "title": "Структура файлов проекта (чтобы всё находилось)",
+      "title": "Структура файлов проекта",
       "category": "designer_ops",
       "roles": ["designer","visualizer"],
       "tags": ["структура","файлы","нейминг"],
@@ -55,8 +55,13 @@
       "tags": ["фото","объект","качество"],
       "updatedAt": "2026-02-16",
       "pinned": false,
-      "path": "./content/articles/designer/site-photo-standards.md"
-    },
+      "path": "./content/articles/designer/site-photo-standards.md",
+      "actions": [
+        { "label": "Открыть подсказку (PDF)", "url": "#/pdf/assets/pdfs/photo-guide-good.pdf", "external": false },
+        { "label": "Открыть плохой пример (PDF)", "url": "#/pdf/assets/pdfs/photo-guide-bad.pdf", "external": false }
+      ]
+    }
+
     {
       "id": "designer-measurements-mistakes",
       "title": "Замеры: частые ошибки и как их избежать",
@@ -69,7 +74,7 @@
     },
     {
       "id": "designer-handoff-package",
-      "title": "Пакет для визуализатора: что именно отдаём",
+      "title": "Пакет для визуализатора",
       "category": "designer_ops",
       "roles": ["designer","visualizer"],
       "tags": ["передача","пакет","ТЗ"],
@@ -79,7 +84,7 @@
     },
     {
       "id": "designer-revisions",
-      "title": "Как формулировать правки визуализатору (чтобы не было хаоса)",
+      "title": "Как формулировать правки визуализатору",
       "category": "designer_ops",
       "roles": ["designer","visualizer"],
       "tags": ["правки","коммуникация"],
@@ -90,7 +95,7 @@
 
     {
       "id": "viz-intake-questions",
-      "title": "Приём ТЗ: быстрые вопросы, если не хватает данных",
+      "title": "Приём ТЗ: Примеры вопросов",
       "category": "visualizer_ops",
       "roles": ["visualizer"],
       "tags": ["ТЗ","вопросы","старт"],
@@ -100,7 +105,7 @@
     },
     {
       "id": "viz-quality-checklist",
-      "title": "Чек качества визуализации перед отправкой (must-have)",
+      "title": "Чек качества визуализации перед отправкой",
       "category": "visualizer_ops",
       "roles": ["visualizer","designer"],
       "tags": ["качество","рендер","чек"],
@@ -110,7 +115,7 @@
     },
     {
       "id": "viz-delivery-format",
-      "title": "Формат выдачи рендеров (чтобы дизайнеру было удобно)",
+      "title": "Формат выдачи рендеров",
       "category": "visualizer_ops",
       "roles": ["visualizer","designer"],
       "tags": ["выдача","форматы","нейминг"],
@@ -121,7 +126,7 @@
 
     {
       "id": "designer-camera-list",
-      "title": "Список камер: как составлять (дизайнер)",
+      "title": "Список камер: как составлять",
       "category": "designer_ops",
       "roles": ["designer","visualizer"],
       "tags": ["камеры","ракурсы","ТЗ"],
@@ -131,7 +136,7 @@
     },
     {
       "id": "process-revision-rounds",
-      "title": "Круги правок: правила и сроки (ядро)",
+      "title": "Круги правок: правила и сроки",
       "category": "process",
       "roles": ["designer","visualizer","pm"],
       "tags": ["правки","процесс","сроки"],

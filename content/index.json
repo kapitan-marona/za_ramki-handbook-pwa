@@ -35,6 +35,88 @@
       "actions": [
         { "label": "Заполнить ТЗ", "url": "#/templates/brief_visualizer", "external": false }
       ]
+    },
+
+    {
+      "id": "designer-project-files",
+      "title": "Структура файлов проекта (чтобы всё находилось)",
+      "category": "designer_ops",
+      "roles": ["designer","visualizer"],
+      "tags": ["структура","файлы","нейминг"],
+      "updatedAt": "2026-02-16",
+      "pinned": true,
+      "path": "./content/articles/designer/project-files-structure.md"
+    },
+    {
+      "id": "designer-site-photo",
+      "title": "Фотофиксация объекта: как снимать, чтобы было полезно",
+      "category": "designer_ops",
+      "roles": ["designer","visualizer"],
+      "tags": ["фото","объект","качество"],
+      "updatedAt": "2026-02-16",
+      "pinned": false,
+      "path": "./content/articles/designer/site-photo-standards.md"
+    },
+    {
+      "id": "designer-measurements-mistakes",
+      "title": "Замеры: частые ошибки и как их избежать",
+      "category": "designer_ops",
+      "roles": ["designer"],
+      "tags": ["замеры","ошибки","привязки"],
+      "updatedAt": "2026-02-16",
+      "pinned": false,
+      "path": "./content/articles/designer/measurements-common-mistakes.md"
+    },
+    {
+      "id": "designer-handoff-package",
+      "title": "Пакет для визуализатора: что именно отдаём",
+      "category": "designer_ops",
+      "roles": ["designer","visualizer"],
+      "tags": ["передача","пакет","ТЗ"],
+      "updatedAt": "2026-02-16",
+      "pinned": true,
+      "path": "./content/articles/designer/handoff-package-to-visualizer.md"
+    },
+    {
+      "id": "designer-revisions",
+      "title": "Как формулировать правки визуализатору (чтобы не было хаоса)",
+      "category": "designer_ops",
+      "roles": ["designer","visualizer"],
+      "tags": ["правки","коммуникация"],
+      "updatedAt": "2026-02-16",
+      "pinned": false,
+      "path": "./content/articles/designer/how-to-give-revisions.md"
+    },
+
+    {
+      "id": "viz-intake-questions",
+      "title": "Приём ТЗ: быстрые вопросы, если не хватает данных",
+      "category": "visualizer_ops",
+      "roles": ["visualizer"],
+      "tags": ["ТЗ","вопросы","старт"],
+      "updatedAt": "2026-02-16",
+      "pinned": true,
+      "path": "./content/articles/visualizer/intake-questions.md"
+    },
+    {
+      "id": "viz-quality-checklist",
+      "title": "Чек качества визуализации перед отправкой (must-have)",
+      "category": "visualizer_ops",
+      "roles": ["visualizer","designer"],
+      "tags": ["качество","рендер","чек"],
+      "updatedAt": "2026-02-16",
+      "pinned": true,
+      "path": "./content/articles/visualizer/quality-checklist.md"
+    },
+    {
+      "id": "viz-delivery-format",
+      "title": "Формат выдачи рендеров (чтобы дизайнеру было удобно)",
+      "category": "visualizer_ops",
+      "roles": ["visualizer","designer"],
+      "tags": ["выдача","форматы","нейминг"],
+      "updatedAt": "2026-02-16",
+      "pinned": false,
+      "path": "./content/articles/visualizer/delivery-format.md"
     }
   ]
 }

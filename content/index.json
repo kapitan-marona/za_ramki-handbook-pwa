@@ -4,8 +4,8 @@
       "id": "process-stages",
       "title": "Этапы работы с заказчиком",
       "category": "process",
-      "roles": ["designer","pm","visualizer","procurement"],
-      "tags": ["этапы","проект","коммуникация"],
+      "roles": ["designer", "pm", "visualizer", "procurement"],
+      "tags": ["этапы", "проект", "коммуникация"],
       "updatedAt": "2026-02-16",
       "pinned": true,
       "path": "./content/articles/process/stages.md"
@@ -14,35 +14,42 @@
       "id": "designer-site-visit",
       "title": "Выезд на объект и замеры: регламент дизайнера",
       "category": "designer_ops",
-      "roles": ["designer","site_supervision"],
-      "tags": ["выезд","замеры","фотофиксация"],
+      "roles": ["designer", "site_supervision"],
+      "tags": ["выезд", "замеры", "фотофиксация"],
       "updatedAt": "2026-02-16",
       "pinned": true,
       "path": "./content/articles/designer/site-visit-and-measurements.md",
       "actions": [
-        { "label": "Открыть чек-лист", "url": "https://kapitan-marona.github.io/za_ramki/", "external": true }
+        {
+          "label": "Открыть чек-лист",
+          "url": "https://kapitan-marona.github.io/za_ramki/",
+          "external": true
+        }
       ]
     },
     {
       "id": "designer-brief-to-visualizer",
       "title": "Как передать ТЗ визуализатору",
       "category": "designer_ops",
-      "roles": ["designer","visualizer","pm"],
-      "tags": ["ТЗ","визуализация","правки"],
+      "roles": ["designer", "visualizer", "pm"],
+      "tags": ["ТЗ", "визуализация", "правки"],
       "updatedAt": "2026-02-16",
       "pinned": false,
       "path": "./content/articles/designer/brief-to-visualizer.md",
       "actions": [
-        { "label": "Заполнить ТЗ", "url": "#/templates/brief_visualizer", "external": false }
+        {
+          "label": "Заполнить ТЗ",
+          "url": "#/templates/brief_visualizer",
+          "external": false
+        }
       ]
     },
-
     {
       "id": "designer-project-files",
       "title": "Структура файлов проекта",
       "category": "designer_ops",
-      "roles": ["designer","visualizer"],
-      "tags": ["структура","файлы","нейминг"],
+      "roles": ["designer", "visualizer"],
+      "tags": ["структура", "файлы", "нейминг"],
       "updatedAt": "2026-02-16",
       "pinned": true,
       "path": "./content/articles/designer/project-files-structure.md"
@@ -51,23 +58,30 @@
       "id": "designer-site-photo",
       "title": "Фотофиксация объекта: как снимать, чтобы было полезно",
       "category": "designer_ops",
-      "roles": ["designer","visualizer"],
-      "tags": ["фото","объект","качество"],
+      "roles": ["designer", "visualizer"],
+      "tags": ["фото", "объект", "качество"],
       "updatedAt": "2026-02-16",
       "pinned": false,
       "path": "./content/articles/designer/site-photo-standards.md",
       "actions": [
-        { "label": "Открыть подсказку (PDF)", "url": "#/pdf/assets/pdfs/photo-guide-good.pdf", "external": false },
-        { "label": "Открыть плохой пример (PDF)", "url": "#/pdf/assets/pdfs/photo-guide-bad.pdf", "external": false }
+        {
+          "label": "Открыть подсказку (PDF)",
+          "url": "#/pdf/assets/pdfs/photo-guide-good.pdf",
+          "external": false
+        },
+        {
+          "label": "Открыть плохой пример (PDF)",
+          "url": "#/pdf/assets/pdfs/photo-guide-bad.pdf",
+          "external": false
+        }
       ]
-    }
-
+    },
     {
       "id": "designer-measurements-mistakes",
       "title": "Замеры: частые ошибки и как их избежать",
       "category": "designer_ops",
       "roles": ["designer"],
-      "tags": ["замеры","ошибки","привязки"],
+      "tags": ["замеры", "ошибки", "привязки"],
       "updatedAt": "2026-02-16",
       "pinned": false,
       "path": "./content/articles/designer/measurements-common-mistakes.md"
@@ -76,8 +90,8 @@
       "id": "designer-handoff-package",
       "title": "Пакет для визуализатора",
       "category": "designer_ops",
-      "roles": ["designer","visualizer"],
-      "tags": ["передача","пакет","ТЗ"],
+      "roles": ["designer", "visualizer"],
+      "tags": ["передача", "пакет", "ТЗ"],
       "updatedAt": "2026-02-16",
       "pinned": true,
       "path": "./content/articles/designer/handoff-package-to-visualizer.md"
@@ -86,19 +100,18 @@
       "id": "designer-revisions",
       "title": "Как формулировать правки визуализатору",
       "category": "designer_ops",
-      "roles": ["designer","visualizer"],
-      "tags": ["правки","коммуникация"],
+      "roles": ["designer", "visualizer"],
+      "tags": ["правки", "коммуникация"],
       "updatedAt": "2026-02-16",
       "pinned": false,
       "path": "./content/articles/designer/how-to-give-revisions.md"
     },
-
     {
       "id": "viz-intake-questions",
       "title": "Приём ТЗ: Примеры вопросов",
       "category": "visualizer_ops",
       "roles": ["visualizer"],
-      "tags": ["ТЗ","вопросы","старт"],
+      "tags": ["ТЗ", "вопросы", "старт"],
       "updatedAt": "2026-02-16",
       "pinned": true,
       "path": "./content/articles/visualizer/intake-questions.md"
@@ -107,8 +120,8 @@
       "id": "viz-quality-checklist",
       "title": "Чек качества визуализации перед отправкой",
       "category": "visualizer_ops",
-      "roles": ["visualizer","designer"],
-      "tags": ["качество","рендер","чек"],
+      "roles": ["visualizer", "designer"],
+      "tags": ["качество", "рендер", "чек"],
       "updatedAt": "2026-02-16",
       "pinned": true,
       "path": "./content/articles/visualizer/quality-checklist.md"
@@ -117,19 +130,18 @@
       "id": "viz-delivery-format",
       "title": "Формат выдачи рендеров",
       "category": "visualizer_ops",
-      "roles": ["visualizer","designer"],
-      "tags": ["выдача","форматы","нейминг"],
+      "roles": ["visualizer", "designer"],
+      "tags": ["выдача", "форматы", "нейминг"],
       "updatedAt": "2026-02-16",
       "pinned": false,
       "path": "./content/articles/visualizer/delivery-format.md"
     },
-
     {
       "id": "designer-camera-list",
       "title": "Список камер: как составлять",
       "category": "designer_ops",
-      "roles": ["designer","visualizer"],
-      "tags": ["камеры","ракурсы","ТЗ"],
+      "roles": ["designer", "visualizer"],
+      "tags": ["камеры", "ракурсы", "ТЗ"],
       "updatedAt": "2026-02-16",
       "pinned": true,
       "path": "./content/articles/designer/camera-list-howto.md"
@@ -138,8 +150,8 @@
       "id": "process-revision-rounds",
       "title": "Круги правок: правила и сроки",
       "category": "process",
-      "roles": ["designer","visualizer","pm"],
-      "tags": ["правки","процесс","сроки"],
+      "roles": ["designer", "visualizer", "pm"],
+      "tags": ["правки", "процесс", "сроки"],
       "updatedAt": "2026-02-16",
       "pinned": true,
       "path": "./content/articles/process/revision-rounds-rules.md"
@@ -148,8 +160,8 @@
       "id": "process-fixed-vs-flexible",
       "title": "Фиксировано vs можно подбирать: памятка",
       "category": "process",
-      "roles": ["designer","visualizer"],
-      "tags": ["ТЗ","границы","согласования"],
+      "roles": ["designer", "visualizer"],
+      "tags": ["ТЗ", "границы", "согласования"],
       "updatedAt": "2026-02-16",
       "pinned": true,
       "path": "./content/articles/process/fixed-vs-flexible.md"

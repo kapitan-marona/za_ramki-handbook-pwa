@@ -117,6 +117,37 @@
       "updatedAt": "2026-02-16",
       "pinned": false,
       "path": "./content/articles/visualizer/delivery-format.md"
+    },
+
+    {
+      "id": "designer-camera-list",
+      "title": "Список камер: как составлять (дизайнер)",
+      "category": "designer_ops",
+      "roles": ["designer","visualizer"],
+      "tags": ["камеры","ракурсы","ТЗ"],
+      "updatedAt": "2026-02-16",
+      "pinned": true,
+      "path": "./content/articles/designer/camera-list-howto.md"
+    },
+    {
+      "id": "process-revision-rounds",
+      "title": "Круги правок: правила и сроки (ядро)",
+      "category": "process",
+      "roles": ["designer","visualizer","pm"],
+      "tags": ["правки","процесс","сроки"],
+      "updatedAt": "2026-02-16",
+      "pinned": true,
+      "path": "./content/articles/process/revision-rounds-rules.md"
+    },
+    {
+      "id": "process-fixed-vs-flexible",
+      "title": "Фиксировано vs можно подбирать: памятка",
+      "category": "process",
+      "roles": ["designer","visualizer"],
+      "tags": ["ТЗ","границы","согласования"],
+      "updatedAt": "2026-02-16",
+      "pinned": true,
+      "path": "./content/articles/process/fixed-vs-flexible.md"
     }
   ]
 }

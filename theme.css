@@ -1,15 +1,8 @@
 ﻿/* ===========================
-   ZA RAMKI — Brand Theme
+   ZA RAMKI — Brand Theme (UI-tuned)
    =========================== */
 
 /* ---------- Fonts (local) ---------- */
-/* IMPORTANT:
-   Put fonts here:
-   ./assets/fonts/Manasco.otf
-   ./assets/fonts/Roboto-Regular.ttf
-   ./assets/fonts/Roboto-Medium.ttf
-*/
-
 @font-face{
   font-family: "Manasco";
   src: url("./assets/fonts/Manasco.otf") format("opentype");
@@ -18,6 +11,7 @@
   font-display: swap;
 }
 
+/* Roboto оставляем подключённым, но пока НЕ используем как основной */
 @font-face{
   font-family: "RobotoCustom";
   src: url("./assets/fonts/Roboto-Regular.ttf") format("truetype");
@@ -25,7 +19,6 @@
   font-weight: 400;
   font-display: swap;
 }
-
 @font-face{
   font-family: "RobotoCustom";
   src: url("./assets/fonts/Roboto-Medium.ttf") format("truetype");
@@ -34,180 +27,165 @@
   font-display: swap;
 }
 
-/* ---------- Brand + overrides ---------- */
+/* ---------- Palette + override base tokens ---------- */
 :root{
-  /* Brand-ish palette tuned for UI */
-  --brand-accent: #C03A14;      /* ближе к B43202, но мягче/дороже */
-  --brand-bg: #1E1B18;          /* чуть глубже, меньше “плоскости” */
-  --brand-headings: #FFF3EA;    /* почти твой FFF4EB */
-  --brand-text: #EEE6DE;        /* светлее и теплее, без “голубого” */
+  /* tuned close to your brand */
+  --brand-accent: #C03A14;     /* мягче, но близко к B43202 */
+  --brand-bg: #1E1B18;         /* тёплый графит вместо “синего” */
+  --brand-headings: #FFF3EA;   /* близко к FFF4EB */
+  --brand-text: #EEE6DE;       /* почти белый, тёплый */
   --brand-muted: rgba(238,230,222,.72);
 
-  /* Surfaces (no blue) */
-  --brand-panel: rgba(26,23,20,.92);
-  --brand-card: rgba(26,23,20,.78);
+  /* no-blue surfaces */
+  --brand-panel: rgba(30,27,24,.82);   /* для шапки/панелей */
+  --brand-card: rgba(26,23,20,.88);    /* для карточек/пустых блоков */
+  --brand-item: rgba(26,23,20,.72);
 
-  /* Borders */
+  /* borders */
   --brand-border: rgba(255,243,234,.12);
   --brand-border-accent: rgba(192,58,20,.38);
 
-  /* Override tokens from styles.css */
+  /* override tokens from styles.css */
   --bg: var(--brand-bg);
-  --panel: var(--brand-panel);
-  --card: var(--brand-card);
+  --panel: var(--brand-card);
+  --card: var(--brand-item);
   --text: var(--brand-text);
   --muted: var(--brand-muted);
   --accent: var(--brand-accent);
   --border: var(--brand-border);
 }
 
-
-/* ---------- Base ---------- */
+/* ---------- Typography (TEMP: no Roboto until you pick a new font) ---------- */
 body{
   background: var(--bg);
   color: var(--text);
-  font-family: "RobotoCustom", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
 }
 
-/* ---------- Header / Brand ---------- */
+/* Brand title */
 .brand h1{
-  font-family: "Manasco", "RobotoCustom", sans-serif;
+  font-family: "Manasco", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
   font-weight: 400;
   letter-spacing: 2px;
   text-transform: uppercase;
+  color: var(--brand-headings);
+}
+.brand small{ color: var(--muted); }
+
+/* Headings */
+.article-title,
+.markdown h2,
+.markdown h3{
+  color: var(--brand-headings);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  font-weight: 600;
 }
 
-.brand small{
-  color: var(--muted);
-}
+/* Sub text */
+.article-sub,
+.kv,
+.pill{ color: var(--muted); }
 
-/* Logo: smaller */
+/* Logo smaller */
 .logo-img{
-  height: 46px;
+  height: 30px;
   width: auto;
   object-fit: contain;
   display:block;
 }
 
-/* ---------- Typography ---------- */
-.article-title,
-.markdown h2,
-.markdown h3{
-  color: var(--brand-headings);
-  font-family: "RobotoCustom", sans-serif;
-  font-weight: 500;
+/* ---------- Kill all blue-ish tints ---------- */
+
+/* header background (make it warm graphite, still translucent) */
+.header{
+  background: rgba(30,27,24,.72) !important;
+  border-bottom: 1px solid var(--border) !important;
 }
 
-.article-sub,
-.kv,
-.pill{
-  color: var(--muted);
-}
-
-/* ---------- Surfaces ---------- */
-.panel,
-.viewer{
-  background: var(--panel);
-  border: 1px solid var(--border);
-}
-
-/* Make inner cards/list items match tone */
-.item{
-  background: rgba(33,31,28,.70);
-  border: 1px solid var(--border);
-}
-.item:hover{
-  border-color: var(--brand-border-accent);
-}
-
-/* Search field */
-.search{
-  background: rgba(33,31,28,.75);
-  border: 1px solid var(--border);
-}
-.search input{
-  color: var(--text);
-}
-
-/* ---------- Tabs / Tags ---------- */
-.tab{
-  border: 1px solid var(--border);
-  background: rgba(33,31,28,.65);
-  color: var(--text);
-}
-.tab:hover{
-  border-color: var(--brand-border-accent);
-}
-.tab.is-active{
-  border-color: var(--brand-accent);
-  box-shadow: 0 8px 24px rgba(180,50,2,.15);
-}
-
-.tag{
-  border: 1px solid var(--border);
-  color: var(--muted);
-}
-.tag.accent{
-  border-color: var(--brand-accent);
-  color: var(--brand-accent);
-}
-
-/* ---------- Buttons ---------- */
-.btn{
-  border: 1px solid var(--border);
-  background: rgba(33,31,28,.65);
-  color: var(--text);
-}
-.btn:hover{
-  border-color: var(--brand-accent);
-}
-.btn .dot{
-  background: var(--brand-accent);
-}
-
-/* ---------- Markdown tweaks ---------- */
-.markdown a{
-  color: var(--brand-headings);
-  text-decoration-color: rgba(180,50,2,.55);
-}
-.markdown blockquote{
-  border-left: 3px solid var(--brand-accent);
-  background: rgba(180,50,2,.06);
-  color: var(--brand-headings);
-}
-
-/* ---------- Forms (template page) ---------- */
-input, textarea{
+/* panels */
+.panel, .viewer{
+  background: var(--brand-card) !important;
   border: 1px solid var(--border) !important;
-  background: rgba(33,31,28,.60) !important;
-  color: var(--text) !important;
-}
-input:focus, textarea:focus{
-  outline: none;
-  border-color: var(--brand-accent) !important;
-  box-shadow: 0 0 0 2px rgba(180,50,2,.15);
 }
 
-/* Kill remaining blue-ish tint under tabs */
+/* tabs area (this is where your “синий” was) */
 .tabs{
   background: rgba(26,23,20,.92) !important;
   border-bottom: 1px solid var(--border) !important;
 }
 
+/* search */
+.search{
+  background: rgba(26,23,20,.78) !important;
+  border: 1px solid var(--border) !important;
+}
+.search input{ color: var(--text) !important; }
+
+/* list items */
+.item{
+  background: var(--brand-item) !important;
+  border: 1px solid var(--border) !important;
+}
+.item:hover{ border-color: var(--brand-border-accent) !important; }
+
+/* empty blocks (your “Выбери статью слева...” box) */
+.viewer .empty{
+  background: rgba(26,23,20,.72) !important;
+  border: 1px dashed var(--border) !important;
+  color: var(--muted) !important;
+}
+
+/* tabs/buttons */
 .tab{
   background: rgba(26,23,20,.72) !important;
   border: 1px solid var(--border) !important;
+  color: var(--text) !important;
 }
-
+.tab:hover{ border-color: var(--brand-border-accent) !important; }
 .tab.is-active{
   border-color: var(--brand-accent) !important;
+  box-shadow: 0 8px 24px rgba(192,58,20,.15) !important;
 }
 
-/* Make cards a bit more premium */
-.item{
-  background: rgba(26,23,20,.70) !important;
+/* tags/buttons */
+.tag{
+  border: 1px solid var(--border) !important;
+  color: var(--muted) !important;
 }
-.search{
-  background: rgba(26,23,20,.78) !important;
+.tag.accent{
+  border-color: var(--brand-accent) !important;
+  color: var(--brand-accent) !important;
 }
 
+.btn{
+  border: 1px solid var(--border) !important;
+  background: rgba(26,23,20,.68) !important;
+  color: var(--text) !important;
+}
+.btn:hover{ border-color: var(--brand-accent) !important; }
+.btn .dot{ background: var(--brand-accent) !important; }
+
+/* markdown */
+.markdown a{
+  color: var(--brand-headings);
+  text-decoration-color: rgba(192,58,20,.55);
+}
+.markdown blockquote{
+  border-left: 3px solid var(--brand-accent);
+  background: rgba(192,58,20,.06);
+  color: var(--brand-headings);
+}
+
+/* forms */
+input, textarea{
+  border: 1px solid var(--border) !important;
+  background: rgba(26,23,20,.60) !important;
+  color: var(--text) !important;
+}
+input:focus, textarea:focus{
+  outline: none;
+  border-color: var(--brand-accent) !important;
+  box-shadow: 0 0 0 2px rgba(192,58,20,.15);
+}

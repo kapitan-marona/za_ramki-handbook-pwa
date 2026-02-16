@@ -1,4 +1,51 @@
 ﻿/* ===========================
+   Fonts
+   =========================== */
+
+@font-face {
+  font-family: 'Manasco';
+  src: url('./assets/fonts/Manasco.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'RobotoCustom';
+  src: url('./assets/fonts/Roboto-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'RobotoCustom';
+  src: url('./assets/fonts/Roboto-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+/* ===========================
+   Typography
+   =========================== */
+
+body{
+  font-family: 'RobotoCustom', sans-serif;
+}
+
+.article-title,
+.markdown h2,
+.markdown h3{
+  font-family: 'RobotoCustom', sans-serif;
+  font-weight: 500;
+}
+
+.brand h1{
+  font-family: 'Manasco', sans-serif;
+  font-weight: normal;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ===========================
    ZA RAMKI — Brand Theme
    =========================== */
 
@@ -95,3 +142,10 @@ input:focus, textarea:focus{
   border-color: var(--brand-accent) !important;
   box-shadow: 0 0 0 2px rgba(180, 50, 2, 0.15);
 }
+
+.logo-img{
+  height: 46px;
+  width: auto;
+  object-fit: contain;
+}
+

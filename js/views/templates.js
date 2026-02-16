@@ -76,6 +76,17 @@ Views.Templates = (() => {
       viewer.innerHTML = `<div class="empty">Шаблон не найден.</div>`;
       return;
     }
+    
+    // Custom interactive templates
+    if(templateId === "brief_visualizer_pro"){
+      if(!window.Views || !Views.BriefPro){
+        viewer.innerHTML = `<div class="empty">BriefPro не подключён (js/views/brief_pro.js).</div>`;
+        return;
+      }
+      await Views.BriefPro.open();
+      return;
+    }
+
 
     // For demo we implement one interactive template: brief_visualizer
     if(templateId !== "brief_visualizer"){
@@ -87,6 +98,7 @@ Views.Templates = (() => {
         </div>`;
       return;
     }
+
 
     const key = "tpl:brief_visualizer:v1";
     const saved = JSON.parse(localStorage.getItem(key) || "{}");

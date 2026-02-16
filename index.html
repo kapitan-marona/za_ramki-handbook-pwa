@@ -30,9 +30,16 @@
   <div class="main">
     <div class="panel">
       <div class="panel-head">
-        <h2>Статьи</h2>
+        <h2 id="panelTitle">Раздел</h2>
         <span class="pill">клик → открыть</span>
       </div>
+
+      <div class="tabs" id="tabs">
+        <button class="tab is-active" data-tab="articles">Статьи</button>
+        <button class="tab" data-tab="contacts">Контакты</button>
+        <button class="tab" data-tab="templates">Шаблоны</button>
+      </div>
+
       <div id="list" class="list"></div>
     </div>
 
@@ -43,8 +50,15 @@
     Совет: позже мы добавим PWA (установка на экран), роли/доступ и избранное — без переделки контента.
   </div>
 
-  <!-- Markdown renderer (CDN) -->
+  <!-- Markdown renderer -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="./app.js"></script>
+
+  <!-- App modules -->
+  <script src="./js/api.js"></script>
+  <script src="./js/router.js"></script>
+  <script src="./js/views/articles.js"></script>
+  <script src="./js/views/contacts.js"></script>
+  <script src="./js/views/templates.js"></script>
+  <script src="./js/app.js"></script>
 </body>
 </html>

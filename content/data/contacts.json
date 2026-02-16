@@ -1,0 +1,33 @@
+﻿[
+  {
+    "team": "Визуализация",
+    "person": "Алина (3D)",
+    "phone": "+358 40 000 0000",
+    "telegram": "@za_ramki_viz",
+    "email": "viz@za-ramki.studio",
+    "notes": "Передача ТЗ, сроки, круги правок. Если срочно — писать в TG."
+  },
+  {
+    "team": "Комплектация / закупки",
+    "person": "Мария (FF&E)",
+    "phone": "+358 50 000 0000",
+    "telegram": "@za_ramki_proc",
+    "email": "procurement@za-ramki.studio",
+    "notes": "Поставщики, аналоги, сроки поставки, счета, наличие."
+  },
+  {
+    "team": "Проект-менеджер",
+    "person": "Иван (PM)",
+    "phone": "+358 45 000 0000",
+    "telegram": "@za_ramki_pm",
+    "email": "pm@za-ramki.studio",
+    "notes": "Коммуникация с клиентом, статусы, согласования, дедлайны."
+  },
+  {
+    "team": "SMM",
+    "person": "Катя (SMM)",
+    "telegram": "@za_ramki_smm",
+    "email": "smm@za-ramki.studio",
+    "notes": "Запрос материалов, правила видео/фото, дедлайны постов."
+  }
+]

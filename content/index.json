@@ -18,7 +18,10 @@
       "tags": ["выезд","замеры","фотофиксация"],
       "updatedAt": "2026-02-16",
       "pinned": true,
-      "path": "./content/articles/designer/site-visit-and-measurements.md"
+      "path": "./content/articles/designer/site-visit-and-measurements.md",
+      "actions": [
+        { "label": "Открыть чек-лист", "url": "https://kapitan-marona.github.io/za_ramki/", "external": true }
+      ]
     },
     {
       "id": "designer-brief-to-visualizer",
@@ -28,7 +31,10 @@
       "tags": ["ТЗ","визуализация","правки"],
       "updatedAt": "2026-02-16",
       "pinned": false,
-      "path": "./content/articles/designer/brief-to-visualizer.md"
+      "path": "./content/articles/designer/brief-to-visualizer.md",
+      "actions": [
+        { "label": "Заполнить ТЗ", "url": "#/templates/brief_visualizer", "external": false }
+      ]
     }
   ]
 }

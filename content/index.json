@@ -64,17 +64,10 @@
       "pinned": false,
       "path": "./content/articles/designer/site-photo-standards.md",
       "actions": [
-        {
-          "label": "Открыть подсказку (PDF)",
-          "url": "#/pdf/assets/pdfs/photo-guide-good.pdf",
-          "external": false
-        },
-        {
-          "label": "Открыть плохой пример (PDF)",
-          "url": "#/pdf/assets/pdfs/photo-guide-bad.pdf",
-          "external": false
-        }
+        { "label": "Открыть подсказку (картинка)", "url": "#/pdf/assets/examples/photo-good.png", "external": false },
+        { "label": "Открыть плохой пример (картинка)", "url": "#/pdf/assets/examples/photo-bad.png", "external": false }
       ]
+
     },
     {
       "id": "designer-measurements-mistakes",

@@ -1,0 +1,34 @@
+﻿{
+  "items": [
+    {
+      "id": "process-stages",
+      "title": "Этапы работы с заказчиком (коротко и по делу)",
+      "category": "process",
+      "roles": ["designer","pm","visualizer","procurement"],
+      "tags": ["этапы","проект","коммуникация"],
+      "updatedAt": "2026-02-16",
+      "pinned": true,
+      "path": "./content/articles/process/stages.md"
+    },
+    {
+      "id": "designer-site-visit",
+      "title": "Выезд на объект и замеры: регламент дизайнера",
+      "category": "designer_ops",
+      "roles": ["designer","site_supervision"],
+      "tags": ["выезд","замеры","фотофиксация"],
+      "updatedAt": "2026-02-16",
+      "pinned": true,
+      "path": "./content/articles/designer/site-visit-and-measurements.md"
+    },
+    {
+      "id": "designer-brief-to-visualizer",
+      "title": "Как передать ТЗ визуализатору (чтобы не было 20 кругов правок)",
+      "category": "designer_ops",
+      "roles": ["designer","visualizer","pm"],
+      "tags": ["ТЗ","визуализация","правки"],
+      "updatedAt": "2026-02-16",
+      "pinned": false,
+      "path": "./content/articles/designer/brief-to-visualizer.md"
+    }
+  ]
+}

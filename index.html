@@ -4,26 +4,47 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZA RAMKI — Handbook</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
-    h1 { color: #222; }
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
-    }
-  </style>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <h1>ZA RAMKI — База знаний</h1>
 
-  <div class="card">
-    <h2>Структура создана ✅</h2>
-    <p>Контент находится в папке <b>/content</b>.</p>
-    <p>Следующий шаг — подключить отображение статей.</p>
+  <div class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>ZA RAMKI — база знаний</h1>
+          <small>Поиск, инструкции, регламенты, контакты</small>
+        </div>
+      </div>
+
+      <div class="search">
+        <input id="q" type="search" placeholder="Поиск по статьям, тегам, ролям…" />
+        <span class="pill">Статей: <span id="status">—</span></span>
+      </div>
+
+      <div class="pill">v0</div>
+    </div>
   </div>
 
+  <div class="main">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Статьи</h2>
+        <span class="pill">клик → открыть</span>
+      </div>
+      <div id="list" class="list"></div>
+    </div>
+
+    <div class="viewer" id="viewer"></div>
+  </div>
+
+  <div class="footer">
+    Совет: позже мы добавим PWA (установка на экран), роли/доступ и избранное — без переделки контента.
+  </div>
+
+  <!-- Markdown renderer (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>

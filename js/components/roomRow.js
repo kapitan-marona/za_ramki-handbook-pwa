@@ -26,26 +26,23 @@ Components.RoomRow = (() => {
     const name = (r.name || "").toString();
 
     const delBtn = mode === "edit"
-      ? `<button type="button" class="btn rr-del" data-room-idx="${idx}" title="Удалить помещение"><span class="dot"></span>Удалить</button>`
+      ? '<button type="button" class="btn btn-sm rr-del" data-room-idx="' + idx + '" title="Удалит всю строку">' +
+          '<span class="dot"></span>Удалить всю строку' +
+        '</button>'
       : "";
 
     const nameCell = mode === "edit"
-      ? `
-        <div style="display:flex; gap:8px; align-items:flex-start">
-          <input
-            class="rr-name"
-            data-room-idx="${idx}"
-            value="${esc(name)}"
-            placeholder="Напр. Гостиная"
-            style="width:100%; padding:10px; border-radius:12px;"
-          />
-          ${delBtn}
-        </div>
-      `
-      : `<div style="white-space:pre-wrap; font-weight:600; color: var(--brand-headings)">${esc(name || "—")}</div>`;
+      ? (
+          '<div style="display:flex; flex-direction:column; gap:8px;">' +
+            '<input class="rr-name" data-room-idx="' + idx + '" value="' + esc(name) + '" placeholder="Напр. Гостиная"' +
+              ' style="width:100%; padding:10px; border-radius:12px;" />' +
+            delBtn +
+          '</div>'
+        )
+      : '<div style="white-space:pre-wrap; font-weight:600; color: var(--brand-headings)">' + esc(name || "—") + '</div>';
 
     const cells = COLS.map((c) => {
-      const path = `rooms.${idx}.${c.key}`;
+      const path = 'rooms.' + idx + '.' + c.key;
       return MF().render({
         value: r[c.key],
         mode,
@@ -55,27 +52,20 @@ Components.RoomRow = (() => {
       });
     });
 
-    // table row (first column + 9 cols)
-    return `
-      <tr data-room-row="${idx}">
-        <td style="
-  min-width:220px;
-  vertical-align:top;
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: rgba(26,23,20,.92);
-  border-right: 1px solid var(--border);
-">
-  ${nameCell}
-</td>
-        ${cells.map(h => `<td style="min-width:240px; vertical-align:top">${h}</td>`).join("")}
-      </tr>
-    `;
+    const tdWidth = (key) => (key === "notes" ? 240 : 140);
+
+    return (
+      '<tr data-room-row="' + idx + '">' +
+        '<td style="min-width:220px; vertical-align:top">' + nameCell + '</td>' +
+        cells.map((h, i) => {
+          const key = COLS[i].key;
+          return '<td style="min-width:' + tdWidth(key) + 'px; vertical-align:top">' + h + '</td>';
+        }).join("") +
+      '</tr>'
+    );
   }
 
   function getCols(){ return COLS; }
 
   return { render, getCols };
 })();
-

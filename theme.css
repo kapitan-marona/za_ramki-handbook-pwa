@@ -201,3 +201,13 @@ input:focus, textarea:focus{
   flex:0 0 auto;
 }
 
+
+/* Compact buttons (BriefPro) */
+.btn.btn-sm{
+  font-size: 12px;
+  padding: 6px 10px;
+}
+.btn.btn-sm .dot{
+  transform: scale(0.9);
+}
+

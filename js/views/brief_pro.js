@@ -5,6 +5,10 @@ Views.BriefPro = (() => {
   const KEY = "tpl:brief_visualizer_pro:v1";
   let _abort = null;
 
+  // Undo for room deletion (last only)
+  let _undo = null;        // { idx, room }
+  let _undoTimer = null;   // timeout id
+
   const defaultCell = () => ({ text: "", links: [] });
 
   const defaultRoom = () => ({
@@ -29,15 +33,10 @@ Views.BriefPro = (() => {
       furniturePlanDwg: "",
       drawingsPdf: "",
       conceptLink: "",
-      // IMPORTANT: radiators is now a MultiField-like cell (text + many links)
-      radiators: defaultCell(),
-      // mm fields
+      radiators: defaultCell(), // text + links
       ceilingsMm: "",
       doorsMm: "",
       otherMm: "",
-      // legacy (kept for compatibility, not used in UI)
-      radiatorsLink: "",
-      ceilingsDoorsEtc: "",
     },
   });
 
@@ -148,16 +147,15 @@ Views.BriefPro = (() => {
     addMeta("Ссылка на чертежи (PDF)", m.drawingsPdf);
     addMeta("Ссылка на концепт", m.conceptLink);
 
-    // Радиаторы (текст + ссылки)
-    const rad = m.radiators || { text: "", links: [] };
+    const rad = (m.radiators && typeof m.radiators === "object") ? m.radiators : { text:"", links:[] };
     const radText = (rad.text || "").trim();
-    const radLinks = Array.isArray(rad.links) ? rad.links.map(x => (x || "").trim()).filter(Boolean) : [];
-    if (radText) addMeta("Радиаторы", radText);
-    if (radLinks.length) addMeta("Радиаторы — ссылки", radLinks.join(" | "));
+    const radLinks = Array.isArray(rad.links) ? rad.links.map(x => (x||"").trim()).filter(Boolean) : [];
+    if(radText) addMeta("Радиаторы", radText);
+    if(radLinks.length) addMeta("Радиаторы — ссылки", radLinks.join(" | "));
 
     addMeta("Высота потолков (мм)", m.ceilingsMm);
     addMeta("Высота дверей (мм)", m.doorsMm);
-    addMeta("Прочее (мм)", m.otherMm);
+    addMeta("Прочее", m.otherMm);
 
     if (metaLines.length) {
       lines.push("ФАЙЛЫ / ДОП. ИНФО");
@@ -169,7 +167,7 @@ Views.BriefPro = (() => {
     return lines.join("\n");
   }
 
-  function renderMetaField(label, key, state, isTextArea, placeholder) {
+  function renderMetaField(label, key, state, placeholder) {
     const val = (state.meta && state.meta[key] ? state.meta[key] : "").toString();
     const ph = (placeholder || "").toString();
 
@@ -178,44 +176,30 @@ Views.BriefPro = (() => {
       const isLink = /^https?:\/\//i.test(val.trim());
       if (isLink) {
         return (
-          '<div style="margin-bottom:14px">' +
-          '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
-          '<a href="' + esc(val) + '" target="_blank" rel="noopener" style="color:var(--brand-headings)" title="' + esc(val) + '">🔗 ' + esc(val) + "</a>" +
+          '<div style="margin-bottom:12px">' +
+            '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
+            '<a href="' + esc(val) + '" target="_blank" rel="noopener" style="color:var(--brand-headings)" title="' + esc(val) + '">🔗 ' + esc(val) + "</a>" +
           "</div>"
         );
       }
       return (
-        '<div style="margin-bottom:14px">' +
-        '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
-        '<div style="white-space:pre-wrap">' + esc(val) + "</div>" +
-        "</div>"
-      );
-    }
-
-    if (isTextArea) {
-      return (
-        '<div style="margin-bottom:14px">' +
-        '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
-        '<textarea data-meta="' + esc(key) + '" rows="3" style="width:100%; padding:10px; border-radius:12px;" placeholder="' + esc(ph) + '">' + esc(val) + "</textarea>" +
+        '<div style="margin-bottom:12px">' +
+          '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
+          '<div style="white-space:pre-wrap">' + esc(val) + "</div>" +
         "</div>"
       );
     }
 
     return (
-      '<div style="margin-bottom:14px">' +
-      '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
-      '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" style="width:100%; padding:10px; border-radius:12px;" placeholder="' + esc(ph) + '" />' +
+      '<div style="margin-bottom:12px">' +
+        '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
+        '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" style="width:100%; padding:10px; border-radius:12px;" placeholder="' + esc(ph) + '" />' +
       "</div>"
     );
   }
 
-  // --------- NEW: Radiators section exactly as requested ---------
   function renderRadiatorsSection(state) {
-    // Same UI as table cells: MultiField (text + many links)
-    const rad = (state.meta && state.meta.radiators) ? state.meta.radiators : { text:"", links:[] };
-
-    // Ensure structure
-    if (!rad || typeof rad !== "object") state.meta.radiators = { text:"", links:[] };
+    if (!state.meta.radiators || typeof state.meta.radiators !== "object") state.meta.radiators = { text:"", links:[] };
     if (!Array.isArray(state.meta.radiators.links)) state.meta.radiators.links = [];
 
     const mfHtml = Components.MultiField.render({
@@ -227,18 +211,17 @@ Views.BriefPro = (() => {
     });
 
     return (
-      '<div style="margin-bottom:18px">' +
+      '<div style="margin-bottom:14px">' +
         '<div style="font-weight:700; margin-bottom:8px">Радиаторы</div>' +
         mfHtml +
       '</div>'
     );
   }
 
-  // --------- NEW: Heights row (3 columns) ---------
   function renderHeightsRow(state) {
-    const vC = (state.meta && state.meta.ceilingsMm ? state.meta.ceilingsMm : "").toString();
-    const vD = (state.meta && state.meta.doorsMm ? state.meta.doorsMm : "").toString();
-    const vO = (state.meta && state.meta.otherMm ? state.meta.otherMm : "").toString();
+    const vC = (state.meta.ceilingsMm || "").toString();
+    const vD = (state.meta.doorsMm || "").toString();
+    const vO = (state.meta.otherMm || "").toString();
 
     if (state.mode === "view") {
       if (!vC.trim() && !vD.trim() && !vO.trim()) return "";
@@ -252,7 +235,7 @@ Views.BriefPro = (() => {
         '</div>';
 
       return (
-        '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px">' +
+        '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px">' +
           box("Высота потолков", vC) +
           box("Высота дверей", vD) +
           box("Прочее", vO) +
@@ -263,12 +246,11 @@ Views.BriefPro = (() => {
     const inp = (title, key, ph, val) =>
       '<div style="flex:1; min-width:200px; max-width:280px">' +
         '<div style="font-weight:700; margin-bottom:6px">' + esc(title) + '</div>' +
-        '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" placeholder="' + esc(ph) + '" ' +
-          'style="width:100%; padding:8px 10px; border-radius:12px;" />' +
+        '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" placeholder="' + esc(ph) + '" style="width:100%; padding:8px 10px; border-radius:12px;" />' +
       '</div>';
 
     return (
-      '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px">' +
+      '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px">' +
         inp("Высота потолков", "ceilingsMm", "0000мм", vC) +
         inp("Высота дверей", "doorsMm", "0000мм", vD) +
         inp("Прочее", "otherMm", "", vO) +
@@ -276,7 +258,7 @@ Views.BriefPro = (() => {
     );
   }
 
-function render(state) {
+  function render(state) {
     const viewer = $("#viewer");
     if (!viewer) return;
 
@@ -296,8 +278,13 @@ function render(state) {
       ? '<button class="btn" id="bp_csv"><span class="dot"></span>Скачать CSV (Excel)</button>'
       : "";
 
+    const undoBtn = (_undo && state.mode === "edit")
+      ? '<button class="btn btn-sm" id="bp_undo_del" title="Вернуть удалённую строку"><span class="dot"></span>Отменить удаление</button>'
+      : "";
+
+    // narrower columns: 140px for all middle columns; keep first 220 and last(notes) 240
     const colsHead = ["Стены, цвет", "Пол", "Потолок", "Двери", "Плинтус, карниз"]
-      .map((h) => '<th style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">' + esc(h) + "</th>")
+      .map((h) => '<th style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:140px;">' + esc(h) + "</th>")
       .join("");
 
     const rowsHtml = (state.rooms || [])
@@ -309,25 +296,26 @@ function render(state) {
       '<h1 class="article-title">ТЗ визуализатору — PRO</h1>' +
       '<p class="article-sub">Режим: <b>' + esc(modeLabel) + "</b>. Автосохранение включено.</p>" +
 
-      '<div class="actions">' +
-      modeBtn +
-      addRoomBtn +
-      '<button class="btn" id="bp_copy"><span class="dot"></span>Скопировать</button>' +
-      '<button class="btn" id="bp_download"><span class="dot"></span>Скачать .txt</button>' +
-      csvBtn +
+      '<div class="actions" style="gap:8px; flex-wrap:wrap">' +
+        modeBtn +
+        addRoomBtn +
+        undoBtn +
+        '<button class="btn" id="bp_copy"><span class="dot"></span>Скопировать</button>' +
+        '<button class="btn" id="bp_download"><span class="dot"></span>Скачать .txt</button>' +
+        csvBtn +
       "</div>" +
 
       '<div class="hr"></div>' +
 
       '<div style="overflow:auto; border:1px solid var(--border); border-radius:14px; background: rgba(26,23,20,.55);">' +
-      '<table style="border-collapse:separate; border-spacing:0; min-width:1700px; width:100%;">' +
+      '<table style="border-collapse:separate; border-spacing:0; min-width:1350px; width:100%;">' +
       "<thead>" +
       "<tr>" +
       '<th rowspan="2" style="position:sticky; left:0; background: rgba(26,23,20,.92); z-index:2; text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:220px;">Наименование помещения</th>' +
       '<th colspan="5" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); color:var(--brand-headings);">Геометрия помещения</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Свет</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Мебель / Декор</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Ссылка на концепт</th>' +
+      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:140px;">Свет</th>' +
+      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:140px;">Мебель / Декор</th>' +
+      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:140px;">Ссылка на концепт</th>' +
       '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Допы к черновикам или примечания</th>' +
       "</tr>" +
       "<tr>" + colsHead + "</tr>" +
@@ -340,26 +328,17 @@ function render(state) {
 
       '<div class="markdown" style="opacity:.95">' +
       "<h2>Файлы и ссылки проекта</h2>" +
-      renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state, false, "https://...") +
-      renderMetaField("Ссылка на свет (DWG)", "lightDwg", state, false, "https://...") +
-      renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state, false, "https://...") +
-      renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state, false, "https://...") +
-      renderMetaField("Ссылка на концепт", "conceptLink", state, false, "https://...") +
+      renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state, "https://...") +
+      renderMetaField("Ссылка на свет (DWG)", "lightDwg", state, "https://...") +
+      renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state, "https://...") +
+      renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state, "https://...") +
+      renderMetaField("Ссылка на концепт", "conceptLink", state, "https://...") +
       renderRadiatorsSection(state) +
       renderHeightsRow(state) +
       "</div>" +
       "</div>";
 
     viewer.innerHTML = html;
-
-    // fill radiators textarea value (because we didn't inject it into HTML to keep it simple)
-    if(state.mode === "edit"){
-      const ta = viewer.querySelector('textarea.mf-text[data-mf-path="meta.radiators"]');
-      if(ta){
-        const rad = getByPath(state, "meta.radiators") || { text:"", links:[] };
-        ta.value = (rad.text || "");
-      }
-    }
 
     bind(viewer, state);
     setStatus(String((state.rooms || []).length));
@@ -377,7 +356,6 @@ function render(state) {
       (e) => {
         const t = e.target;
 
-        // meta inputs
         if (t && t.dataset && t.dataset.meta) {
           const key = t.dataset.meta;
           state.meta[key] = t.value;
@@ -385,7 +363,6 @@ function render(state) {
           return;
         }
 
-        // room name
         if (t && t.classList && t.classList.contains("rr-name")) {
           const idx = Number(t.dataset.roomIdx);
           if (Number.isFinite(idx) && state.rooms[idx]) {
@@ -395,7 +372,6 @@ function render(state) {
           return;
         }
 
-        // multiField text (works for rooms AND meta.radiators)
         if (t && t.classList && t.classList.contains("mf-text")) {
           const path = t.dataset.mfPath;
           const cell = getByPath(state, path) || { text: "", links: [] };
@@ -405,7 +381,6 @@ function render(state) {
           return;
         }
 
-        // multiField link input
         if (t && t.classList && t.classList.contains("mf-link")) {
           const path = t.dataset.mfPath;
           const li = Number(t.dataset.mfLinkIdx);
@@ -427,13 +402,13 @@ function render(state) {
         const btn = e.target.closest("button");
         if (!btn) return;
 
-        // mode
         if (btn.id === "bp_to_view") {
           state.mode = "view";
           save(state);
           rerender();
           return;
         }
+
         if (btn.id === "bp_to_edit") {
           state.mode = "edit";
           save(state);
@@ -441,7 +416,6 @@ function render(state) {
           return;
         }
 
-        // add room
         if (btn.id === "bp_add_room") {
           state.rooms.push(defaultRoom());
           save(state);
@@ -449,26 +423,47 @@ function render(state) {
           return;
         }
 
-        // export
         if (btn.id === "bp_copy") {
           navigator.clipboard.writeText(buildExportText(state));
           alert("Скопировано ✅");
           return;
         }
+
         if (btn.id === "bp_download") {
           downloadText("TZ_vizualizatoru_PRO.txt", buildExportText(state));
           return;
         }
+
         if (btn.id === "bp_csv") {
           const csv = Utils.Exporters.briefToCSV(state);
           Utils.Exporters.download("TZ_vizualizatoru_PRO.csv", csv);
           return;
         }
 
-        // delete room
+        if (btn.id === "bp_undo_del") {
+          if (_undo && _undo.room) {
+            const idx = Math.min(Math.max(_undo.idx, 0), state.rooms.length);
+            state.rooms.splice(idx, 0, _undo.room);
+            _undo = null;
+            if (_undoTimer) { clearTimeout(_undoTimer); _undoTimer = null; }
+            save(state);
+            rerender();
+          }
+          return;
+        }
+
         if (btn.classList.contains("rr-del")) {
           const idx = Number(btn.dataset.roomIdx);
-          if (Number.isFinite(idx)) {
+          if (Number.isFinite(idx) && state.rooms[idx]) {
+            _undo = { idx: idx, room: state.rooms[idx] };
+
+            if (_undoTimer) clearTimeout(_undoTimer);
+            _undoTimer = setTimeout(() => {
+              _undo = null;
+              _undoTimer = null;
+              // не ререндерим насильно: просто исчезнет при следующем действии
+            }, 10000);
+
             state.rooms.splice(idx, 1);
             if (state.rooms.length === 0) state.rooms.push(defaultRoom());
             save(state);
@@ -477,7 +472,6 @@ function render(state) {
           return;
         }
 
-        // add link
         if (btn.classList.contains("mf-add-link")) {
           const path = btn.dataset.mfPath;
           const cell = getByPath(state, path) || { text: "", links: [] };
@@ -489,7 +483,6 @@ function render(state) {
           return;
         }
 
-        // delete link
         if (btn.classList.contains("mf-del-link")) {
           const path = btn.dataset.mfPath;
           const li = Number(btn.dataset.mfLinkIdx);
@@ -513,4 +506,3 @@ function render(state) {
 
   return { open };
 })();
-

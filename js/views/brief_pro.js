@@ -256,7 +256,7 @@ Views.BriefPro = (() => {
       : '';
 
     const xlsBtn = canExport
-      ? '<button class="btn btn-sm" id="bp_xls">Скачать Excel (.xls)</button>'
+      ? '<button class="btn btn-sm" id="bp_xlsx">Скачать Excel (.xlsx)</button>'
       : '';
 
     const undoBtn = (_undo && state.mode === "edit")
@@ -451,7 +451,7 @@ Views.BriefPro = (() => {
         return;
       }
 
-      if (btn.id === "bp_xls") {
+      if (btn.id === "bp_xlsx") {
         // Prefer true XLSX export (styled). Fallback to legacy HTML-XLS if something fails.
         try {
           if (window.Utils && Utils.XLSXExport && typeof Utils.XLSXExport.downloadXLSX === "function") {
@@ -546,4 +546,5 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+
 

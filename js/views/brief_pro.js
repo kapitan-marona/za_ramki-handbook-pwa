@@ -29,11 +29,11 @@ Views.BriefPro = (() => {
       drawingsPdf: "",
       conceptLink: "",
       radiators: "",
-      radiatorsLink: ", 
-      ceilingsMm: ", 
-      doorsMm: ", 
-      otherMm: ", 
-      ceilingsDoorsEtc: ""
+      radiatorsLink: "",
+      ceilingsMm: "",
+      doorsMm: "",
+      otherMm: "",
+      ceilingsDoorsEtc: "" // legacy (kept for compatibility)
     }
   });
 
@@ -42,7 +42,7 @@ Views.BriefPro = (() => {
       const raw = localStorage.getItem(KEY);
       if(!raw) return defaultState();
       const s = JSON.parse(raw);
-      return { ...defaultState(), ...s };
+      return { ...defaultState(), ...s, meta: { ...defaultState().meta, ...(s.meta || {}) } };
     }catch(e){
       return defaultState();
     }
@@ -112,7 +112,7 @@ Views.BriefPro = (() => {
     const m = state.meta || {};
     const metaLines = [];
     const addMeta = (label, val) => {
-      const v = (val || "").trim();
+      const v = (val || "").toString().trim();
       if(v) metaLines.push(`${label}: ${v}`);
     };
 
@@ -122,7 +122,10 @@ Views.BriefPro = (() => {
     addMeta("Ссылка на чертежи (PDF)", m.drawingsPdf);
     addMeta("Ссылка на концепт", m.conceptLink);
     addMeta("Радиаторы", m.radiators);
-    addMeta("Потолки/двери/прочее", m.ceilingsDoorsEtc);
+    addMeta("Радиаторы — ссылка", m.radiatorsLink);
+    addMeta("Потолки (мм)", m.ceilingsMm);
+    addMeta("Двери (мм)", m.doorsMm);
+    addMeta("Прочее (мм)", m.otherMm);
 
     if(metaLines.length){
       lines.push("ФАЙЛЫ / ДОП. ИНФО");
@@ -190,62 +193,65 @@ Views.BriefPro = (() => {
       : "";
 
     viewer.innerHTML = `
-      <h1 class="article-title">ТЗ визуализатору — PRO</h1>
-      <p class="article-sub">Режим: <b>${esc(modeLabel)}</b>. Автосохранение включено.</p>
+      <div class="bp-pro">
+        <h1 class="article-title">ТЗ визуализатору — PRO</h1>
+        <p class="article-sub">Режим: <b>${esc(modeLabel)}</b>. Автосохранение включено.</p>
 
-      <div class="actions">
-        ${modeBtn}
-        ${addRoomBtn}
-        <button class="btn" id="bp_copy"><span class="dot"></span>Скопировать</button>
-        <button class="btn" id="bp_download"><span class="dot"></span>Скачать .txt</button>
-        ${window.Utils && Utils.Exporters ? `<button class="btn" id="bp_csv"><span class="dot"></span>Скачать CSV (Excel)</button>` : ""}
-      </div>
+        <div class="actions">
+          ${modeBtn}
+          ${addRoomBtn}
+          <button class="btn" id="bp_copy"><span class="dot"></span>Скопировать</button>
+          <button class="btn" id="bp_download"><span class="dot"></span>Скачать .txt</button>
+          ${window.Utils && Utils.Exporters ? `<button class="btn" id="bp_csv"><span class="dot"></span>Скачать CSV (Excel)</button>` : ""}
+        </div>
 
-      <div class="hr"></div>
+        <div class="hr"></div>
 
-      <div style="overflow:auto; border:1px solid var(--border); border-radius:14px; background: rgba(26,23,20,.55);">
-        <table style="border-collapse:separate; border-spacing:0; min-width:1700px; width:100%;">
-          <thead>
-            <tr>
-              <th rowspan="2" style="position:sticky; left:0; background: rgba(26,23,20,.92); z-index:2; text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:220px;">
-                Наименование помещения
-              </th>
+        <div style="overflow:auto; border:1px solid var(--border); border-radius:14px; background: rgba(26,23,20,.55);">
+          <table style="border-collapse:separate; border-spacing:0; min-width:1700px; width:100%;">
+            <thead>
+              <tr>
+                <th rowspan="2" style="position:sticky; left:0; background: rgba(26,23,20,.92); z-index:2; text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:220px;">
+                  Наименование помещения
+                </th>
 
-              <th colspan="5" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); color:var(--brand-headings);">
-                Геометрия помещения
-              </th>
+                <th colspan="5" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); color:var(--brand-headings);">
+                  Геометрия помещения
+                </th>
 
-              <th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Свет</th>
-              <th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Мебель / Декор</th>
-              <th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Ссылка на концепт</th>
-              <th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Допы к черновикам или примечания</th>
-            </tr>
-            <tr>
-              ${["Стены, цвет","Пол","Потолок","Двери","Плинтус, карниз"].map(h => `
-                <th style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">${esc(h)}</th>
-              `).join("")}
-            </tr>
-          </thead>
+                <th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Свет</th>
+                <th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Мебель / Декор</th>
+                <th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Ссылка на концепт</th>
+                <th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Допы к черновикам или примечания</th>
+              </tr>
+              <tr>
+                ${["Стены, цвет","Пол","Потолок","Двери","Плинтус, карниз"].map(h => `
+                  <th style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">${esc(h)}</th>
+                `).join("")}
+              </tr>
+            </thead>
 
-          <tbody>
-            ${state.rooms.map((r, idx) => Components.RoomRow.render({ room: r, idx, mode: state.mode })).join("")}
-          </tbody>
-        </table>
-      </div>
+            <tbody>
+              ${state.rooms.map((r, idx) => Components.RoomRow.render({ room: r, idx, mode: state.mode })).join("")}
+            </tbody>
+          </table>
+        </div>
 
-      <div class="hr"></div>
+        <div class="hr"></div>
 
-      <div class="markdown" style="opacity:.95">
-        <h2>Файлы и ссылки проекта</h2>
-        ${renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state)}
-        ${renderMetaField("Ссылка на свет (DWG)", "lightDwg", state)}
-        ${renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state)}
-        ${renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state)}
-        ${renderMetaField("Ссылка на концепт", "conceptLink", state)}
-        ${renderMetaField("Радиаторы", "radiators", state, true)}
-        ${renderMetaField("Потолки (0000мм)", "ceilingsMm", state)}
-        ${renderMetaField("Двери (0000мм)", "doorsMm", state)}
-        ${renderMetaField("Прочее (0000мм)", "otherMm", state)}
+        <div class="markdown" style="opacity:.95">
+          <h2>Файлы и ссылки проекта</h2>
+          ${renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state)}
+          ${renderMetaField("Ссылка на свет (DWG)", "lightDwg", state)}
+          ${renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state)}
+          ${renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state)}
+          ${renderMetaField("Ссылка на концепт", "conceptLink", state)}
+          ${renderMetaField("Радиаторы", "radiators", state, true)}
+          ${renderMetaField("Радиаторы — ссылка", "radiatorsLink", state)}
+          ${renderMetaField("Потолки (0000мм)", "ceilingsMm", state)}
+          ${renderMetaField("Двери (0000мм)", "doorsMm", state)}
+          ${renderMetaField("Прочее (0000мм)", "otherMm", state)}
+        </div>
       </div>
     `;
 
@@ -254,7 +260,6 @@ Views.BriefPro = (() => {
   }
 
   function bind(root, state){
-    // полностью убиваем старые делегированные события
     if(_abort) _abort.abort();
     _abort = new AbortController();
     const { signal } = _abort;
@@ -264,14 +269,13 @@ Views.BriefPro = (() => {
     root.addEventListener("input", (e) => {
       const t = e.target;
 
-      // ===== META =====
       if(t.dataset && t.dataset.meta){
-        state.meta[t.dataset.meta] = t.value;
+        const key = t.dataset.meta;
+        state.meta[key] = t.value;
         save(state);
         return;
       }
 
-      // ===== ROOM NAME =====
       if(t.classList.contains("rr-name")){
         const idx = Number(t.dataset.roomIdx);
         if(Number.isFinite(idx) && state.rooms[idx]){
@@ -281,7 +285,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // ===== MULTIFIELD TEXT =====
       if(t.classList.contains("mf-text")){
         const path = t.dataset.mfPath;
         const cell = getByPath(state, path) || { text:"", links:[] };
@@ -291,7 +294,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // ===== MULTIFIELD LINK =====
       if(t.classList.contains("mf-link")){
         const path = t.dataset.mfPath;
         const li = Number(t.dataset.mfLinkIdx);
@@ -307,12 +309,10 @@ Views.BriefPro = (() => {
 
     }, { signal });
 
-
     root.addEventListener("click", (e) => {
       const btn = e.target.closest("button");
       if(!btn) return;
 
-      // ===== MODE SWITCH =====
       if(btn.id === "bp_to_view"){
         state.mode = "view";
         save(state);
@@ -327,7 +327,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // ===== ADD ROOM =====
       if(btn.id === "bp_add_room"){
         state.rooms.push(defaultRoom());
         save(state);
@@ -335,7 +334,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // ===== COPY =====
       if(btn.id === "bp_copy"){
         const text = buildExportText(state);
         navigator.clipboard.writeText(text);
@@ -343,20 +341,17 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // ===== TXT DOWNLOAD =====
       if(btn.id === "bp_download"){
         downloadText("TZ_vizualizatoru_PRO.txt", buildExportText(state));
         return;
       }
 
-      // ===== CSV DOWNLOAD =====
       if(btn.id === "bp_csv"){
         const csv = Utils.Exporters.briefToCSV(state);
         Utils.Exporters.download("TZ_vizualizatoru_PRO.csv", csv);
         return;
       }
 
-      // ===== DELETE ROOM =====
       if(btn.classList.contains("rr-del")){
         const idx = Number(btn.dataset.roomIdx);
         if(Number.isFinite(idx)){
@@ -368,7 +363,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // ===== ADD LINK =====
       if(btn.classList.contains("mf-add-link")){
         const path = btn.dataset.mfPath;
         const cell = getByPath(state, path) || { text:"", links:[] };
@@ -380,7 +374,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // ===== DELETE LINK =====
       if(btn.classList.contains("mf-del-link")){
         const path = btn.dataset.mfPath;
         const li = Number(btn.dataset.mfLinkIdx);
@@ -397,7 +390,6 @@ Views.BriefPro = (() => {
     }, { signal });
   }
 
-
   async function open(){
     const state = load();
     render(state);
@@ -405,5 +397,3 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
-
-

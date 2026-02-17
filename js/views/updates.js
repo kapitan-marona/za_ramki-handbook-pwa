@@ -58,7 +58,11 @@ Views.Updates = (() => {
       : "";
 
     const textHtml = text
-      ? `<div class="markdown" style="opacity:.95; margin-top:10px">${window.marked ? marked.parse(text) : `<pre>${esc(text)}</pre>`}</div>`
+      ? (
+          `<div class="markdown" style="opacity:.95; margin-top:10px">` +
+          (window.marked ? marked.parse(text) : (`<pre>` + esc(text) + `</pre>`)) +
+          `</div>`
+        )
       : `<div class="empty" style="margin-top:10px">Нет текста</div>`;
 
     return `
@@ -163,3 +167,4 @@ Views.Updates = (() => {
 
   return { show, open };
 })();
+

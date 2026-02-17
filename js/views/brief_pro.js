@@ -37,13 +37,16 @@ Views.BriefPro = (() => {
       furniturePlanDwg: "",
       drawingsPdf: "",
       conceptLink: "",
-      radiators: defaultCell(),
+      radiators: defaultCell(), // text + links
       ceilingsMm: "",
       doorsMm: "",
       otherMm: "",
       otherLabel: "Прочее"
-    }
     },
+    __ui: {
+      restoreScroll: null,
+      focus: null
+    }
   });
 
   function esc(str) {
@@ -68,6 +71,7 @@ Views.BriefPro = (() => {
         ...base,
         ...s,
         meta: { ...base.meta, ...(s.meta || {}) },
+        __ui: base.__ui
       };
     } catch (e) {
       return defaultState();
@@ -96,9 +100,7 @@ Views.BriefPro = (() => {
   function setByPath(state, path, value) {
     const parts = (path || "").split(".");
     let cur = state;
-    for (let i = 0; i < parts.length - 1; i++) {
-      cur = cur[parts[i]];
-    }
+    for (let i = 0; i < parts.length - 1; i++) cur = cur[parts[i]];
     cur[parts[parts.length - 1]] = value;
   }
 
@@ -116,7 +118,6 @@ Views.BriefPro = (() => {
     _pendingTimer = setTimeout(() => {
       _pendingDeleteIdx = null;
       _pendingTimer = null;
-      // Optional rerender to reset button text
       rerender();
     }, 3000);
   }
@@ -131,24 +132,24 @@ Views.BriefPro = (() => {
       if (isLink) {
         return (
           '<div class="bp-meta">' +
-            '<div class="bp-meta-label">' + esc(label) + "</div>" +
-            '<a href="' + esc(val) + '" target="_blank" rel="noopener" class="bp-meta-link" title="' + esc(val) + '">🔗 ' + esc(val) + "</a>" +
-          "</div>"
+            '<div class="bp-meta-label">' + esc(label) + '</div>' +
+            '<a href="' + esc(val) + '" target="_blank" rel="noopener" class="bp-meta-link" title="' + esc(val) + '">🔗 ' + esc(val) + '</a>' +
+          '</div>'
         );
       }
       return (
         '<div class="bp-meta">' +
-          '<div class="bp-meta-label">' + esc(label) + "</div>" +
-          '<div class="bp-meta-text">' + esc(val) + "</div>" +
-        "</div>"
+          '<div class="bp-meta-label">' + esc(label) + '</div>' +
+          '<div class="bp-meta-text">' + esc(val) + '</div>' +
+        '</div>'
       );
     }
 
     return (
       '<div class="bp-meta">' +
-        '<div class="bp-meta-label">' + esc(label) + "</div>" +
+        '<div class="bp-meta-label">' + esc(label) + '</div>' +
         '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" class="bp-meta-input" placeholder="' + esc(ph) + '" />' +
-      "</div>"
+      '</div>'
     );
   }
 
@@ -202,7 +203,6 @@ Views.BriefPro = (() => {
         '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" placeholder="' + esc(ph) + '" class="bp-3col-input" />' +
       '</div>';
 
-    // Third column: editable title + value input
     const otherCol =
       '<div class="bp-3col">' +
         '<input data-meta="otherLabel" value="' + esc(otherTitle === "Прочее" ? "" : otherTitle) + '" placeholder="Прочее" class="bp-3col-title-edit" />' +
@@ -218,13 +218,13 @@ Views.BriefPro = (() => {
     );
   }
 
-function render(state) {
+  function render(state) {
     const viewer = $("#viewer");
     if (!viewer) return;
 
     const canCsv = window.Utils && Utils.Exporters;
 
-    // Buttons: ONLY 3 in requested order
+    // ONLY 3 buttons in requested order (+ undo appears only when needed)
     const addRoomBtn = (state.mode === "edit")
       ? '<button class="btn btn-sm" id="bp_add_room">Добавить помещение</button>'
       : '';
@@ -242,11 +242,16 @@ function render(state) {
       : '';
 
     const colsHead = ["Стены, цвет", "Пол", "Потолок", "Двери", "Плинтус, карниз"]
-      .map((h) => '<th class="bp-th mid">' + esc(h) + "</th>")
+      .map((h) => '<th class="bp-th mid">' + esc(h) + '</th>')
       .join("");
 
     const rowsHtml = (state.rooms || [])
-      .map((r, idx) => Components.RoomRow.render({ room: r, idx, mode: state.mode, pendingDeleteIdx: _pendingDeleteIdx }))
+      .map((r, idx) => Components.RoomRow.render({
+        room: r,
+        idx,
+        mode: state.mode,
+        pendingDeleteIdx: _pendingDeleteIdx
+      }))
       .join("");
 
     viewer.innerHTML =
@@ -292,11 +297,11 @@ function render(state) {
         renderHeightsRow(state) +
       '</div>';
 
-        // restore scroll & focus after rerender (table should NOT jump)
-    try{
+    // Restore scroll + focus (if rerender requested it)
+    try {
       const ui = state.__ui || {};
       const wrap = viewer.querySelector(".bp-tablewrap");
-      if(wrap && ui.restoreScroll){
+      if (wrap && ui.restoreScroll) {
         const sl = ui.restoreScroll.scrollLeft || 0;
         const st = ui.restoreScroll.scrollTop || 0;
         requestAnimationFrame(() => {
@@ -304,21 +309,21 @@ function render(state) {
           wrap.scrollTop = st;
         });
       }
-
-      if(ui.focus && ui.focus.path){
-        const esc = (v) => (window.CSS && CSS.escape) ? CSS.escape(v) : v.replace(/"/g,'\\"');
-        const sel = 'input.mf-link[data-mf-path="' + esc(ui.focus.path) + '"][data-mf-link-idx="' + ui.focus.idx + '"]';
+      if (ui.focus && ui.focus.path) {
+        const path = ui.focus.path;
+        const idx = ui.focus.idx;
+        const selector = 'input.mf-link[data-mf-path="' + path.replace(/"/g, '\\"') + '"][data-mf-link-idx="' + idx + '"]';
         requestAnimationFrame(() => {
-          const el = viewer.querySelector(sel);
-          if(el){
+          const el = viewer.querySelector(selector);
+          if (el) {
             el.focus();
-            el.select && el.select();
+            if (el.select) el.select();
           }
         });
       }
-      // clear one-shot ui hints
-      if(state.__ui){ state.__ui.focus = null; }
-    }catch(e){}
+      // clear one-shot focus request
+      if (state.__ui) state.__ui.focus = null;
+    } catch (e) {}
 
     bind(viewer, state);
     setStatus(String((state.rooms || []).length));
@@ -334,10 +339,9 @@ function render(state) {
       const scrollLeft = wrap ? wrap.scrollLeft : 0;
       const scrollTop = wrap ? wrap.scrollTop : 0;
 
-      // stash on state object to restore after render
       state.__ui = state.__ui || {};
       state.__ui.restoreScroll = { scrollLeft, scrollTop };
-      state.__ui.focus = opts && opts.focus ? opts.focus : null;
+      state.__ui.focus = (opts && opts.focus) ? opts.focus : null;
 
       render(state);
     };
@@ -347,7 +351,15 @@ function render(state) {
 
       if (t && t.dataset && t.dataset.meta) {
         const key = t.dataset.meta;
-        state.meta[key] = t.value;
+        // Special: otherLabel empty -> fallback to "Прочее"
+        if (key === "otherLabel") {
+          state.meta.otherLabel = (t.value || "").toString();
+        } else if (key === "radiators") {
+          // not used (radiators handled by MultiField)
+          state.meta[key] = t.value;
+        } else {
+          state.meta[key] = t.value;
+        }
         save(state);
         return;
       }
@@ -444,11 +456,10 @@ function render(state) {
         return;
       }
 
-      // Row delete step 2 (confirm)
+      // Row delete step 2
       if (btn.classList.contains("rr-del-confirm")) {
         const idx = Number(btn.dataset.roomIdx);
         if (Number.isFinite(idx) && state.rooms[idx]) {
-          // prepare undo
           _undo = { idx: idx, room: state.rooms[idx] };
           if (_undoTimer) clearTimeout(_undoTimer);
           _undoTimer = setTimeout(() => {
@@ -467,7 +478,7 @@ function render(state) {
         return;
       }
 
-      // MultiField add link
+      // MultiField add link (preserve scroll + focus on new input)
       if (btn.classList.contains("mf-add-link")) {
         const path = btn.dataset.mfPath;
         const cell = getByPath(state, path) || { text: "", links: [] };
@@ -501,4 +512,3 @@ function render(state) {
 
   return { open };
 })();
-

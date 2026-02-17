@@ -60,14 +60,20 @@ Components.RoomRow = (() => {
       });
     });
 
-    const tdWidth = (key) => (key === "notes" ? 240 : 140);
+    // Color for entire row (persisted in room.__bg)
+    const bg = (r && r.__bg) ? r.__bg : "";
+    const bgStyle = bg ? `background:${esc(bg)};` : "";
+
+    const tdWidth = (key) => (key === "notes" ? 260 : 170);
 
     return `
-      <tr data-room-row="${idx}">
-        <td class="rr-sticky" style="min-width:150px; vertical-align:top">${nameCell}</td>
+      <tr data-room-row="${idx}" style="${bgStyle}">
+        <td class="rr-sticky" style="${bgStyle} min-width:220px; vertical-align:top">
+          ${nameCell}
+        </td>
         ${cells.map((h, i) => {
           const key = COLS[i].key;
-          return `<td style="min-width:${tdWidth(key)}px; vertical-align:top">${h}</td>`;
+          return `<td style="${bgStyle} min-width:${tdWidth(key)}px; vertical-align:top">${h}</td>`;
         }).join("")}
       </tr>
     `;

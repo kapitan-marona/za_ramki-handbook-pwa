@@ -13,9 +13,15 @@ Views.BriefPro = (() => {
   let _pendingDeleteIdx = null;
   let _pendingTimer = null;
 
+  // Approved palette (cycled)
+  const PALETTE = [
+    "#F8FAFC", "#F1F5F9", "#FAFAF9", "#FDF2F8", "#ECFDF5",
+    "#EFF6FF", "#FFFBEB", "#F5F3FF", "#FFF1F2", "#F0FDFA"
+  ];
+
   const defaultCell = () => ({ text: "", links: [] });
 
-  const defaultRoom = () => ({
+  const defaultRoom = (bg) => ({
     name: "",
     walls: defaultCell(),
     floor: defaultCell(),
@@ -26,11 +32,12 @@ Views.BriefPro = (() => {
     furniture: defaultCell(),
     concept: defaultCell(),
     notes: defaultCell(),
+    __bg: bg || "" // persisted row color
   });
 
   const defaultState = () => ({
     mode: "edit",
-    rooms: [defaultRoom()],
+    rooms: [defaultRoom(PALETTE[0])],
     meta: {
       surveyPhotosLink: "",
       lightDwg: "",
@@ -61,18 +68,30 @@ Views.BriefPro = (() => {
       }[c]));
   }
 
+  function ensureRoomColors(state){
+    const rooms = Array.isArray(state.rooms) ? state.rooms : [];
+    for(let i=0;i<rooms.length;i++){
+      const r = rooms[i];
+      if(r && !r.__bg){
+        r.__bg = PALETTE[i % PALETTE.length];
+      }
+    }
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return defaultState();
       const s = JSON.parse(raw);
       const base = defaultState();
-      return {
+      const merged = {
         ...base,
         ...s,
         meta: { ...base.meta, ...(s.meta || {}) },
         __ui: base.__ui
       };
+      ensureRoomColors(merged);
+      return merged;
     } catch (e) {
       return defaultState();
     }
@@ -224,7 +243,6 @@ Views.BriefPro = (() => {
 
     const canExport = window.Utils && Utils.Exporters;
 
-    // Buttons
     const addRoomBtn = (state.mode === "edit")
       ? '<button class="btn btn-sm" id="bp_add_room">Добавить помещение</button>'
       : '';
@@ -302,7 +320,6 @@ Views.BriefPro = (() => {
         renderHeightsRow(state) +
       '</div>';
 
-    // Restore scroll + focus (if rerender requested it)
     try {
       const ui = state.__ui || {};
       const wrap = viewer.querySelector(".bp-tablewrap");
@@ -421,7 +438,8 @@ Views.BriefPro = (() => {
 
       if (btn.id === "bp_add_room") {
         clearPendingDelete();
-        state.rooms.push(defaultRoom());
+        const nextColor = PALETTE[(state.rooms.length || 0) % PALETTE.length];
+        state.rooms.push(defaultRoom(nextColor));
         save(state);
         rerender();
         return;
@@ -471,7 +489,7 @@ Views.BriefPro = (() => {
           }, 10000);
 
           state.rooms.splice(idx, 1);
-          if (state.rooms.length === 0) state.rooms.push(defaultRoom());
+          if (state.rooms.length === 0) state.rooms.push(defaultRoom(PALETTE[0]));
           save(state);
 
           clearPendingDelete();

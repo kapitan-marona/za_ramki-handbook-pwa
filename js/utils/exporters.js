@@ -3,11 +3,10 @@
 Utils.Exporters = (() => {
 
   // ---------------------------
-  // CSV helpers
+  // CSV helpers (Excel-friendly)
   // ---------------------------
   function escCsv(v){
     const s = (v ?? "").toString();
-    // quote if contains ; or " or newline
     if(/[;"\n\r]/.test(s)){
       return `"${s.replace(/"/g, '""')}"`;
     }
@@ -31,11 +30,9 @@ Utils.Exporters = (() => {
     const c = cell || { text:"", links:[] };
     const text = (c.text || "").toString().trim();
     const links = Array.isArray(c.links) ? c.links.map(x => (x||"").toString().trim()).filter(Boolean) : [];
-    // IMPORTANT: CRLF inside cell (Excel-friendly)
-    return [text, ...links].filter(Boolean).join("\r\n");
+    return [text, ...links].filter(Boolean).join("\r\n"); // CRLF inside cell
   }
 
-  // rooms: array from brief_pro state
   function briefToCSV(state){
     const sep = ";";
     const headers = [
@@ -58,20 +55,14 @@ Utils.Exporters = (() => {
     for(const r of rooms){
       const row = [];
       row.push(r?.name || "");
-
-      // order must match headers above
       const order = ["walls","floor","ceiling","doors","plinth","light","furniture","concept","notes"];
       for(const key of order){
-        const cellValue = cellToText(r?.[key]);
-        row.push(cellValue);
+        row.push(cellToText(r?.[key]));
       }
-
       lines.push(row.map(escCsv).join(sep));
     }
 
-    // --- Meta block below (same CSV file) ---
     const m = state.meta || {};
-
     const metaPairs = [];
     const pushIf = (k,v) => {
       const s = (v ?? "").toString().trim();
@@ -84,12 +75,10 @@ Utils.Exporters = (() => {
     pushIf("Ссылка на чертежи (PDF)", m.drawingsPdf);
     pushIf("Ссылка на концепт", m.conceptLink);
 
-    // Радиаторы: text + links (multi)
     const rad = m.radiators && typeof m.radiators === "object" ? m.radiators : { text:"", links:[] };
     const radValue = cellToText(rad);
     if(radValue.trim()) metaPairs.push(["Радиаторы", radValue]);
 
-    // Высоты / прочее
     pushIf("Высота потолков (мм)", m.ceilingsMm);
     pushIf("Высота дверей (мм)", m.doorsMm);
     {
@@ -98,7 +87,6 @@ Utils.Exporters = (() => {
     }
 
     if(metaPairs.length){
-      // a bit more "air" for Excel
       lines.push("");
       lines.push("");
       lines.push([escCsv("ФАЙЛЫ / ДОП. ИНФО")].join(sep));
@@ -108,14 +96,17 @@ Utils.Exporters = (() => {
       }
     }
 
-    // IMPORTANT: UTF-8 BOM for Excel Windows
-    const body = lines.join("\r\n");
-    return "\uFEFF" + body;
+    return "\uFEFF" + lines.join("\r\n"); // UTF-8 BOM
   }
 
   // ---------------------------
-  // XLS (HTML) export with styles
+  // XLS (HTML) export with styles + Links matrix
   // ---------------------------
+  const PALETTE = [
+    "#F8FAFC", "#F1F5F9", "#FAFAF9", "#FDF2F8", "#ECFDF5",
+    "#EFF6FF", "#FFFBEB", "#F5F3FF", "#FFF1F2", "#F0FDFA"
+  ];
+
   function escHtml(s){
     return (s ?? "").toString()
       .replace(/&/g, "&amp;")
@@ -124,43 +115,60 @@ Utils.Exporters = (() => {
       .replace(/"/g, "&quot;");
   }
 
-  function textToHtmlWithLinks(cell){
-    if(!cell) return "";
-    const t = (cell.text || "").toString();
-    const links = Array.isArray(cell.links) ? cell.links.map(x => (x||"").toString().trim()).filter(Boolean) : [];
+  function isUrlLine(line){
+    return /^https?:\/\/\S+$/i.test((line||"").trim());
+  }
 
-    const textPart = t.trim()
-      ? `<div class="txt">${escHtml(t).replace(/\r?\n/g, "<br/>")}</div>`
+  function lineToHtml(line){
+    const l = (line||"").trim();
+    if(!l) return "";
+    if(isUrlLine(l)){
+      const u = escHtml(l);
+      return `<a href="${u}">${u}</a>`;
+    }
+    return escHtml(l);
+  }
+
+  // Main cell: text + links, URL lines inside text also clickable
+  function cellToHtml(cell){
+    const c = cell || { text:"", links:[] };
+    const t = (c.text || "").toString();
+    const links = Array.isArray(c.links) ? c.links.map(x => (x||"").toString().trim()).filter(Boolean) : [];
+
+    const textLines = t.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    const textHtml = textLines.length
+      ? `<div class="txt">${textLines.map(lineToHtml).join("<br/>")}</div>`
       : "";
 
-    const linksPart = links.length
+    const linksHtml = links.length
       ? `<div class="links">${links.map(u => {
           const uu = escHtml(u);
           return `<div><a href="${uu}">${uu}</a></div>`;
         }).join("")}</div>`
       : "";
 
-    return textPart + linksPart;
+    return textHtml + linksHtml;
   }
 
   function briefToXLS(state){
     const columns = [
-      { key: "room", label: "Наименование помещения" },
-      { key: "walls", label: "Стены, цвет" },
-      { key: "floor", label: "Пол" },
-      { key: "ceiling", label: "Потолок" },
-      { key: "doors", label: "Двери" },
-      { key: "plinth", label: "Плинтус, карниз" },
-      { key: "light", label: "Свет" },
-      { key: "furniture", label: "Мебель / Декор" },
-      { key: "concept", label: "Ссылка на концепт" },
-      { key: "notes", label: "Допы к черновикам или примечания" }
+      { key: "room", label: "Наименование помещения", w: 280 },
+      { key: "walls", label: "Стены, цвет", w: 260 },
+      { key: "floor", label: "Пол", w: 220 },
+      { key: "ceiling", label: "Потолок", w: 220 },
+      { key: "doors", label: "Двери", w: 220 },
+      { key: "plinth", label: "Плинтус, карниз", w: 240 },
+      { key: "light", label: "Свет", w: 240 },
+      { key: "furniture", label: "Мебель / Декор", w: 260 },
+      { key: "concept", label: "Ссылка на концепт", w: 240 },
+      { key: "notes", label: "Допы / примечания", w: 340 }
     ];
 
     const rooms = Array.isArray(state.rooms) ? state.rooms : [];
     const m = state.meta || {};
     const otherLabel = ((m.otherLabel || "Прочее") + "").trim() || "Прочее";
 
+    // Meta
     const metaPairs = [];
     const pushIf = (k,v) => {
       const s = (v ?? "").toString().trim();
@@ -174,12 +182,49 @@ Utils.Exporters = (() => {
     pushIf("Ссылка на концепт", m.conceptLink);
 
     const rad = m.radiators && typeof m.radiators === "object" ? m.radiators : { text:"", links:[] };
-    const radVal = cellToText(rad);
-    if(radVal.trim()) metaPairs.push(["Радиаторы", radVal]);
+    const radText = (rad.text || "").toString().trim();
+    const radLinks = Array.isArray(rad.links) ? rad.links.map(x => (x||"").toString().trim()).filter(Boolean) : [];
+    if(radText || radLinks.length){
+      metaPairs.push(["Радиаторы", [radText, ...radLinks].filter(Boolean).join("\n")]);
+    }
 
     pushIf("Высота потолков (мм)", m.ceilingsMm);
     pushIf("Высота дверей (мм)", m.doorsMm);
     pushIf(otherLabel, m.otherMm);
+
+    // Links matrix
+    const fields = [
+      ["walls","Стены, цвет"],
+      ["floor","Пол"],
+      ["ceiling","Потолок"],
+      ["doors","Двери"],
+      ["plinth","Плинтус, карниз"],
+      ["light","Свет"],
+      ["furniture","Мебель / Декор"],
+      ["concept","Ссылка на концепт"],
+      ["notes","Допы / примечания"],
+    ];
+
+    const linkRows = [];
+    let maxLinks = 0;
+
+    rooms.forEach((r) => {
+      fields.forEach(([key, label]) => {
+        const cell = r?.[key] || { text:"", links:[] };
+        const links = Array.isArray(cell.links) ? cell.links.map(x => (x||"").toString().trim()).filter(Boolean) : [];
+        if(links.length){
+          maxLinks = Math.max(maxLinks, links.length);
+          linkRows.push({
+            room: (r?.name || "").toString(),
+            field: label,
+            links,
+            bg: (r && r.__bg) ? r.__bg : ""
+          });
+        }
+      });
+    });
+
+    const colgroup = `<colgroup>${columns.map(c => `<col style="width:${c.w}px" />`).join("")}</colgroup>`;
 
     const html = `
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -204,54 +249,119 @@ Utils.Exporters = (() => {
 
   <style>
     body { font-family: Calibri, Arial, sans-serif; }
+
     table { border-collapse: collapse; }
-    .grid td, .grid th { border: 1px solid #d9d9d9; padding: 6px 8px; vertical-align: top; }
+    .grid { table-layout: fixed; }
+    .grid td, .grid th { border: 1px solid #d9d9d9; padding: 10px 10px; vertical-align: top; }
+
+    /* Headers: 16px bold */
     .grid th {
-      font-weight: 700;
-      font-size: 12.5pt;
-      background: #1f2937;
+      font-weight: 800;
+      font-size: 16px;
+      background: #111827;
       color: #ffffff;
       text-align: left;
       white-space: nowrap;
     }
-    .grid td { font-size: 10.5pt; line-height: 1.25; }
-    .room { font-weight: 700; white-space: nowrap; background: #f8fafc; }
+
+    /* Cells: 12px */
+    .grid td {
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.35;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+
+    /* First column: 16px bold */
+    .room { font-weight: 800; font-size: 16px; }
+
     .txt { margin-bottom: 6px; }
-    .links a { color: #0563C1; text-decoration: underline; }
-    .metaTitle { font-weight: 800; font-size: 13pt; padding-top: 12px; }
-    .meta td { border: 1px solid #d9d9d9; padding: 6px 8px; font-size: 10.5pt; vertical-align: top; }
-    .metaKey { width: 320px; font-weight: 700; background: #f3f4f6; }
-    .metaVal { width: 900px; }
+    a { color: #0563C1; text-decoration: underline; }
+    .links div { margin-top: 2px; }
+
+    .sectionTitle { font-weight: 900; font-size: 16px; margin-top: 18px; margin-bottom: 8px; }
+
+    /* Links matrix */
+    .linksGrid { table-layout: fixed; }
+    .linksGrid td, .linksGrid th { border: 1px solid #d9d9d9; padding: 10px 10px; vertical-align: top; }
+    .linksGrid th { background: #111827; color: #fff; font-weight: 800; font-size: 16px; text-align:left; }
+    .linksGrid td { font-size: 12px; line-height: 1.35; word-wrap: break-word; }
+    .linksGrid .lgRoom { width: 280px; font-weight: 700; }
+    .linksGrid .lgField { width: 240px; font-weight: 700; background: #f3f4f6; }
+    .linksGrid .lgLink { width: 360px; }
+
+    /* Meta */
+    .meta { table-layout: fixed; }
+    .meta td, .meta th { border: 1px solid #d9d9d9; padding: 10px 10px; vertical-align: top; }
+    .meta th { background: #111827; color: #fff; font-weight: 800; font-size: 16px; text-align:left; }
+    .meta td { font-size: 12px; line-height: 1.35; word-wrap: break-word; }
+    .metaKey { width: 340px; font-weight: 700; background: #f3f4f6; }
+    .metaVal { width: 1080px; }
   </style>
 </head>
 <body>
+
   <table class="grid">
+    ${colgroup}
     <tr>
       ${columns.map(c => `<th>${escHtml(c.label)}</th>`).join("")}
     </tr>
-    ${rooms.map(r => `
+
+    ${rooms.map((r, idx) => {
+      const bg = (r && r.__bg) ? r.__bg : (PALETTE[idx % PALETTE.length]);
+      return `
       <tr>
         ${columns.map(c => {
-          if (c.key === "room") return `<td class="room">${escHtml(r?.name || "")}</td>`;
-          return `<td>${textToHtmlWithLinks(r?.[c.key])}</td>`;
+          if(c.key === "room"){
+            return `<td class="room" style="background:${escHtml(bg)};">${escHtml(r?.name || "")}</td>`;
+          }
+          return `<td style="background:${escHtml(bg)};">${cellToHtml(r?.[c.key])}</td>`;
         }).join("")}
-      </tr>
-    `).join("")}
+      </tr>`;
+    }).join("")}
   </table>
 
-  ${metaPairs.length ? `
-    <div class="metaTitle">ФАЙЛЫ / ДОП. ИНФО</div>
-    <table class="meta" style="margin-top:10px;">
-      <tr><td class="metaKey">Параметр</td><td class="metaVal"><b>Значение</b></td></tr>
-      ${metaPairs.map(([k,v]) => {
-        const vv = (v ?? "").toString().trim();
-        const isUrl = /^https?:\/\/\S+$/i.test(vv);
-        const safeVal = escHtml(vv).replace(/\r?\n/g, "<br/>");
-        const vHtml = isUrl ? `<a href="${escHtml(vv)}">${escHtml(vv)}</a>` : safeVal;
-        return `<tr><td class="metaKey">${escHtml(k)}</td><td class="metaVal">${vHtml}</td></tr>`;
+  ${linkRows.length ? `
+    <div class="sectionTitle">ССЫЛКИ (каждая ссылка в своей ячейке)</div>
+    <table class="linksGrid">
+      <tr>
+        <th class="lgRoom">Помещение</th>
+        <th class="lgField">Поле</th>
+        ${Array.from({length: maxLinks}, (_,i) => `<th class="lgLink">Ссылка ${i+1}</th>`).join("")}
+      </tr>
+      ${linkRows.map((row, i) => {
+        const bg = row.bg ? row.bg : (PALETTE[i % PALETTE.length]);
+        return `
+        <tr>
+          <td class="lgRoom" style="background:${escHtml(bg)};">${escHtml(row.room)}</td>
+          <td class="lgField" style="background:${escHtml(bg)};">${escHtml(row.field)}</td>
+          ${Array.from({length: maxLinks}, (_,j) => {
+            const v = row.links[j] || "";
+            if(!v) return `<td class="lgLink" style="background:${escHtml(bg)};"></td>`;
+            const u = escHtml(v);
+            return `<td class="lgLink" style="background:${escHtml(bg)};"><a href="${u}">${u}</a></td>`;
+          }).join("")}
+        </tr>`;
       }).join("")}
     </table>
   ` : ""}
+
+  ${metaPairs.length ? `
+    <div class="sectionTitle">ФАЙЛЫ / ДОП. ИНФО</div>
+    <table class="meta">
+      <tr><th style="width:340px;">Параметр</th><th style="width:1080px;">Значение</th></tr>
+      ${metaPairs.map(([k,v], i) => {
+        const bg = PALETTE[i % PALETTE.length];
+        const vv = (v ?? "").toString().trim();
+        const safe = escHtml(vv).replace(/\r?\n/g, "<br/>");
+        const isUrl = /^https?:\/\/\S+$/i.test(vv);
+        const vHtml = isUrl ? `<a href="${escHtml(vv)}">${escHtml(vv)}</a>` : safe;
+        return `<tr><td class="metaKey" style="background:${escHtml(bg)};">${escHtml(k)}</td><td class="metaVal" style="background:${escHtml(bg)};">${vHtml}</td></tr>`;
+      }).join("")}
+    </table>
+  ` : ""}
+
 </body>
 </html>`.trim();
 
@@ -260,8 +370,7 @@ Utils.Exporters = (() => {
 
   function briefDownloadXLS(filename, state){
     const html = briefToXLS(state);
-    // BOM helps Excel detect UTF-8
-    const payload = "\uFEFF" + html;
+    const payload = "\uFEFF" + html; // BOM helps UTF-8
     download(filename, payload, "application/vnd.ms-excel;charset=utf-8");
   }
 

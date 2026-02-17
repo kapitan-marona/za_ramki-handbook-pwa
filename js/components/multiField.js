@@ -36,60 +36,66 @@ Components.MultiField = (() => {
           const label = shortLabel(url);
 
           if(/^https?:\/\//i.test(url)){
-            return (
-              '<div style="margin-top:6px">' +
-                '<a href="' + esc(url) + '" target="_blank" rel="noopener" title="' + esc(url) + '"' +
-                ' style="color:var(--brand-headings); text-decoration-color: rgba(192,58,20,.55)">' +
-                '🔗 ' + esc(label) +
-                '</a>' +
-              '</div>'
-            );
+            return `
+              <div class="mf-linkrow">
+                <a href="${esc(url)}"
+                   target="_blank"
+                   rel="noopener"
+                   title="${esc(url)}"
+                   class="mf-linkview">🔗 ${esc(label)}</a>
+              </div>`;
           }
 
-          return '<div style="margin-top:6px; color: var(--muted)" title="' + esc(url) + '">🔗 ' + esc(label) + '</div>';
+          return `<div class="mf-linkrow mf-muted" title="${esc(url)}">🔗 ${esc(label)}</div>`;
         })
         .join("");
 
-      return (
-        '<div class="mf mf-view" data-mf-path="' + esc(path) + '">' +
-          (txt
-            ? '<div style="white-space:pre-wrap">' + esc(txt) + '</div>'
-            : '<div style="color:var(--muted)">' + esc(pText || "") + '</div>'
-          ) +
-          linksHtml +
-        '</div>'
-      );
+      return `
+        <div class="mf mf-view" data-mf-path="${esc(path)}">
+          ${txt ? `<div class="mf-textview">${esc(txt)}</div>` : `<div class="mf-muted">${esc(pText || "")}</div>`}
+          ${linksHtml}
+        </div>
+      `;
     }
 
     // edit mode
     const linksInputs = links.length
-      ? links.map((u, idx) => (
-          '<div style="display:flex; gap:6px; align-items:center; margin-top:6px">' +
-            '<input class="mf-link" data-mf-path="' + esc(path) + '" data-mf-link-idx="' + idx + '"' +
-              ' value="' + esc(u) + '" placeholder="' + esc(pLink) + '"' +
-              ' style="flex:1; padding:8px 10px; border-radius:12px;" />' +
-            '<button type="button" class="btn btn-sm mf-del-link" data-mf-path="' + esc(path) + '" data-mf-link-idx="' + idx + '"' +
-              ' title="Удалить ссылку"><span class="dot"></span>−</button>' +
-          '</div>'
-        )).join("")
+      ? links.map((u, idx) => `
+          <div class="mf-row">
+            <input
+              class="mf-link"
+              data-mf-path="${esc(path)}"
+              data-mf-link-idx="${idx}"
+              value="${esc(u)}"
+              placeholder="${esc(pLink)}"
+            />
+            <button
+              type="button"
+              class="btn btn-sm btn-icon mf-del-link"
+              data-mf-path="${esc(path)}"
+              data-mf-link-idx="${idx}"
+              title="Удалить ссылку"
+            >−</button>
+          </div>
+        `).join("")
       : "";
 
-    return (
-      '<div class="mf mf-edit" data-mf-path="' + esc(path) + '">' +
-        '<textarea class="mf-text" data-mf-path="' + esc(path) + '" rows="3" placeholder="' + esc(pText) + '"' +
-          ' style="width:100%; padding:10px; border-radius:12px; margin-bottom:6px;">' +
-          esc(v.text || "") +
-        '</textarea>' +
+    return `
+      <div class="mf mf-edit" data-mf-path="${esc(path)}">
+        <textarea
+          class="mf-text"
+          data-mf-path="${esc(path)}"
+          rows="3"
+          placeholder="${esc(pText)}"
+        >${esc(v.text || "")}</textarea>
 
-        linksInputs +
+        <div class="mf-actions">
+          <button type="button" class="btn btn-sm mf-add-link" data-mf-path="${esc(path)}">+ ссылка</button>
+        </div>
 
-        '<div style="margin-top:6px">' +
-          '<button type="button" class="btn btn-sm mf-add-link" data-mf-path="' + esc(path) + '">' +
-            '<span class="dot"></span>Добавить ссылку' +
-          '</button>' +
-        '</div>' +
-      '</div>'
-    );
+        ${linksInputs}
+      </div>
+    `;
   }
 
   return { render };

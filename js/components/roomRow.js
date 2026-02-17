@@ -21,28 +21,36 @@ Components.RoomRow = (() => {
     { key: "notes",     label: "Допы к черновикам или примечания", placeholderText: "Любые допы сюда…", placeholderLink: "https://доп-ссылка" }
   ];
 
-  function render({ room, idx, mode }){
+  function render({ room, idx, mode, pendingDeleteIdx }){
     const r = room || {};
     const name = (r.name || "").toString();
 
+    const isPending = (mode === "edit" && pendingDeleteIdx === idx);
+
     const delBtn = mode === "edit"
-      ? '<button type="button" class="btn btn-sm rr-del" data-room-idx="' + idx + '" title="Удалит всю строку">' +
-          '<span class="dot"></span>Удалить всю строку' +
-        '</button>'
+      ? (
+          isPending
+            ? `<button type="button" class="btn btn-sm rr-del-confirm" data-room-idx="${idx}" title="Подтвердить удаление">Подтвердить удаление</button>`
+            : `<button type="button" class="btn btn-sm rr-del" data-room-idx="${idx}" title="Удалит всю строку"><span class="rr-x">✖</span>Удалить всю строку</button>`
+        )
       : "";
 
     const nameCell = mode === "edit"
-      ? (
-          '<div style="display:flex; flex-direction:column; gap:8px;">' +
-            '<input class="rr-name" data-room-idx="' + idx + '" value="' + esc(name) + '" placeholder="Напр. Гостиная"' +
-              ' style="width:100%; padding:10px; border-radius:12px;" />' +
-            delBtn +
-          '</div>'
-        )
-      : '<div style="white-space:pre-wrap; font-weight:600; color: var(--brand-headings)">' + esc(name || "—") + '</div>';
+      ? `
+        <div class="rr-namebox">
+          <input
+            class="rr-name"
+            data-room-idx="${idx}"
+            value="${esc(name)}"
+            placeholder="Напр. Гостиная"
+          />
+          ${delBtn}
+        </div>
+      `
+      : `<div class="rr-nameview">${esc(name || "—")}</div>`;
 
     const cells = COLS.map((c) => {
-      const path = 'rooms.' + idx + '.' + c.key;
+      const path = `rooms.${idx}.${c.key}`;
       return MF().render({
         value: r[c.key],
         mode,
@@ -54,15 +62,15 @@ Components.RoomRow = (() => {
 
     const tdWidth = (key) => (key === "notes" ? 240 : 140);
 
-    return (
-      '<tr data-room-row="' + idx + '">' +
-        '<td style="min-width:220px; vertical-align:top">' + nameCell + '</td>' +
-        cells.map((h, i) => {
+    return `
+      <tr data-room-row="${idx}">
+        <td class="rr-sticky" style="min-width:150px; vertical-align:top">${nameCell}</td>
+        ${cells.map((h, i) => {
           const key = COLS[i].key;
-          return '<td style="min-width:' + tdWidth(key) + 'px; vertical-align:top">' + h + '</td>';
-        }).join("") +
-      '</tr>'
-    );
+          return `<td style="min-width:${tdWidth(key)}px; vertical-align:top">${h}</td>`;
+        }).join("")}
+      </tr>
+    `;
   }
 
   function getCols(){ return COLS; }

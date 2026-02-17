@@ -5,9 +5,13 @@ Views.BriefPro = (() => {
   const KEY = "tpl:brief_visualizer_pro:v1";
   let _abort = null;
 
-  // Undo for room deletion (last only)
+  // Undo (last deletion)
   let _undo = null;        // { idx, room }
-  let _undoTimer = null;   // timeout id
+  let _undoTimer = null;
+
+  // Two-step delete confirm (B)
+  let _pendingDeleteIdx = null;
+  let _pendingTimer = null;
 
   const defaultCell = () => ({ text: "", links: [] });
 
@@ -33,7 +37,7 @@ Views.BriefPro = (() => {
       furniturePlanDwg: "",
       drawingsPdf: "",
       conceptLink: "",
-      radiators: defaultCell(), // text + links
+      radiators: defaultCell(),
       ceilingsMm: "",
       doorsMm: "",
       otherMm: "",
@@ -96,75 +100,23 @@ Views.BriefPro = (() => {
     cur[parts[parts.length - 1]] = value;
   }
 
-  function downloadText(filename, text) {
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  function clearPendingDelete() {
+    _pendingDeleteIdx = null;
+    if (_pendingTimer) {
+      clearTimeout(_pendingTimer);
+      _pendingTimer = null;
+    }
   }
 
-  function buildExportText(state) {
-    const cols = Components.RoomRow.getCols();
-    const lines = [];
-    lines.push("ТЗ ДЛЯ ВИЗУАЛИЗАТОРА — ZA RAMKI");
-    lines.push("================================");
-    lines.push("");
-
-    (state.rooms || []).forEach((r) => {
-      lines.push("Помещение: " + (r.name || "(не указано)"));
-      lines.push("--------------------------------");
-
-      cols.forEach((c) => {
-        const cell = r[c.key] || { text: "", links: [] };
-        const txt = (cell.text || "").trim();
-        const links = Array.isArray(cell.links) ? cell.links.filter(Boolean) : [];
-        if (!txt && links.length === 0) return;
-
-        lines.push(c.label + ":");
-        if (txt) lines.push("- " + txt);
-        links.forEach((u) => lines.push("- " + u));
-        lines.push("");
-      });
-
-      lines.push("");
-    });
-
-    const m = state.meta || {};
-    const metaLines = [];
-    const addMeta = (label, val) => {
-      const v = (val || "").toString().trim();
-      if (v) metaLines.push(label + ": " + v);
-    };
-
-    addMeta("Фото на замере (Google Drive)", m.surveyPhotosLink);
-    addMeta("Ссылка на свет (DWG)", m.lightDwg);
-    addMeta("Ссылка на план мебели (DWG)", m.furniturePlanDwg);
-    addMeta("Ссылка на чертежи (PDF)", m.drawingsPdf);
-    addMeta("Ссылка на концепт", m.conceptLink);
-
-    const rad = (m.radiators && typeof m.radiators === "object") ? m.radiators : { text:"", links:[] };
-    const radText = (rad.text || "").trim();
-    const radLinks = Array.isArray(rad.links) ? rad.links.map(x => (x||"").trim()).filter(Boolean) : [];
-    if(radText) addMeta("Радиаторы", radText);
-    if(radLinks.length) addMeta("Радиаторы — ссылки", radLinks.join(" | "));
-
-    addMeta("Высота потолков (мм)", m.ceilingsMm);
-    addMeta("Высота дверей (мм)", m.doorsMm);
-    addMeta("Прочее", m.otherMm);
-
-    if (metaLines.length) {
-      lines.push("ФАЙЛЫ / ДОП. ИНФО");
-      lines.push("-----------------");
-      lines.push(...metaLines);
-      lines.push("");
-    }
-
-    return lines.join("\n");
+  function requestPendingDelete(idx, rerender) {
+    _pendingDeleteIdx = idx;
+    if (_pendingTimer) clearTimeout(_pendingTimer);
+    _pendingTimer = setTimeout(() => {
+      _pendingDeleteIdx = null;
+      _pendingTimer = null;
+      // Optional rerender to reset button text
+      rerender();
+    }, 3000);
   }
 
   function renderMetaField(label, key, state, placeholder) {
@@ -176,24 +128,24 @@ Views.BriefPro = (() => {
       const isLink = /^https?:\/\//i.test(val.trim());
       if (isLink) {
         return (
-          '<div style="margin-bottom:12px">' +
-            '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
-            '<a href="' + esc(val) + '" target="_blank" rel="noopener" style="color:var(--brand-headings)" title="' + esc(val) + '">🔗 ' + esc(val) + "</a>" +
+          '<div class="bp-meta">' +
+            '<div class="bp-meta-label">' + esc(label) + "</div>" +
+            '<a href="' + esc(val) + '" target="_blank" rel="noopener" class="bp-meta-link" title="' + esc(val) + '">🔗 ' + esc(val) + "</a>" +
           "</div>"
         );
       }
       return (
-        '<div style="margin-bottom:12px">' +
-          '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
-          '<div style="white-space:pre-wrap">' + esc(val) + "</div>" +
+        '<div class="bp-meta">' +
+          '<div class="bp-meta-label">' + esc(label) + "</div>" +
+          '<div class="bp-meta-text">' + esc(val) + "</div>" +
         "</div>"
       );
     }
 
     return (
-      '<div style="margin-bottom:12px">' +
-        '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
-        '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" style="width:100%; padding:10px; border-radius:12px;" placeholder="' + esc(ph) + '" />' +
+      '<div class="bp-meta">' +
+        '<div class="bp-meta-label">' + esc(label) + "</div>" +
+        '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" class="bp-meta-input" placeholder="' + esc(ph) + '" />' +
       "</div>"
     );
   }
@@ -227,15 +179,13 @@ Views.BriefPro = (() => {
       if (!vC.trim() && !vD.trim() && !vO.trim()) return "";
 
       const box = (title, val) =>
-        '<div style="flex:1; min-width:200px; max-width:280px">' +
-          '<div style="font-weight:700; margin-bottom:6px">' + esc(title) + '</div>' +
-          '<div style="padding:10px; border-radius:12px; border:1px solid var(--border); background: rgba(26,23,20,.35)">' +
-            esc(val || "—") +
-          '</div>' +
+        '<div class="bp-3col">' +
+          '<div class="bp-3col-title">' + esc(title) + '</div>' +
+          '<div class="bp-3col-val">' + esc(val || "—") + '</div>' +
         '</div>';
 
       return (
-        '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px">' +
+        '<div class="bp-3cols">' +
           box("Высота потолков", vC) +
           box("Высота дверей", vD) +
           box("Прочее", vO) +
@@ -244,13 +194,13 @@ Views.BriefPro = (() => {
     }
 
     const inp = (title, key, ph, val) =>
-      '<div style="flex:1; min-width:200px; max-width:280px">' +
-        '<div style="font-weight:700; margin-bottom:6px">' + esc(title) + '</div>' +
-        '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" placeholder="' + esc(ph) + '" style="width:100%; padding:8px 10px; border-radius:12px;" />' +
+      '<div class="bp-3col">' +
+        '<div class="bp-3col-title">' + esc(title) + '</div>' +
+        '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" placeholder="' + esc(ph) + '" class="bp-3col-input" />' +
       '</div>';
 
     return (
-      '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px">' +
+      '<div class="bp-3cols">' +
         inp("Высота потолков", "ceilingsMm", "0000мм", vC) +
         inp("Высота дверей", "doorsMm", "0000мм", vD) +
         inp("Прочее", "otherMm", "", vO) +
@@ -262,83 +212,75 @@ Views.BriefPro = (() => {
     const viewer = $("#viewer");
     if (!viewer) return;
 
-    const modeLabel = state.mode === "edit" ? "Редактирование" : "Просмотр";
-    const modeBtn =
-      state.mode === "edit"
-        ? '<button class="btn" id="bp_to_view"><span class="dot"></span>Перейти в просмотр</button>'
-        : '<button class="btn" id="bp_to_edit"><span class="dot"></span>Редактировать</button>';
-
-    const addRoomBtn =
-      state.mode === "edit"
-        ? '<button class="btn" id="bp_add_room"><span class="dot"></span>Добавить помещение</button>'
-        : "";
-
     const canCsv = window.Utils && Utils.Exporters;
+
+    // Buttons: ONLY 3 in requested order
+    const addRoomBtn = (state.mode === "edit")
+      ? '<button class="btn btn-sm" id="bp_add_room">Добавить помещение</button>'
+      : '';
+
+    const modeBtn = (state.mode === "edit")
+      ? '<button class="btn btn-sm" id="bp_to_view">Просмотр</button>'
+      : '<button class="btn btn-sm" id="bp_to_edit">Редактирование</button>';
+
     const csvBtn = canCsv
-      ? '<button class="btn" id="bp_csv"><span class="dot"></span>Скачать CSV (Excel)</button>'
-      : "";
+      ? '<button class="btn btn-sm" id="bp_csv">Скачать CSV (.excel)</button>'
+      : '';
 
     const undoBtn = (_undo && state.mode === "edit")
-      ? '<button class="btn btn-sm" id="bp_undo_del" title="Вернуть удалённую строку"><span class="dot"></span>Отменить удаление</button>'
-      : "";
+      ? '<button class="btn btn-sm" id="bp_undo_del" title="Вернуть удалённую строку">Отменить удаление</button>'
+      : '';
 
-    // narrower columns: 140px for all middle columns; keep first 220 and last(notes) 240
     const colsHead = ["Стены, цвет", "Пол", "Потолок", "Двери", "Плинтус, карниз"]
-      .map((h) => '<th style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:140px;">' + esc(h) + "</th>")
+      .map((h) => '<th class="bp-th mid">' + esc(h) + "</th>")
       .join("");
 
     const rowsHtml = (state.rooms || [])
-      .map((r, idx) => Components.RoomRow.render({ room: r, idx: idx, mode: state.mode }))
+      .map((r, idx) => Components.RoomRow.render({ room: r, idx, mode: state.mode, pendingDeleteIdx: _pendingDeleteIdx }))
       .join("");
 
-    const html =
-      '<div class="bp-pro">' +
+    viewer.innerHTML =
       '<h1 class="article-title">ТЗ визуализатору — PRO</h1>' +
-      '<p class="article-sub">Режим: <b>' + esc(modeLabel) + "</b>. Автосохранение включено.</p>" +
+      '<p class="article-sub">Заполнение таблицы и экспорт в Excel.</p>' +
 
-      '<div class="actions" style="gap:8px; flex-wrap:wrap">' +
-        modeBtn +
+      '<div class="actions bp-top">' +
         addRoomBtn +
-        undoBtn +
-        '<button class="btn" id="bp_copy"><span class="dot"></span>Скопировать</button>' +
-        '<button class="btn" id="bp_download"><span class="dot"></span>Скачать .txt</button>' +
+        modeBtn +
         csvBtn +
-      "</div>" +
+        undoBtn +
+      '</div>' +
 
       '<div class="hr"></div>' +
 
-      '<div style="overflow:auto; border:1px solid var(--border); border-radius:14px; background: rgba(26,23,20,.55);">' +
-      '<table style="border-collapse:separate; border-spacing:0; min-width:1350px; width:100%;">' +
-      "<thead>" +
-      "<tr>" +
-      '<th rowspan="2" style="position:sticky; left:0; background: rgba(26,23,20,.92); z-index:2; text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:220px;">Наименование помещения</th>' +
-      '<th colspan="5" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); color:var(--brand-headings);">Геометрия помещения</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:140px;">Свет</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:140px;">Мебель / Декор</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:140px;">Ссылка на концепт</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Допы к черновикам или примечания</th>' +
-      "</tr>" +
-      "<tr>" + colsHead + "</tr>" +
-      "</thead>" +
-      "<tbody>" + rowsHtml + "</tbody>" +
-      "</table>" +
-      "</div>" +
+      '<div class="bp-tablewrap">' +
+        '<table class="bp-table">' +
+          '<thead>' +
+            '<tr>' +
+              '<th rowspan="2" class="bp-th sticky">Наименование помещения</th>' +
+              '<th colspan="5" class="bp-th group">Геометрия помещения</th>' +
+              '<th rowspan="2" class="bp-th mid">Свет</th>' +
+              '<th rowspan="2" class="bp-th mid">Мебель / Декор</th>' +
+              '<th rowspan="2" class="bp-th mid">Ссылка на концепт</th>' +
+              '<th rowspan="2" class="bp-th last">Допы к черновикам или примечания</th>' +
+            '</tr>' +
+            '<tr>' + colsHead + '</tr>' +
+          '</thead>' +
+          '<tbody>' + rowsHtml + '</tbody>' +
+        '</table>' +
+      '</div>' +
 
       '<div class="hr"></div>' +
 
       '<div class="markdown" style="opacity:.95">' +
-      "<h2>Файлы и ссылки проекта</h2>" +
-      renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state, "https://...") +
-      renderMetaField("Ссылка на свет (DWG)", "lightDwg", state, "https://...") +
-      renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state, "https://...") +
-      renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state, "https://...") +
-      renderMetaField("Ссылка на концепт", "conceptLink", state, "https://...") +
-      renderRadiatorsSection(state) +
-      renderHeightsRow(state) +
-      "</div>" +
-      "</div>";
-
-    viewer.innerHTML = html;
+        '<h2>Файлы и ссылки проекта</h2>' +
+        renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state, "https://...") +
+        renderMetaField("Ссылка на свет (DWG)", "lightDwg", state, "https://...") +
+        renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state, "https://...") +
+        renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state, "https://...") +
+        renderMetaField("Ссылка на концепт", "conceptLink", state, "https://...") +
+        renderRadiatorsSection(state) +
+        renderHeightsRow(state) +
+      '</div>';
 
     bind(viewer, state);
     setStatus(String((state.rooms || []).length));
@@ -351,152 +293,156 @@ Views.BriefPro = (() => {
 
     const rerender = () => render(state);
 
-    root.addEventListener(
-      "input",
-      (e) => {
-        const t = e.target;
+    root.addEventListener("input", (e) => {
+      const t = e.target;
 
-        if (t && t.dataset && t.dataset.meta) {
-          const key = t.dataset.meta;
-          state.meta[key] = t.value;
+      if (t && t.dataset && t.dataset.meta) {
+        const key = t.dataset.meta;
+        state.meta[key] = t.value;
+        save(state);
+        return;
+      }
+
+      if (t && t.classList && t.classList.contains("rr-name")) {
+        const idx = Number(t.dataset.roomIdx);
+        if (Number.isFinite(idx) && state.rooms[idx]) {
+          state.rooms[idx].name = t.value;
           save(state);
-          return;
         }
+        return;
+      }
 
-        if (t && t.classList && t.classList.contains("rr-name")) {
-          const idx = Number(t.dataset.roomIdx);
-          if (Number.isFinite(idx) && state.rooms[idx]) {
-            state.rooms[idx].name = t.value;
-            save(state);
-          }
-          return;
-        }
+      if (t && t.classList && t.classList.contains("mf-text")) {
+        const path = t.dataset.mfPath;
+        const cell = getByPath(state, path) || { text: "", links: [] };
+        cell.text = t.value;
+        setByPath(state, path, cell);
+        save(state);
+        return;
+      }
 
-        if (t && t.classList && t.classList.contains("mf-text")) {
-          const path = t.dataset.mfPath;
-          const cell = getByPath(state, path) || { text: "", links: [] };
-          cell.text = t.value;
+      if (t && t.classList && t.classList.contains("mf-link")) {
+        const path = t.dataset.mfPath;
+        const li = Number(t.dataset.mfLinkIdx);
+        const cell = getByPath(state, path) || { text: "", links: [] };
+        if (!Array.isArray(cell.links)) cell.links = [];
+        if (Number.isFinite(li)) {
+          cell.links[li] = t.value;
           setByPath(state, path, cell);
           save(state);
-          return;
         }
+      }
+    }, { signal });
 
-        if (t && t.classList && t.classList.contains("mf-link")) {
-          const path = t.dataset.mfPath;
-          const li = Number(t.dataset.mfLinkIdx);
-          const cell = getByPath(state, path) || { text: "", links: [] };
-          if (!Array.isArray(cell.links)) cell.links = [];
-          if (Number.isFinite(li)) {
-            cell.links[li] = t.value;
-            setByPath(state, path, cell);
-            save(state);
-          }
-        }
-      },
-      { signal: signal }
-    );
+    root.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
 
-    root.addEventListener(
-      "click",
-      (e) => {
-        const btn = e.target.closest("button");
-        if (!btn) return;
+      // Any click cancels pending delete if it's elsewhere
+      if (!btn.classList.contains("rr-del") && !btn.classList.contains("rr-del-confirm")) {
+        clearPendingDelete();
+      }
 
-        if (btn.id === "bp_to_view") {
-          state.mode = "view";
+      if (btn.id === "bp_to_view") {
+        clearPendingDelete();
+        state.mode = "view";
+        save(state);
+        rerender();
+        return;
+      }
+
+      if (btn.id === "bp_to_edit") {
+        clearPendingDelete();
+        state.mode = "edit";
+        save(state);
+        rerender();
+        return;
+      }
+
+      if (btn.id === "bp_add_room") {
+        clearPendingDelete();
+        state.rooms.push(defaultRoom());
+        save(state);
+        rerender();
+        return;
+      }
+
+      if (btn.id === "bp_csv") {
+        const csv = Utils.Exporters.briefToCSV(state);
+        Utils.Exporters.download("TZ_vizualizatoru_PRO.csv", csv);
+        return;
+      }
+
+      if (btn.id === "bp_undo_del") {
+        if (_undo && _undo.room) {
+          const idx = Math.min(Math.max(_undo.idx, 0), state.rooms.length);
+          state.rooms.splice(idx, 0, _undo.room);
+          _undo = null;
+          if (_undoTimer) { clearTimeout(_undoTimer); _undoTimer = null; }
           save(state);
           rerender();
-          return;
         }
+        return;
+      }
 
-        if (btn.id === "bp_to_edit") {
-          state.mode = "edit";
-          save(state);
+      // Row delete step 1
+      if (btn.classList.contains("rr-del")) {
+        const idx = Number(btn.dataset.roomIdx);
+        if (Number.isFinite(idx) && state.rooms[idx]) {
+          requestPendingDelete(idx, rerender);
           rerender();
-          return;
         }
+        return;
+      }
 
-        if (btn.id === "bp_add_room") {
-          state.rooms.push(defaultRoom());
-          save(state);
-          rerender();
-          return;
-        }
-
-        if (btn.id === "bp_copy") {
-          navigator.clipboard.writeText(buildExportText(state));
-          alert("Скопировано ✅");
-          return;
-        }
-
-        if (btn.id === "bp_download") {
-          downloadText("TZ_vizualizatoru_PRO.txt", buildExportText(state));
-          return;
-        }
-
-        if (btn.id === "bp_csv") {
-          const csv = Utils.Exporters.briefToCSV(state);
-          Utils.Exporters.download("TZ_vizualizatoru_PRO.csv", csv);
-          return;
-        }
-
-        if (btn.id === "bp_undo_del") {
-          if (_undo && _undo.room) {
-            const idx = Math.min(Math.max(_undo.idx, 0), state.rooms.length);
-            state.rooms.splice(idx, 0, _undo.room);
+      // Row delete step 2 (confirm)
+      if (btn.classList.contains("rr-del-confirm")) {
+        const idx = Number(btn.dataset.roomIdx);
+        if (Number.isFinite(idx) && state.rooms[idx]) {
+          // prepare undo
+          _undo = { idx: idx, room: state.rooms[idx] };
+          if (_undoTimer) clearTimeout(_undoTimer);
+          _undoTimer = setTimeout(() => {
             _undo = null;
-            if (_undoTimer) { clearTimeout(_undoTimer); _undoTimer = null; }
-            save(state);
+            _undoTimer = null;
             rerender();
-          }
-          return;
+          }, 10000);
+
+          state.rooms.splice(idx, 1);
+          if (state.rooms.length === 0) state.rooms.push(defaultRoom());
+          save(state);
+
+          clearPendingDelete();
+          rerender();
         }
+        return;
+      }
 
-        if (btn.classList.contains("rr-del")) {
-          const idx = Number(btn.dataset.roomIdx);
-          if (Number.isFinite(idx) && state.rooms[idx]) {
-            _undo = { idx: idx, room: state.rooms[idx] };
+      // MultiField add link
+      if (btn.classList.contains("mf-add-link")) {
+        const path = btn.dataset.mfPath;
+        const cell = getByPath(state, path) || { text: "", links: [] };
+        if (!Array.isArray(cell.links)) cell.links = [];
+        cell.links.push("");
+        setByPath(state, path, cell);
+        save(state);
+        rerender();
+        return;
+      }
 
-            if (_undoTimer) clearTimeout(_undoTimer);
-            _undoTimer = setTimeout(() => {
-              _undo = null;
-              _undoTimer = null;
-              // не ререндерим насильно: просто исчезнет при следующем действии
-            }, 10000);
-
-            state.rooms.splice(idx, 1);
-            if (state.rooms.length === 0) state.rooms.push(defaultRoom());
-            save(state);
-            rerender();
-          }
-          return;
-        }
-
-        if (btn.classList.contains("mf-add-link")) {
-          const path = btn.dataset.mfPath;
-          const cell = getByPath(state, path) || { text: "", links: [] };
-          if (!Array.isArray(cell.links)) cell.links = [];
-          cell.links.push("");
+      // MultiField delete link
+      if (btn.classList.contains("mf-del-link")) {
+        const path = btn.dataset.mfPath;
+        const li = Number(btn.dataset.mfLinkIdx);
+        const cell = getByPath(state, path) || { text: "", links: [] };
+        if (Array.isArray(cell.links) && Number.isFinite(li)) {
+          cell.links.splice(li, 1);
           setByPath(state, path, cell);
           save(state);
           rerender();
-          return;
         }
-
-        if (btn.classList.contains("mf-del-link")) {
-          const path = btn.dataset.mfPath;
-          const li = Number(btn.dataset.mfLinkIdx);
-          const cell = getByPath(state, path) || { text: "", links: [] };
-          if (Array.isArray(cell.links) && Number.isFinite(li)) {
-            cell.links.splice(li, 1);
-            setByPath(state, path, cell);
-            save(state);
-            rerender();
-          }
-        }
-      },
-      { signal: signal }
-    );
+      }
+    }, { signal });
   }
 
   async function open() {

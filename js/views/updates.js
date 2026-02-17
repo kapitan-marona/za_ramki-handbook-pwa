@@ -3,7 +3,7 @@ Views.Updates = (() => {
   const $ = (s) => document.querySelector(s);
 
   const ACK_PREFIX = "upd:ack:";
-  const LIKE_PREFIX = "upd:like:";
+  const TTL_DAYS_DEFAULT = 3;
 
   function esc(str){
     return (str ?? "").toString().replace(/[&<>"']/g, c => ({
@@ -17,11 +17,29 @@ Views.Updates = (() => {
   function isAck(id){ return !!localStorage.getItem(ACK_PREFIX + id); }
   function setAck(id){ localStorage.setItem(ACK_PREFIX + id, new Date().toISOString()); }
 
-  function isLiked(id){ return !!localStorage.getItem(LIKE_PREFIX + id); }
-  function toggleLike(id){
-    const k = LIKE_PREFIX + id;
-    if(localStorage.getItem(k)) localStorage.removeItem(k);
-    else localStorage.setItem(k, "1");
+  function daysAgo(n){
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function parseDateYYYYMMDD(s){
+    // expects "YYYY-MM-DD"
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((s || "").trim());
+    if(!m) return null;
+    const y = Number(m[1]), mo = Number(m[2]) - 1, da = Number(m[3]);
+    const d = new Date(y, mo, da);
+    if(Number.isNaN(d.getTime())) return null;
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function isVisibleByTTL(item){
+    const ttl = Number.isFinite(Number(item.ttlDays)) ? Number(item.ttlDays) : TTL_DAYS_DEFAULT;
+    const dt = parseDateYYYYMMDD(item.date);
+    if(!dt) return true; // если дата не задана — показываем (чтобы не “пропало”)
+    return dt >= daysAgo(ttl);
   }
 
   function updateTabBadge(items){
@@ -33,7 +51,9 @@ Views.Updates = (() => {
 
   async function loadData(){
     const data = await API.json("./content/data/updates.json");
-    return Array.isArray(data) ? data : [];
+    const arr = Array.isArray(data) ? data : [];
+    // apply TTL filter
+    return arr.filter(x => x && x.id && isVisibleByTTL(x));
   }
 
   function renderCard(u){
@@ -45,7 +65,6 @@ Views.Updates = (() => {
     const image = u.image || "";
 
     const acked = isAck(id);
-    const liked = isLiked(id);
 
     const linkHtml = link
       ? `<p style="margin-top:10px"><a href="${esc(link)}" target="_blank" rel="noopener" style="color:var(--brand-headings)" title="${esc(link)}">🔗 ${esc(link)}</a></p>`
@@ -63,6 +82,7 @@ Views.Updates = (() => {
         )
       : `<div class="empty" style="margin-top:10px">Нет текста</div>`;
 
+    // одна кнопка "Принято"
     return `
       <div style="border:1px solid var(--border); border-radius:16px; padding:14px; background: rgba(26,23,20,.55);">
         <div style="display:flex; gap:10px; align-items:flex-start; justify-content:space-between;">
@@ -71,12 +91,14 @@ Views.Updates = (() => {
             <div class="article-sub" style="margin-top:6px">${esc(date)}</div>
           </div>
           <div style="display:flex; gap:8px; align-items:center;">
-            <button class="btn upd-like" data-upd-id="${esc(id)}" title="Лайк">
-              <span class="dot"></span>${liked ? "👍 Убрано" : "👍 Лайк"}
-            </button>
-            <button class="btn upd-ack" data-upd-id="${esc(id)}" title="Принято">
-              <span class="dot"></span>${acked ? "✅ Принято" : "✅ Принять"}
-            </button>
+            <button 
+  class="btn upd-ack" 
+  data-upd-id="${esc(id)}" 
+  title="Принято"
+  ${acked ? "disabled style=`"opacity:0.5; cursor:not-allowed; background:rgba(120,120,120,0.25); border-color:rgba(120,120,120,0.5);`"" : ""}
+>
+  <span class="dot"></span>👍 Принято
+</button>
           </div>
         </div>
         ${imgHtml}
@@ -136,28 +158,17 @@ Views.Updates = (() => {
 
     const u = items.find(x => x.id === id);
     if(!u){
-      if(viewer) viewer.innerHTML = `<div class="empty">Обновление не найдено.</div>`;
+      if(viewer) viewer.innerHTML = `<div class="empty">Обновление не найдено (возможно, истёк срок показа).</div>`;
       return;
     }
 
     if(viewer) viewer.innerHTML = renderCard(u);
 
     const ackBtn = viewer ? viewer.querySelector(".upd-ack") : null;
-    const likeBtn = viewer ? viewer.querySelector(".upd-like") : null;
-
-    if(ackBtn){
+    if(ackBtn && !ackBtn.disabled){
       ackBtn.onclick = async () => {
         const updId = ackBtn.dataset.updId;
         setAck(updId);
-        await show();
-        await open(updId);
-      };
-    }
-
-    if(likeBtn){
-      likeBtn.onclick = async () => {
-        const updId = likeBtn.dataset.updId;
-        toggleLike(updId);
         await show();
         await open(updId);
       };
@@ -166,3 +177,4 @@ Views.Updates = (() => {
 
   return { show, open };
 })();
+

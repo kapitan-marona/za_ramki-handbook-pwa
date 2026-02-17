@@ -88,3 +88,4 @@ Utils.Exporters = (() => {
 
   return { download, briefToCSV };
 })();
+

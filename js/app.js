@@ -34,9 +34,16 @@
       await Views.Templates.open(param);
       return;
     }
-
-    Router.go("articles");
-  }
+    if(section === "updates"){
+      if(!window.Views || !Views.Updates){
+        $("#viewer").innerHTML = `<div class="empty">Updates не подключён (js/views/updates.js).</div>`;
+        return;
+      }
+      await Views.Updates.show();
+      await Views.Updates.open(param);
+      return;
+    }
+}
 
   function boot(){
     // tab click
@@ -56,9 +63,19 @@
     window.addEventListener("hashchange", render);
 
     // default route
-    if(!location.hash) Router.go("articles");
-    render();
+    if(!location.hash)
+    if(section === "updates"){
+      if(!window.Views || !Views.Updates){
+        $("#viewer").innerHTML = `<div class="empty">Updates не подключён (js/views/updates.js).</div>`;
+        return;
+      }
+      await Views.Updates.show();
+      await Views.Updates.open(param);
+      return;
+    }
+render();
   }
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+

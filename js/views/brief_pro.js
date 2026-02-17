@@ -29,6 +29,10 @@ Views.BriefPro = (() => {
       drawingsPdf: "",
       conceptLink: "",
       radiators: "",
+      radiatorsLink: ", 
+      ceilingsMm: ", 
+      doorsMm: ", 
+      otherMm: ", 
       ceilingsDoorsEtc: ""
     }
   });
@@ -239,7 +243,9 @@ Views.BriefPro = (() => {
         ${renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state)}
         ${renderMetaField("Ссылка на концепт", "conceptLink", state)}
         ${renderMetaField("Радиаторы", "radiators", state, true)}
-        ${renderMetaField("Потолки / двери / прочее", "ceilingsDoorsEtc", state, true)}
+        ${renderMetaField("Потолки (0000мм)", "ceilingsMm", state)}
+        ${renderMetaField("Двери (0000мм)", "doorsMm", state)}
+        ${renderMetaField("Прочее (0000мм)", "otherMm", state)}
       </div>
     `;
 
@@ -399,3 +405,5 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+
+

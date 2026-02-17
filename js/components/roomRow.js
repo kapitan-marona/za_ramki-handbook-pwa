@@ -58,7 +58,17 @@ Components.RoomRow = (() => {
     // table row (first column + 9 cols)
     return `
       <tr data-room-row="${idx}">
-        <td style="min-width:220px; vertical-align:top">${nameCell}</td>
+        <td style="
+  min-width:220px;
+  vertical-align:top;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: rgba(26,23,20,.92);
+  border-right: 1px solid var(--border);
+">
+  ${nameCell}
+</td>
         ${cells.map(h => `<td style="min-width:240px; vertical-align:top">${h}</td>`).join("")}
       </tr>
     `;
@@ -68,3 +78,4 @@ Components.RoomRow = (() => {
 
   return { render, getCols };
 })();
+

@@ -25,7 +25,6 @@ Views.Updates = (() => {
   }
 
   function parseDateYYYYMMDD(s){
-    // expects "YYYY-MM-DD"
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((s || "").trim());
     if(!m) return null;
     const y = Number(m[1]), mo = Number(m[2]) - 1, da = Number(m[3]);
@@ -38,7 +37,7 @@ Views.Updates = (() => {
   function isVisibleByTTL(item){
     const ttl = Number.isFinite(Number(item.ttlDays)) ? Number(item.ttlDays) : TTL_DAYS_DEFAULT;
     const dt = parseDateYYYYMMDD(item.date);
-    if(!dt) return true; // если дата не задана — показываем (чтобы не “пропало”)
+    if(!dt) return true; // нет даты — показываем
     return dt >= daysAgo(ttl);
   }
 
@@ -52,7 +51,6 @@ Views.Updates = (() => {
   async function loadData(){
     const data = await API.json("./content/data/updates.json");
     const arr = Array.isArray(data) ? data : [];
-    // apply TTL filter
     return arr.filter(x => x && x.id && isVisibleByTTL(x));
   }
 
@@ -82,7 +80,10 @@ Views.Updates = (() => {
         )
       : `<div class="empty" style="margin-top:10px">Нет текста</div>`;
 
-    // одна кнопка "Принято"
+    const disabledAttrs = acked
+      ? 'disabled style="opacity:0.5; cursor:not-allowed; background:rgba(120,120,120,0.25); border-color:rgba(120,120,120,0.5);"'
+      : '';
+
     return `
       <div style="border:1px solid var(--border); border-radius:16px; padding:14px; background: rgba(26,23,20,.55);">
         <div style="display:flex; gap:10px; align-items:flex-start; justify-content:space-between;">
@@ -91,14 +92,9 @@ Views.Updates = (() => {
             <div class="article-sub" style="margin-top:6px">${esc(date)}</div>
           </div>
           <div style="display:flex; gap:8px; align-items:center;">
-            <button 
-  class="btn upd-ack" 
-  data-upd-id="${esc(id)}" 
-  title="Принято"
-  ${acked ? "disabled style=`"opacity:0.5; cursor:not-allowed; background:rgba(120,120,120,0.25); border-color:rgba(120,120,120,0.5);`"" : ""}
->
-  <span class="dot"></span>👍 Принято
-</button>
+            <button class="btn upd-ack" data-upd-id="${esc(id)}" title="Принято" ${disabledAttrs}>
+              <span class="dot"></span>👍 Принято
+            </button>
           </div>
         </div>
         ${imgHtml}
@@ -177,4 +173,3 @@ Views.Updates = (() => {
 
   return { show, open };
 })();
-

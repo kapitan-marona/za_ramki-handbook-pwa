@@ -24,7 +24,6 @@ Components.RoomRow = (() => {
   function render({ room, idx, mode, pendingDeleteIdx }){
     const r = room || {};
     const name = (r.name || "").toString();
-
     const isPending = (mode === "edit" && pendingDeleteIdx === idx);
 
     const delBtn = mode === "edit"
@@ -60,20 +59,20 @@ Components.RoomRow = (() => {
       });
     });
 
-    // Color for entire row (persisted in room.__bg)
+    // Accent color (no background fill in UI)
     const bg = (r && r.__bg) ? r.__bg : "";
-    const bgStyle = bg ? `background:${esc(bg)};` : "";
+    const rowStyle = bg ? `--rr-bg:${esc(bg)};` : "";
 
     const tdWidth = (key) => (key === "notes" ? 260 : 170);
 
     return `
-      <tr data-room-row="${idx}" style="${bgStyle}">
-        <td class="rr-sticky" style="${bgStyle} min-width:220px; vertical-align:top">
+      <tr data-room-row="${idx}" style="${rowStyle}">
+        <td class="rr-sticky" style="min-width:220px; vertical-align:top">
           ${nameCell}
         </td>
         ${cells.map((h, i) => {
           const key = COLS[i].key;
-          return `<td style="${bgStyle} min-width:${tdWidth(key)}px; vertical-align:top">${h}</td>`;
+          return `<td style="min-width:${tdWidth(key)}px; vertical-align:top">${h}</td>`;
         }).join("")}
       </tr>
     `;

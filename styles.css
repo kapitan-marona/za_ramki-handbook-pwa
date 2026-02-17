@@ -222,3 +222,9 @@ body{
 /* Simple cards in contacts/templates lists */
 .kv{ color:var(--muted); font-size:12px; margin-top:6px; line-height:1.5; }
 .kv b{ color: var(--text); font-weight:600; }
+
+/* BriefPro row accent */
+.bp-table tr[data-room-row] { --rr-bg: transparent; }
+.bp-table tr[data-room-row] td { background: transparent !important; }
+.bp-table tr[data-room-row] td.rr-sticky { box-shadow: inset 6px 0 0 var(--rr-bg); }
+

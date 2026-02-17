@@ -238,3 +238,13 @@ body{
 .bp-table th {
   z-index: 4;
 }
+
+/* BriefPro: override sticky first column background for dark UI (remove white patches) */
+@media (prefers-color-scheme: dark) {
+  .bp-table td:first-child,
+  .bp-table th:first-child {
+    background: rgba(18,18,18,0.98) !important;
+  }
+}
+
+/* If table class differs, we can adjust selector later */

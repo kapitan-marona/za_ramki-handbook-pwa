@@ -11,8 +11,8 @@ Views.Updates = (() => {
     }[c]));
   }
 
-  function setStatus(t){ $("#status").textContent = t; }
-  function setPanelTitle(t){ $("#panelTitle").textContent = t; }
+  function setStatus(t){ const el = $("#status"); if(el) el.textContent = t; }
+  function setPanelTitle(t){ const el = $("#panelTitle"); if(el) el.textContent = t; }
 
   function isAck(id){ return !!localStorage.getItem(ACK_PREFIX + id); }
   function setAck(id){ localStorage.setItem(ACK_PREFIX + id, new Date().toISOString()); }
@@ -52,9 +52,7 @@ Views.Updates = (() => {
       : "";
 
     const imgHtml = image
-      ? `<div style="margin-top:12px">
-           <img src="${esc(image)}" alt="" style="max-width:100%; border-radius:14px; border:1px solid var(--border)" />
-         </div>`
+      ? `<div style="margin-top:12px"><img src="${esc(image)}" alt="" style="max-width:100%; border-radius:14px; border:1px solid var(--border)" /></div>`
       : "";
 
     const textHtml = text
@@ -92,30 +90,31 @@ Views.Updates = (() => {
     setPanelTitle("Обновления");
     const list = $("#list");
     const viewer = $("#viewer");
-    list.innerHTML = "";
-    viewer.innerHTML = `<div class="empty">Выберите обновление слева.</div>`;
+    if(list) list.innerHTML = "";
+    if(viewer) viewer.innerHTML = `<div class="empty">Выберите обновление слева.</div>`;
 
     const items = await loadData();
     setStatus(`${items.length}`);
     updateTabBadge(items);
 
-    // newest first (if date exists)
     const sorted = items.slice().sort((a,b) => (b.date || "").localeCompare(a.date || ""));
 
-    sorted.forEach((u) => {
-      const a = document.createElement("a");
-      a.className = "item";
-      a.href = `#/${encodeURIComponent("updates")}/${encodeURIComponent(u.id)}`;
+    if(list){
+      sorted.forEach((u) => {
+        const a = document.createElement("a");
+        a.className = "item";
+        a.href = `#/${encodeURIComponent("updates")}/${encodeURIComponent(u.id)}`;
 
-      const unread = u.id && !isAck(u.id);
-      a.innerHTML = `
-        <div class="item-title">${esc(u.title || "Обновление")}</div>
-        <div class="item-meta">
-          ${u.date ? `<span class="tag">${esc(u.date)}</span>` : ""}
-          ${unread ? `<span class="tag accent">новое</span>` : `<span class="tag">прочитано</span>`}
-        </div>`;
-      list.appendChild(a);
-    });
+        const unread = u.id && !isAck(u.id);
+        a.innerHTML = `
+          <div class="item-title">${esc(u.title || "Обновление")}</div>
+          <div class="item-meta">
+            ${u.date ? `<span class="tag">${esc(u.date)}</span>` : ""}
+            ${unread ? `<span class="tag accent">новое</span>` : `<span class="tag">прочитано</span>`}
+          </div>`;
+        list.appendChild(a);
+      });
+    }
 
     return sorted;
   }
@@ -129,7 +128,7 @@ Views.Updates = (() => {
       const sorted = items.slice().sort((a,b) => (b.date || "").localeCompare(a.date || ""));
       const pick = sorted.find(x => x && x.id && !isAck(x.id)) || sorted[0];
       if(!pick){
-        viewer.innerHTML = `<div class="empty">Пока нет обновлений.</div>`;
+        if(viewer) viewer.innerHTML = `<div class="empty">Пока нет обновлений.</div>`;
         return;
       }
       id = pick.id;
@@ -137,14 +136,14 @@ Views.Updates = (() => {
 
     const u = items.find(x => x.id === id);
     if(!u){
-      viewer.innerHTML = `<div class="empty">Обновление не найдено.</div>`;
+      if(viewer) viewer.innerHTML = `<div class="empty">Обновление не найдено.</div>`;
       return;
     }
 
-    viewer.innerHTML = renderCard(u);
+    if(viewer) viewer.innerHTML = renderCard(u);
 
-    const ackBtn = viewer.querySelector(".upd-ack");
-    const likeBtn = viewer.querySelector(".upd-like");
+    const ackBtn = viewer ? viewer.querySelector(".upd-ack") : null;
+    const likeBtn = viewer ? viewer.querySelector(".upd-like") : null;
 
     if(ackBtn){
       ackBtn.onclick = async () => {
@@ -167,4 +166,3 @@ Views.Updates = (() => {
 
   return { show, open };
 })();
-

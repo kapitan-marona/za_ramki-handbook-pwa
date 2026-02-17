@@ -34,6 +34,7 @@
       await Views.Templates.open(param);
       return;
     }
+
     if(section === "updates"){
       if(!window.Views || !Views.Updates){
         $("#viewer").innerHTML = `<div class="empty">Updates не подключён (js/views/updates.js).</div>`;
@@ -43,7 +44,9 @@
       await Views.Updates.open(param);
       return;
     }
-}
+
+    Router.go("articles");
+  }
 
   function boot(){
     // tab click
@@ -63,19 +66,9 @@
     window.addEventListener("hashchange", render);
 
     // default route
-    if(!location.hash)
-    if(section === "updates"){
-      if(!window.Views || !Views.Updates){
-        $("#viewer").innerHTML = `<div class="empty">Updates не подключён (js/views/updates.js).</div>`;
-        return;
-      }
-      await Views.Updates.show();
-      await Views.Updates.open(param);
-      return;
-    }
-render();
+    if(!location.hash) Router.go("articles");
+    render();
   }
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
-

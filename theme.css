@@ -347,3 +347,13 @@ input:focus, textarea:focus{
 .mf-muted{ color: var(--muted); }
 .mf-textview{ white-space:pre-wrap; }
 
+
+/* BriefPro: editable title in 3rd column (Other) */
+.bp-3col-title-edit{
+  width:100%;
+  padding:6px 8px;
+  border-radius:10px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+

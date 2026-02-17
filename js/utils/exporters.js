@@ -89,7 +89,10 @@ Utils.Exporters = (() => {
     // Высоты / прочее
     pushIf("Высота потолков (мм)", m.ceilingsMm);
     pushIf("Высота дверей (мм)", m.doorsMm);
-    pushIf("Прочее", m.otherMm);
+    {
+      const label = ((m.otherLabel || "Прочее") + "").trim() || "Прочее";
+      pushIf(label, m.otherMm);
+    }
 
     if(metaPairs.length){
       lines.push(""); // empty row
@@ -104,3 +107,4 @@ Utils.Exporters = (() => {
 
   return { download, briefToCSV };
 })();
+

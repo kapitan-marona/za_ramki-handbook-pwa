@@ -41,6 +41,8 @@ Views.BriefPro = (() => {
       ceilingsMm: "",
       doorsMm: "",
       otherMm: "",
+      otherLabel: "Прочее"
+    }
     },
   });
 
@@ -174,6 +176,7 @@ Views.BriefPro = (() => {
     const vC = (state.meta.ceilingsMm || "").toString();
     const vD = (state.meta.doorsMm || "").toString();
     const vO = (state.meta.otherMm || "").toString();
+    const otherTitle = ((state.meta.otherLabel || "Прочее") + "").trim() || "Прочее";
 
     if (state.mode === "view") {
       if (!vC.trim() && !vD.trim() && !vO.trim()) return "";
@@ -188,7 +191,7 @@ Views.BriefPro = (() => {
         '<div class="bp-3cols">' +
           box("Высота потолков", vC) +
           box("Высота дверей", vD) +
-          box("Прочее", vO) +
+          box(otherTitle, vO) +
         '</div>'
       );
     }
@@ -199,16 +202,23 @@ Views.BriefPro = (() => {
         '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" placeholder="' + esc(ph) + '" class="bp-3col-input" />' +
       '</div>';
 
+    // Third column: editable title + value input
+    const otherCol =
+      '<div class="bp-3col">' +
+        '<input data-meta="otherLabel" value="' + esc(otherTitle === "Прочее" ? "" : otherTitle) + '" placeholder="Прочее" class="bp-3col-title-edit" />' +
+        '<input data-meta="otherMm" value="' + esc(vO) + '" placeholder="" class="bp-3col-input" />' +
+      '</div>';
+
     return (
       '<div class="bp-3cols">' +
         inp("Высота потолков", "ceilingsMm", "0000мм", vC) +
         inp("Высота дверей", "doorsMm", "0000мм", vD) +
-        inp("Прочее", "otherMm", "", vO) +
+        otherCol +
       '</div>'
     );
   }
 
-  function render(state) {
+function render(state) {
     const viewer = $("#viewer");
     if (!viewer) return;
 
@@ -282,6 +292,34 @@ Views.BriefPro = (() => {
         renderHeightsRow(state) +
       '</div>';
 
+        // restore scroll & focus after rerender (table should NOT jump)
+    try{
+      const ui = state.__ui || {};
+      const wrap = viewer.querySelector(".bp-tablewrap");
+      if(wrap && ui.restoreScroll){
+        const sl = ui.restoreScroll.scrollLeft || 0;
+        const st = ui.restoreScroll.scrollTop || 0;
+        requestAnimationFrame(() => {
+          wrap.scrollLeft = sl;
+          wrap.scrollTop = st;
+        });
+      }
+
+      if(ui.focus && ui.focus.path){
+        const esc = (v) => (window.CSS && CSS.escape) ? CSS.escape(v) : v.replace(/"/g,'\\"');
+        const sel = 'input.mf-link[data-mf-path="' + esc(ui.focus.path) + '"][data-mf-link-idx="' + ui.focus.idx + '"]';
+        requestAnimationFrame(() => {
+          const el = viewer.querySelector(sel);
+          if(el){
+            el.focus();
+            el.select && el.select();
+          }
+        });
+      }
+      // clear one-shot ui hints
+      if(state.__ui){ state.__ui.focus = null; }
+    }catch(e){}
+
     bind(viewer, state);
     setStatus(String((state.rooms || []).length));
   }
@@ -291,7 +329,18 @@ Views.BriefPro = (() => {
     _abort = new AbortController();
     const signal = _abort.signal;
 
-    const rerender = () => render(state);
+    const rerender = (opts) => {
+      const wrap = root.querySelector(".bp-tablewrap");
+      const scrollLeft = wrap ? wrap.scrollLeft : 0;
+      const scrollTop = wrap ? wrap.scrollTop : 0;
+
+      // stash on state object to restore after render
+      state.__ui = state.__ui || {};
+      state.__ui.restoreScroll = { scrollLeft, scrollTop };
+      state.__ui.focus = opts && opts.focus ? opts.focus : null;
+
+      render(state);
+    };
 
     root.addEventListener("input", (e) => {
       const t = e.target;
@@ -426,7 +475,7 @@ Views.BriefPro = (() => {
         cell.links.push("");
         setByPath(state, path, cell);
         save(state);
-        rerender();
+        rerender({ focus: { path: path, idx: cell.links.length - 1 } });
         return;
       }
 
@@ -452,3 +501,4 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+

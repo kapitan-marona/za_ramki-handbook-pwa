@@ -142,13 +142,25 @@ Views.Updates = (() => {
     const items = await loadData();
     updateTabBadge(items);
 
+    // если ничего не выбрано — показываем только непрочитанное
     if(!id){
       const sorted = items.slice().sort((a,b) => (b.date || "").localeCompare(a.date || ""));
-      const pick = sorted.find(x => x && x.id && !isAck(x.id)) || sorted[0];
+      const unread = sorted.filter(x => x && x.id && !isAck(x.id));
+
+      const pick = unread[0];
       if(!pick){
-        if(viewer) viewer.innerHTML = `<div class="empty">Пока нет обновлений.</div>`;
+        if(viewer){
+          viewer.innerHTML = `
+            <div style="padding:24px; text-align:center;">
+              <div style="font-size:72px; line-height:1; margin-bottom:10px;">😎</div>
+              <div class="article-title" style="margin:0;">Ты в курсе событий</div>
+              <div class="article-sub" style="margin-top:8px;">Пока ничего нового</div>
+            </div>
+          `;
+        }
         return;
       }
+
       id = pick.id;
     }
 
@@ -166,10 +178,12 @@ Views.Updates = (() => {
         const updId = ackBtn.dataset.updId;
         setAck(updId);
         await show();
-        await open(updId);
+        // после принятия: снова пытаемся открыть следующее непрочитанное, либо покажем 😎
+        await open(null);
       };
     }
   }
 
   return { show, open };
 })();
+

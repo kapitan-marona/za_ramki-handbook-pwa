@@ -228,3 +228,13 @@ body{
 .bp-table tr[data-room-row] td { background: transparent !important; }
 .bp-table tr[data-room-row] td.rr-sticky { box-shadow: inset 6px 0 0 var(--rr-bg); }
 
+
+/* BriefPro: sticky first column must have solid background (no see-through overlap) */
+.bp-table td:first-child,
+.bp-table th:first-child {
+  background: #ffffff;
+  z-index: 3;
+}
+.bp-table th {
+  z-index: 4;
+}

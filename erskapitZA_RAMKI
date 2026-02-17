@@ -1,0 +1,35 @@
+warning: in the working copy of 'js/views/brief_pro.js', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/js/views/brief_pro.js b/js/views/brief_pro.js[m
+[1mindex 3c6e070..b599b99 100644[m
+[1m--- a/js/views/brief_pro.js[m
+[1m+++ b/js/views/brief_pro.js[m
+[36m@@ -452,7 +452,23 @@[m [mViews.BriefPro = (() => {[m
+       }[m
+ [m
+       if (btn.id === "bp_xls") {[m
+[31m-        Utils.Exporters.briefDownloadXLS("TZ_vizualizatoru_PRO.xls", state);[m
+[32m+[m[32m        // Prefer true XLSX export (styled). Fallback to legacy HTML-XLS if something fails.[m
+[32m+[m[32m        try {[m
+[32m+[m[32m          if (window.Utils && Utils.XLSXExport && typeof Utils.XLSXExport.downloadXLSX === "function") {[m
+[32m+[m[32m            Utils.XLSXExport.downloadXLSX(state, "TZ_vizualizatoru_PRO.xlsx");[m
+[32m+[m[32m            return;[m
+[32m+[m[32m          }[m
+[32m+[m[32m        } catch (e) {[m
+[32m+[m[32m          console.error(e);[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        // Fallback: legacy HTML-XLS (if present)[m
+[32m+[m[32m        if (window.Utils && Utils.Exporters && typeof Utils.Exporters.briefDownloadXLS === "function") {[m
+[32m+[m[32m          Utils.Exporters.briefDownloadXLS(state);[m
+[32m+[m[32m          return;[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        alert("Экспорт Excel недоступен. Проверь подключение скриптов (xlsx_exporter.js).");[m
+         return;[m
+       }[m
+ [m
+[36m@@ -530,3 +546,4 @@[m [mViews.BriefPro = (() => {[m
+ [m
+   return { open };[m
+ })();[m
+[41m+[m

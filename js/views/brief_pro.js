@@ -452,7 +452,23 @@ Views.BriefPro = (() => {
       }
 
       if (btn.id === "bp_xls") {
-        Utils.Exporters.briefDownloadXLS("TZ_vizualizatoru_PRO.xls", state);
+        // Prefer true XLSX export (styled). Fallback to legacy HTML-XLS if something fails.
+        try {
+          if (window.Utils && Utils.XLSXExport && typeof Utils.XLSXExport.downloadXLSX === "function") {
+            Utils.XLSXExport.downloadXLSX(state, "TZ_vizualizatoru_PRO.xlsx");
+            return;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
+        // Fallback: legacy HTML-XLS (if present)
+        if (window.Utils && Utils.Exporters && typeof Utils.Exporters.briefDownloadXLS === "function") {
+          Utils.Exporters.briefDownloadXLS(state);
+          return;
+        }
+
+        alert("Экспорт Excel недоступен. Проверь подключение скриптов (xlsx_exporter.js).");
         return;
       }
 
@@ -530,3 +546,4 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+

@@ -222,9 +222,9 @@ Views.BriefPro = (() => {
     const viewer = $("#viewer");
     if (!viewer) return;
 
-    const canCsv = window.Utils && Utils.Exporters;
+    const canExport = window.Utils && Utils.Exporters;
 
-    // ONLY 3 buttons in requested order (+ undo appears only when needed)
+    // Buttons
     const addRoomBtn = (state.mode === "edit")
       ? '<button class="btn btn-sm" id="bp_add_room">Добавить помещение</button>'
       : '';
@@ -233,8 +233,12 @@ Views.BriefPro = (() => {
       ? '<button class="btn btn-sm" id="bp_to_view">Просмотр</button>'
       : '<button class="btn btn-sm" id="bp_to_edit">Редактирование</button>';
 
-    const csvBtn = canCsv
+    const csvBtn = canExport
       ? '<button class="btn btn-sm" id="bp_csv">Скачать CSV (.excel)</button>'
+      : '';
+
+    const xlsBtn = canExport
+      ? '<button class="btn btn-sm" id="bp_xls">Скачать Excel (.xls)</button>'
       : '';
 
     const undoBtn = (_undo && state.mode === "edit")
@@ -262,6 +266,7 @@ Views.BriefPro = (() => {
         addRoomBtn +
         modeBtn +
         csvBtn +
+        xlsBtn +
         undoBtn +
       '</div>' +
 
@@ -321,7 +326,6 @@ Views.BriefPro = (() => {
           }
         });
       }
-      // clear one-shot focus request
       if (state.__ui) state.__ui.focus = null;
     } catch (e) {}
 
@@ -351,12 +355,8 @@ Views.BriefPro = (() => {
 
       if (t && t.dataset && t.dataset.meta) {
         const key = t.dataset.meta;
-        // Special: otherLabel empty -> fallback to "Прочее"
         if (key === "otherLabel") {
           state.meta.otherLabel = (t.value || "").toString();
-        } else if (key === "radiators") {
-          // not used (radiators handled by MultiField)
-          state.meta[key] = t.value;
         } else {
           state.meta[key] = t.value;
         }
@@ -399,7 +399,6 @@ Views.BriefPro = (() => {
       const btn = e.target.closest("button");
       if (!btn) return;
 
-      // Any click cancels pending delete if it's elsewhere
       if (!btn.classList.contains("rr-del") && !btn.classList.contains("rr-del-confirm")) {
         clearPendingDelete();
       }
@@ -434,6 +433,11 @@ Views.BriefPro = (() => {
         return;
       }
 
+      if (btn.id === "bp_xls") {
+        Utils.Exporters.briefDownloadXLS("TZ_vizualizatoru_PRO.xls", state);
+        return;
+      }
+
       if (btn.id === "bp_undo_del") {
         if (_undo && _undo.room) {
           const idx = Math.min(Math.max(_undo.idx, 0), state.rooms.length);
@@ -446,7 +450,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // Row delete step 1
       if (btn.classList.contains("rr-del")) {
         const idx = Number(btn.dataset.roomIdx);
         if (Number.isFinite(idx) && state.rooms[idx]) {
@@ -456,7 +459,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // Row delete step 2
       if (btn.classList.contains("rr-del-confirm")) {
         const idx = Number(btn.dataset.roomIdx);
         if (Number.isFinite(idx) && state.rooms[idx]) {
@@ -478,7 +480,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // MultiField add link (preserve scroll + focus on new input)
       if (btn.classList.contains("mf-add-link")) {
         const path = btn.dataset.mfPath;
         const cell = getByPath(state, path) || { text: "", links: [] };
@@ -490,7 +491,6 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // MultiField delete link
       if (btn.classList.contains("mf-del-link")) {
         const path = btn.dataset.mfPath;
         const li = Number(btn.dataset.mfLinkIdx);

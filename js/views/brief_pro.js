@@ -3,6 +3,7 @@ Views.BriefPro = (() => {
   const $ = (s) => document.querySelector(s);
 
   const KEY = "tpl:brief_visualizer_pro:v1";
+  let _abort = null; // prevents duplicated listeners on rerender
 
   const defaultCell = () => ({ text:"", links:[] });
   const defaultRoom = () => ({
@@ -21,7 +22,6 @@ Views.BriefPro = (() => {
   const defaultState = () => ({
     mode: "edit", // edit | view
     rooms: [ defaultRoom() ],
-    // second block (below table) – we will add next step
     meta: {
       surveyPhotosLink: "",
       lightDwg: "",
@@ -60,7 +60,6 @@ Views.BriefPro = (() => {
   }
 
   function getByPath(state, path){
-    // path like rooms.0.walls
     const parts = path.split(".");
     let cur = state;
     for(const p of parts){
@@ -87,7 +86,7 @@ Views.BriefPro = (() => {
     lines.push("================================");
     lines.push("");
 
-    state.rooms.forEach((r, idx) => {
+    state.rooms.forEach((r) => {
       lines.push(`Помещение: ${r.name || "(не указано)"}`);
       lines.push("--------------------------------");
 
@@ -106,7 +105,6 @@ Views.BriefPro = (() => {
       lines.push("");
     });
 
-    // meta (second block) – we fill later; keep keys ready
     const m = state.meta || {};
     const metaLines = [];
     const addMeta = (label, val) => {
@@ -114,7 +112,7 @@ Views.BriefPro = (() => {
       if(v) metaLines.push(`${label}: ${v}`);
     };
 
-    addMeta("Фото на замере (ссылка/папка)", m.surveyPhotosLink);
+    addMeta("Фото на замере (Google Drive)", m.surveyPhotosLink);
     addMeta("Ссылка на свет (DWG)", m.lightDwg);
     addMeta("Ссылка на план мебели (DWG)", m.furniturePlanDwg);
     addMeta("Ссылка на чертежи (PDF)", m.drawingsPdf);
@@ -144,9 +142,39 @@ Views.BriefPro = (() => {
     URL.revokeObjectURL(url);
   }
 
+  function renderMetaField(label, key, state, isTextArea){
+    const val = (state.meta?.[key] || "").toString();
+
+    if(state.mode === "view"){
+      if(!val.trim()) return "";
+      const isLink = /^https?:\/\//i.test(val.trim());
+
+      return `
+        <div style="margin-bottom:14px">
+          <div style="font-weight:600; margin-bottom:4px">${esc(label)}</div>
+          ${
+            isLink
+              ? `<a href="${esc(val)}" target="_blank" rel="noopener" style="color:var(--brand-headings)" title="${esc(val)}">🔗 ${esc(val)}</a>`
+              : `<div style="white-space:pre-wrap">${esc(val)}</div>`
+          }
+        </div>
+      `;
+    }
+
+    return `
+      <div style="margin-bottom:14px">
+        <div style="font-weight:600; margin-bottom:4px">${esc(label)}</div>
+        ${
+          isTextArea
+            ? `<textarea data-meta="${esc(key)}" rows="3" style="width:100%; padding:10px; border-radius:12px;">${esc(val)}</textarea>`
+            : `<input data-meta="${esc(key)}" value="${esc(val)}" style="width:100%; padding:10px; border-radius:12px;" placeholder="https://..." />`
+        }
+      </div>
+    `;
+  }
+
   function render(state){
     const viewer = $("#viewer");
-    const cols = Components.RoomRow.getCols();
 
     const modeLabel = state.mode === "edit" ? "Редактирование" : "Просмотр";
     const modeBtn = state.mode === "edit"
@@ -166,6 +194,7 @@ Views.BriefPro = (() => {
         ${addRoomBtn}
         <button class="btn" id="bp_copy"><span class="dot"></span>Скопировать</button>
         <button class="btn" id="bp_download"><span class="dot"></span>Скачать .txt</button>
+        ${window.Utils && Utils.Exporters ? `<button class="btn" id="bp_csv"><span class="dot"></span>Скачать CSV (Excel)</button>` : ""}
       </div>
 
       <div class="hr"></div>
@@ -204,7 +233,13 @@ Views.BriefPro = (() => {
 
       <div class="markdown" style="opacity:.95">
         <h2>Файлы и ссылки проекта</h2>
-        <p style="color:var(--muted)">Этот блок мы добавим следующим шагом (ниже таблицы): фото на замере, DWG/PDF, концепт, радиаторы, потолки/двери и т.д.</p>
+        ${renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state)}
+        ${renderMetaField("Ссылка на свет (DWG)", "lightDwg", state)}
+        ${renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state)}
+        ${renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state)}
+        ${renderMetaField("Ссылка на концепт", "conceptLink", state)}
+        ${renderMetaField("Радиаторы", "radiators", state, true)}
+        ${renderMetaField("Потолки / двери / прочее", "ceilingsDoorsEtc", state, true)}
       </div>
     `;
 
@@ -213,41 +248,24 @@ Views.BriefPro = (() => {
   }
 
   function bind(root, state){
+    // полностью убиваем старые делегированные события
+    if(_abort) _abort.abort();
+    _abort = new AbortController();
+    const { signal } = _abort;
+
     const rerender = () => render(state);
 
-    // mode toggle
-    const toView = root.querySelector("#bp_to_view");
-    if(toView) toView.onclick = () => { state.mode = "view"; save(state); rerender(); };
-
-    const toEdit = root.querySelector("#bp_to_edit");
-    if(toEdit) toEdit.onclick = () => { state.mode = "edit"; save(state); rerender(); };
-
-    // add room
-    const addRoom = root.querySelector("#bp_add_room");
-    if(addRoom) addRoom.onclick = () => {
-      state.rooms.push(defaultRoom());
-      save(state);
-      rerender();
-    };
-
-    // copy / download
-    const btnCopy = root.querySelector("#bp_copy");
-    if(btnCopy) btnCopy.onclick = async () => {
-      const text = buildExportText(state);
-      await navigator.clipboard.writeText(text);
-      alert("Скопировано ✅");
-    };
-
-    const btnDl = root.querySelector("#bp_download");
-    if(btnDl) btnDl.onclick = () => {
-      downloadText("TZ_vizualizatoru_PRO.txt", buildExportText(state));
-    };
-
-    // event delegation for table inputs/buttons
     root.addEventListener("input", (e) => {
       const t = e.target;
 
-      // room name
+      // ===== META =====
+      if(t.dataset && t.dataset.meta){
+        state.meta[t.dataset.meta] = t.value;
+        save(state);
+        return;
+      }
+
+      // ===== ROOM NAME =====
       if(t.classList.contains("rr-name")){
         const idx = Number(t.dataset.roomIdx);
         if(Number.isFinite(idx) && state.rooms[idx]){
@@ -257,7 +275,7 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // multiField text
+      // ===== MULTIFIELD TEXT =====
       if(t.classList.contains("mf-text")){
         const path = t.dataset.mfPath;
         const cell = getByPath(state, path) || { text:"", links:[] };
@@ -267,7 +285,7 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // multiField link input
+      // ===== MULTIFIELD LINK =====
       if(t.classList.contains("mf-link")){
         const path = t.dataset.mfPath;
         const li = Number(t.dataset.mfLinkIdx);
@@ -280,13 +298,59 @@ Views.BriefPro = (() => {
         }
         return;
       }
-    });
+
+    }, { signal });
+
 
     root.addEventListener("click", (e) => {
       const btn = e.target.closest("button");
       if(!btn) return;
 
-      // delete room
+      // ===== MODE SWITCH =====
+      if(btn.id === "bp_to_view"){
+        state.mode = "view";
+        save(state);
+        rerender();
+        return;
+      }
+
+      if(btn.id === "bp_to_edit"){
+        state.mode = "edit";
+        save(state);
+        rerender();
+        return;
+      }
+
+      // ===== ADD ROOM =====
+      if(btn.id === "bp_add_room"){
+        state.rooms.push(defaultRoom());
+        save(state);
+        rerender();
+        return;
+      }
+
+      // ===== COPY =====
+      if(btn.id === "bp_copy"){
+        const text = buildExportText(state);
+        navigator.clipboard.writeText(text);
+        alert("Скопировано ✅");
+        return;
+      }
+
+      // ===== TXT DOWNLOAD =====
+      if(btn.id === "bp_download"){
+        downloadText("TZ_vizualizatoru_PRO.txt", buildExportText(state));
+        return;
+      }
+
+      // ===== CSV DOWNLOAD =====
+      if(btn.id === "bp_csv"){
+        const csv = Utils.Exporters.briefToCSV(state);
+        Utils.Exporters.download("TZ_vizualizatoru_PRO.csv", csv);
+        return;
+      }
+
+      // ===== DELETE ROOM =====
       if(btn.classList.contains("rr-del")){
         const idx = Number(btn.dataset.roomIdx);
         if(Number.isFinite(idx)){
@@ -298,7 +362,7 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // add link
+      // ===== ADD LINK =====
       if(btn.classList.contains("mf-add-link")){
         const path = btn.dataset.mfPath;
         const cell = getByPath(state, path) || { text:"", links:[] };
@@ -310,7 +374,7 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // delete link
+      // ===== DELETE LINK =====
       if(btn.classList.contains("mf-del-link")){
         const path = btn.dataset.mfPath;
         const li = Number(btn.dataset.mfLinkIdx);
@@ -323,8 +387,10 @@ Views.BriefPro = (() => {
         }
         return;
       }
-    });
+
+    }, { signal });
   }
+
 
   async function open(){
     const state = load();

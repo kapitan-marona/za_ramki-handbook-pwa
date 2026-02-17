@@ -11,9 +11,13 @@ Components.MultiField = (() => {
   function safeUrl(u){
     const s = (u ?? "").toString().trim();
     if(!s) return "";
-    // allow http(s) only; otherwise keep as text
-    if(/^https?:\/\//i.test(s)) return s;
-    return s; // we'll still display, but won't make it clickable unless it has http(s)
+    return s;
+  }
+
+  function shortLabel(url){
+    const clean = (url || "").replace(/^https?:\/\//i, "");
+    const n = 7; // 6–7 symbols, change to 6 if you want
+    return clean.length > n ? (clean.slice(0, n) + "…") : clean;
   }
 
   function render({ value, mode, placeholderText, placeholderLink, path }){
@@ -24,13 +28,29 @@ Components.MultiField = (() => {
 
     if(mode === "view"){
       const txt = (v.text || "").trim();
+
       const linksHtml = links
         .map((u) => {
           const url = safeUrl(u);
+          if(!url) return "";
+          const label = shortLabel(url);
+
+          // clickable only if starts with http(s)
           if(/^https?:\/\//i.test(url)){
-            return `<div style="margin-top:6px"><a href="${esc(url)}" target="_blank" rel="noopener" style="color:var(--brand-headings); text-decoration-color: rgba(192,58,20,.55)">🔗 ${esc(url)}</a></div>`;
+            return `
+              <div style="margin-top:6px">
+                <a href="${esc(url)}"
+                   target="_blank"
+                   rel="noopener"
+                   title="${esc(url)}"
+                   style="color:var(--brand-headings); text-decoration-color: rgba(192,58,20,.55)">
+                   🔗 ${esc(label)}
+                </a>
+              </div>`;
           }
-          return url ? `<div style="margin-top:6px; color: var(--muted)">🔗 ${esc(url)}</div>` : "";
+
+          // non-http: show as text
+          return `<div style="margin-top:6px; color: var(--muted)" title="${esc(url)}">🔗 ${esc(label)}</div>`;
         })
         .join("");
 

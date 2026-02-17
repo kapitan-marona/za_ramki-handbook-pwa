@@ -211,103 +211,72 @@ Views.BriefPro = (() => {
 
   // --------- NEW: Radiators section exactly as requested ---------
   function renderRadiatorsSection(state) {
-    const radPath = "meta.radiators";
-    const rad = getByPath(state, radPath) || { text: "", links: [] };
-    const links = Array.isArray(rad.links) ? rad.links : [];
+    // Same UI as table cells: MultiField (text + many links)
+    const rad = (state.meta && state.meta.radiators) ? state.meta.radiators : { text:"", links:[] };
 
-    if (state.mode === "view") {
-      const txt = (rad.text || "").trim();
-      const linksHtml = links
-        .map((u) => {
-          const url = (u || "").toString().trim();
-          if (!url) return "";
-          const label = url.replace(/^https?:\/\//i, "");
-          const short = label.length > 18 ? (label.slice(0, 18) + "…") : label;
-          if (/^https?:\/\//i.test(url)) {
-            return '<div style="margin-top:6px"><a href="' + esc(url) + '" target="_blank" rel="noopener" style="color:var(--brand-headings)" title="' + esc(url) + '">🔗 ' + esc(short) + "</a></div>";
-          }
-          return '<div style="margin-top:6px; color: var(--muted)" title="' + esc(url) + '">🔗 ' + esc(short) + "</div>";
-        })
-        .join("");
+    // Ensure structure
+    if (!rad || typeof rad !== "object") state.meta.radiators = { text:"", links:[] };
+    if (!Array.isArray(state.meta.radiators.links)) state.meta.radiators.links = [];
 
-      // If empty in view -> show nothing
-      if (!txt && linksHtml.length === 0) return "";
-
-      return (
-        '<div style="margin-bottom:16px">' +
-          '<div style="font-weight:700; margin-bottom:8px">Радиаторы</div>' +
-          (txt ? '<div style="white-space:pre-wrap">' + esc(txt) + "</div>" : "") +
-          linksHtml +
-        "</div>"
-      );
-    }
-
-    // edit mode: textarea | add link button (same row)
-    const linksInputs = links.length
-      ? links
-          .map((u, idx) => {
-            return (
-              '<div style="display:flex; gap:6px; align-items:center; margin-top:6px">' +
-                '<input class="mf-link" data-mf-path="' + esc(radPath) + '" data-mf-link-idx="' + idx + '" value="' + esc(u) + '" placeholder="https://ссылка-на-радиатор" style="flex:1; padding:8px 10px; border-radius:12px;" />' +
-                '<button type="button" class="btn mf-del-link" data-mf-path="' + esc(radPath) + '" data-mf-link-idx="' + idx + '" title="Удалить ссылку"><span class="dot"></span>−</button>' +
-              "</div>"
-            );
-          })
-          .join("")
-      : "";
+    const mfHtml = Components.MultiField.render({
+      value: state.meta.radiators,
+      mode: state.mode,
+      placeholderText: "Текст (модель/цвет/примечания)…",
+      placeholderLink: "https://ссылка-на-радиатор",
+      path: "meta.radiators"
+    });
 
     return (
       '<div style="margin-bottom:18px">' +
         '<div style="font-weight:700; margin-bottom:8px">Радиаторы</div>' +
-        '<div style="display:flex; gap:10px; align-items:flex-start">' +
-          '<textarea class="mf-text" data-mf-path="' + esc(radPath) + '" rows="3" placeholder="Текст (модель/цвет/примечания)…" style="flex:1; padding:10px; border-radius:12px;"></textarea>' +
-          '<button type="button" class="btn mf-add-link" data-mf-path="' + esc(radPath) + '" style="white-space:nowrap;"><span class="dot"></span>Добавить ссылку</button>' +
-        "</div>" +
-        linksInputs +
-      "</div>"
+        mfHtml +
+      '</div>'
     );
   }
 
   // --------- NEW: Heights row (3 columns) ---------
   function renderHeightsRow(state) {
-    if (state.mode === "view") {
-      const a = (state.meta.ceilingsMm || "").toString().trim();
-      const b = (state.meta.doorsMm || "").toString().trim();
-      const c = (state.meta.otherMm || "").toString().trim();
-      if (!a && !b && !c) return "";
+    const vC = (state.meta && state.meta.ceilingsMm ? state.meta.ceilingsMm : "").toString();
+    const vD = (state.meta && state.meta.doorsMm ? state.meta.doorsMm : "").toString();
+    const vO = (state.meta && state.meta.otherMm ? state.meta.otherMm : "").toString();
 
-      const cell = (title, val) =>
-        '<div style="flex:1; min-width:220px">' +
-          '<div style="font-weight:700; margin-bottom:6px">' + esc(title) + "</div>" +
-          '<div style="padding:10px; border-radius:12px; border:1px solid var(--border); background: rgba(26,23,20,.35)">' + esc(val || "—") + "</div>" +
-        "</div>";
+    if (state.mode === "view") {
+      if (!vC.trim() && !vD.trim() && !vO.trim()) return "";
+
+      const box = (title, val) =>
+        '<div style="flex:1; min-width:200px; max-width:280px">' +
+          '<div style="font-weight:700; margin-bottom:6px">' + esc(title) + '</div>' +
+          '<div style="padding:10px; border-radius:12px; border:1px solid var(--border); background: rgba(26,23,20,.35)">' +
+            esc(val || "—") +
+          '</div>' +
+        '</div>';
 
       return (
         '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px">' +
-          cell("Высота потолков", a) +
-          cell("Высота дверей", b) +
-          cell("Прочее", c) +
-        "</div>"
+          box("Высота потолков", vC) +
+          box("Высота дверей", vD) +
+          box("Прочее", vO) +
+        '</div>'
       );
     }
 
-    // edit mode
-    const input = (title, key, ph) =>
-      '<div style="flex:1; min-width:220px">' +
-        '<div style="font-weight:700; margin-bottom:6px">' + esc(title) + "</div>" +
-        '<input data-meta="' + esc(key) + '" value="' + esc((state.meta && state.meta[key]) || "") + '" placeholder="' + esc(ph) + '" style="width:100%; padding:10px; border-radius:12px;" />' +
-      "</div>";
+    const inp = (title, key, ph, val) =>
+      '<div style="flex:1; min-width:200px; max-width:280px">' +
+        '<div style="font-weight:700; margin-bottom:6px">' + esc(title) + '</div>' +
+        '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" placeholder="' + esc(ph) + '" ' +
+          'style="width:100%; padding:8px 10px; border-radius:12px;" />' +
+      '</div>';
 
     return (
       '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px">' +
-        input("Высота потолков", "ceilingsMm", "0000мм") +
-        input("Высота дверей", "doorsMm", "0000мм") +
-        input("Прочее", "otherMm", "") +
-      "</div>"
+        inp("Высота потолков", "ceilingsMm", "0000мм", vC) +
+        inp("Высота дверей", "doorsMm", "0000мм", vD) +
+        inp("Прочее", "otherMm", "", vO) +
+      '</div>'
     );
   }
 
-  function render(state) {
+function render(state) {
     const viewer = $("#viewer");
     if (!viewer) return;
 
@@ -544,3 +513,4 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+

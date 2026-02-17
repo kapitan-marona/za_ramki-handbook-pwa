@@ -24,9 +24,15 @@ Utils.Exporters = (() => {
     URL.revokeObjectURL(url);
   }
 
+  function cellToText(cell){
+    const c = cell || { text:"", links:[] };
+    const text = (c.text || "").toString().trim();
+    const links = Array.isArray(c.links) ? c.links.map(x => (x||"").toString().trim()).filter(Boolean) : [];
+    return [text, ...links].filter(Boolean).join("\n");
+  }
+
   // rooms: array from brief_pro state
-  // columns: [{key,label}, ...] (except room name handled separately)
-  function briefToCSV(state, columns){
+  function briefToCSV(state){
     const sep = ";";
     const headers = [
       "Наименование помещения",
@@ -52,32 +58,42 @@ Utils.Exporters = (() => {
       // order must match headers above
       const order = ["walls","floor","ceiling","doors","plinth","light","furniture","concept","notes"];
       for(const key of order){
-        const cell = r?.[key] || { text:"", links:[] };
-        const text = (cell.text || "").trim();
-        const links = Array.isArray(cell.links) ? cell.links.map(x => (x||"").trim()).filter(Boolean) : [];
-        // Put multiple links on new lines inside the same cell
-        const cellValue = [text, ...links].filter(Boolean).join("\n");
+        const cellValue = cellToText(r?.[key]);
         row.push(cellValue);
       }
 
       lines.push(row.map(escCsv).join(sep));
     }
 
-    // Add meta block below as separate section (optional)
+    // --- Meta block below (same CSV file) ---
     const m = state.meta || {};
-    const metaPairs = [
-      ["Фото на замере (Google Drive)", m.surveyPhotosLink],
-      ["Ссылка на свет (DWG)", m.lightDwg],
-      ["Ссылка на план мебели (DWG)", m.furniturePlanDwg],
-      ["Ссылка на чертежи (PDF)", m.drawingsPdf],
-      ["Ссылка на концепт", m.conceptLink],
-      ["Радиаторы", m.radiators],
-      ["Потолки / двери / прочее", m.ceilingsDoorsEtc],
-    ].filter(([,v]) => (v||"").toString().trim().length > 0);
+
+    const metaPairs = [];
+
+    const pushIf = (k,v) => {
+      const s = (v ?? "").toString().trim();
+      if(s) metaPairs.push([k, s]);
+    };
+
+    pushIf("Фото на замере (Google Drive)", m.surveyPhotosLink);
+    pushIf("Ссылка на свет (DWG)", m.lightDwg);
+    pushIf("Ссылка на план мебели (DWG)", m.furniturePlanDwg);
+    pushIf("Ссылка на чертежи (PDF)", m.drawingsPdf);
+    pushIf("Ссылка на концепт", m.conceptLink);
+
+    // Радиаторы: text + links (multi)
+    const rad = m.radiators && typeof m.radiators === "object" ? m.radiators : { text:"", links:[] };
+    const radValue = cellToText(rad);
+    if(radValue.trim()) metaPairs.push(["Радиаторы", radValue]);
+
+    // Высоты / прочее
+    pushIf("Высота потолков (мм)", m.ceilingsMm);
+    pushIf("Высота дверей (мм)", m.doorsMm);
+    pushIf("Прочее", m.otherMm);
 
     if(metaPairs.length){
       lines.push(""); // empty row
-      lines.push(escCsv("ФАЙЛЫ / ДОП. ИНФО")); // section title
+      lines.push(escCsv("ФАЙЛЫ / ДОП. ИНФО")); // section title (single cell)
       for(const [k,v] of metaPairs){
         lines.push([k, v].map(escCsv).join(sep));
       }
@@ -88,4 +104,3 @@ Utils.Exporters = (() => {
 
   return { download, briefToCSV };
 })();
-

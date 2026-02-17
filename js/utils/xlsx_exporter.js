@@ -1,300 +1,358 @@
-﻿window.Utils = window.Utils || {};
-Utils.Exporters = Utils.Exporters || {};
+﻿/**
+ * XLSX exporter for BriefPro (true .xlsx with styles) using xlsx-js-style bundle.
+ * Loads vendor lazily only on export.
+ *
+ * Public API:
+ *   Utils.XLSXExport.downloadXLSX(state, filename)
+ */
+(function () {
+  "use strict";
 
-Utils.XLSXExport = (() => {
-  const VENDOR_SRC = "./js/vendor/xlsx.bundle.js";
+  window.Utils = window.Utils || {};
 
-  function hexToRgbNoHash(hex){
-    const h = (hex || "").toString().trim().replace("#","");
-    if(h.length === 3){
-      const r = h[0]+h[0], g = h[1]+h[1], b = h[2]+h[2];
-      return (r+g+b).toUpperCase();
-    }
-    if(h.length === 6) return h.toUpperCase();
-    return null;
-  }
+  const VENDOR_PATH = "./js/vendor/xlsx.bundle.js";
 
-  function asText(v){ return (v ?? "").toString(); }
+  function ensureXLSXLoaded() {
+    if (window.XLSX && window.XLSX.utils) return Promise.resolve(window.XLSX);
 
-  function cellToText(cell){
-    const c = cell || { text:"", links:[] };
-    const text = asText(c.text).trim();
-    const links = Array.isArray(c.links) ? c.links.map(x => asText(x).trim()).filter(Boolean) : [];
-    return [text, ...links].filter(Boolean).join("\n");
-  }
-
-  function flattenLinks(state){
-    const rows = [];
-    const rooms = Array.isArray(state.rooms) ? state.rooms : [];
-    const order = [
-      ["walls","Стены, цвет"],
-      ["floor","Пол"],
-      ["ceiling","Потолок"],
-      ["doors","Двери"],
-      ["plinth","Плинтус, карниз"],
-      ["light","Свет"],
-      ["furniture","Мебель / Декор"],
-      ["concept","Ссылка на концепт"],
-      ["notes","Допы / примечания"]
-    ];
-
-    for(let i=0;i<rooms.length;i++){
-      const r = rooms[i] || {};
-      const roomName = asText(r.name).trim() || `Помещение ${i+1}`;
-      for(const [key,label] of order){
-        const cell = r[key] || {text:"",links:[]};
-        const links = Array.isArray(cell.links) ? cell.links.map(x => asText(x).trim()).filter(Boolean) : [];
-        for(const url of links){
-          rows.push({ room: roomName, field: label, url });
-        }
-      }
-    }
-
-    // meta links тоже добавим
-    const m = state.meta || {};
-    const metaLinks = [
-      ["Фото на замере (Google Drive)", m.surveyPhotosLink],
-      ["Ссылка на свет (DWG)", m.lightDwg],
-      ["Ссылка на план мебели (DWG)", m.furniturePlanDwg],
-      ["Ссылка на чертежи (PDF)", m.drawingsPdf],
-      ["Ссылка на концепт", m.conceptLink],
-    ];
-    for(const [label,val] of metaLinks){
-      const url = asText(val).trim();
-      if(/^https?:\/\//i.test(url)) rows.push({ room: "ФАЙЛЫ / ДОП. ИНФО", field: label, url });
-    }
-
-    // radiators multi
-    const rad = (m.radiators && typeof m.radiators === "object") ? m.radiators : {text:"",links:[]};
-    const radLinks = Array.isArray(rad.links) ? rad.links.map(x=>asText(x).trim()).filter(Boolean) : [];
-    for(const url of radLinks){
-      rows.push({ room: "ФАЙЛЫ / ДОП. ИНФО", field: "Радиаторы", url });
-    }
-
-    return rows;
-  }
-
-  function ensureXLSX(){
-    if(window.XLSX) return Promise.resolve(true);
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
-      s.src = VENDOR_SRC;
+      s.src = VENDOR_PATH;
       s.async = true;
-      s.onload = () => resolve(true);
-      s.onerror = () => reject(new Error("Failed to load XLSX vendor: " + VENDOR_SRC));
+      s.onload = () => {
+        if (window.XLSX && window.XLSX.utils) resolve(window.XLSX);
+        else reject(new Error("XLSX bundle loaded but window.XLSX is missing"));
+      };
+      s.onerror = () => reject(new Error("Failed to load XLSX vendor: " + VENDOR_PATH));
       document.head.appendChild(s);
     });
   }
 
-  function downloadBlob(filename, blob){
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  // ---------- helpers ----------
+  const FONT_BODY = "Calibri";
+  const FONT_SIZE_BODY = 12;
+  const FONT_SIZE_HEAD = 16;
+
+  function normStr(v) {
+    if (v === null || v === undefined) return "";
+    return String(v);
   }
 
-  function buildWorkbook(state){
-    const XLSX = window.XLSX;
-    const wb = XLSX.utils.book_new();
+  function safeUrl(url) {
+    const s = normStr(url).trim();
+    if (!s) return "";
+    // Accept http(s) + mailto + tel + bare domain (we'll try to normalize)
+    if (/^(https?:\/\/|mailto:|tel:)/i.test(s)) return s;
+    if (/^[\w.-]+\.[a-z]{2,}([\/?#].*)?$/i.test(s)) return "https://" + s;
+    return s; // fallback (still try as target)
+  }
 
-    // -------------------------
-    // Sheet 1: BRIEF (main)
-    // -------------------------
-    const headers = [
-      "Наименование помещения",
-      "Стены, цвет","Пол","Потолок","Двери","Плинтус, карниз",
-      "Свет","Мебель / Декор","Ссылка на концепт","Допы к черновикам или примечания"
-    ];
+  function cellText(v, style) {
+    return { t: "s", v: normStr(v), s: style || undefined };
+  }
 
-    const rooms = Array.isArray(state.rooms) ? state.rooms : [];
-    const order = ["walls","floor","ceiling","doors","plinth","light","furniture","concept","notes"];
-
-    const aoa = [];
-    aoa.push(headers);
-
-    for(const r of rooms){
-      const row = [];
-      row.push(asText(r?.name || ""));
-      for(const key of order){
-        row.push(cellToText(r?.[key]));
-      }
-      aoa.push(row);
+  function cellLink(display, url, style) {
+    const target = safeUrl(url);
+    const c = { t: "s", v: normStr(display), s: style || undefined };
+    if (target) {
+      // SheetJS hyperlink
+      c.l = { Target: target, Tooltip: target };
     }
+    return c;
+  }
 
-    // meta block (как “таблица параметр/значение” ниже)
-    aoa.push([]);
-    aoa.push(["ФАЙЛЫ / ДОП. ИНФО",""]);
-    aoa.push(["Параметр","Значение"]);
-
-    const m = state.meta || {};
-    const pushIf = (k,v) => {
-      const s = asText(v).trim();
-      if(s) aoa.push([k, s]);
+  function makeStyles() {
+    const borderThin = {
+      top: { style: "thin", color: { rgb: "D9D9D9" } },
+      bottom: { style: "thin", color: { rgb: "D9D9D9" } },
+      left: { style: "thin", color: { rgb: "D9D9D9" } },
+      right: { style: "thin", color: { rgb: "D9D9D9" } }
     };
 
-    pushIf("Фото на замере (Google Drive)", m.surveyPhotosLink);
-    pushIf("Ссылка на свет (DWG)", m.lightDwg);
-    pushIf("Ссылка на план мебели (DWG)", m.furniturePlanDwg);
-    pushIf("Ссылка на чертежи (PDF)", m.drawingsPdf);
-    pushIf("Ссылка на концепт", m.conceptLink);
+    const head = {
+      font: { name: FONT_BODY, sz: FONT_SIZE_HEAD, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: "1F2937" } }, // dark
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: borderThin
+    };
 
-    // Радиаторы (text+links)
-    const rad = (m.radiators && typeof m.radiators === "object") ? m.radiators : {text:"",links:[]};
-    const radVal = cellToText(rad).trim();
-    if(radVal) aoa.push(["Радиаторы", radVal]);
+    const body = {
+      font: { name: FONT_BODY, sz: FONT_SIZE_BODY, bold: false, color: { rgb: "111827" } },
+      alignment: { horizontal: "left", vertical: "top", wrapText: true },
+      border: borderThin
+    };
 
-    pushIf("Высота потолков (мм)", m.ceilingsMm);
-    pushIf("Высота дверей (мм)", m.doorsMm);
-    {
-      const label = (asText(m.otherLabel || "Прочее").trim() || "Прочее");
-      pushIf(label, m.otherMm);
+    const firstCol = (rgb) => ({
+      font: { name: FONT_BODY, sz: FONT_SIZE_BODY, bold: true, color: { rgb: "111827" } },
+      fill: { patternType: "solid", fgColor: { rgb: rgb || "E5E7EB" } },
+      alignment: { horizontal: "left", vertical: "top", wrapText: true },
+      border: borderThin
+    });
+
+    const link = {
+      font: { name: FONT_BODY, sz: FONT_SIZE_BODY, color: { rgb: "1D4ED8" }, underline: true },
+      alignment: { horizontal: "left", vertical: "top", wrapText: true },
+      border: borderThin
+    };
+
+    const metaHead = {
+      font: { name: FONT_BODY, sz: 14, bold: true, color: { rgb: "111827" } },
+      alignment: { horizontal: "left", vertical: "center", wrapText: true }
+    };
+
+    return { head, body, firstCol, link, metaHead };
+  }
+
+  function hexToRGB(hex) {
+    const h = normStr(hex).trim().replace("#", "");
+    if (!/^[0-9a-f]{6}$/i.test(h)) return "";
+    return h.toUpperCase();
+  }
+
+  // Try to extract BriefPro table data from state in a defensive way.
+  // We support a few common shapes without breaking if something differs.
+  function getBriefProModel(state) {
+    const s = state || {};
+    const bp =
+      s.briefPro ||
+      s.brief_pro ||
+      s.brief ||
+      s.briefpro ||
+      (s.data && (s.data.briefPro || s.data.brief_pro)) ||
+      {};
+
+    const rooms = bp.rooms || bp.rows || bp.items || s.rooms || [];
+    const columns =
+      bp.columns ||
+      bp.fields ||
+      bp.headers ||
+      s.columns ||
+      [
+        { key: "walls", label: "Стены" },
+        { key: "floor", label: "Пол" },
+        { key: "ceiling", label: "Потолок" },
+        { key: "doors", label: "Двери" },
+        { key: "plinth", label: "Плинтус" },
+        { key: "light", label: "Свет" },
+        { key: "furniture", label: "Мебель" },
+        { key: "concept", label: "Концепт" },
+        { key: "notes", label: "Примечания" }
+      ];
+
+    // Meta / links blocks (optional)
+    const meta = bp.meta || s.meta || {};
+    const radiators = bp.radiators || s.radiators || [];
+    const ceilings = bp.ceilings || s.ceilings || {};
+    const doors = bp.doors || s.doors || {};
+    const other = bp.other || s.other || {};
+    const otherLabel = bp.otherLabel || s.otherLabel || "Другое";
+
+    return { rooms, columns, meta, radiators, ceilings, doors, other, otherLabel };
+  }
+
+  function extractCellValue(room, colKey) {
+    // Try typical shapes:
+    // room[colKey] could be string OR { text, links } OR { value, links } OR { items: [...] } etc.
+    const raw = room ? room[colKey] : "";
+    if (raw === null || raw === undefined) return { text: "", links: [] };
+
+    if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean") {
+      return { text: normStr(raw), links: [] };
     }
+
+    // common MultiField shape
+    const text =
+      normStr(raw.text ?? raw.value ?? raw.note ?? raw.content ?? raw.main ?? "");
+
+    let links = raw.links || raw.urls || raw.hrefs || [];
+    if (typeof links === "string") links = [links];
+    if (!Array.isArray(links)) links = [];
+
+    // also support items array like [{text, links}]
+    if ((!text || text === "") && Array.isArray(raw.items) && raw.items.length) {
+      const parts = [];
+      const allLinks = [];
+      raw.items.forEach((it) => {
+        if (!it) return;
+        const t = normStr(it.text ?? it.value ?? "");
+        if (t) parts.push(t);
+        const l = it.links || it.urls || [];
+        if (Array.isArray(l)) allLinks.push(...l);
+      });
+      return { text: parts.join("\n"), links: allLinks.filter(Boolean) };
+    }
+
+    return { text, links: links.filter(Boolean) };
+  }
+
+  function buildBriefSheet(XLSX, model) {
+    const st = makeStyles();
+
+    const columns = model.columns || [];
+    const headRow = [
+      cellText("Помещение", st.head),
+      ...columns.map((c) => cellText(normStr(c.label ?? c.title ?? c.key ?? ""), st.head))
+    ];
+
+    const aoa = [headRow];
+
+    // widths: stable + “designer friendly”
+    const colWidths = [];
+    colWidths.push({ wch: 26 }); // room column
+    columns.forEach((c) => {
+      const key = normStr(c.key ?? c.id ?? c.name ?? "");
+      // heuristic widths
+      let wch = 22;
+      if (/notes|comment|remark|примеч/i.test(key)) wch = 40;
+      if (/concept|концеп/i.test(key)) wch = 28;
+      if (/light|свет/i.test(key)) wch = 18;
+      if (/furniture|мебель/i.test(key)) wch = 22;
+      if (/walls|стены/i.test(key)) wch = 24;
+      if (/ceiling|потол/i.test(key)) wch = 20;
+      if (/floor|пол/i.test(key)) wch = 20;
+      colWidths.push({ wch });
+    });
+
+    const rooms = Array.isArray(model.rooms) ? model.rooms : [];
+    rooms.forEach((room) => {
+      const roomName = normStr(room?.title ?? room?.name ?? room?.room ?? "");
+      const bg = hexToRGB(room?.__bg || room?.bg || room?.color || "");
+      const roomStyle = st.firstCol(bg || "E5E7EB");
+
+      const row = [cellText(roomName, roomStyle)];
+
+      columns.forEach((c) => {
+        const key = normStr(c.key ?? c.id ?? c.name ?? "");
+        const { text, links } = extractCellValue(room, key);
+
+        // If exactly one link and no other link noise → make it clickable in BRIEF
+        if (links && links.length === 1) {
+          const display = text ? text : links[0];
+          row.push(cellLink(display, links[0], st.link));
+        } else {
+          // Keep text; links are detailed in LINKS sheet
+          let v = text || "";
+          if (links && links.length > 0) {
+            // Add plain text refs to hint designer
+            v = (v ? v + "\n" : "") + links.map((u) => normStr(u)).join("\n");
+          }
+          row.push(cellText(v, st.body));
+        }
+      });
+
+      aoa.push(row);
+    });
+
+    // meta block below (optional but kept as you had)
+    aoa.push([cellText("", null)]);
+    aoa.push([cellText("Файлы и ссылки проекта", st.metaHead)]);
+    const metaPairs = [];
+
+    // Try to flatten meta
+    if (model.meta && typeof model.meta === "object") {
+      Object.keys(model.meta).forEach((k) => {
+        const v = model.meta[k];
+        if (v === null || v === undefined) return;
+        metaPairs.push([k, normStr(v)]);
+      });
+    }
+
+    // Radiators & heights (best-effort)
+    if (Array.isArray(model.radiators) && model.radiators.length) {
+      metaPairs.push(["Радиаторы", model.radiators.map(normStr).join(" | ")]);
+    }
+
+    if (model.ceilings && Object.keys(model.ceilings).length) {
+      metaPairs.push(["Высоты (ceiling)", JSON.stringify(model.ceilings)]);
+    }
+    if (model.doors && Object.keys(model.doors).length) {
+      metaPairs.push(["Высоты (doors)", JSON.stringify(model.doors)]);
+    }
+    if (model.other && Object.keys(model.other).length) {
+      metaPairs.push([model.otherLabel || "Другое", JSON.stringify(model.other)]);
+    }
+
+    metaPairs.forEach(([k, v]) => {
+      aoa.push([cellText(normStr(k), st.body), cellText(normStr(v), st.body)]);
+    });
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-    // widths (wch ~ characters)
-    ws["!cols"] = [
-      { wch: 28 }, // room
-      { wch: 26 },{ wch: 22 },{ wch: 22 },{ wch: 22 },{ wch: 24 },
-      { wch: 22 },{ wch: 24 },{ wch: 26 },{ wch: 28 }
+    // Apply column widths
+    ws["!cols"] = colWidths;
+
+    // Slightly taller header row for readability
+    ws["!rows"] = [{ hpt: 26 }];
+
+    return ws;
+  }
+
+  function buildLinksSheet(XLSX, model) {
+    const st = makeStyles();
+
+    const columns = model.columns || [];
+    const aoa = [
+      [
+        cellText("Помещение", st.head),
+        cellText("Поле", st.head),
+        cellText("Текст", st.head),
+        cellText("Ссылка", st.head)
+      ]
     ];
 
-    // header style
-    const headerStyle = {
-      font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: "111827" } },
-      alignment: { vertical: "top", horizontal: "left", wrapText: true }
-    };
+    const rooms = Array.isArray(model.rooms) ? model.rooms : [];
+    rooms.forEach((room) => {
+      const roomName = normStr(room?.title ?? room?.name ?? room?.room ?? "");
+      columns.forEach((c) => {
+        const key = normStr(c.key ?? c.id ?? c.name ?? "");
+        const label = normStr(c.label ?? c.title ?? key);
+        const { text, links } = extractCellValue(room, key);
+        if (!links || !links.length) return;
 
-    // body style
-    const bodyStyle = {
-      font: { sz: 12, color: { rgb: "111827" } },
-      alignment: { vertical: "top", horizontal: "left", wrapText: true }
-    };
-
-    // first col style (room name)
-    const roomStyle = {
-      font: { bold: true, sz: 12, color: { rgb: "111827" } },
-      alignment: { vertical: "top", horizontal: "left", wrapText: true }
-    };
-
-    // Apply styles (xlsx-js-style supports cell.s)
-    const range = XLSX.utils.decode_range(ws["!ref"]);
-    for(let R = range.s.r; R <= range.e.r; ++R){
-      for(let C = range.s.c; C <= range.e.c; ++C){
-        const addr = XLSX.utils.encode_cell({r:R,c:C});
-        const cell = ws[addr];
-        if(!cell) continue;
-
-        if(R === 0){
-          cell.s = headerStyle;
-        } else {
-          cell.s = (C === 0) ? roomStyle : bodyStyle;
-        }
-      }
-    }
-
-    // Row accent fills in first column for rooms only (using __bg or palette)
-    const palette = ["#FDE68A","#BFDBFE","#FBCFE8","#BBF7D0","#DDD6FE","#FED7AA","#A7F3D0"];
-    for(let i=0;i<rooms.length;i++){
-      const r = rooms[i] || {};
-      const colorHex = (r.__bg || palette[i % palette.length] || "").toString();
-      const rgb = hexToRgbNoHash(colorHex);
-      if(!rgb) continue;
-
-      const R = 1 + i; // data rows start at row 1
-      const addr = XLSX.utils.encode_cell({r:R,c:0});
-      if(ws[addr]){
-        ws[addr].s = ws[addr].s || roomStyle;
-        ws[addr].s = {
-          ...ws[addr].s,
-          fill: { patternType: "solid", fgColor: { rgb } }
-        };
-      }
-    }
-
-    XLSX.utils.book_append_sheet(wb, ws, "BRIEF");
-
-    // -------------------------
-    // Sheet 2: LINKS (each link in its own row, clickable)
-    // -------------------------
-    const links = flattenLinks(state);
-    const linksAoa = [["Помещение","Поле","Ссылка"]];
-    for(const x of links){
-      linksAoa.push([x.room, x.field, x.url]);
-    }
-    const ws2 = XLSX.utils.aoa_to_sheet(linksAoa);
-    ws2["!cols"] = [{wch:30},{wch:26},{wch:60}];
-
-    const linkHeader = headerStyle;
-    const linkBody = bodyStyle;
-    const linkStyle = {
-      font: { sz: 12, color: { rgb: "1D4ED8" }, underline: true },
-      alignment: { vertical: "top", horizontal: "left", wrapText: true }
-    };
-
-    const r2 = XLSX.utils.decode_range(ws2["!ref"]);
-    for(let R = r2.s.r; R <= r2.e.r; ++R){
-      for(let C = r2.s.c; C <= r2.e.c; ++C){
-        const addr = XLSX.utils.encode_cell({r:R,c:C});
-        const cell = ws2[addr];
-        if(!cell) continue;
-        if(R === 0){
-          cell.s = linkHeader;
-        } else {
-          cell.s = (C === 2) ? linkStyle : linkBody;
-          if(C === 2){
-            const url = asText(cell.v).trim();
-            if(/^https?:\/\//i.test(url)){
-              cell.l = { Target: url, Tooltip: url };
-            }
-          }
-        }
-      }
-    }
-
-    XLSX.utils.book_append_sheet(wb, ws2, "LINKS");
-
-    return wb;
-  }
-
-  async function downloadXLSX(state, filename){
-    await ensureXLSX();
-    const wb = buildWorkbook(state);
-
-    // array -> Blob
-    const out = window.XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([out], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        links.forEach((u) => {
+          const url = normStr(u);
+          aoa.push([
+            cellText(roomName, st.body),
+            cellText(label, st.body),
+            cellText(text, st.body),
+            // IMPORTANT: hyperlink lives in .l.Target
+            cellLink(url, url, st.link)
+          ]);
+        });
+      });
     });
 
-    downloadBlob(filename || "TZ_vizualizatoru_PRO.xlsx", blob);
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [
+      { wch: 26 },
+      { wch: 22 },
+      { wch: 40 },
+      { wch: 60 }
+    ];
+    ws["!rows"] = [{ hpt: 26 }];
+    return ws;
   }
 
-  return { downloadXLSX, ensureXLSX };
-})();
+  async function downloadXLSX(state, filename) {
+    const XLSX = await ensureXLSXLoaded();
 
-// Convenience hook for existing UI (if BriefPro calls briefDownloadXLS)
-// We'll keep the old HTML-xls as fallback in Utils.Exporters.briefDownloadXLS_legacy (if exists)
-(function(){
-  const legacy = Utils.Exporters.briefDownloadXLS;
-  if(legacy) Utils.Exporters.briefDownloadXLS_legacy = legacy;
+    const model = getBriefProModel(state);
 
-  // override: now "Скачать Excel" делает XLSX
-  Utils.Exporters.briefDownloadXLS = function(state){
-    // fire-and-forget
-    Utils.XLSXExport.downloadXLSX(state, "TZ_vizualizatoru_PRO.xlsx").catch((e) => {
-      console.error(e);
-      // fallback to legacy if possible
-      if(Utils.Exporters.briefDownloadXLS_legacy){
-        Utils.Exporters.briefDownloadXLS_legacy(state);
-      } else {
-        alert("Не удалось скачать XLSX. Открой консоль (F12) и пришли ошибку.");
-      }
-    });
+    const wb = XLSX.utils.book_new();
+    const wsBrief = buildBriefSheet(XLSX, model);
+    const wsLinks = buildLinksSheet(XLSX, model);
+
+    XLSX.utils.book_append_sheet(wb, wsBrief, "BRIEF");
+    XLSX.utils.book_append_sheet(wb, wsLinks, "LINKS");
+
+    const name = (filename && String(filename).trim()) ? String(filename).trim() : "BriefPro";
+    const out = name.toLowerCase().endsWith(".xlsx") ? name : (name + ".xlsx");
+
+    // writeFile from SheetJS
+    XLSX.writeFile(wb, out, { bookType: "xlsx", compression: true });
+  }
+
+  window.Utils.XLSXExport = {
+    downloadXLSX
   };
 })();

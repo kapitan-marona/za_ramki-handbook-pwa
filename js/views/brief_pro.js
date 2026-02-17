@@ -108,12 +108,12 @@ Views.BriefPro = (() => {
   function buildExportText(state) {
     const cols = Components.RoomRow.getCols();
     const lines = [];
-    lines.push("TZ DLYA VIZUALIZATORA - ZA RAMKI");
+    lines.push("ТЗ ДЛЯ ВИЗУАЛИЗАТОРА — ZA RAMKI");
     lines.push("================================");
     lines.push("");
 
     (state.rooms || []).forEach((r) => {
-      lines.push("Pomeshchenie: " + (r.name || "(ne ukazano)"));
+      lines.push("Помещение: " + (r.name || "(не указано)"));
       lines.push("--------------------------------");
 
       cols.forEach((c) => {
@@ -138,19 +138,19 @@ Views.BriefPro = (() => {
       if (v) metaLines.push(label + ": " + v);
     };
 
-    addMeta("Foto na zamere (Google Drive)", m.surveyPhotosLink);
-    addMeta("Ssilka na svet (DWG)", m.lightDwg);
-    addMeta("Ssilka na plan mebeli (DWG)", m.furniturePlanDwg);
-    addMeta("Ssilka na chertezhi (PDF)", m.drawingsPdf);
-    addMeta("Ssilka na kontsept", m.conceptLink);
-    addMeta("Radiatory", m.radiators);
-    addMeta("Radiatory - ssilka", m.radiatorsLink);
+    addMeta("Фото на замере (Google Drive)", m.surveyPhotosLink);
+    addMeta("Ссылка на свет (DWG)", m.lightDwg);
+    addMeta("Ссылка на план мебели (DWG)", m.furniturePlanDwg);
+    addMeta("Ссылка на чертежи (PDF)", m.drawingsPdf);
+    addMeta("Ссылка на концепт", m.conceptLink);
+    addMeta("Радиаторы", m.radiators);
+    addMeta("Радиаторы — ссылка", m.radiatorsLink);
     addMeta("Potolki (mm)", m.ceilingsMm);
-    addMeta("Dveri (mm)", m.doorsMm);
+    addMeta("Двери (mm)", m.doorsMm);
     addMeta("Prochee (mm)", m.otherMm);
 
     if (metaLines.length) {
-      lines.push("FILES / INFO");
+      lines.push("ФАЙЛЫ / ДОП. ИНФО");
       lines.push("------------");
       lines.push(...metaLines);
       lines.push("");
@@ -202,23 +202,23 @@ Views.BriefPro = (() => {
     const viewer = $("#viewer");
     if (!viewer) return;
 
-    const modeLabel = state.mode === "edit" ? "Redaktirovanie" : "Prosmotr";
+    const modeLabel = state.mode === "edit" ? "Редактирование" : "Просмотр";
     const modeBtn =
       state.mode === "edit"
-        ? '<button class="btn" id="bp_to_view"><span class="dot"></span>Pereyti v prosmotr</button>'
-        : '<button class="btn" id="bp_to_edit"><span class="dot"></span>Redaktirovat</button>';
+        ? '<button class="btn" id="bp_to_view"><span class="dot"></span>Перейти в просмотр</button>'
+        : '<button class="btn" id="bp_to_edit"><span class="dot"></span>Редактировать</button>';
 
     const addRoomBtn =
       state.mode === "edit"
-        ? '<button class="btn" id="bp_add_room"><span class="dot"></span>Dobavit pomeshchenie</button>'
+        ? '<button class="btn" id="bp_add_room"><span class="dot"></span>Добавить помещение</button>'
         : "";
 
     const canCsv = window.Utils && Utils.Exporters;
     const csvBtn = canCsv
-      ? '<button class="btn" id="bp_csv"><span class="dot"></span>Skachat CSV (Excel)</button>'
+      ? '<button class="btn" id="bp_csv"><span class="dot"></span>Скачать CSV (Excel)</button>'
       : "";
 
-    const colsHead = ["Steny, tsvet", "Pol", "Potolok", "Dveri", "Plintus, karniz"]
+    const colsHead = ["Стены, цвет", "Пол", "Потолок", "Двери", "Плинтус, карниз"]
       .map((h) => '<th style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">' + esc(h) + "</th>")
       .join("");
 
@@ -228,14 +228,14 @@ Views.BriefPro = (() => {
 
     const html =
       '<div class="bp-pro">' +
-      '<h1 class="article-title">TZ vizualizatoru - PRO</h1>' +
-      '<p class="article-sub">Rezhim: <b>' + esc(modeLabel) + "</b>. Avtosokhranenie vklyucheno.</p>" +
+      '<h1 class="article-title">ТЗ визуализатору — PRO</h1>' +
+      '<p class="article-sub">Режим: <b>' + esc(modeLabel) + "</b>. Автосохранение включено.</p>" +
 
       '<div class="actions">' +
       modeBtn +
       addRoomBtn +
-      '<button class="btn" id="bp_copy"><span class="dot"></span>Skopirovat</button>' +
-      '<button class="btn" id="bp_download"><span class="dot"></span>Skachat .txt</button>' +
+      '<button class="btn" id="bp_copy"><span class="dot"></span>Скопировать</button>' +
+      '<button class="btn" id="bp_download"><span class="dot"></span>Скачать .txt</button>' +
       csvBtn +
       "</div>" +
 
@@ -245,12 +245,12 @@ Views.BriefPro = (() => {
       '<table style="border-collapse:separate; border-spacing:0; min-width:1700px; width:100%;">' +
       "<thead>" +
       "<tr>" +
-      '<th rowspan="2" style="position:sticky; left:0; background: rgba(26,23,20,.92); z-index:2; text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:220px;">Na imenovanie pomeshcheniya</th>' +
-      '<th colspan="5" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); color:var(--brand-headings);">Geometriya pomeshcheniya</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Svet</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Mebel / Dekor</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Ssilka na kontsept</th>' +
-      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Primechaniya</th>' +
+      '<th rowspan="2" style="position:sticky; left:0; background: rgba(26,23,20,.92); z-index:2; text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:220px;">Наименование помещения</th>' +
+      '<th colspan="5" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); color:var(--brand-headings);">Геометрия помещения</th>' +
+      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Свет</th>' +
+      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Мебель / Декор</th>' +
+      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Ссылка на концепт</th>' +
+      '<th rowspan="2" style="text-align:left; padding:10px; border-bottom:1px solid var(--border); min-width:240px;">Допы к черновикам или примечания</th>' +
       "</tr>" +
       "<tr>" + colsHead + "</tr>" +
       "</thead>" +
@@ -261,17 +261,17 @@ Views.BriefPro = (() => {
       '<div class="hr"></div>' +
 
       '<div class="markdown" style="opacity:.95">' +
-      "<h2>Fayly i ssylki proekta</h2>" +
-      renderMetaField("Foto na zamere (Google Drive)", "surveyPhotosLink", state) +
-      renderMetaField("Ssilka na svet (DWG)", "lightDwg", state) +
-      renderMetaField("Ssilka na plan mebeli (DWG)", "furniturePlanDwg", state) +
-      renderMetaField("Ssilka na chertezhi (PDF)", "drawingsPdf", state) +
-      renderMetaField("Ssilka na kontsept", "conceptLink", state) +
-      renderMetaField("Radiatory", "radiators", state, true) +
-      renderMetaField("Radiatory - ssilka", "radiatorsLink", state) +
-      renderMetaField("Potolki (0000mm)", "ceilingsMm", state) +
-      renderMetaField("Dveri (0000mm)", "doorsMm", state) +
-      renderMetaField("Prochee (0000mm)", "otherMm", state) +
+      "<h2>Файлы и ссылки проекта</h2>" +
+      renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state) +
+      renderMetaField("Ссылка на свет (DWG)", "lightDwg", state) +
+      renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state) +
+      renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state) +
+      renderMetaField("Ссылка на концепт", "conceptLink", state) +
+      renderMetaField("Радиаторы", "radiators", state, true) +
+      renderMetaField("Радиаторы — ссылка", "radiatorsLink", state) +
+      renderMetaField("Потолки (0000мм)", "ceilingsMm", state) +
+      renderMetaField("Двери (0000mm)", "doorsMm", state) +
+      renderMetaField("Прочее (0000мм)", "otherMm", state) +
       "</div>" +
       "</div>";
 
@@ -362,7 +362,7 @@ Views.BriefPro = (() => {
 
         if (btn.id === "bp_copy") {
           navigator.clipboard.writeText(buildExportText(state));
-          alert("Skopirovano");
+          alert("Скопировано ✅");
           return;
         }
 
@@ -422,3 +422,5 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+
+

@@ -29,11 +29,15 @@ Views.BriefPro = (() => {
       furniturePlanDwg: "",
       drawingsPdf: "",
       conceptLink: "",
-      radiators: "",
-      radiatorsLink: "",
+      // IMPORTANT: radiators is now a MultiField-like cell (text + many links)
+      radiators: defaultCell(),
+      // mm fields
       ceilingsMm: "",
       doorsMm: "",
       otherMm: "",
+      // legacy (kept for compatibility, not used in UI)
+      radiatorsLink: "",
+      ceilingsDoorsEtc: "",
     },
   });
 
@@ -143,15 +147,21 @@ Views.BriefPro = (() => {
     addMeta("Ссылка на план мебели (DWG)", m.furniturePlanDwg);
     addMeta("Ссылка на чертежи (PDF)", m.drawingsPdf);
     addMeta("Ссылка на концепт", m.conceptLink);
-    addMeta("Радиаторы", m.radiators);
-    addMeta("Радиаторы — ссылка", m.radiatorsLink);
-    addMeta("Potolki (mm)", m.ceilingsMm);
-    addMeta("Двери (mm)", m.doorsMm);
-    addMeta("Prochee (mm)", m.otherMm);
+
+    // Радиаторы (текст + ссылки)
+    const rad = m.radiators || { text: "", links: [] };
+    const radText = (rad.text || "").trim();
+    const radLinks = Array.isArray(rad.links) ? rad.links.map(x => (x || "").trim()).filter(Boolean) : [];
+    if (radText) addMeta("Радиаторы", radText);
+    if (radLinks.length) addMeta("Радиаторы — ссылки", radLinks.join(" | "));
+
+    addMeta("Высота потолков (мм)", m.ceilingsMm);
+    addMeta("Высота дверей (мм)", m.doorsMm);
+    addMeta("Прочее (мм)", m.otherMm);
 
     if (metaLines.length) {
       lines.push("ФАЙЛЫ / ДОП. ИНФО");
-      lines.push("------------");
+      lines.push("-----------------");
       lines.push(...metaLines);
       lines.push("");
     }
@@ -159,8 +169,9 @@ Views.BriefPro = (() => {
     return lines.join("\n");
   }
 
-  function renderMetaField(label, key, state, isTextArea) {
+  function renderMetaField(label, key, state, isTextArea, placeholder) {
     const val = (state.meta && state.meta[key] ? state.meta[key] : "").toString();
+    const ph = (placeholder || "").toString();
 
     if (state.mode === "view") {
       if (!val.trim()) return "";
@@ -185,7 +196,7 @@ Views.BriefPro = (() => {
       return (
         '<div style="margin-bottom:14px">' +
         '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
-        '<textarea data-meta="' + esc(key) + '" rows="3" style="width:100%; padding:10px; border-radius:12px;">' + esc(val) + "</textarea>" +
+        '<textarea data-meta="' + esc(key) + '" rows="3" style="width:100%; padding:10px; border-radius:12px;" placeholder="' + esc(ph) + '">' + esc(val) + "</textarea>" +
         "</div>"
       );
     }
@@ -193,7 +204,105 @@ Views.BriefPro = (() => {
     return (
       '<div style="margin-bottom:14px">' +
       '<div style="font-weight:600; margin-bottom:4px">' + esc(label) + "</div>" +
-      '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" style="width:100%; padding:10px; border-radius:12px;" placeholder="https://..." />' +
+      '<input data-meta="' + esc(key) + '" value="' + esc(val) + '" style="width:100%; padding:10px; border-radius:12px;" placeholder="' + esc(ph) + '" />' +
+      "</div>"
+    );
+  }
+
+  // --------- NEW: Radiators section exactly as requested ---------
+  function renderRadiatorsSection(state) {
+    const radPath = "meta.radiators";
+    const rad = getByPath(state, radPath) || { text: "", links: [] };
+    const links = Array.isArray(rad.links) ? rad.links : [];
+
+    if (state.mode === "view") {
+      const txt = (rad.text || "").trim();
+      const linksHtml = links
+        .map((u) => {
+          const url = (u || "").toString().trim();
+          if (!url) return "";
+          const label = url.replace(/^https?:\/\//i, "");
+          const short = label.length > 18 ? (label.slice(0, 18) + "…") : label;
+          if (/^https?:\/\//i.test(url)) {
+            return '<div style="margin-top:6px"><a href="' + esc(url) + '" target="_blank" rel="noopener" style="color:var(--brand-headings)" title="' + esc(url) + '">🔗 ' + esc(short) + "</a></div>";
+          }
+          return '<div style="margin-top:6px; color: var(--muted)" title="' + esc(url) + '">🔗 ' + esc(short) + "</div>";
+        })
+        .join("");
+
+      // If empty in view -> show nothing
+      if (!txt && linksHtml.length === 0) return "";
+
+      return (
+        '<div style="margin-bottom:16px">' +
+          '<div style="font-weight:700; margin-bottom:8px">Радиаторы</div>' +
+          (txt ? '<div style="white-space:pre-wrap">' + esc(txt) + "</div>" : "") +
+          linksHtml +
+        "</div>"
+      );
+    }
+
+    // edit mode: textarea | add link button (same row)
+    const linksInputs = links.length
+      ? links
+          .map((u, idx) => {
+            return (
+              '<div style="display:flex; gap:6px; align-items:center; margin-top:6px">' +
+                '<input class="mf-link" data-mf-path="' + esc(radPath) + '" data-mf-link-idx="' + idx + '" value="' + esc(u) + '" placeholder="https://ссылка-на-радиатор" style="flex:1; padding:8px 10px; border-radius:12px;" />' +
+                '<button type="button" class="btn mf-del-link" data-mf-path="' + esc(radPath) + '" data-mf-link-idx="' + idx + '" title="Удалить ссылку"><span class="dot"></span>−</button>' +
+              "</div>"
+            );
+          })
+          .join("")
+      : "";
+
+    return (
+      '<div style="margin-bottom:18px">' +
+        '<div style="font-weight:700; margin-bottom:8px">Радиаторы</div>' +
+        '<div style="display:flex; gap:10px; align-items:flex-start">' +
+          '<textarea class="mf-text" data-mf-path="' + esc(radPath) + '" rows="3" placeholder="Текст (модель/цвет/примечания)…" style="flex:1; padding:10px; border-radius:12px;"></textarea>' +
+          '<button type="button" class="btn mf-add-link" data-mf-path="' + esc(radPath) + '" style="white-space:nowrap;"><span class="dot"></span>Добавить ссылку</button>' +
+        "</div>" +
+        linksInputs +
+      "</div>"
+    );
+  }
+
+  // --------- NEW: Heights row (3 columns) ---------
+  function renderHeightsRow(state) {
+    if (state.mode === "view") {
+      const a = (state.meta.ceilingsMm || "").toString().trim();
+      const b = (state.meta.doorsMm || "").toString().trim();
+      const c = (state.meta.otherMm || "").toString().trim();
+      if (!a && !b && !c) return "";
+
+      const cell = (title, val) =>
+        '<div style="flex:1; min-width:220px">' +
+          '<div style="font-weight:700; margin-bottom:6px">' + esc(title) + "</div>" +
+          '<div style="padding:10px; border-radius:12px; border:1px solid var(--border); background: rgba(26,23,20,.35)">' + esc(val || "—") + "</div>" +
+        "</div>";
+
+      return (
+        '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px">' +
+          cell("Высота потолков", a) +
+          cell("Высота дверей", b) +
+          cell("Прочее", c) +
+        "</div>"
+      );
+    }
+
+    // edit mode
+    const input = (title, key, ph) =>
+      '<div style="flex:1; min-width:220px">' +
+        '<div style="font-weight:700; margin-bottom:6px">' + esc(title) + "</div>" +
+        '<input data-meta="' + esc(key) + '" value="' + esc((state.meta && state.meta[key]) || "") + '" placeholder="' + esc(ph) + '" style="width:100%; padding:10px; border-radius:12px;" />' +
+      "</div>";
+
+    return (
+      '<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px">' +
+        input("Высота потолков", "ceilingsMm", "0000мм") +
+        input("Высота дверей", "doorsMm", "0000мм") +
+        input("Прочее", "otherMm", "") +
       "</div>"
     );
   }
@@ -262,20 +371,26 @@ Views.BriefPro = (() => {
 
       '<div class="markdown" style="opacity:.95">' +
       "<h2>Файлы и ссылки проекта</h2>" +
-      renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state) +
-      renderMetaField("Ссылка на свет (DWG)", "lightDwg", state) +
-      renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state) +
-      renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state) +
-      renderMetaField("Ссылка на концепт", "conceptLink", state) +
-      renderMetaField("Радиаторы", "radiators", state, true) +
-      renderMetaField("Радиаторы — ссылка", "radiatorsLink", state) +
-      renderMetaField("Потолки (0000мм)", "ceilingsMm", state) +
-      renderMetaField("Двери (0000mm)", "doorsMm", state) +
-      renderMetaField("Прочее (0000мм)", "otherMm", state) +
+      renderMetaField("Фото на замере (Google Drive)", "surveyPhotosLink", state, false, "https://...") +
+      renderMetaField("Ссылка на свет (DWG)", "lightDwg", state, false, "https://...") +
+      renderMetaField("Ссылка на план мебели (DWG)", "furniturePlanDwg", state, false, "https://...") +
+      renderMetaField("Ссылка на чертежи (PDF)", "drawingsPdf", state, false, "https://...") +
+      renderMetaField("Ссылка на концепт", "conceptLink", state, false, "https://...") +
+      renderRadiatorsSection(state) +
+      renderHeightsRow(state) +
       "</div>" +
       "</div>";
 
     viewer.innerHTML = html;
+
+    // fill radiators textarea value (because we didn't inject it into HTML to keep it simple)
+    if(state.mode === "edit"){
+      const ta = viewer.querySelector('textarea.mf-text[data-mf-path="meta.radiators"]');
+      if(ta){
+        const rad = getByPath(state, "meta.radiators") || { text:"", links:[] };
+        ta.value = (rad.text || "");
+      }
+    }
 
     bind(viewer, state);
     setStatus(String((state.rooms || []).length));
@@ -293,6 +408,7 @@ Views.BriefPro = (() => {
       (e) => {
         const t = e.target;
 
+        // meta inputs
         if (t && t.dataset && t.dataset.meta) {
           const key = t.dataset.meta;
           state.meta[key] = t.value;
@@ -300,6 +416,7 @@ Views.BriefPro = (() => {
           return;
         }
 
+        // room name
         if (t && t.classList && t.classList.contains("rr-name")) {
           const idx = Number(t.dataset.roomIdx);
           if (Number.isFinite(idx) && state.rooms[idx]) {
@@ -309,6 +426,7 @@ Views.BriefPro = (() => {
           return;
         }
 
+        // multiField text (works for rooms AND meta.radiators)
         if (t && t.classList && t.classList.contains("mf-text")) {
           const path = t.dataset.mfPath;
           const cell = getByPath(state, path) || { text: "", links: [] };
@@ -318,6 +436,7 @@ Views.BriefPro = (() => {
           return;
         }
 
+        // multiField link input
         if (t && t.classList && t.classList.contains("mf-link")) {
           const path = t.dataset.mfPath;
           const li = Number(t.dataset.mfLinkIdx);
@@ -339,13 +458,13 @@ Views.BriefPro = (() => {
         const btn = e.target.closest("button");
         if (!btn) return;
 
+        // mode
         if (btn.id === "bp_to_view") {
           state.mode = "view";
           save(state);
           rerender();
           return;
         }
-
         if (btn.id === "bp_to_edit") {
           state.mode = "edit";
           save(state);
@@ -353,6 +472,7 @@ Views.BriefPro = (() => {
           return;
         }
 
+        // add room
         if (btn.id === "bp_add_room") {
           state.rooms.push(defaultRoom());
           save(state);
@@ -360,23 +480,23 @@ Views.BriefPro = (() => {
           return;
         }
 
+        // export
         if (btn.id === "bp_copy") {
           navigator.clipboard.writeText(buildExportText(state));
           alert("Скопировано ✅");
           return;
         }
-
         if (btn.id === "bp_download") {
           downloadText("TZ_vizualizatoru_PRO.txt", buildExportText(state));
           return;
         }
-
         if (btn.id === "bp_csv") {
           const csv = Utils.Exporters.briefToCSV(state);
           Utils.Exporters.download("TZ_vizualizatoru_PRO.csv", csv);
           return;
         }
 
+        // delete room
         if (btn.classList.contains("rr-del")) {
           const idx = Number(btn.dataset.roomIdx);
           if (Number.isFinite(idx)) {
@@ -388,6 +508,7 @@ Views.BriefPro = (() => {
           return;
         }
 
+        // add link
         if (btn.classList.contains("mf-add-link")) {
           const path = btn.dataset.mfPath;
           const cell = getByPath(state, path) || { text: "", links: [] };
@@ -399,6 +520,7 @@ Views.BriefPro = (() => {
           return;
         }
 
+        // delete link
         if (btn.classList.contains("mf-del-link")) {
           const path = btn.dataset.mfPath;
           const li = Number(btn.dataset.mfLinkIdx);
@@ -422,5 +544,3 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
-
-

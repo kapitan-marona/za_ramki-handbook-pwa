@@ -16,18 +16,40 @@ Components.MultiField = (() => {
 
   function shortLabel(url){
     const clean = (url || "").replace(/^https?:\/\//i, "");
-    const n = 7;
+    const n = 22;
     return clean.length > n ? (clean.slice(0, n) + "…") : clean;
   }
 
-  function render({ value, mode, placeholderText, placeholderLink, path }){
-    const v = value || { text:"", links:[] };
+  function normalize(value){
+    const v = value || {};
     const links = Array.isArray(v.links) ? v.links : [];
+
+    let textItems = Array.isArray(v.textItems) ? v.textItems : [];
+    const legacyText = (v.text ?? "").toString();
+    if(!textItems.length && legacyText.trim()){
+      textItems = [legacyText];
+    }
+
+    return { ...v, links, textItems };
+  }
+
+  function render({ value, mode, placeholderText, placeholderLink, path }){
+    const v = normalize(value);
+    const links = v.links;
+    const textItems = v.textItems;
+
     const pText = placeholderText || "";
     const pLink = placeholderLink || "https://…";
 
     if(mode === "view"){
-      const txt = (v.text || "").trim();
+      const textsHtml = textItems.length
+        ? textItems
+            .map((t) => {
+              const s = (t || "").trim();
+              return s ? `<div class="mf-textview">${esc(s)}</div>` : "";
+            })
+            .join("")
+        : `<div class="mf-muted">${esc(pText || "")}</div>`;
 
       const linksHtml = links
         .map((u) => {
@@ -52,13 +74,34 @@ Components.MultiField = (() => {
 
       return `
         <div class="mf mf-view" data-mf-path="${esc(path)}">
-          ${txt ? `<div class="mf-textview">${esc(txt)}</div>` : `<div class="mf-muted">${esc(pText || "")}</div>`}
+          ${textsHtml}
           ${linksHtml}
         </div>
       `;
     }
 
-    // edit mode
+    // edit mode: NO text field by default; user adds via "+ инфо"
+    const textInputs = textItems.length
+      ? textItems.map((t, idx) => `
+          <div class="mf-row">
+            <textarea
+              class="mf-textitem"
+              data-mf-path="${esc(path)}"
+              data-mf-text-idx="${idx}"
+              rows="2"
+              placeholder="${esc(pText)}"
+            >${esc(t || "")}</textarea>
+            <button
+              type="button"
+              class="btn btn-sm btn-icon mf-del-text"
+              data-mf-path="${esc(path)}"
+              data-mf-text-idx="${idx}"
+              title="Удалить инфо"
+            >−</button>
+          </div>
+        `).join("")
+      : "";
+
     const linksInputs = links.length
       ? links.map((u, idx) => `
           <div class="mf-row">
@@ -82,17 +125,12 @@ Components.MultiField = (() => {
 
     return `
       <div class="mf mf-edit" data-mf-path="${esc(path)}">
-        <textarea
-          class="mf-text"
-          data-mf-path="${esc(path)}"
-          rows="3"
-          placeholder="${esc(pText)}"
-        >${esc(v.text || "")}</textarea>
-
         <div class="mf-actions">
+          <button type="button" class="btn btn-sm mf-add-text" data-mf-path="${esc(path)}">+ инфо</button>
           <button type="button" class="btn btn-sm mf-add-link" data-mf-path="${esc(path)}">+ ссылка</button>
         </div>
 
+        ${textInputs}
         ${linksInputs}
       </div>
     `;

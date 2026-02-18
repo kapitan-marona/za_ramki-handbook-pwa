@@ -258,3 +258,17 @@ body{
 }
 
 /* If table class differs, we can adjust selector later */
+
+/* BriefPro: make table surface and sticky first column use the same background */
+.bp-table {
+  --bp-table-bg: rgba(20,20,20,0.98);
+  background: var(--bp-table-bg);
+}
+
+.bp-table td:first-child,
+.bp-table th:first-child {
+  background: var(--bp-table-bg) !important;
+  z-index: 3;
+}
+
+.bp-table th { z-index: 4; }

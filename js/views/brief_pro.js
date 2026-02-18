@@ -390,25 +390,64 @@ Views.BriefPro = (() => {
         return;
       }
 
+      // NEW: multiple info text fields
+      if (t && t.classList && t.classList.contains("mf-textitem")) {
+        const path = t.dataset.mfPath;
+        const ti = Number(t.dataset.mfTextIdx);
+        const cell = getByPath(state, path) || { text: "", links: [] };
+
+        if (!Array.isArray(cell.textItems)) cell.textItems = [];
+        // migrate legacy text -> textItems (only once)
+        if (!cell.textItems.length && (cell.text || "").toString().trim()) {
+          cell.textItems = [(cell.text || "").toString()];
+        }
+
+        if (Number.isFinite(ti) && ti >= 0) {
+          while (cell.textItems.length <= ti) cell.textItems.push("");
+          cell.textItems[ti] = t.value;
+
+          // legacy mirror for backward compatibility
+          cell.text = cell.textItems
+            .map(x => (x ?? "").toString())
+            .filter(x => x.trim() !== "")
+            .join("\n");
+
+          setByPath(state, path, cell);
+          save(state);
+        }
+        return;
+      }
+
+      // legacy single textarea (keep if still present somewhere)
       if (t && t.classList && t.classList.contains("mf-text")) {
         const path = t.dataset.mfPath;
         const cell = getByPath(state, path) || { text: "", links: [] };
         cell.text = t.value;
+
+        if (!Array.isArray(cell.textItems)) cell.textItems = [];
+        if (!cell.textItems.length && (cell.text || "").toString().trim()) {
+          cell.textItems = [(cell.text || "").toString()];
+        } else if (cell.textItems.length) {
+          cell.textItems[0] = (cell.text || "").toString();
+        }
+
         setByPath(state, path, cell);
         save(state);
         return;
       }
 
+      // links (unchanged)
       if (t && t.classList && t.classList.contains("mf-link")) {
         const path = t.dataset.mfPath;
         const li = Number(t.dataset.mfLinkIdx);
         const cell = getByPath(state, path) || { text: "", links: [] };
         if (!Array.isArray(cell.links)) cell.links = [];
-        if (Number.isFinite(li)) {
+        if (Number.isFinite(li) && li >= 0) {
           cell.links[li] = t.value;
           setByPath(state, path, cell);
           save(state);
         }
+        return;
       }
     }, { signal });
 
@@ -514,6 +553,50 @@ Views.BriefPro = (() => {
         return;
       }
 
+      if (btn.classList.contains("mf-add-text")) {
+        const path = btn.dataset.mfPath;
+        const cell = getByPath(state, path) || { text: "", links: [] };
+
+        if (!Array.isArray(cell.textItems)) cell.textItems = [];
+        if (!cell.textItems.length && (cell.text || "").toString().trim()) {
+          cell.textItems = [(cell.text || "").toString()];
+        }
+
+        cell.textItems.push("");
+        cell.text = cell.textItems
+          .map(x => (x ?? "").toString())
+          .filter(x => x.trim() !== "")
+          .join("\n");
+
+        setByPath(state, path, cell);
+        save(state);
+        rerender(); # focus optional; keep simple/stable
+        return;
+      }
+
+      if (btn.classList.contains("mf-del-text")) {
+        const path = btn.dataset.mfPath;
+        const ti = Number(btn.dataset.mfTextIdx);
+        const cell = getByPath(state, path) || { text: "", links: [] };
+
+        if (!Array.isArray(cell.textItems)) cell.textItems = [];
+        if (!cell.textItems.length && (cell.text || "").toString().trim()) {
+          cell.textItems = [(cell.text || "").toString()];
+        }
+
+        if (Number.isFinite(ti) && ti >= 0) {
+          cell.textItems.splice(ti, 1);
+          cell.text = cell.textItems
+            .map(x => (x ?? "").toString())
+            .filter(x => x.trim() !== "")
+            .join("\n");
+
+          setByPath(state, path, cell);
+          save(state);
+          rerender();
+        }
+        return;
+      }
       if (btn.classList.contains("mf-add-link")) {
         const path = btn.dataset.mfPath;
         const cell = getByPath(state, path) || { text: "", links: [] };
@@ -546,5 +629,6 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+
 
 

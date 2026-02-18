@@ -589,9 +589,7 @@ input:focus, textarea:focus{
 /* ============================= */
 
 /* Viewer area becomes solid dark so page gradients don't show through */
-#viewer{
-  background: #111827 !important;
-}
+#viewer { background: var(--brand-card) !important; }
 
 /* If BriefPro content is wrapped into .markdown – make it solid too */
 #viewer .markdown{
@@ -731,4 +729,5 @@ body{
 .bp-tablewrap::after{
   display:none !important;
 }
+
 

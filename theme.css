@@ -1,5 +1,5 @@
-/* ===========================
-   ZA RAMKI — Brand Theme (UI-tuned)
+п»ї/* ===========================
+   ZA RAMKI вЂ” Brand Theme (UI-tuned)
    =========================== */
 
 /* ---------- Fonts (local) ---------- */
@@ -11,7 +11,7 @@
   font-display: swap;
 }
 
-/* Roboto оставляем подключённым, но пока НЕ используем как основной */
+/* Roboto РѕСЃС‚Р°РІР»СЏРµРј РїРѕРґРєР»СЋС‡С‘РЅРЅС‹Рј, РЅРѕ РїРѕРєР° РќР• РёСЃРїРѕР»СЊР·СѓРµРј РєР°Рє РѕСЃРЅРѕРІРЅРѕР№ */
 @font-face{
   font-family: "RobotoCustom";
   src: url("./assets/fonts/Roboto-Regular.ttf") format("truetype");
@@ -30,15 +30,15 @@
 /* ---------- Palette + override base tokens ---------- */
 :root{
   /* tuned close to your brand */
-  --brand-accent: #C03A14;     /* мягче, но близко к B43202 */
-  --brand-bg: #1E1B18;         /* тёплый графит вместо “синего” */
-  --brand-headings: #FFF3EA;   /* близко к FFF4EB */
-  --brand-text: #EEE6DE;       /* почти белый, тёплый */
+  --brand-accent: #C03A14;     /* РјСЏРіС‡Рµ, РЅРѕ Р±Р»РёР·РєРѕ Рє B43202 */
+  --brand-bg: #1E1B18;         /* С‚С‘РїР»С‹Р№ РіСЂР°С„РёС‚ РІРјРµСЃС‚Рѕ вЂњСЃРёРЅРµРіРѕвЂќ */
+  --brand-headings: #FFF3EA;   /* Р±Р»РёР·РєРѕ Рє FFF4EB */
+  --brand-text: #EEE6DE;       /* РїРѕС‡С‚Рё Р±РµР»С‹Р№, С‚С‘РїР»С‹Р№ */
   --brand-muted: rgba(238,230,222,.72);
 
   /* no-blue surfaces */
-  --brand-panel: rgba(30,27,24,.82);   /* для шапки/панелей */
-  --brand-card: rgba(26,23,20,.88);    /* для карточек/пустых блоков */
+  --brand-panel: rgba(30,27,24,.82);   /* РґР»СЏ С€Р°РїРєРё/РїР°РЅРµР»РµР№ */
+  --brand-card: rgba(26,23,20,.88);    /* РґР»СЏ РєР°СЂС‚РѕС‡РµРє/РїСѓСЃС‚С‹С… Р±Р»РѕРєРѕРІ */
   --brand-item: rgba(26,23,20,.72);
 
   /* borders */
@@ -110,7 +110,7 @@ body{
   border: 1px solid var(--border) !important;
 }
 
-/* tabs area (this is where your “синий” was) */
+/* tabs area (this is where your вЂњСЃРёРЅРёР№вЂќ was) */
 .tabs{
   background: rgba(26,23,20,.92) !important;
   border-bottom: 1px solid var(--border) !important;
@@ -130,7 +130,7 @@ body{
 }
 .item:hover{ border-color: var(--brand-border-accent) !important; }
 
-/* empty blocks (your “Выбери статью слева...” box) */
+/* empty blocks (your вЂњР’С‹Р±РµСЂРё СЃС‚Р°С‚СЊСЋ СЃР»РµРІР°...вЂќ box) */
 .viewer .empty{
   background: rgba(26,23,20,.72) !important;
   border: 1px dashed var(--border) !important;
@@ -326,10 +326,10 @@ input:focus, textarea:focus{
   width:100%;
   padding:10px;
   border-radius:12px;
-  margin-bottom:4px; /* приклеили */
+  margin-bottom:4px; /* РїСЂРёРєР»РµРёР»Рё */
 }
 .mf-actions{
-  margin: 0 0 8px 0; /* меньше пустоты */
+  margin: 0 0 8px 0; /* РјРµРЅСЊС€Рµ РїСѓСЃС‚РѕС‚С‹ */
 }
 .mf-row{
   display:flex;
@@ -362,136 +362,89 @@ input:focus, textarea:focus{
 
 
 /* ============================= */
-/* DARK UI: Scrollbars + Select  */
+/* BriefPro + Scrollbars system  */
 /* ============================= */
 
 :root{
   color-scheme: dark;
 }
 
-/* Firefox */
-*{
-  scrollbar-width: thin;
-  
-}
+/* Scrollbars */
 
-/* Chrome / Edge / Safari */
 ::-webkit-scrollbar{
   width: 10px;
   height: 10px;
 }
+
 ::-webkit-scrollbar-track{
   background: var(--brand-bg);
 }
+
 ::-webkit-scrollbar-thumb{
-  background: #374151;
+  background: var(--brand-card);
   border-radius: 999px;
   border: 2px solid var(--brand-bg);
 }
-::-webkit-scrollbar-thumb:hover{
-  background: #4B5563;
-}
 
+::-webkit-scrollbar-thumb:hover{
+  background: var(--brand-item);
+}
 
 /* MultiField link label select */
 
 .mf-label-select{
-  background: var(--brand-bg);
-  color: #E5E7EB;
-  border: 1px solid #334155;
+  background: var(--brand-card);
+  color: var(--brand-text);
+  border: 1px solid var(--brand-border);
   border-radius: 10px;
-  padding: 6px 10px;
-  height: 34px;
-  outline: none;
-  font-size: 13px;
+  padding: 4px 8px;
+  height: 30px;
+  font-size: 12px;
 }
 
-.mf-label-select:focus{
-  border-color: #64748B;
-}
-
-.mf-label-select option{
-  background: var(--brand-bg);
-  color: #E5E7EB;
-}
-
-
-
-
-/* ============================= */
-/* BriefPro table polish         */
-/* ============================= */
-
-/* 1) Fix "white strip" + unify table background */
-.bp-tablewrap{
-  background: var(--brand-bg);
-  padding-left: 0;
-  border-radius: 14px; /* если у тебя есть скругление — будет красиво */
-}
-
-/* если где-то фон таблицы не задан */
-.bp-table{
-  background: var(--brand-bg);
-}
-
-/* 2) Make sticky first column opaque (and above everything) */
-.bp-table th.sticky,
-.bp-table td.sticky{
-  background: var(--brand-bg) !important;
-  z-index: 6;
-}
-
-/* sticky header cells тоже должны быть непрозрачные */
-.bp-table thead th{
-  background-clip: padding-box;
-  z-index: 7;
-}
-
-/* иногда “полоска” — это border/box-shadow слева у ячеек */
-.bp-table,
-.bp-table th,
-.bp-table td{
-  border-left-color: rgba(255,255,255,0.08);
-  background-clip: padding-box;
-}
-
-/* 3) Remove blue focus ring (select + inputs) and match table palette */
-.mf-label-select{
-  background: var(--brand-bg);
-  border-color: #1F2937;
-}
-
-/* убираем синий outline на фокусе */
 .mf-label-select:focus,
 .mf-label-select:focus-visible,
 .mf-link:focus,
-.mf-link:focus-visible,
-.mf-textitem:focus,
-.mf-textitem:focus-visible{
-  outline: none !important;
-  box-shadow: 0 0 0 2px rgba(148,163,184,0.22) !important; /* мягкое “табличное” кольцо */
-  border-color: #334155 !important;
+.mf-textitem:focus{
+  outline: none;
+  box-shadow: 0 0 0 2px var(--brand-border-accent);
+  border-color: var(--brand-accent);
 }
 
-/* Scrollbars: closer to table palette (thumb/track/hover) */
-*{
-  
+.mf-label-select option{
+  background: var(--brand-card);
+  color: var(--brand-text);
 }
 
-::-webkit-scrollbar-track{
-  background: var(--brand-bg);
-}
-::-webkit-scrollbar-thumb{
-  background: #1F2937;
-  border: 2px solid var(--brand-bg);
-}
-::-webkit-scrollbar-thumb:hover{
-  background: #334155;
+/* BriefPro table */
+
+.bp-tablewrap{
+  background: var(--brand-card);
+  border-radius: 14px;
 }
 
+.bp-table{
+  background: var(--brand-card);
+}
 
+.bp-table,
+.bp-table th,
+.bp-table td{
+  border-color: var(--brand-border);
+}
 
-/* ============================= */
+/* Sticky column */
+.bp-table th.sticky,
+.bp-table td.sticky{
+  background: var(--brand-card);
+  z-index: 5;
+}
+
+/* Header */
+.bp-table thead th{
+  background: var(--brand-item);
+  z-index: 6;
+}/* ============================= */
 /* BriefPro: kill blue gradients */
 /* ============================= */
 
@@ -502,8 +455,8 @@ input:focus, textarea:focus{
 .bp-table tr,
 .bp-table th,
 .bp-table td{
-  background-color: var(--brand-card) !important;     /* нужный тёмный */
-  background-image: none !important;       /* убиваем синий/градиенты */
+  background-color: var(--brand-card) !important;     /* РЅСѓР¶РЅС‹Р№ С‚С‘РјРЅС‹Р№ */
+  background-image: none !important;       /* СѓР±РёРІР°РµРј СЃРёРЅРёР№/РіСЂР°РґРёРµРЅС‚С‹ */
 }
 
 /* Sticky first column must be opaque and above */
@@ -554,10 +507,10 @@ input:focus, textarea:focus{
 .bp-tablewrap{
   background: var(--brand-bg) !important;
   background-image: none !important;
-  overflow: hidden !important; /* убирает “просветы” у скруглений/краёв */
+  overflow: hidden !important; /* СѓР±РёСЂР°РµС‚ вЂњРїСЂРѕСЃРІРµС‚С‹вЂќ Сѓ СЃРєСЂСѓРіР»РµРЅРёР№/РєСЂР°С‘РІ */
 }
 
-/* ВАЖНО: фон у тебя задаётся классами bp-th и td, перебиваем их */
+/* Р’РђР–РќРћ: С„РѕРЅ Сѓ С‚РµР±СЏ Р·Р°РґР°С‘С‚СЃСЏ РєР»Р°СЃСЃР°РјРё bp-th Рё td, РїРµСЂРµР±РёРІР°РµРј РёС… */
 .bp-table,
 .bp-table td,
 .bp-th,
@@ -568,7 +521,7 @@ input:focus, textarea:focus{
   background-image: none !important;
 }
 
-/* Sticky first column: непрозрачная и поверх */
+/* Sticky first column: РЅРµРїСЂРѕР·СЂР°С‡РЅР°СЏ Рё РїРѕРІРµСЂС… */
 .bp-th.sticky,
 .bp-table td.sticky{
   background-color: var(--brand-card) !important;
@@ -576,7 +529,7 @@ input:focus, textarea:focus{
   z-index: 20 !important;
 }
 
-/* Header поверх sticky */
+/* Header РїРѕРІРµСЂС… sticky */
 .bp-table thead .bp-th{
   z-index: 30 !important;
 }
@@ -591,7 +544,7 @@ input:focus, textarea:focus{
 /* Viewer area becomes solid dark so page gradients don't show through */
 #viewer { background: var(--brand-card) !important; }
 
-/* If BriefPro content is wrapped into .markdown – make it solid too */
+/* If BriefPro content is wrapped into .markdown вЂ“ make it solid too */
 #viewer .markdown{
   background: var(--brand-bg) !important;
 }
@@ -627,17 +580,17 @@ input:focus, textarea:focus{
 /* BriefPro: FINAL FIX (wins all)*/
 /* ============================= */
 
-/* 1) Вернуть прокрутку */
+/* 1) Р’РµСЂРЅСѓС‚СЊ РїСЂРѕРєСЂСѓС‚РєСѓ */
 .bp-tablewrap{
   overflow: auto !important;
 }
 
-/* 2) Убрать “прозрачные” td из styles.css (они показывают синеву) */
+/* 2) РЈР±СЂР°С‚СЊ вЂњРїСЂРѕР·СЂР°С‡РЅС‹РµвЂќ td РёР· styles.css (РѕРЅРё РїРѕРєР°Р·С‹РІР°СЋС‚ СЃРёРЅРµРІСѓ) */
 .bp-table tr[data-room-row] td{
   background: rgba(26,23,20,.35) !important;
 }
 
-/* 3) Общий фон таблицы/шапки — тёплый, без синего */
+/* 3) РћР±С‰РёР№ С„РѕРЅ С‚Р°Р±Р»РёС†С‹/С€Р°РїРєРё вЂ” С‚С‘РїР»С‹Р№, Р±РµР· СЃРёРЅРµРіРѕ */
 .bp-tablewrap{
   background: rgba(26,23,20,.55) !important;
 }
@@ -645,19 +598,19 @@ input:focus, textarea:focus{
   background: rgba(26,23,20,.35) !important;
 }
 
-/* шапка */
+/* С€Р°РїРєР° */
 .bp-th{
   background: rgba(26,23,20,.92) !important;
   background-image: none !important;
 }
 
-/* обычные ячейки (если у тебя есть td без data-room-row) */
+/* РѕР±С‹С‡РЅС‹Рµ СЏС‡РµР№РєРё (РµСЃР»Рё Сѓ С‚РµР±СЏ РµСЃС‚СЊ td Р±РµР· data-room-row) */
 .bp-table td{
   background: rgba(26,23,20,.35) !important;
   background-image: none !important;
 }
 
-/* 4) Sticky first column: непрозрачная и без белых полос */
+/* 4) Sticky first column: РЅРµРїСЂРѕР·СЂР°С‡РЅР°СЏ Рё Р±РµР· Р±РµР»С‹С… РїРѕР»РѕСЃ */
 .bp-table td:first-child,
 .bp-table th:first-child,
 .rr-sticky,
@@ -667,7 +620,7 @@ input:focus, textarea:focus{
   z-index: 50 !important;
 }
 
-/* 5) Добить белую полоску слева (часто это псевдо-слой/тень) */
+/* 5) Р”РѕР±РёС‚СЊ Р±РµР»СѓСЋ РїРѕР»РѕСЃРєСѓ СЃР»РµРІР° (С‡Р°СЃС‚Рѕ СЌС‚Рѕ РїСЃРµРІРґРѕ-СЃР»РѕР№/С‚РµРЅСЊ) */
 .bp-tablewrap::before,
 .bp-tablewrap::after{
   display:none !important;
@@ -682,29 +635,29 @@ input:focus, textarea:focus{
 /* BriefPro: STOP BLUE (hard)    */
 /* ============================= */
 
-/* 0) На всякий: убиваем градиенты страницы (они и дают “синеву”) */
+/* 0) РќР° РІСЃСЏРєРёР№: СѓР±РёРІР°РµРј РіСЂР°РґРёРµРЅС‚С‹ СЃС‚СЂР°РЅРёС†С‹ (РѕРЅРё Рё РґР°СЋС‚ вЂњСЃРёРЅРµРІСѓвЂќ) */
 body{
   background: var(--bg) !important;
   background-image: none !important;
 }
 
-/* 1) Карточка viewer — тёплая, без синего */
+/* 1) РљР°СЂС‚РѕС‡РєР° viewer вЂ” С‚С‘РїР»Р°СЏ, Р±РµР· СЃРёРЅРµРіРѕ */
 .viewer{
   background: var(--brand-card) !important;
   background-image: none !important;
 }
 
-/* 2) ГЛАВНОЕ: перебиваем прозрачные td из styles.css (!!important) */
+/* 2) Р“Р›РђР’РќРћР•: РїРµСЂРµР±РёРІР°РµРј РїСЂРѕР·СЂР°С‡РЅС‹Рµ td РёР· styles.css (!!important) */
 .bp-table tr[data-room-row] td{
-  background: rgba(26,23,20,.35) !important;   /* было transparent !important */
+  background: rgba(26,23,20,.35) !important;   /* Р±С‹Р»Рѕ transparent !important */
   background-image: none !important;
 }
 
-/* 3) Шапка и таблица — тёплые */
+/* 3) РЁР°РїРєР° Рё С‚Р°Р±Р»РёС†Р° вЂ” С‚С‘РїР»С‹Рµ */
 .bp-tablewrap{
   background: rgba(26,23,20,.55) !important;
   background-image: none !important;
-  overflow: auto !important;                  /* скролл должен жить */
+  overflow: auto !important;                  /* СЃРєСЂРѕР»Р» РґРѕР»Р¶РµРЅ Р¶РёС‚СЊ */
   padding-left: 0 !important;
 }
 
@@ -714,7 +667,7 @@ body{
   margin-left: 0 !important;
 }
 
-/* 4) Sticky первая колонка — непрозрачная */
+/* 4) Sticky РїРµСЂРІР°СЏ РєРѕР»РѕРЅРєР° вЂ” РЅРµРїСЂРѕР·СЂР°С‡РЅР°СЏ */
 .bp-table td:first-child,
 .bp-table th:first-child,
 .rr-sticky,
@@ -724,7 +677,7 @@ body{
   z-index: 50 !important;
 }
 
-/* 5) Белая полоса: чаще всего псевдоэлемент/тень */
+/* 5) Р‘РµР»Р°СЏ РїРѕР»РѕСЃР°: С‡Р°С‰Рµ РІСЃРµРіРѕ РїСЃРµРІРґРѕСЌР»РµРјРµРЅС‚/С‚РµРЅСЊ */
 .bp-tablewrap::before,
 .bp-tablewrap::after{
   display:none !important;
@@ -735,7 +688,7 @@ body{
 
 
 /* =========================================================
-   BRAND CLEANUP — remove blue tint everywhere
+   BRAND CLEANUP вЂ” remove blue tint everywhere
    ========================================================= */
 
 /* 1. Scrollbar */
@@ -830,3 +783,4 @@ select:focus {
 .bp-table {
   min-width: max-content;
 }
+

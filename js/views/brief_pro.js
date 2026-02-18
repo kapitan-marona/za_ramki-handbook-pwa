@@ -123,6 +123,52 @@ Views.BriefPro = (() => {
     cur[parts[parts.length - 1]] = value;
   }
 
+  // --- blocks support (ordered text/link) + legacy mirrors ---
+  function ensureBlocks(cell){
+    const c = cell || { text:"", links:[] };
+
+    if (!Array.isArray(c.links)) c.links = [];
+    if (!Array.isArray(c.textItems)) c.textItems = [];
+
+    if (!c.textItems.length && (c.text || "").toString().trim()) {
+      c.textItems = [(c.text || "").toString()];
+    }
+
+    if (!Array.isArray(c.blocks)) {
+      c.blocks = [];
+      c.textItems.forEach(t => c.blocks.push({ t:"text", v:(t ?? "").toString() }));
+      c.links.forEach(u => c.blocks.push({ t:"link", v:(u ?? "").toString() }));
+    } else {
+      c.blocks = c.blocks
+        .filter(b => b && (b.t === "text" || b.t === "link"))
+        .map(b => ({ t: b.t, v: (b.v ?? "").toString() }));
+    }
+
+    return c;
+  }
+
+  function syncLegacyFromBlocks(cell){
+    const c = ensureBlocks(cell);
+
+    const texts = [];
+    const links = [];
+
+    c.blocks.forEach(b => {
+      if (b.t === "text") texts.push((b.v ?? "").toString());
+      if (b.t === "link") links.push((b.v ?? "").toString());
+    });
+
+    c.textItems = texts;
+    c.links = links;
+
+    c.text = texts
+      .map(x => (x ?? "").toString())
+      .filter(x => x.trim() !== "")
+      .join("\n");
+
+    return c;
+  }
+
   function clearPendingDelete() {
     _pendingDeleteIdx = null;
     if (_pendingTimer) {
@@ -174,7 +220,8 @@ Views.BriefPro = (() => {
 
   function renderRadiatorsSection(state) {
     if (!state.meta.radiators || typeof state.meta.radiators !== "object") state.meta.radiators = { text:"", links:[] };
-    if (!Array.isArray(state.meta.radiators.links)) state.meta.radiators.links = [];
+    state.meta.radiators = ensureBlocks(state.meta.radiators);
+    state.meta.radiators = syncLegacyFromBlocks(state.meta.radiators);
 
     const mfHtml = Components.MultiField.render({
       value: state.meta.radiators,
@@ -331,10 +378,13 @@ Views.BriefPro = (() => {
           wrap.scrollTop = st;
         });
       }
+
       if (ui.focus && ui.focus.path) {
         const path = ui.focus.path;
         const idx = ui.focus.idx;
-        const selector = 'input.mf-link[data-mf-path="' + path.replace(/"/g, '\\"') + '"][data-mf-link-idx="' + idx + '"]';
+        const selector =
+          'input.mf-link[data-mf-path="' + path.replace(/"/g, '\\"') + '"][data-mf-kind="link"][data-mf-idx="' + idx + '"]';
+
         requestAnimationFrame(() => {
           const el = viewer.querySelector(selector);
           if (el) {
@@ -390,60 +440,20 @@ Views.BriefPro = (() => {
         return;
       }
 
-      // NEW: multiple info text fields
-      if (t && t.classList && t.classList.contains("mf-textitem")) {
+      // ordered blocks edit
+      if (t && t.classList && t.classList.contains("mf-block")) {
         const path = t.dataset.mfPath;
-        const ti = Number(t.dataset.mfTextIdx);
-        const cell = getByPath(state, path) || { text: "", links: [] };
+        const kind = t.dataset.mfKind;
+        const bi = Number(t.dataset.mfIdx);
 
-        if (!Array.isArray(cell.textItems)) cell.textItems = [];
-        // migrate legacy text -> textItems (only once)
-        if (!cell.textItems.length && (cell.text || "").toString().trim()) {
-          cell.textItems = [(cell.text || "").toString()];
-        }
+        let cell = getByPath(state, path) || { text:"", links:[] };
+        cell = ensureBlocks(cell);
 
-        if (Number.isFinite(ti) && ti >= 0) {
-          while (cell.textItems.length <= ti) cell.textItems.push("");
-          cell.textItems[ti] = t.value;
+        if (Number.isFinite(bi) && bi >= 0 && cell.blocks[bi]) {
+          if (kind === "text") cell.blocks[bi].v = t.value;
+          if (kind === "link") cell.blocks[bi].v = t.value;
 
-          // legacy mirror for backward compatibility
-          cell.text = cell.textItems
-            .map(x => (x ?? "").toString())
-            .filter(x => x.trim() !== "")
-            .join("\n");
-
-          setByPath(state, path, cell);
-          save(state);
-        }
-        return;
-      }
-
-      // legacy single textarea (keep if still present somewhere)
-      if (t && t.classList && t.classList.contains("mf-text")) {
-        const path = t.dataset.mfPath;
-        const cell = getByPath(state, path) || { text: "", links: [] };
-        cell.text = t.value;
-
-        if (!Array.isArray(cell.textItems)) cell.textItems = [];
-        if (!cell.textItems.length && (cell.text || "").toString().trim()) {
-          cell.textItems = [(cell.text || "").toString()];
-        } else if (cell.textItems.length) {
-          cell.textItems[0] = (cell.text || "").toString();
-        }
-
-        setByPath(state, path, cell);
-        save(state);
-        return;
-      }
-
-      // links (unchanged)
-      if (t && t.classList && t.classList.contains("mf-link")) {
-        const path = t.dataset.mfPath;
-        const li = Number(t.dataset.mfLinkIdx);
-        const cell = getByPath(state, path) || { text: "", links: [] };
-        if (!Array.isArray(cell.links)) cell.links = [];
-        if (Number.isFinite(li) && li >= 0) {
-          cell.links[li] = t.value;
+          cell = syncLegacyFromBlocks(cell);
           setByPath(state, path, cell);
           save(state);
         }
@@ -491,7 +501,6 @@ Views.BriefPro = (() => {
       }
 
       if (btn.id === "bp_xlsx") {
-        // Prefer true XLSX export (.xlsx via xlsx-js-style). No legacy .xls fallback.
         try {
           if (window.Utils && Utils.XLSXExport && typeof Utils.XLSXExport.downloadXLSX === "function") {
             Utils.XLSXExport.downloadXLSX(state, "TZ_vizualizatoru_PRO.xlsx");
@@ -500,7 +509,7 @@ Views.BriefPro = (() => {
         } catch (e) {
           console.error(e);
         }
-alert("Экспорт Excel недоступен. Проверь подключение скриптов (xlsx_exporter.js).");
+        alert("Экспорт Excel недоступен. Проверь подключение скриптов (xlsx_exporter.js).");
         return;
       }
 
@@ -548,69 +557,50 @@ alert("Экспорт Excel недоступен. Проверь подключ�
 
       if (btn.classList.contains("mf-add-text")) {
         const path = btn.dataset.mfPath;
-        const cell = getByPath(state, path) || { text: "", links: [] };
+        let cell = getByPath(state, path) || { text:"", links:[] };
+        cell = ensureBlocks(cell);
 
-        if (!Array.isArray(cell.textItems)) cell.textItems = [];
-        if (!cell.textItems.length && (cell.text || "").toString().trim()) {
-          cell.textItems = [(cell.text || "").toString()];
-        }
-
-        cell.textItems.push("");
-        cell.text = cell.textItems
-          .map(x => (x ?? "").toString())
-          .filter(x => x.trim() !== "")
-          .join("\n");
+        cell.blocks.push({ t:"text", v:"" });
+        cell = syncLegacyFromBlocks(cell);
 
         setByPath(state, path, cell);
         save(state);
-        rerender(); // optional focus (kept simple)
+        rerender();
         return;
       }
 
-      if (btn.classList.contains("mf-del-text")) {
-        const path = btn.dataset.mfPath;
-        const ti = Number(btn.dataset.mfTextIdx);
-        const cell = getByPath(state, path) || { text: "", links: [] };
-
-        if (!Array.isArray(cell.textItems)) cell.textItems = [];
-        if (!cell.textItems.length && (cell.text || "").toString().trim()) {
-          cell.textItems = [(cell.text || "").toString()];
-        }
-
-        if (Number.isFinite(ti) && ti >= 0) {
-          cell.textItems.splice(ti, 1);
-          cell.text = cell.textItems
-            .map(x => (x ?? "").toString())
-            .filter(x => x.trim() !== "")
-            .join("\n");
-
-          setByPath(state, path, cell);
-          save(state);
-          rerender();
-        }
-        return;
-      }
       if (btn.classList.contains("mf-add-link")) {
         const path = btn.dataset.mfPath;
-        const cell = getByPath(state, path) || { text: "", links: [] };
-        if (!Array.isArray(cell.links)) cell.links = [];
-        cell.links.push("");
+        let cell = getByPath(state, path) || { text:"", links:[] };
+        cell = ensureBlocks(cell);
+
+        cell.blocks.push({ t:"link", v:"" });
+        const newIdx = cell.blocks.length - 1;
+
+        cell = syncLegacyFromBlocks(cell);
         setByPath(state, path, cell);
         save(state);
-        rerender({ focus: { path: path, idx: cell.links.length - 1 } });
+
+        rerender({ focus: { path: path, idx: newIdx } });
         return;
       }
 
-      if (btn.classList.contains("mf-del-link")) {
+      if (btn.classList.contains("mf-del-block")) {
         const path = btn.dataset.mfPath;
-        const li = Number(btn.dataset.mfLinkIdx);
-        const cell = getByPath(state, path) || { text: "", links: [] };
-        if (Array.isArray(cell.links) && Number.isFinite(li)) {
-          cell.links.splice(li, 1);
+        const bi = Number(btn.dataset.mfIdx);
+
+        let cell = getByPath(state, path) || { text:"", links:[] };
+        cell = ensureBlocks(cell);
+
+        if (Number.isFinite(bi) && bi >= 0 && bi < cell.blocks.length) {
+          cell.blocks.splice(bi, 1);
+          cell = syncLegacyFromBlocks(cell);
+
           setByPath(state, path, cell);
           save(state);
           rerender();
         }
+        return;
       }
     }, { signal });
   }
@@ -622,10 +612,3 @@ alert("Экспорт Excel недоступен. Проверь подключ�
 
   return { open };
 })();
-
-
-
-
-
-
-

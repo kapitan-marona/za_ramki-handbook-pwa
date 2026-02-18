@@ -543,3 +543,41 @@ input:focus, textarea:focus{
 }
 
 
+
+
+
+
+/* ============================= */
+/* BriefPro: force solid table   */
+/* ============================= */
+
+.bp-tablewrap{
+  background: #111827 !important;
+  background-image: none !important;
+  overflow: hidden !important; /* убирает “просветы” у скруглений/краёв */
+}
+
+/* ВАЖНО: фон у тебя задаётся классами bp-th и td, перебиваем их */
+.bp-table,
+.bp-table td,
+.bp-th,
+.bp-th.group,
+.bp-th.mid,
+.bp-th.last{
+  background-color: #111827 !important;
+  background-image: none !important;
+}
+
+/* Sticky first column: непрозрачная и поверх */
+.bp-th.sticky,
+.bp-table td.sticky{
+  background-color: #111827 !important;
+  background-image: none !important;
+  z-index: 20 !important;
+}
+
+/* Header поверх sticky */
+.bp-table thead .bp-th{
+  z-index: 30 !important;
+}
+

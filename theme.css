@@ -1,5 +1,5 @@
-п»ї/* ===========================
-   ZA RAMKI вЂ” Brand Theme (UI-tuned)
+/* ===========================
+   ZA RAMKI — Brand Theme (UI-tuned)
    =========================== */
 
 /* ---------- Fonts (local) ---------- */
@@ -11,7 +11,7 @@
   font-display: swap;
 }
 
-/* Roboto РѕСЃС‚Р°РІР»СЏРµРј РїРѕРґРєР»СЋС‡С‘РЅРЅС‹Рј, РЅРѕ РїРѕРєР° РќР• РёСЃРїРѕР»СЊР·СѓРµРј РєР°Рє РѕСЃРЅРѕРІРЅРѕР№ */
+/* Roboto оставляем подключённым, но пока НЕ используем как основной */
 @font-face{
   font-family: "RobotoCustom";
   src: url("./assets/fonts/Roboto-Regular.ttf") format("truetype");
@@ -30,15 +30,15 @@
 /* ---------- Palette + override base tokens ---------- */
 :root{
   /* tuned close to your brand */
-  --brand-accent: #C03A14;     /* РјСЏРіС‡Рµ, РЅРѕ Р±Р»РёР·РєРѕ Рє B43202 */
-  --brand-bg: #1E1B18;         /* С‚С‘РїР»С‹Р№ РіСЂР°С„РёС‚ РІРјРµСЃС‚Рѕ вЂњСЃРёРЅРµРіРѕвЂќ */
-  --brand-headings: #FFF3EA;   /* Р±Р»РёР·РєРѕ Рє FFF4EB */
-  --brand-text: #EEE6DE;       /* РїРѕС‡С‚Рё Р±РµР»С‹Р№, С‚С‘РїР»С‹Р№ */
+  --brand-accent: #C03A14;     /* мягче, но близко к B43202 */
+  --brand-bg: #1E1B18;         /* тёплый графит вместо “синего” */
+  --brand-headings: #FFF3EA;   /* близко к FFF4EB */
+  --brand-text: #EEE6DE;       /* почти белый, тёплый */
   --brand-muted: rgba(238,230,222,.72);
 
   /* no-blue surfaces */
-  --brand-panel: rgba(30,27,24,.82);   /* РґР»СЏ С€Р°РїРєРё/РїР°РЅРµР»РµР№ */
-  --brand-card: rgba(26,23,20,.88);    /* РґР»СЏ РєР°СЂС‚РѕС‡РµРє/РїСѓСЃС‚С‹С… Р±Р»РѕРєРѕРІ */
+  --brand-panel: rgba(30,27,24,.82);   /* для шапки/панелей */
+  --brand-card: rgba(26,23,20,.88);    /* для карточек/пустых блоков */
   --brand-item: rgba(26,23,20,.72);
 
   /* borders */
@@ -110,7 +110,7 @@ body{
   border: 1px solid var(--border) !important;
 }
 
-/* tabs area (this is where your вЂњСЃРёРЅРёР№вЂќ was) */
+/* tabs area (this is where your “синий” was) */
 .tabs{
   background: rgba(26,23,20,.92) !important;
   border-bottom: 1px solid var(--border) !important;
@@ -130,7 +130,7 @@ body{
 }
 .item:hover{ border-color: var(--brand-border-accent) !important; }
 
-/* empty blocks (your вЂњР’С‹Р±РµСЂРё СЃС‚Р°С‚СЊСЋ СЃР»РµРІР°...вЂќ box) */
+/* empty blocks (your “Выбери статью слева...” box) */
 .viewer .empty{
   background: rgba(26,23,20,.72) !important;
   border: 1px dashed var(--border) !important;
@@ -221,7 +221,7 @@ input:focus, textarea:focus{
 }
 .btn.btn-sm:hover{ opacity: .95; }
 
-/* Small round icon button (for в€’) */
+/* Small round icon button (for ?) */
 .btn.btn-icon{
   width: 26px;
   height: 26px;
@@ -326,10 +326,10 @@ input:focus, textarea:focus{
   width:100%;
   padding:10px;
   border-radius:12px;
-  margin-bottom:4px; /* РїСЂРёРєР»РµРёР»Рё */
+  margin-bottom:4px; /* приклеили */
 }
 .mf-actions{
-  margin: 0 0 8px 0; /* РјРµРЅСЊС€Рµ РїСѓСЃС‚РѕС‚С‹ */
+  margin: 0 0 8px 0; /* меньше пустоты */
 }
 .mf-row{
   display:flex;
@@ -381,12 +381,12 @@ input:focus, textarea:focus{
   height: 10px;
 }
 ::-webkit-scrollbar-track{
-  background: #0B1220;
+  background: var(--brand-bg);
 }
 ::-webkit-scrollbar-thumb{
   background: #374151;
   border-radius: 999px;
-  border: 2px solid #0B1220;
+  border: 2px solid var(--brand-bg);
 }
 ::-webkit-scrollbar-thumb:hover{
   background: #4B5563;
@@ -396,7 +396,7 @@ input:focus, textarea:focus{
 /* MultiField link label select */
 
 .mf-label-select{
-  background: #0B1220;
+  background: var(--brand-bg);
   color: #E5E7EB;
   border: 1px solid #334155;
   border-radius: 10px;
@@ -411,7 +411,7 @@ input:focus, textarea:focus{
 }
 
 .mf-label-select option{
-  background: #0B1220;
+  background: var(--brand-bg);
   color: #E5E7EB;
 }
 
@@ -424,30 +424,30 @@ input:focus, textarea:focus{
 
 /* 1) Fix "white strip" + unify table background */
 .bp-tablewrap{
-  background: #0B1220;
+  background: var(--brand-bg);
   padding-left: 0;
-  border-radius: 14px; /* РµСЃР»Рё Сѓ С‚РµР±СЏ РµСЃС‚СЊ СЃРєСЂСѓРіР»РµРЅРёРµ вЂ” Р±СѓРґРµС‚ РєСЂР°СЃРёРІРѕ */
+  border-radius: 14px; /* если у тебя есть скругление — будет красиво */
 }
 
-/* РµСЃР»Рё РіРґРµ-С‚Рѕ С„РѕРЅ С‚Р°Р±Р»РёС†С‹ РЅРµ Р·Р°РґР°РЅ */
+/* если где-то фон таблицы не задан */
 .bp-table{
-  background: #0B1220;
+  background: var(--brand-bg);
 }
 
 /* 2) Make sticky first column opaque (and above everything) */
 .bp-table th.sticky,
 .bp-table td.sticky{
-  background: #0B1220 !important;
+  background: var(--brand-bg) !important;
   z-index: 6;
 }
 
-/* sticky header cells С‚РѕР¶Рµ РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РЅРµРїСЂРѕР·СЂР°С‡РЅС‹Рµ */
+/* sticky header cells тоже должны быть непрозрачные */
 .bp-table thead th{
   background-clip: padding-box;
   z-index: 7;
 }
 
-/* РёРЅРѕРіРґР° вЂњРїРѕР»РѕСЃРєР°вЂќ вЂ” СЌС‚Рѕ border/box-shadow СЃР»РµРІР° Сѓ СЏС‡РµРµРє */
+/* иногда “полоска” — это border/box-shadow слева у ячеек */
 .bp-table,
 .bp-table th,
 .bp-table td{
@@ -457,11 +457,11 @@ input:focus, textarea:focus{
 
 /* 3) Remove blue focus ring (select + inputs) and match table palette */
 .mf-label-select{
-  background: #0B1220;
+  background: var(--brand-bg);
   border-color: #1F2937;
 }
 
-/* СѓР±РёСЂР°РµРј СЃРёРЅРёР№ outline РЅР° С„РѕРєСѓСЃРµ */
+/* убираем синий outline на фокусе */
 .mf-label-select:focus,
 .mf-label-select:focus-visible,
 .mf-link:focus,
@@ -469,7 +469,7 @@ input:focus, textarea:focus{
 .mf-textitem:focus,
 .mf-textitem:focus-visible{
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(148,163,184,0.22) !important; /* РјСЏРіРєРѕРµ вЂњС‚Р°Р±Р»РёС‡РЅРѕРµвЂќ РєРѕР»СЊС†Рѕ */
+  box-shadow: 0 0 0 2px rgba(148,163,184,0.22) !important; /* мягкое “табличное” кольцо */
   border-color: #334155 !important;
 }
 
@@ -479,11 +479,11 @@ input:focus, textarea:focus{
 }
 
 ::-webkit-scrollbar-track{
-  background: #0B1220;
+  background: var(--brand-bg);
 }
 ::-webkit-scrollbar-thumb{
   background: #1F2937;
-  border: 2px solid #0B1220;
+  border: 2px solid var(--brand-bg);
 }
 ::-webkit-scrollbar-thumb:hover{
   background: #334155;
@@ -502,8 +502,8 @@ input:focus, textarea:focus{
 .bp-table tr,
 .bp-table th,
 .bp-table td{
-  background-color: var(--brand-card) !important;     /* РЅСѓР¶РЅС‹Р№ С‚С‘РјРЅС‹Р№ */
-  background-image: none !important;       /* СѓР±РёРІР°РµРј СЃРёРЅРёР№/РіСЂР°РґРёРµРЅС‚С‹ */
+  background-color: var(--brand-card) !important;     /* нужный тёмный */
+  background-image: none !important;       /* убиваем синий/градиенты */
 }
 
 /* Sticky first column must be opaque and above */
@@ -552,12 +552,12 @@ input:focus, textarea:focus{
 /* ============================= */
 
 .bp-tablewrap{
-  background: #111827 !important;
+  background: var(--brand-bg) !important;
   background-image: none !important;
-  overflow: hidden !important; /* СѓР±РёСЂР°РµС‚ вЂњРїСЂРѕСЃРІРµС‚С‹вЂќ Сѓ СЃРєСЂСѓРіР»РµРЅРёР№/РєСЂР°С‘РІ */
+  overflow: hidden !important; /* убирает “просветы” у скруглений/краёв */
 }
 
-/* Р’РђР–РќРћ: С„РѕРЅ Сѓ С‚РµР±СЏ Р·Р°РґР°С‘С‚СЃСЏ РєР»Р°СЃСЃР°РјРё bp-th Рё td, РїРµСЂРµР±РёРІР°РµРј РёС… */
+/* ВАЖНО: фон у тебя задаётся классами bp-th и td, перебиваем их */
 .bp-table,
 .bp-table td,
 .bp-th,
@@ -568,7 +568,7 @@ input:focus, textarea:focus{
   background-image: none !important;
 }
 
-/* Sticky first column: РЅРµРїСЂРѕР·СЂР°С‡РЅР°СЏ Рё РїРѕРІРµСЂС… */
+/* Sticky first column: непрозрачная и поверх */
 .bp-th.sticky,
 .bp-table td.sticky{
   background-color: var(--brand-card) !important;
@@ -576,7 +576,7 @@ input:focus, textarea:focus{
   z-index: 20 !important;
 }
 
-/* Header РїРѕРІРµСЂС… sticky */
+/* Header поверх sticky */
 .bp-table thead .bp-th{
   z-index: 30 !important;
 }
@@ -591,14 +591,14 @@ input:focus, textarea:focus{
 /* Viewer area becomes solid dark so page gradients don't show through */
 #viewer { background: var(--brand-card) !important; }
 
-/* If BriefPro content is wrapped into .markdown вЂ“ make it solid too */
+/* If BriefPro content is wrapped into .markdown – make it solid too */
 #viewer .markdown{
-  background: #111827 !important;
+  background: var(--brand-bg) !important;
 }
 
 /* Table wrapper + table must be solid */
 .bp-tablewrap{
-  background: #111827 !important;
+  background: var(--brand-bg) !important;
   background-image: none !important;
   overflow: hidden !important;
 }
@@ -627,17 +627,17 @@ input:focus, textarea:focus{
 /* BriefPro: FINAL FIX (wins all)*/
 /* ============================= */
 
-/* 1) Р’РµСЂРЅСѓС‚СЊ РїСЂРѕРєСЂСѓС‚РєСѓ */
+/* 1) Вернуть прокрутку */
 .bp-tablewrap{
   overflow: auto !important;
 }
 
-/* 2) РЈР±СЂР°С‚СЊ вЂњРїСЂРѕР·СЂР°С‡РЅС‹РµвЂќ td РёР· styles.css (РѕРЅРё РїРѕРєР°Р·С‹РІР°СЋС‚ СЃРёРЅРµРІСѓ) */
+/* 2) Убрать “прозрачные” td из styles.css (они показывают синеву) */
 .bp-table tr[data-room-row] td{
   background: rgba(26,23,20,.35) !important;
 }
 
-/* 3) РћР±С‰РёР№ С„РѕРЅ С‚Р°Р±Р»РёС†С‹/С€Р°РїРєРё вЂ” С‚С‘РїР»С‹Р№, Р±РµР· СЃРёРЅРµРіРѕ */
+/* 3) Общий фон таблицы/шапки — тёплый, без синего */
 .bp-tablewrap{
   background: rgba(26,23,20,.55) !important;
 }
@@ -645,19 +645,19 @@ input:focus, textarea:focus{
   background: rgba(26,23,20,.35) !important;
 }
 
-/* С€Р°РїРєР° */
+/* шапка */
 .bp-th{
   background: rgba(26,23,20,.92) !important;
   background-image: none !important;
 }
 
-/* РѕР±С‹С‡РЅС‹Рµ СЏС‡РµР№РєРё (РµСЃР»Рё Сѓ С‚РµР±СЏ РµСЃС‚СЊ td Р±РµР· data-room-row) */
+/* обычные ячейки (если у тебя есть td без data-room-row) */
 .bp-table td{
   background: rgba(26,23,20,.35) !important;
   background-image: none !important;
 }
 
-/* 4) Sticky first column: РЅРµРїСЂРѕР·СЂР°С‡РЅР°СЏ Рё Р±РµР· Р±РµР»С‹С… РїРѕР»РѕСЃ */
+/* 4) Sticky first column: непрозрачная и без белых полос */
 .bp-table td:first-child,
 .bp-table th:first-child,
 .rr-sticky,
@@ -667,7 +667,7 @@ input:focus, textarea:focus{
   z-index: 50 !important;
 }
 
-/* 5) Р”РѕР±РёС‚СЊ Р±РµР»СѓСЋ РїРѕР»РѕСЃРєСѓ СЃР»РµРІР° (С‡Р°СЃС‚Рѕ СЌС‚Рѕ РїСЃРµРІРґРѕ-СЃР»РѕР№/С‚РµРЅСЊ) */
+/* 5) Добить белую полоску слева (часто это псевдо-слой/тень) */
 .bp-tablewrap::before,
 .bp-tablewrap::after{
   display:none !important;
@@ -682,29 +682,29 @@ input:focus, textarea:focus{
 /* BriefPro: STOP BLUE (hard)    */
 /* ============================= */
 
-/* 0) РќР° РІСЃСЏРєРёР№: СѓР±РёРІР°РµРј РіСЂР°РґРёРµРЅС‚С‹ СЃС‚СЂР°РЅРёС†С‹ (РѕРЅРё Рё РґР°СЋС‚ вЂњСЃРёРЅРµРІСѓвЂќ) */
+/* 0) На всякий: убиваем градиенты страницы (они и дают “синеву”) */
 body{
   background: var(--bg) !important;
   background-image: none !important;
 }
 
-/* 1) РљР°СЂС‚РѕС‡РєР° viewer вЂ” С‚С‘РїР»Р°СЏ, Р±РµР· СЃРёРЅРµРіРѕ */
+/* 1) Карточка viewer — тёплая, без синего */
 .viewer{
   background: var(--brand-card) !important;
   background-image: none !important;
 }
 
-/* 2) Р“Р›РђР’РќРћР•: РїРµСЂРµР±РёРІР°РµРј РїСЂРѕР·СЂР°С‡РЅС‹Рµ td РёР· styles.css (!!important) */
+/* 2) ГЛАВНОЕ: перебиваем прозрачные td из styles.css (!!important) */
 .bp-table tr[data-room-row] td{
-  background: rgba(26,23,20,.35) !important;   /* Р±С‹Р»Рѕ transparent !important */
+  background: rgba(26,23,20,.35) !important;   /* было transparent !important */
   background-image: none !important;
 }
 
-/* 3) РЁР°РїРєР° Рё С‚Р°Р±Р»РёС†Р° вЂ” С‚С‘РїР»С‹Рµ */
+/* 3) Шапка и таблица — тёплые */
 .bp-tablewrap{
   background: rgba(26,23,20,.55) !important;
   background-image: none !important;
-  overflow: auto !important;                  /* СЃРєСЂРѕР»Р» РґРѕР»Р¶РµРЅ Р¶РёС‚СЊ */
+  overflow: auto !important;                  /* скролл должен жить */
   padding-left: 0 !important;
 }
 
@@ -714,7 +714,7 @@ body{
   margin-left: 0 !important;
 }
 
-/* 4) Sticky РїРµСЂРІР°СЏ РєРѕР»РѕРЅРєР° вЂ” РЅРµРїСЂРѕР·СЂР°С‡РЅР°СЏ */
+/* 4) Sticky первая колонка — непрозрачная */
 .bp-table td:first-child,
 .bp-table th:first-child,
 .rr-sticky,
@@ -724,7 +724,7 @@ body{
   z-index: 50 !important;
 }
 
-/* 5) Р‘РµР»Р°СЏ РїРѕР»РѕСЃР°: С‡Р°С‰Рµ РІСЃРµРіРѕ РїСЃРµРІРґРѕСЌР»РµРјРµРЅС‚/С‚РµРЅСЊ */
+/* 5) Белая полоса: чаще всего псевдоэлемент/тень */
 .bp-tablewrap::before,
 .bp-tablewrap::after{
   display:none !important;
@@ -735,7 +735,7 @@ body{
 
 
 /* =========================================================
-   BRAND CLEANUP вЂ” remove blue tint everywhere
+   BRAND CLEANUP — remove blue tint everywhere
    ========================================================= */
 
 /* 1. Scrollbar */

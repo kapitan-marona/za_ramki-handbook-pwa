@@ -27,6 +27,7 @@
   const FONT_BODY = "Calibri";
   const FONT_SIZE_BODY = 12;
   const FONT_SIZE_HEAD = 16;
+  const FONT_SIZE_ROOM = 14; // first column (room names)
 
   function normStr(v) { return (v === null || v === undefined) ? "" : String(v); }
 
@@ -36,6 +37,19 @@
     if (/^(https?:\/\/|mailto:|tel:)/i.test(s)) return s;
     if (/^[\w.-]+\.[a-z]{2,}([\/?#].*)?$/i.test(s)) return "https://" + s;
     return s;
+  }
+
+  function linkDisplay(url) {
+    const raw = normStr(url).trim();
+    if (!raw) return "";
+    // remove scheme for display
+    let d = raw.replace(/^(https?:\/\/)/i, "").replace(/\/$/, "");
+    // keep it readable in narrow cells
+    const MAX = 48;
+    if (d.length > MAX) {
+      d = d.slice(0, 30) + "…" + d.slice(-14);
+    }
+    return d;
   }
 
   function cellText(v, style) { return { t: "s", v: normStr(v), s: style || undefined }; }
@@ -76,7 +90,7 @@
     };
 
     const firstCol = (rgb) => ({
-      font: { name: FONT_BODY, sz: FONT_SIZE_BODY, bold: true, color: { rgb: "111827" } },
+      font: { name: FONT_BODY, sz: FONT_SIZE_ROOM, bold: true, color: { rgb: "111827" } },
       fill: { patternType: "solid", fgColor: { rgb: rgb || "E5E7EB" } },
       alignment: { horizontal: "left", vertical: "top", wrapText: true },
       border: borderThin
@@ -182,6 +196,9 @@
 
     const aoa = [headerTop, headerSub];
 
+    // row heights (Excel points)
+    const rowHeights = [{ hpt: 28 }, { hpt: 24 }];
+
     // widths (stable)
     const colWidths = [{ wch: 26 }];
     cols.forEach((c) => {
@@ -206,6 +223,7 @@
       const textRow = [cellText(roomName, roomStyle)];
       values.forEach((v) => textRow.push(cellText(v.text, st.body)));
       aoa.push(textRow);
+      rowHeights.push({ hpt: 60 });
 
       // link rows: make links separate clickable cells (same column), under the room
       const maxLinks = Math.min(
@@ -219,16 +237,17 @@
 
         values.forEach((v) => {
           const url = (v.links && v.links[li]) ? v.links[li] : "";
-          linkRow.push(url ? cellLink(url, url, st.link) : cellText("", st.body));
+          linkRow.push(url ? cellLink(linkDisplay(url), url, st.link) : cellText("", st.body));
         });
 
         aoa.push(linkRow);
+        rowHeights.push({ hpt: 18 });
       }
     });
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = colWidths;
-    ws["!rows"] = [{ hpt: 24 }, { hpt: 22 }];
+    ws["!rows"] = rowHeights;
 
     // merges:
     // A1:A2
@@ -275,7 +294,7 @@
           aoa.push([
             cellText(roomName, st.body),
             cellText(label, st.body),
-            cellLink(u, u, st.link)
+            cellLink(linkDisplay(u), u, st.link)
           ]);
         });
       });
@@ -283,7 +302,8 @@
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = [{ wch: 26 }, { wch: 24 }, { wch: 60 }];
-    ws["!rows"] = [{ hpt: 24 }];
+    ws["!rows"] = [{ hpt: 24 }]; // header
+    // body rows use Excel default; keep file small
     return ws;
   }
 

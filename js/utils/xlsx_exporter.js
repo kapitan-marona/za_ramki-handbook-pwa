@@ -42,13 +42,9 @@
   function linkDisplay(url) {
     const raw = normStr(url).trim();
     if (!raw) return "";
-    // remove scheme for display
     let d = raw.replace(/^(https?:\/\/)/i, "").replace(/\/$/, "");
-    // keep it readable in narrow cells
     const MAX = 48;
-    if (d.length > MAX) {
-      d = d.slice(0, 30) + "…" + d.slice(-14);
-    }
+    if (d.length > MAX) d = d.slice(0, 30) + "…" + d.slice(-14);
     return d;
   }
 
@@ -89,6 +85,12 @@
       border: borderThin
     };
 
+    const bodyBold = {
+      font: { name: FONT_BODY, sz: FONT_SIZE_BODY, bold: true, color: { rgb: "111827" } },
+      alignment: { horizontal: "left", vertical: "top", wrapText: true },
+      border: borderThin
+    };
+
     const firstCol = (rgb) => ({
       font: { name: FONT_BODY, sz: FONT_SIZE_ROOM, bold: true, color: { rgb: "111827" } },
       fill: { patternType: "solid", fgColor: { rgb: rgb || "E5E7EB" } },
@@ -102,7 +104,7 @@
       border: borderThin
     };
 
-    return { head, groupHead, body, firstCol, link };
+    return { head, groupHead, body, bodyBold, firstCol, link };
   }
 
   function hexToRGB(hex) {
@@ -123,7 +125,6 @@
 
     const rooms = bp.rooms || bp.rows || bp.items || s.rooms || [];
 
-    // Берём реальные колонки из состояния (как в UI). Если их нет — fallback.
     const columns =
       bp.columns || bp.fields || bp.headers || s.columns ||
       [
@@ -138,7 +139,7 @@
         { key: "notes",   label: "Примечания" }
       ];
 
-    return { rooms, columns, bp };
+    return { rooms, columns, bp, meta: s.meta || bp.meta || {} };
   }
 
   function extractCellValue(room, colKey) {
@@ -156,11 +157,48 @@
     return { text, links: links.filter(Boolean).map(normStr) };
   }
 
+  function pushMetaRow(aoa, rowHeights, st, totalCols, label, value) {
+    const v = normStr(value).trim();
+    if (!v) return;
+
+    const row = new Array(totalCols).fill(cellText("", st.body));
+    row[0] = cellText(label, st.bodyBold);
+
+    const isLink = /^(https?:\/\/|mailto:|tel:)/i.test(v) || /^[\w.-]+\.[a-z]{2,}([\/?#].*)?$/i.test(v);
+    row[1] = isLink ? cellLink(linkDisplay(v), v, st.link) : cellText(v, st.body);
+
+    aoa.push(row);
+    rowHeights.push({ hpt: 20 });
+  }
+
+  function pushMetaMultiField(aoa, rowHeights, st, totalCols, label, mfValue) {
+    if (!mfValue || typeof mfValue !== "object") return;
+    const text = normStr(mfValue.text).trim();
+    const links = Array.isArray(mfValue.links) ? mfValue.links.map(normStr).filter(Boolean) : [];
+
+    if (!text && links.length === 0) return;
+
+    // label row (text)
+    const row = new Array(totalCols).fill(cellText("", st.body));
+    row[0] = cellText(label, st.bodyBold);
+    row[1] = cellText(text, st.body);
+    aoa.push(row);
+    rowHeights.push({ hpt: 34 });
+
+    // link rows
+    links.slice(0, 8).forEach((u, idx) => {
+      const r = new Array(totalCols).fill(cellText("", st.body));
+      r[0] = cellText(idx === 0 ? "↳ ссылки" : "", st.body);
+      r[1] = cellLink(linkDisplay(u), u, st.link);
+      aoa.push(r);
+      rowHeights.push({ hpt: 18 });
+    });
+  }
+
   function buildBriefSheet(XLSX, model) {
     const st = makeStyles();
     const cols = model.columns || [];
 
-    // --- two-row header like UI ---
     const headerTop = [cellText("Наименование помещения", st.head)];
     const headerSub = [cellText("", st.head)];
 
@@ -172,7 +210,6 @@
       normalizeLabel("Плинтус и карниз")
     ]);
 
-    // find geometry span by labels (positions)
     const geoIdxs = [];
     cols.forEach((c, i) => {
       const lbl = normalizeLabel(c.label ?? c.title ?? c.key ?? "");
@@ -184,7 +221,6 @@
 
     cols.forEach((c, i) => {
       const label = normStr(c.label ?? c.title ?? c.key ?? "");
-
       if (geoStart !== -1 && i >= geoStart && i <= geoEnd) {
         headerTop.push(cellText(i === geoStart ? "Геометрия помещения" : "", st.groupHead));
         headerSub.push(cellText(label, st.head));
@@ -196,10 +232,8 @@
 
     const aoa = [headerTop, headerSub];
 
-    // row heights (Excel points)
     const rowHeights = [{ hpt: 28 }, { hpt: 24 }];
 
-    // widths (stable)
     const colWidths = [{ wch: 26 }];
     cols.forEach((c) => {
       const label = normalizeLabel(c.label ?? c.title ?? c.key ?? "");
@@ -209,23 +243,19 @@
       colWidths.push({ wch });
     });
 
-    // data rows: for each room => 1 text row + N link rows (separate cells, clickable)
     const rooms = Array.isArray(model.rooms) ? model.rooms : [];
     rooms.forEach((room) => {
       const roomName = normStr(room?.title ?? room?.name ?? room?.room ?? "");
       const bg = hexToRGB(room?.__bg || room?.bg || room?.color || "");
       const roomStyle = st.firstCol(bg || "E5E7EB");
 
-      // collect values once
       const values = cols.map((c) => extractCellValue(room, normStr(c.key ?? c.id ?? c.name ?? "")));
 
-      // row 1: texts only
       const textRow = [cellText(roomName, roomStyle)];
       values.forEach((v) => textRow.push(cellText(v.text, st.body)));
       aoa.push(textRow);
       rowHeights.push({ hpt: 60 });
 
-      // link rows: make links separate clickable cells (same column), under the room
       const maxLinks = Math.min(
         5,
         values.reduce((m, v) => Math.max(m, (v.links || []).length), 0)
@@ -245,28 +275,96 @@
       }
     });
 
+    // --- Meta section under the table: "Файлы и ссылки проекта"
+    const totalCols = 1 + cols.length;
+    const meta = model.meta || {};
+
+    const hasAnyMeta =
+      !!normStr(meta.surveyPhotosLink).trim() ||
+      !!normStr(meta.lightDwg).trim() ||
+      !!normStr(meta.furniturePlanDwg).trim() ||
+      !!normStr(meta.drawingsPdf).trim() ||
+      !!normStr(meta.conceptLink).trim() ||
+      (meta.radiators && (normStr(meta.radiators.text).trim() || (Array.isArray(meta.radiators.links) && meta.radiators.links.filter(Boolean).length))) ||
+      !!normStr(meta.ceilingsMm).trim() ||
+      !!normStr(meta.doorsMm).trim() ||
+      !!normStr(meta.otherMm).trim();
+
+    if (hasAnyMeta) {
+      aoa.push(new Array(totalCols).fill(cellText("", st.body)));
+      rowHeights.push({ hpt: 10 });
+
+      const titleRow = new Array(totalCols).fill(cellText("", st.groupHead));
+      titleRow[0] = cellText("Файлы и ссылки проекта", st.groupHead);
+      aoa.push(titleRow);
+      rowHeights.push({ hpt: 24 });
+
+      pushMetaRow(aoa, rowHeights, st, totalCols, "Фото на замере (Google Drive)", meta.surveyPhotosLink);
+      pushMetaRow(aoa, rowHeights, st, totalCols, "Ссылка на свет (DWG)", meta.lightDwg);
+      pushMetaRow(aoa, rowHeights, st, totalCols, "Ссылка на план мебели (DWG)", meta.furniturePlanDwg);
+      pushMetaRow(aoa, rowHeights, st, totalCols, "Ссылка на чертежи (PDF)", meta.drawingsPdf);
+      pushMetaRow(aoa, rowHeights, st, totalCols, "Ссылка на концепт", meta.conceptLink);
+
+      pushMetaMultiField(aoa, rowHeights, st, totalCols, "Радиаторы", meta.radiators);
+
+      // Heights row
+      const otherTitle = (normStr(meta.otherLabel).trim() || "Прочее");
+      if (normStr(meta.ceilingsMm).trim() || normStr(meta.doorsMm).trim() || normStr(meta.otherMm).trim()) {
+        const r = new Array(totalCols).fill(cellText("", st.body));
+        r[0] = cellText("Высоты (мм)", st.bodyBold);
+        r[1] = cellText(
+          "Потолки: " + normStr(meta.ceilingsMm).trim() +
+          " | Двери: " + normStr(meta.doorsMm).trim() +
+          " | " + otherTitle + ": " + normStr(meta.otherMm).trim(),
+          st.body
+        );
+        aoa.push(r);
+        rowHeights.push({ hpt: 22 });
+      }
+    }
+
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = colWidths;
     ws["!rows"] = rowHeights;
 
-    // merges:
-    // A1:A2
-    // Geometry: (B..?) in first header row
-    // Non-geometry columns: vertical merge in their column (row 1..2)
     const merges = [];
     merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
 
     if (geoStart !== -1) {
-      // +1 because A is room
       merges.push({ s: { r: 0, c: geoStart + 1 }, e: { r: 0, c: geoEnd + 1 } });
     }
 
     cols.forEach((c, i) => {
       const isGeo = (geoStart !== -1 && i >= geoStart && i <= geoEnd);
-      if (!isGeo) {
-        merges.push({ s: { r: 0, c: i + 1 }, e: { r: 1, c: i + 1 } });
-      }
+      if (!isGeo) merges.push({ s: { r: 0, c: i + 1 }, e: { r: 1, c: i + 1 } });
     });
+
+    // merge meta title row across all columns (if present)
+    if (hasAnyMeta) {
+      // title row index = total rows - (meta rows + ...). We find it by scanning aoa from bottom for that title.
+      for (let rr = aoa.length - 1; rr >= 0; rr--) {
+        const c0 = aoa[rr] && aoa[rr][0] && aoa[rr][0].v;
+        if (c0 === "Файлы и ссылки проекта") {
+          merges.push({ s: { r: rr, c: 0 }, e: { r: rr, c: totalCols - 1 } });
+          break;
+        }
+      }
+      // merge meta value column (B..end) for each meta row where A has label
+      for (let rr = 0; rr < aoa.length; rr++) {
+        const a = aoa[rr] && aoa[rr][0] && normStr(aoa[rr][0].v).trim();
+        if (!a) continue;
+        if (a === "Файлы и ссылки проекта") continue;
+        if (a === "↳ ссылки") continue;
+        if (a === "Высоты (мм)" || a === "Радиаторы" || a === "Фото на замере (Google Drive)" || a === "Ссылка на свет (DWG)" || a === "Ссылка на план мебели (DWG)" || a === "Ссылка на чертежи (PDF)" || a === "Ссылка на концепт") {
+          merges.push({ s: { r: rr, c: 1 }, e: { r: rr, c: totalCols - 1 } });
+        }
+      }
+      // merge radiators text row value
+      for (let rr = 0; rr < aoa.length; rr++) {
+        const a = aoa[rr] && aoa[rr][0] && normStr(aoa[rr][0].v).trim();
+        if (a === "Радиаторы") merges.push({ s: { r: rr, c: 1 }, e: { r: rr, c: totalCols - 1 } });
+      }
+    }
 
     ws["!merges"] = merges;
     return ws;
@@ -300,10 +398,38 @@
       });
     });
 
+    // also include meta links (project files)
+    const meta = model.meta || {};
+    const metaPairs = [
+      ["Фото на замере (Google Drive)", meta.surveyPhotosLink],
+      ["Ссылка на свет (DWG)", meta.lightDwg],
+      ["Ссылка на план мебели (DWG)", meta.furniturePlanDwg],
+      ["Ссылка на чертежи (PDF)", meta.drawingsPdf],
+      ["Ссылка на концепт", meta.conceptLink],
+    ];
+    metaPairs.forEach(([label, val]) => {
+      const v = normStr(val).trim();
+      if (!v) return;
+      aoa.push([
+        cellText("—", st.body),
+        cellText(label, st.body),
+        cellLink(linkDisplay(v), v, st.link)
+      ]);
+    });
+
+    if (meta.radiators && Array.isArray(meta.radiators.links)) {
+      meta.radiators.links.map(normStr).filter(Boolean).forEach((u) => {
+        aoa.push([
+          cellText("—", st.body),
+          cellText("Радиаторы", st.body),
+          cellLink(linkDisplay(u), u, st.link)
+        ]);
+      });
+    }
+
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = [{ wch: 26 }, { wch: 24 }, { wch: 60 }];
-    ws["!rows"] = [{ hpt: 24 }]; // header
-    // body rows use Excel default; keep file small
+    ws["!rows"] = [{ hpt: 24 }];
     return ws;
   }
 

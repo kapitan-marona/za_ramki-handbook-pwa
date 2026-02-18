@@ -733,3 +733,68 @@ body{
 
 
 
+
+/* =========================================================
+   BRAND CLEANUP — remove blue tint everywhere
+   ========================================================= */
+
+/* 1. Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--brand-bg) !important;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brand-card) !important;
+  border-radius: 999px;
+  border: 2px solid var(--brand-bg) !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-accent) !important;
+}
+
+/* 2. Viewer / panel unified background */
+.viewer,
+.panel,
+.main,
+.bp-tablewrap {
+  background: var(--brand-bg) !important;
+}
+
+/* 3. Table surface */
+.bp-table,
+.bp-table td,
+.bp-th,
+.bp-th.group,
+.bp-th.mid,
+.bp-th.last {
+  background-color: var(--brand-card) !important;
+}
+
+/* 4. Sticky column without blue shadow */
+.bp-table td:first-child,
+.bp-table th:first-child,
+.rr-sticky,
+.bp-th.sticky {
+  background: var(--brand-item) !important;
+  box-shadow: none !important;
+}
+
+/* 5. Select (link label dropdown) */
+select {
+  background: var(--brand-item) !important;
+  color: var(--brand-headings) !important;
+  border: 1px solid var(--brand-border) !important;
+  border-radius: 10px;
+  padding: 6px 10px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+select:focus {
+  outline: none !important;
+  border-color: var(--brand-accent) !important;
+  box-shadow: 0 0 0 1px var(--brand-accent) !important;
+}
+

@@ -812,3 +812,21 @@ select:focus {
   scrollbar-color: var(--brand-card) var(--brand-bg) !important;
 }
 
+
+/* ===== Remove blue under section headers ===== */
+.markdown h2,
+.bp-meta-label,
+.bp-meta h2 {
+  background: var(--brand-bg) !important;
+  color: var(--brand-headings) !important;
+  border-bottom: 2px solid var(--brand-border) !important;
+}
+
+/* ===== Restore horizontal scroll for table ===== */
+.bp-tablewrap {
+  overflow-x: auto !important;
+}
+
+.bp-table {
+  min-width: max-content;
+}

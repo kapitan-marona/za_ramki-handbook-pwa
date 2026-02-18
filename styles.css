@@ -13,9 +13,7 @@ html,body{height:100%}
 body{
   margin:0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: radial-gradient(1200px 800px at 20% 0%, rgba(34,197,94,.16), transparent 55%),
-              radial-gradient(800px 500px at 100% 20%, rgba(59,130,246,.14), transparent 45%),
-              var(--bg);
+  background: var(--bg);
   color:var(--text);
 }
 
@@ -82,7 +80,7 @@ body{
 }
 
 .panel, .viewer{
-  background: rgba(17,24,39,.56);
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 16px;
   overflow:hidden;
@@ -225,7 +223,7 @@ body{
 
 /* BriefPro row accent */
 .bp-table tr[data-room-row] { --rr-bg: transparent; }
-.bp-table tr[data-room-row] td { background: transparent !important; }
+.bp-table tr[data-room-row] td { background: rgba(26,23,20,.35) !important; }
 .bp-table tr[data-room-row] td.rr-sticky { box-shadow: inset 6px 0 0 var(--rr-bg); }
 
 
@@ -272,3 +270,6 @@ body{
 }
 
 .bp-table th { z-index: 4; }
+
+
+

@@ -372,7 +372,7 @@ input:focus, textarea:focus{
 /* Firefox */
 *{
   scrollbar-width: thin;
-  scrollbar-color: #374151 #0B1220;
+  
 }
 
 /* Chrome / Edge / Safari */
@@ -475,7 +475,7 @@ input:focus, textarea:focus{
 
 /* Scrollbars: closer to table palette (thumb/track/hover) */
 *{
-  scrollbar-color: #1F2937 #0B1220;
+  
 }
 
 ::-webkit-scrollbar-track{
@@ -796,5 +796,19 @@ select:focus {
   outline: none !important;
   border-color: var(--brand-accent) !important;
   box-shadow: 0 0 0 1px var(--brand-accent) !important;
+}
+
+
+/* ===== Meta section cleanup ===== */
+.bp-meta,
+.bp-meta-label {
+  background: var(--brand-card) !important;
+  color: var(--brand-headings) !important;
+}
+
+/* ===== Firefox scrollbar ===== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-card) var(--brand-bg) !important;
 }
 

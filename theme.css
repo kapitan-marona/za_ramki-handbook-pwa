@@ -415,3 +415,77 @@ input:focus, textarea:focus{
   color: #E5E7EB;
 }
 
+
+
+
+/* ============================= */
+/* BriefPro table polish         */
+/* ============================= */
+
+/* 1) Fix "white strip" + unify table background */
+.bp-tablewrap{
+  background: #0B1220;
+  padding-left: 0;
+  border-radius: 14px; /* если у тебя есть скругление — будет красиво */
+}
+
+/* если где-то фон таблицы не задан */
+.bp-table{
+  background: #0B1220;
+}
+
+/* 2) Make sticky first column opaque (and above everything) */
+.bp-table th.sticky,
+.bp-table td.sticky{
+  background: #0B1220 !important;
+  z-index: 6;
+}
+
+/* sticky header cells тоже должны быть непрозрачные */
+.bp-table thead th{
+  background-clip: padding-box;
+  z-index: 7;
+}
+
+/* иногда “полоска” — это border/box-shadow слева у ячеек */
+.bp-table,
+.bp-table th,
+.bp-table td{
+  border-left-color: rgba(255,255,255,0.08);
+  background-clip: padding-box;
+}
+
+/* 3) Remove blue focus ring (select + inputs) and match table palette */
+.mf-label-select{
+  background: #0B1220;
+  border-color: #1F2937;
+}
+
+/* убираем синий outline на фокусе */
+.mf-label-select:focus,
+.mf-label-select:focus-visible,
+.mf-link:focus,
+.mf-link:focus-visible,
+.mf-textitem:focus,
+.mf-textitem:focus-visible{
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(148,163,184,0.22) !important; /* мягкое “табличное” кольцо */
+  border-color: #334155 !important;
+}
+
+/* Scrollbars: closer to table palette (thumb/track/hover) */
+*{
+  scrollbar-color: #1F2937 #0B1220;
+}
+
+::-webkit-scrollbar-track{
+  background: #0B1220;
+}
+::-webkit-scrollbar-thumb{
+  background: #1F2937;
+  border: 2px solid #0B1220;
+}
+::-webkit-scrollbar-thumb:hover{
+  background: #334155;
+}
+

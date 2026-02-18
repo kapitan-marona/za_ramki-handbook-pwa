@@ -489,3 +489,57 @@ input:focus, textarea:focus{
   background: #334155;
 }
 
+
+
+/* ============================= */
+/* BriefPro: kill blue gradients */
+/* ============================= */
+
+.bp-tablewrap,
+.bp-table,
+.bp-table thead,
+.bp-table tbody,
+.bp-table tr,
+.bp-table th,
+.bp-table td{
+  background-color: #111827 !important;     /* нужный тёмный */
+  background-image: none !important;       /* убиваем синий/градиенты */
+}
+
+/* Sticky first column must be opaque and above */
+.bp-table th.sticky,
+.bp-table td.sticky{
+  background-color: #111827 !important;
+  background-image: none !important;
+  z-index: 10 !important;
+}
+
+/* Header above sticky */
+.bp-table thead th{
+  z-index: 11 !important;
+}
+
+/* White strip leftovers: remove left padding/inner shadows */
+.bp-tablewrap{
+  padding-left: 0 !important;
+  box-shadow: none !important;
+}
+
+.bp-table{
+  margin-left: 0 !important;
+  border-left: 0 !important;
+}
+
+/* If there is a pseudo-element creating a strip */
+.bp-tablewrap::before,
+.bp-tablewrap::after{
+  content: none !important;
+}
+
+/* Optional: subtle separator between sticky col and rest */
+.bp-table th.sticky,
+.bp-table td.sticky{
+  box-shadow: 1px 0 0 rgba(255,255,255,0.08) !important;
+}
+
+

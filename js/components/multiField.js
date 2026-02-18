@@ -20,9 +20,18 @@ Components.MultiField = (() => {
     return clean.length > n ? (clean.slice(0, n) + "…") : clean;
   }
 
+  const PRESET_LABELS = ["Каталог","Фото","Реф","Чертёж","Другое"];
+  const CUSTOM_VALUE = "__custom__";
+
+  function isPresetLabel(x){
+    const s = (x ?? "").toString().trim();
+    return PRESET_LABELS.includes(s);
+  }
+
   // Backward compatible normalization:
   // - keeps v.textItems / v.links
   // - adds v.blocks (ordered list) if missing
+  // - supports link label: b.label
   function normalize(value){
     const v = value || {};
     const links = Array.isArray(v.links) ? v.links : [];
@@ -38,12 +47,16 @@ Components.MultiField = (() => {
       // cannot restore historical interleaving from old data, so fallback: texts then links
       blocks = [];
       textItems.forEach(t => blocks.push({ t:"text", v: (t ?? "").toString() }));
-      links.forEach(u => blocks.push({ t:"link", v: (u ?? "").toString() }));
+      links.forEach(u => blocks.push({ t:"link", v: (u ?? "").toString(), label: "" }));
     } else {
       // sanitize
       blocks = blocks
         .filter(b => b && (b.t === "text" || b.t === "link"))
-        .map(b => ({ t: b.t, v: (b.v ?? "").toString() }));
+        .map(b => ({
+          t: b.t,
+          v: (b.v ?? "").toString(),
+          label: b.t === "link" ? (b.label ?? "").toString() : undefined
+        }));
     }
 
     return { ...v, links, textItems, blocks };
@@ -61,13 +74,14 @@ Components.MultiField = (() => {
         ? blocks.map((b) => {
             if(b.t === "text"){
               const s = (b.v || "").trim();
-              return s
-                ? `<div class="mf-textview">${esc(s)}</div>`
-                : "";
+              return s ? `<div class="mf-textview">${esc(s)}</div>` : "";
             }
+
             const url = safeUrl(b.v);
             if(!url) return "";
             const label = shortLabel(url);
+            const lbl = (b.label ?? "").toString().trim();
+            const prefix = lbl ? (esc(lbl) + ": ") : "";
 
             if(/^https?:\/\//i.test(url)){
               return `
@@ -76,11 +90,11 @@ Components.MultiField = (() => {
                      target="_blank"
                      rel="noopener"
                      title="${esc(url)}"
-                     class="mf-linkview">🔗 ${esc(label)}</a>
+                     class="mf-linkview">🔗 ${prefix}${esc(label)}</a>
                 </div>`;
             }
 
-            return `<div class="mf-linkrow mf-muted" title="${esc(url)}">🔗 ${esc(label)}</div>`;
+            return `<div class="mf-linkrow mf-muted" title="${esc(url)}">🔗 ${prefix}${esc(label)}</div>`;
           }).join("")
         : `<div class="mf-muted">${esc(pText || "")}</div>`;
 
@@ -116,16 +130,48 @@ Components.MultiField = (() => {
             `;
           }
 
+          const curLabel = (b.label ?? "").toString().trim();
+          const selectVal = isPresetLabel(curLabel) ? curLabel : (curLabel ? CUSTOM_VALUE : "");
+          const showCustom = (selectVal === CUSTOM_VALUE);
+
+          const optionsHtml =
+            ['<option value=""></option>']
+            .concat(PRESET_LABELS.map(x => `<option value="${esc(x)}"${x===selectVal?' selected':''}>${esc(x)}</option>`))
+            .concat([`<option value="${CUSTOM_VALUE}"${selectVal===CUSTOM_VALUE?' selected':''}>Свой…</option>`])
+            .join("");
+
           return `
-            <div class="mf-row">
-              <input
-                class="mf-link mf-block"
-                data-mf-path="${esc(path)}"
-                data-mf-kind="link"
-                data-mf-idx="${idx}"
-                value="${esc(b.v || "")}"
-                placeholder="${esc(pLink)}"
-              />
+            <div class="mf-row" style="align-items:flex-start; gap:8px;">
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; gap:8px; margin-bottom:6px;">
+                  <select
+                    class="mf-label-select"
+                    data-mf-path="${esc(path)}"
+                    data-mf-idx="${idx}"
+                    title="Лейбл ссылки"
+                    style="max-width:160px;"
+                  >${optionsHtml}</select>
+
+                  <input
+                    class="mf-label-custom"
+                    data-mf-path="${esc(path)}"
+                    data-mf-idx="${idx}"
+                    value="${esc(showCustom ? curLabel : "")}"
+                    placeholder="Свой лейбл…"
+                    style="flex:1; ${showCustom ? "" : "display:none;"}"
+                  />
+                </div>
+
+                <input
+                  class="mf-link mf-block"
+                  data-mf-path="${esc(path)}"
+                  data-mf-kind="link"
+                  data-mf-idx="${idx}"
+                  value="${esc(b.v || "")}"
+                  placeholder="${esc(pLink)}"
+                />
+              </div>
+
               <button
                 type="button"
                 class="btn btn-sm btn-icon mf-del-block"

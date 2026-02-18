@@ -145,18 +145,12 @@
   }
 
   // Normalize multi-field object into ordered blocks.
-  // Backward compatible:
-  // - if blocks exist -> use them
-  // - else build blocks: textItems (or legacy text) then links
+  // Supports link label: b.label
   function normalizeBlocks(raw) {
-    // primitive -> single text block
     if (raw === null || raw === undefined) return { blocks: [], links: [] };
     if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean") {
       const t = normStr(raw);
-      return {
-        blocks: t.trim() ? [{ t: "text", v: t }] : [],
-        links: []
-      };
+      return { blocks: t.trim() ? [{ t: "text", v: t }] : [], links: [] };
     }
 
     const obj = (raw && typeof raw === "object") ? raw : {};
@@ -174,11 +168,15 @@
     if (!blocks) {
       blocks = [];
       textItems.forEach((t) => blocks.push({ t: "text", v: normStr(t) }));
-      links.forEach((u) => blocks.push({ t: "link", v: normStr(u) }));
+      links.forEach((u) => blocks.push({ t: "link", v: normStr(u), label: "" }));
     } else {
       blocks = blocks
         .filter(b => b && (b.t === "text" || b.t === "link"))
-        .map(b => ({ t: b.t, v: normStr(b.v) }));
+        .map(b => ({
+          t: b.t,
+          v: normStr(b.v),
+          label: b.t === "link" ? normStr(b.label) : ""
+        }));
     }
 
     const flatLinks = blocks
@@ -192,7 +190,6 @@
     const raw = room ? room[colKey] : "";
     const n = normalizeBlocks(raw);
 
-    // For safety: also expose a single "text" (used nowhere critical now)
     const text = n.blocks
       .filter(b => b.t === "text")
       .map(b => normStr(b.v))
@@ -216,11 +213,9 @@
     rowHeights.push({ hpt: 20 });
   }
 
-  // Ordered meta multifield (supports blocks)
   function pushMetaMultiField(aoa, rowHeights, st, totalCols, label, mfValue) {
     const n = normalizeBlocks(mfValue);
     const blocks = n.blocks;
-
     if (!blocks.length) return;
 
     blocks.slice(0, 12).forEach((b, idx) => {
@@ -229,7 +224,9 @@
 
       if (b.t === "link") {
         const u = normStr(b.v).trim();
-        r[1] = u ? cellLink(linkDisplay(u), u, st.link) : cellText("", st.body);
+        const lbl = normStr(b.label).trim();
+        const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
+        r[1] = u ? cellLink(disp, u, st.link) : cellText("", st.body);
         aoa.push(r);
         rowHeights.push({ hpt: 18 });
       } else {
@@ -296,13 +293,11 @@
 
       const values = cols.map((c) => extractCellValue(room, normStr(c.key ?? c.id ?? c.name ?? "")));
 
-      // NEW: ordered rows per block index (preserves: text/link/text/link ...)
       const maxBlocks = Math.min(
         10,
         values.reduce((m, v) => Math.max(m, Array.isArray(v.blocks) ? v.blocks.length : 0), 0)
       );
 
-      // If no blocks at all, still print an empty single row with room name
       const rowsCount = Math.max(1, maxBlocks);
 
       for (let bi = 0; bi < rowsCount; bi++) {
@@ -320,8 +315,10 @@
           }
           if (b.t === "link") {
             const u = normStr(b.v).trim();
+            const lbl = normStr(b.label).trim();
+            const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
             if (u) {
-              row.push(cellLink(linkDisplay(u), u, st.link));
+              row.push(cellLink(disp, u, st.link));
               hasLink = true;
             } else {
               row.push(cellText("", st.body));
@@ -336,23 +333,13 @@
 
         aoa.push(row);
 
-        // Row height tuning:
-        // - first row: roomy
-        // - text rows: medium
-        // - link-only rows: compact
-        if (bi === 0) {
-          rowHeights.push({ hpt: 60 });
-        } else if (hasText) {
-          rowHeights.push({ hpt: 34 });
-        } else if (hasLink) {
-          rowHeights.push({ hpt: 18 });
-        } else {
-          rowHeights.push({ hpt: 18 });
-        }
+        if (bi === 0) rowHeights.push({ hpt: 60 });
+        else if (hasText) rowHeights.push({ hpt: 34 });
+        else if (hasLink) rowHeights.push({ hpt: 18 });
+        else rowHeights.push({ hpt: 18 });
       }
     });
 
-    // --- Meta section under the table: "Файлы и ссылки проекта"
     const totalCols = 1 + cols.length;
     const meta = model.meta || {};
 
@@ -416,7 +403,6 @@
       if (!isGeo) merges.push({ s: { r: 0, c: i + 1 }, e: { r: 1, c: i + 1 } });
     });
 
-    // merge meta title row across all columns (if present)
     if (hasAnyMeta) {
       for (let rr = aoa.length - 1; rr >= 0; rr--) {
         const c0 = aoa[rr] && aoa[rr][0] && aoa[rr][0].v;
@@ -425,7 +411,6 @@
           break;
         }
       }
-      // merge meta value column (B..end) for simple one-line meta rows
       for (let rr = 0; rr < aoa.length; rr++) {
         const a = aoa[rr] && aoa[rr][0] && normStr(aoa[rr][0].v).trim();
         if (!a) continue;
@@ -443,7 +428,6 @@
           merges.push({ s: { r: rr, c: 1 }, e: { r: rr, c: totalCols - 1 } });
         }
       }
-      // Radiators rows can be multi-line; merge each of them across value columns
       for (let rr = 0; rr < aoa.length; rr++) {
         const a = aoa[rr] && aoa[rr][0] && normStr(aoa[rr][0].v).trim();
         if (a === "Радиаторы") merges.push({ s: { r: rr, c: 1 }, e: { r: rr, c: totalCols - 1 } });
@@ -461,6 +445,7 @@
     const aoa = [[
       cellText("Помещение", st.head),
       cellText("Поле", st.head),
+      cellText("Лейбл", st.head),
       cellText("Ссылка", st.head)
     ]];
 
@@ -472,20 +457,26 @@
         const label = normStr(c.label ?? c.title ?? key);
 
         const v = extractCellValue(room, key);
-        const links = Array.isArray(v.links) ? v.links : [];
+        const blocks = Array.isArray(v.blocks) ? v.blocks : [];
+        const links = blocks.filter(b => b && b.t === "link" && normStr(b.v).trim());
+
         if (!links.length) return;
 
-        links.forEach((u) => {
+        links.forEach((b) => {
+          const u = normStr(b.v).trim();
+          const lbl = normStr(b.label).trim();
+          const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
+
           aoa.push([
             cellText(roomName, st.body),
             cellText(label, st.body),
-            cellLink(linkDisplay(u), u, st.link)
+            cellText(lbl, st.body),
+            cellLink(disp, u, st.link)
           ]);
         });
       });
     });
 
-    // also include meta links (project files)
     const meta = model.meta || {};
     const metaPairs = [
       ["Фото на замере (Google Drive)", meta.surveyPhotosLink],
@@ -501,24 +492,29 @@
       aoa.push([
         cellText("—", st.body),
         cellText(label, st.body),
+        cellText("", st.body),
         cellLink(linkDisplay(v), v, st.link)
       ]);
     });
 
-    // radiators: include link blocks too
     const rad = normalizeBlocks(meta.radiators);
-    if (rad.links && rad.links.length) {
-      rad.links.forEach((u) => {
+    if (rad.blocks && rad.blocks.length) {
+      rad.blocks.filter(b => b && b.t === "link" && normStr(b.v).trim()).forEach((b) => {
+        const u = normStr(b.v).trim();
+        const lbl = normStr(b.label).trim();
+        const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
+
         aoa.push([
           cellText("—", st.body),
           cellText("Радиаторы", st.body),
-          cellLink(linkDisplay(u), u, st.link)
+          cellText(lbl, st.body),
+          cellLink(disp, u, st.link)
         ]);
       });
     }
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [{ wch: 26 }, { wch: 24 }, { wch: 60 }];
+    ws["!cols"] = [{ wch: 26 }, { wch: 24 }, { wch: 16 }, { wch: 60 }];
     ws["!rows"] = [{ hpt: 24 }];
     return ws;
   }

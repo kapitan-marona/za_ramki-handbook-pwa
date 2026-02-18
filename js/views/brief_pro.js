@@ -457,11 +457,56 @@ Views.BriefPro = (() => {
           setByPath(state, path, cell);
           save(state);
         }
+      // NEW: custom label input (shown when select = "Свой…")
+      if (t && t.classList && t.classList.contains("mf-label-custom")) {
+        const path = t.dataset.mfPath;
+        const bi = Number(t.dataset.mfIdx);
+
+        let cell = getByPath(state, path) || { text:"", links:[] };
+        cell = ensureBlocks(cell);
+
+        if (Number.isFinite(bi) && bi >= 0 && cell.blocks[bi] && cell.blocks[bi].t === "link") {
+          cell.blocks[bi].label = (t.value || "").toString();
+          cell = syncLegacyFromBlocks(cell);
+          setByPath(state, path, cell);
+          save(state);
+        }
+        return;
+      }
         return;
       }
     }, { signal });
 
-    root.addEventListener("click", (e) => {
+        // NEW: link label select (needs "change" to rerender show/hide custom input)
+    root.addEventListener("change", (e) => {
+      const t = e.target;
+
+      if (t && t.classList && t.classList.contains("mf-label-select")) {
+        const path = t.dataset.mfPath;
+        const bi = Number(t.dataset.mfIdx);
+        const val = (t.value || "").toString();
+
+        let cell = getByPath(state, path) || { text:"", links:[] };
+        cell = ensureBlocks(cell);
+
+        if (Number.isFinite(bi) && bi >= 0 && cell.blocks[bi] && cell.blocks[bi].t === "link") {
+          if (val === "__custom__") {
+            // keep existing custom label (if any), but show custom input
+            const cur = (cell.blocks[bi].label || "").toString().trim();
+            if (!cur) cell.blocks[bi].label = "";
+          } else {
+            cell.blocks[bi].label = val;
+          }
+
+          cell = syncLegacyFromBlocks(cell);
+          setByPath(state, path, cell);
+          save(state);
+          rerender(); // to show/hide custom input
+        }
+        return;
+      }
+    }, { signal });
+root.addEventListener("click", (e) => {
       const btn = e.target.closest("button");
       if (!btn) return;
 
@@ -612,3 +657,5 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+
+

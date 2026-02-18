@@ -255,7 +255,7 @@ Views.BriefPro = (() => {
       ? '<button class="btn btn-sm" id="bp_csv">Скачать CSV (.excel)</button>'
       : '';
 
-    const xlsBtn = canExport
+    const xlsxBtn = canExport
       ? '<button class="btn btn-sm" id="bp_xlsx">Скачать Excel (.xlsx)</button>'
       : '';
 
@@ -284,7 +284,7 @@ Views.BriefPro = (() => {
         addRoomBtn +
         modeBtn +
         csvBtn +
-        xlsBtn +
+        xlsxBtn +
         undoBtn +
       '</div>' +
 
@@ -491,7 +491,7 @@ Views.BriefPro = (() => {
       }
 
       if (btn.id === "bp_xlsx") {
-        // Prefer true XLSX export (styled). Fallback to legacy HTML-XLS if something fails.
+        // Prefer true XLSX export (.xlsx via xlsx-js-style). No legacy .xls fallback.
         try {
           if (window.Utils && Utils.XLSXExport && typeof Utils.XLSXExport.downloadXLSX === "function") {
             Utils.XLSXExport.downloadXLSX(state, "TZ_vizualizatoru_PRO.xlsx");
@@ -500,14 +500,7 @@ Views.BriefPro = (() => {
         } catch (e) {
           console.error(e);
         }
-
-        // Fallback: legacy HTML-XLS (if present)
-        if (window.Utils && Utils.Exporters && typeof Utils.Exporters.briefDownloadXLS === "function") {
-          Utils.Exporters.briefDownloadXLS(state);
-          return;
-        }
-
-        alert("Экспорт Excel недоступен. Проверь подключение скриптов (xlsx_exporter.js).");
+alert("Экспорт Excel недоступен. Проверь подключение скриптов (xlsx_exporter.js).");
         return;
       }
 
@@ -629,6 +622,9 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+
+
+
 
 
 

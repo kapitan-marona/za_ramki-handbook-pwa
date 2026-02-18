@@ -152,16 +152,16 @@ Utils.Exporters = (() => {
 
   function briefToXLS(state){
     const columns = [
-      { key: "room", label: "Наименование помещения", w: 280 },
-      { key: "walls", label: "Стены, цвет", w: 260 },
+      { key: "room", label: "Наименование помещения", w: 260 },
+      { key: "walls", label: "Стены, цвет", w: 220 },
       { key: "floor", label: "Пол", w: 220 },
       { key: "ceiling", label: "Потолок", w: 220 },
       { key: "doors", label: "Двери", w: 220 },
-      { key: "plinth", label: "Плинтус, карниз", w: 240 },
-      { key: "light", label: "Свет", w: 240 },
-      { key: "furniture", label: "Мебель / Декор", w: 260 },
-      { key: "concept", label: "Ссылка на концепт", w: 240 },
-      { key: "notes", label: "Допы / примечания", w: 340 }
+      { key: "plinth", label: "Плинтус, карниз", w: 220 },
+      { key: "light", label: "Свет", w: 220 },
+      { key: "furniture", label: "Мебель / Декор", w: 220 },
+      { key: "concept", label: "Ссылка на концепт", w: 220 },
+      { key: "notes", label: "Допы / примечания", w: 260 }
     ];
 
     const rooms = Array.isArray(state.rooms) ? state.rooms : [];
@@ -198,7 +198,7 @@ Utils.Exporters = (() => {
       ["floor","Пол"],
       ["ceiling","Потолок"],
       ["doors","Двери"],
-      ["plinth","Плинтус, карниз"],
+      ["plinth","Плинтус и карниз"],
       ["light","Свет"],
       ["furniture","Мебель / Декор"],
       ["concept","Ссылка на концепт"],
@@ -254,49 +254,49 @@ Utils.Exporters = (() => {
     .grid { table-layout: fixed; }
     .grid td, .grid th { border: 1px solid #d9d9d9; padding: 10px 10px; vertical-align: top; }
 
-    /* Headers: 16px bold */
+    /* Headers: 14px bold */
     .grid th {
       font-weight: 800;
-      font-size: 16px;
+      font-size: 14px;
       background: #111827;
       color: #ffffff;
       text-align: left;
       white-space: nowrap;
     }
 
-    /* Cells: 12px */
+    /* Cells: 10px */
     .grid td {
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 400;
-      line-height: 1.35;
+      line-height: 1.5;
       white-space: normal;
       word-wrap: break-word;
     }
 
-    /* First column: 16px bold */
-    .room { font-weight: 800; font-size: 16px; }
+    /* First column: 14px bold */
+    .room { font-weight: 800; font-size: 14px; }
 
     .txt { margin-bottom: 6px; }
     a { color: #0563C1; text-decoration: underline; }
     .links div { margin-top: 2px; }
 
-    .sectionTitle { font-weight: 900; font-size: 16px; margin-top: 18px; margin-bottom: 8px; }
+    .sectionTitle { font-weight: 900; font-size: 14px; margin-top: 16px; margin-bottom: 8px; }
 
     /* Links matrix */
     .linksGrid { table-layout: fixed; }
     .linksGrid td, .linksGrid th { border: 1px solid #d9d9d9; padding: 10px 10px; vertical-align: top; }
     .linksGrid th { background: #111827; color: #fff; font-weight: 800; font-size: 16px; text-align:left; }
-    .linksGrid td { font-size: 12px; line-height: 1.35; word-wrap: break-word; }
-    .linksGrid .lgRoom { width: 280px; font-weight: 700; }
+    .linksGrid td { font-size: 12px; line-height: 1.5; word-wrap: break-word; }
+    .linksGrid .lgRoom { width: 240px; font-weight: 700; }
     .linksGrid .lgField { width: 240px; font-weight: 700; background: #f3f4f6; }
-    .linksGrid .lgLink { width: 360px; }
+    .linksGrid .lgLink { width: 240px; }
 
     /* Meta */
     .meta { table-layout: fixed; }
     .meta td, .meta th { border: 1px solid #d9d9d9; padding: 10px 10px; vertical-align: top; }
-    .meta th { background: #111827; color: #fff; font-weight: 800; font-size: 16px; text-align:left; }
-    .meta td { font-size: 12px; line-height: 1.35; word-wrap: break-word; }
-    .metaKey { width: 340px; font-weight: 700; background: #f3f4f6; }
+    .meta th { background: #111827; color: #fff; font-weight: 800; font-size: 14px; text-align:left; }
+    .meta td { font-size: 12px; line-height: 1.5; word-wrap: break-word; }
+    .metaKey { width: 240px; font-weight: 700; background: #f3f4f6; }
     .metaVal { width: 1080px; }
   </style>
 </head>
@@ -374,5 +374,6 @@ Utils.Exporters = (() => {
     download(filename, payload, "application/vnd.ms-excel;charset=utf-8");
   }
 
-  return { download, briefToCSV, briefDownloadXLS };
+  return { download, briefToCSV };
 })();
+

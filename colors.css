@@ -1,0 +1,63 @@
+﻿/* =========================================================
+   ZA RAMKI — Color System (single source of truth)
+   Меняй оттенки ТУТ. Не пиши хексы в styles.css.
+   =========================================================
+
+   Быстрые правила:
+   - Теплее: чуть ↑ R и G в --brand-bg / --brand-card
+   - Светлее: ↑ R,G,B одинаково
+   - Контраст: --brand-bg темный, --brand-card чуть светлее
+*/
+
+:root{
+  /* Base surfaces */
+  --brand-bg: #1E1B18;               /* rgb(30,27,24) */
+  --brand-panel: rgba(30,27,24,.82);
+  --brand-card: rgba(26,23,20,.88);
+  --brand-item: rgba(26,23,20,.72);
+
+  /* Text */
+  --brand-headings: #FFF3EA;
+  --brand-text: #EEE6DE;
+  --brand-muted: rgba(238,230,222,.72);
+
+  /* Borders */
+  --brand-border: rgba(255,243,234,.12);
+  --brand-border-accent: rgba(192,58,20,.38);
+
+  /* Accent */
+  --brand-accent: #C03A14;
+
+  /* Public tokens (используем в styles.css) */
+  --bg: var(--brand-bg);
+  --panel: var(--brand-panel);
+  --card: var(--brand-card);
+  --item: var(--brand-item);
+
+  /* Extra surfaces (helpers) */
+  --surface-soft: rgba(26,23,20,.35);   /* soft fill (table cells etc) */
+  --overlay: rgba(18,18,18,.98);        /* modal / overlay */
+  --table-bg: rgba(20,20,20,.98);       /* briefpro table base */
+
+  --text: var(--brand-text);
+  --muted: var(--brand-muted);
+  --headings: var(--brand-headings);
+
+  --border: var(--brand-border);
+  --accent: var(--brand-accent);
+
+  /* Accent as RGB for rgba() usage */
+  --accent-rgb: 192,58,20;
+  --accent-95: rgba(var(--accent-rgb), .95);
+  --accent-60: rgba(var(--accent-rgb), .60);
+  --accent-55: rgba(var(--accent-rgb), .55);
+  --accent-35: rgba(var(--accent-rgb), .35);
+  --accent-12: rgba(var(--accent-rgb), .12);
+  --accent-08: rgba(var(--accent-rgb), .08);
+
+  /* Gradients */
+  --hero-gradient: linear-gradient(135deg, var(--accent-95), rgba(var(--accent-rgb), .25));
+}
+
+
+

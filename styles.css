@@ -1,13 +1,18 @@
-﻿:root{
-  --bg:#0b0f17;
-  --panel:#111827;
-  --card:#0f172a;
-  --muted:#94a3b8;
-  --text:#e5e7eb;
-  --accent:#22c55e;
-  --border:rgba(148,163,184,.18);
-}
+﻿/* =========================================================
+   ZA RAMKI — LAYER MAP
 
+   LAYER 0  Page background     → var(--bg)
+   LAYER 1  Header / top bar    → var(--panel)
+   LAYER 2  Panels / viewer     → var(--card)
+   LAYER 3  Items / rows        → var(--item)
+   SOFT     Soft fills / code   → var(--surface-soft)
+   OVERLAY  Modal / dim         → var(--overlay)
+   ACCENT   Hover / active      → var(--accent)
+   HERO     Gradient surfaces   → var(--hero-gradient)
+
+   Все оттенки меняем в colors.css.
+   В styles.css цвета не хардкодим.
+   ========================================================= */
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -20,7 +25,7 @@ body{
 .header{
   position:sticky; top:0; z-index:10;
   backdrop-filter: blur(10px);
-  background: rgba(11,15,23,.72);
+  background: var(--panel);
   border-bottom: 1px solid var(--border);
 }
 .header-inner{
@@ -37,8 +42,8 @@ body{
 }
 .logo{
   width:34px;height:34px;border-radius:10px;
-  background: linear-gradient(135deg, rgba(34,197,94,.95), rgba(59,130,246,.75));
-  box-shadow: 0 12px 30px rgba(34,197,94,.12);
+  background: var(--hero-gradient);
+  box-shadow: 0 12px 30px var(--accent-12);
 }
 .brand h1{
   font-size:14px; margin:0; letter-spacing:.4px;
@@ -49,7 +54,7 @@ body{
   flex: 1;
   max-width: 520px;
   display:flex; gap:10px; align-items:center;
-  background: rgba(17,24,39,.65);
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 10px 12px;
@@ -113,13 +118,13 @@ body{
   display:block;
   text-decoration:none;
   color: var(--text);
-  background: rgba(15,23,42,.68);
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 12px;
   transition: transform .08s ease, border-color .08s ease;
 }
-.item:hover{ transform: translateY(-1px); border-color: rgba(34,197,94,.35); }
+.item:hover{ transform: translateY(-1px); border-color: var(--accent-35); }
 .item-title{ font-weight:600; font-size:14px; margin:0 0 6px 0; }
 .item-meta{ display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:12px; }
 .tag{
@@ -128,7 +133,7 @@ body{
   padding: 3px 8px;
   color: var(--muted);
 }
-.tag.accent{ border-color: rgba(34,197,94,.35); color: rgba(34,197,94,.95); }
+.tag.accent{ border-color: var(--accent-35); color: var(--accent-95); }
 
 .viewer{
   padding: 18px 18px 22px 18px;
@@ -137,7 +142,7 @@ body{
   color: var(--muted);
   line-height:1.6;
   padding: 20px;
-  background: rgba(15,23,42,.5);
+  background: var(--item);
   border: 1px dashed var(--border);
   border-radius: 14px;
 }
@@ -149,16 +154,16 @@ body{
   line-height: 1.65;
 }
 .markdown h2{ margin-top: 18px; }
-.markdown h3{ margin-top: 14px; color: #dbeafe; }
-.markdown a{ color: #93c5fd; }
-.markdown code{ background: rgba(2,6,23,.6); padding: 2px 6px; border-radius: 8px; border:1px solid var(--border);}
+.markdown h3{ margin-top: 14px; color: var(--headings); }
+.markdown a{ color: var(--accent); }
+.markdown code{ background: var(--item); padding: 2px 6px; border-radius: 8px; border:1px solid var(--border);}
 .markdown blockquote{
   margin: 14px 0;
   padding: 12px 14px;
-  border-left: 3px solid rgba(34,197,94,.6);
-  background: rgba(15,23,42,.5);
+  border-left: 3px solid var(--accent-60);
+  background: var(--item);
   border-radius: 12px;
-  color: #d1fae5;
+  color: var(--headings);
 }
 .markdown ul{ padding-left: 18px; }
 .footer{
@@ -179,22 +184,22 @@ body{
   gap:8px;
   padding: 10px;
   border-bottom: 1px solid var(--border);
-  background: rgba(17,24,39,.35);
+  background: var(--item);
 }
 .tab{
   appearance:none;
   border: 1px solid var(--border);
-  background: rgba(15,23,42,.55);
+  background: var(--card);
   color: var(--text);
   padding: 8px 10px;
   border-radius: 12px;
   cursor:pointer;
   font-size: 13px;
 }
-.tab:hover{ border-color: rgba(34,197,94,.35); }
+.tab:hover{ border-color: var(--accent-35); }
 .tab.is-active{
-  border-color: rgba(34,197,94,.55);
-  box-shadow: 0 10px 22px rgba(34,197,94,.08);
+  border-color: var(--accent-55);
+  box-shadow: 0 10px 22px var(--accent-08);
 }
 
 /* Action buttons inside viewer */
@@ -205,16 +210,16 @@ body{
   gap:8px;
   text-decoration:none;
   color: var(--text);
-  background: rgba(15,23,42,.68);
+  background: var(--card);
   border: 1px solid var(--border);
   padding: 9px 12px;
   border-radius: 12px;
   cursor:pointer;
 }
-.btn:hover{ border-color: rgba(34,197,94,.35); transform: translateY(-1px); }
+.btn:hover{ border-color: var(--accent-35); transform: translateY(-1px); }
 .btn .dot{
   width:8px;height:8px;border-radius:999px;
-  background: rgba(34,197,94,.9);
+  background: var(--accent-95);
 }
 
 /* Simple cards in contacts/templates lists */
@@ -223,14 +228,14 @@ body{
 
 /* BriefPro row accent */
 .bp-table tr[data-room-row] { --rr-bg: transparent; }
-.bp-table tr[data-room-row] td { background: rgba(26,23,20,.35) !important; }
+.bp-table tr[data-room-row] td { background: var(--surface-soft); }
 .bp-table tr[data-room-row] td.rr-sticky { box-shadow: inset 6px 0 0 var(--rr-bg); }
 
 
 /* BriefPro: sticky first column must have solid background (no see-through overlap) */
 .bp-table td:first-child,
 .bp-table th:first-child {
-  background: #ffffff;
+  background: var(--card);
   z-index: 3;
 }
 .bp-table th {
@@ -241,7 +246,7 @@ body{
 @media (prefers-color-scheme: dark) {
   .bp-table td:first-child,
   .bp-table th:first-child {
-    background: rgba(18,18,18,0.98) !important;
+    background: var(--overlay);
   }
 }
 
@@ -251,7 +256,7 @@ body{
 @media (prefers-color-scheme: dark) {
   .bp-table td:first-child,
   .bp-table th:first-child {
-    background: rgba(18,18,18,0.98) !important;
+    background: var(--overlay);
   }
 }
 
@@ -259,17 +264,28 @@ body{
 
 /* BriefPro: make table surface and sticky first column use the same background */
 .bp-table {
-  --bp-table-bg: rgba(20,20,20,0.98);
+  --bp-table-bg: var(--table-bg);
   background: var(--bp-table-bg);
 }
 
 .bp-table td:first-child,
 .bp-table th:first-child {
-  background: var(--bp-table-bg) !important;
+  background: var(--bp-table-bg);
   z-index: 3;
 }
 
 .bp-table th { z-index: 4; }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

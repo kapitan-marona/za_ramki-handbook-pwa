@@ -784,3 +784,49 @@ select:focus {
   min-width: max-content;
 }
 
+
+
+
+
+
+/* ============================= */
+/* BriefPro layering fix         */
+/* ============================= */
+
+/* Scrollbar — делаем заметнее */
+::-webkit-scrollbar-thumb{
+  background: var(--brand-item);
+  border: 2px solid var(--brand-bg);
+}
+
+::-webkit-scrollbar-thumb:hover{
+  background: var(--brand-accent);
+}
+
+/* Таблица как отдельный слой */
+.bp-tablewrap{
+  position: relative;
+  z-index: 1;
+}
+
+/* Sticky first column — полностью непрозрачная */
+.bp-table th.sticky,
+.bp-table td.sticky{
+  background: var(--brand-card) !important;
+  backdrop-filter: none !important;
+  z-index: 20;
+}
+
+/* Header таблицы выше sticky */
+.bp-table thead th{
+  background: var(--brand-item) !important;
+  backdrop-filter: blur(6px);
+  z-index: 30 !important;
+}
+
+/* Базовый слой таблицы */
+.bp-table{
+  position: relative;
+  z-index: 2;
+}
+

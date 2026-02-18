@@ -623,3 +623,57 @@ input:focus, textarea:focus{
   z-index: 20 !important;
 }
 
+
+
+/* ============================= */
+/* BriefPro: FINAL FIX (wins all)*/
+/* ============================= */
+
+/* 1) Вернуть прокрутку */
+.bp-tablewrap{
+  overflow: auto !important;
+}
+
+/* 2) Убрать “прозрачные” td из styles.css (они показывают синеву) */
+.bp-table tr[data-room-row] td{
+  background: rgba(26,23,20,.35) !important;
+}
+
+/* 3) Общий фон таблицы/шапки — тёплый, без синего */
+.bp-tablewrap{
+  background: rgba(26,23,20,.55) !important;
+}
+.bp-table{
+  background: rgba(26,23,20,.35) !important;
+}
+
+/* шапка */
+.bp-th{
+  background: rgba(26,23,20,.92) !important;
+  background-image: none !important;
+}
+
+/* обычные ячейки (если у тебя есть td без data-room-row) */
+.bp-table td{
+  background: rgba(26,23,20,.35) !important;
+  background-image: none !important;
+}
+
+/* 4) Sticky first column: непрозрачная и без белых полос */
+.bp-table td:first-child,
+.bp-table th:first-child,
+.rr-sticky,
+.bp-th.sticky{
+  background: rgba(26,23,20,.92) !important;
+  background-image: none !important;
+  z-index: 50 !important;
+}
+
+/* 5) Добить белую полоску слева (часто это псевдо-слой/тень) */
+.bp-tablewrap::before,
+.bp-tablewrap::after{
+  display:none !important;
+}
+.bp-tablewrap{
+  padding-left: 0 !important;
+}

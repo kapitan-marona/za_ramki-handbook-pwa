@@ -502,14 +502,14 @@ input:focus, textarea:focus{
 .bp-table tr,
 .bp-table th,
 .bp-table td{
-  background-color: #111827 !important;     /* нужный тёмный */
+  background-color: var(--brand-card) !important;     /* нужный тёмный */
   background-image: none !important;       /* убиваем синий/градиенты */
 }
 
 /* Sticky first column must be opaque and above */
 .bp-table th.sticky,
 .bp-table td.sticky{
-  background-color: #111827 !important;
+  background-color: var(--brand-card) !important;
   background-image: none !important;
   z-index: 10 !important;
 }
@@ -539,7 +539,7 @@ input:focus, textarea:focus{
 /* Optional: subtle separator between sticky col and rest */
 .bp-table th.sticky,
 .bp-table td.sticky{
-  box-shadow: 1px 0 0 rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
 }
 
 
@@ -564,14 +564,14 @@ input:focus, textarea:focus{
 .bp-th.group,
 .bp-th.mid,
 .bp-th.last{
-  background-color: #111827 !important;
+  background-color: var(--brand-card) !important;
   background-image: none !important;
 }
 
 /* Sticky first column: непрозрачная и поверх */
 .bp-th.sticky,
 .bp-table td.sticky{
-  background-color: #111827 !important;
+  background-color: var(--brand-card) !important;
   background-image: none !important;
   z-index: 20 !important;
 }
@@ -609,14 +609,14 @@ input:focus, textarea:focus{
 .bp-th.group,
 .bp-th.mid,
 .bp-th.last{
-  background-color: #111827 !important;
+  background-color: var(--brand-card) !important;
   background-image: none !important;
 }
 
 /* Sticky col opaque */
 .bp-th.sticky,
 .bp-table td.sticky{
-  background-color: #111827 !important;
+  background-color: var(--brand-card) !important;
   background-image: none !important;
   z-index: 20 !important;
 }
@@ -729,5 +729,7 @@ body{
 .bp-tablewrap::after{
   display:none !important;
 }
+
+
 
 

@@ -570,7 +570,7 @@ Views.BriefPro = (() => {
 
         setByPath(state, path, cell);
         save(state);
-        rerender(); # focus optional; keep simple/stable
+        rerender(); // optional focus (kept simple)
         return;
       }
 
@@ -629,6 +629,7 @@ Views.BriefPro = (() => {
 
   return { open };
 })();
+
 
 
 

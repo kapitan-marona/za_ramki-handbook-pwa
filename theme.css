@@ -357,3 +357,61 @@ input:focus, textarea:focus{
   margin-bottom:6px;
 }
 
+
+
+
+
+/* ============================= */
+/* DARK UI: Scrollbars + Select  */
+/* ============================= */
+
+:root{
+  color-scheme: dark;
+}
+
+/* Firefox */
+*{
+  scrollbar-width: thin;
+  scrollbar-color: #374151 #0B1220;
+}
+
+/* Chrome / Edge / Safari */
+::-webkit-scrollbar{
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track{
+  background: #0B1220;
+}
+::-webkit-scrollbar-thumb{
+  background: #374151;
+  border-radius: 999px;
+  border: 2px solid #0B1220;
+}
+::-webkit-scrollbar-thumb:hover{
+  background: #4B5563;
+}
+
+
+/* MultiField link label select */
+
+.mf-label-select{
+  background: #0B1220;
+  color: #E5E7EB;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 6px 10px;
+  height: 34px;
+  outline: none;
+  font-size: 13px;
+}
+
+.mf-label-select:focus{
+  border-color: #64748B;
+}
+
+.mf-label-select option{
+  background: #0B1220;
+  color: #E5E7EB;
+}
+

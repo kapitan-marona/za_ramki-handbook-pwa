@@ -677,3 +677,58 @@ input:focus, textarea:focus{
 .bp-tablewrap{
   padding-left: 0 !important;
 }
+
+
+
+/* ============================= */
+/* BriefPro: STOP BLUE (hard)    */
+/* ============================= */
+
+/* 0) На всякий: убиваем градиенты страницы (они и дают “синеву”) */
+body{
+  background: var(--bg) !important;
+  background-image: none !important;
+}
+
+/* 1) Карточка viewer — тёплая, без синего */
+.viewer{
+  background: var(--brand-card) !important;
+  background-image: none !important;
+}
+
+/* 2) ГЛАВНОЕ: перебиваем прозрачные td из styles.css (!!important) */
+.bp-table tr[data-room-row] td{
+  background: rgba(26,23,20,.35) !important;   /* было transparent !important */
+  background-image: none !important;
+}
+
+/* 3) Шапка и таблица — тёплые */
+.bp-tablewrap{
+  background: rgba(26,23,20,.55) !important;
+  background-image: none !important;
+  overflow: auto !important;                  /* скролл должен жить */
+  padding-left: 0 !important;
+}
+
+.bp-table{
+  background: rgba(26,23,20,.35) !important;
+  background-image: none !important;
+  margin-left: 0 !important;
+}
+
+/* 4) Sticky первая колонка — непрозрачная */
+.bp-table td:first-child,
+.bp-table th:first-child,
+.rr-sticky,
+.bp-th.sticky{
+  background: rgba(26,23,20,.92) !important;
+  background-image: none !important;
+  z-index: 50 !important;
+}
+
+/* 5) Белая полоса: чаще всего псевдоэлемент/тень */
+.bp-tablewrap::before,
+.bp-tablewrap::after{
+  display:none !important;
+}
+

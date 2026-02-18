@@ -581,3 +581,45 @@ input:focus, textarea:focus{
   z-index: 30 !important;
 }
 
+
+
+
+/* ============================= */
+/* BriefPro: cover global gradients */
+/* ============================= */
+
+/* Viewer area becomes solid dark so page gradients don't show through */
+#viewer{
+  background: #111827 !important;
+}
+
+/* If BriefPro content is wrapped into .markdown – make it solid too */
+#viewer .markdown{
+  background: #111827 !important;
+}
+
+/* Table wrapper + table must be solid */
+.bp-tablewrap{
+  background: #111827 !important;
+  background-image: none !important;
+  overflow: hidden !important;
+}
+
+.bp-table,
+.bp-table td,
+.bp-th,
+.bp-th.group,
+.bp-th.mid,
+.bp-th.last{
+  background-color: #111827 !important;
+  background-image: none !important;
+}
+
+/* Sticky col opaque */
+.bp-th.sticky,
+.bp-table td.sticky{
+  background-color: #111827 !important;
+  background-image: none !important;
+  z-index: 20 !important;
+}
+

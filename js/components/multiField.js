@@ -20,6 +20,9 @@ Components.MultiField = (() => {
     return clean.length > n ? (clean.slice(0, n) + "…") : clean;
   }
 
+  // Backward compatible normalization:
+  // - keeps v.textItems / v.links
+  // - adds v.blocks (ordered list) if missing
   function normalize(value){
     const v = value || {};
     const links = Array.isArray(v.links) ? v.links : [];
@@ -30,97 +33,109 @@ Components.MultiField = (() => {
       textItems = [legacyText];
     }
 
-    return { ...v, links, textItems };
+    let blocks = Array.isArray(v.blocks) ? v.blocks : null;
+    if(!blocks){
+      // cannot restore historical interleaving from old data, so fallback: texts then links
+      blocks = [];
+      textItems.forEach(t => blocks.push({ t:"text", v: (t ?? "").toString() }));
+      links.forEach(u => blocks.push({ t:"link", v: (u ?? "").toString() }));
+    } else {
+      // sanitize
+      blocks = blocks
+        .filter(b => b && (b.t === "text" || b.t === "link"))
+        .map(b => ({ t: b.t, v: (b.v ?? "").toString() }));
+    }
+
+    return { ...v, links, textItems, blocks };
   }
 
   function render({ value, mode, placeholderText, placeholderLink, path }){
     const v = normalize(value);
-    const links = v.links;
-    const textItems = v.textItems;
+    const blocks = v.blocks;
 
     const pText = placeholderText || "";
     const pLink = placeholderLink || "https://…";
 
     if(mode === "view"){
-      const textsHtml = textItems.length
-        ? textItems
-            .map((t) => {
-              const s = (t || "").trim();
-              return s ? `<div class="mf-textview">${esc(s)}</div>` : "";
-            })
-            .join("")
+      const html = blocks.length
+        ? blocks.map((b) => {
+            if(b.t === "text"){
+              const s = (b.v || "").trim();
+              return s
+                ? `<div class="mf-textview">${esc(s)}</div>`
+                : "";
+            }
+            const url = safeUrl(b.v);
+            if(!url) return "";
+            const label = shortLabel(url);
+
+            if(/^https?:\/\//i.test(url)){
+              return `
+                <div class="mf-linkrow">
+                  <a href="${esc(url)}"
+                     target="_blank"
+                     rel="noopener"
+                     title="${esc(url)}"
+                     class="mf-linkview">🔗 ${esc(label)}</a>
+                </div>`;
+            }
+
+            return `<div class="mf-linkrow mf-muted" title="${esc(url)}">🔗 ${esc(label)}</div>`;
+          }).join("")
         : `<div class="mf-muted">${esc(pText || "")}</div>`;
-
-      const linksHtml = links
-        .map((u) => {
-          const url = safeUrl(u);
-          if(!url) return "";
-          const label = shortLabel(url);
-
-          if(/^https?:\/\//i.test(url)){
-            return `
-              <div class="mf-linkrow">
-                <a href="${esc(url)}"
-                   target="_blank"
-                   rel="noopener"
-                   title="${esc(url)}"
-                   class="mf-linkview">🔗 ${esc(label)}</a>
-              </div>`;
-          }
-
-          return `<div class="mf-linkrow mf-muted" title="${esc(url)}">🔗 ${esc(label)}</div>`;
-        })
-        .join("");
 
       return `
         <div class="mf mf-view" data-mf-path="${esc(path)}">
-          ${textsHtml}
-          ${linksHtml}
+          ${html}
         </div>
       `;
     }
 
-    // edit mode: NO text field by default; user adds via "+ инфо"
-    const textInputs = textItems.length
-      ? textItems.map((t, idx) => `
-          <div class="mf-row">
-            <textarea
-              class="mf-textitem"
-              data-mf-path="${esc(path)}"
-              data-mf-text-idx="${idx}"
-              rows="2"
-              placeholder="${esc(pText)}"
-            >${esc(t || "")}</textarea>
-            <button
-              type="button"
-              class="btn btn-sm btn-icon mf-del-text"
-              data-mf-path="${esc(path)}"
-              data-mf-text-idx="${idx}"
-              title="Удалить инфо"
-            >−</button>
-          </div>
-        `).join("")
-      : "";
+    // edit mode: renders ordered blocks (text/link/text/link...)
+    const inputs = blocks.length
+      ? blocks.map((b, idx) => {
+          if(b.t === "text"){
+            return `
+              <div class="mf-row">
+                <textarea
+                  class="mf-textitem mf-block"
+                  data-mf-path="${esc(path)}"
+                  data-mf-kind="text"
+                  data-mf-idx="${idx}"
+                  rows="2"
+                  placeholder="${esc(pText)}"
+                >${esc(b.v || "")}</textarea>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-icon mf-del-block"
+                  data-mf-path="${esc(path)}"
+                  data-mf-idx="${idx}"
+                  title="Удалить"
+                >−</button>
+              </div>
+            `;
+          }
 
-    const linksInputs = links.length
-      ? links.map((u, idx) => `
-          <div class="mf-row">
-            <input
-              class="mf-link"
-              data-mf-path="${esc(path)}"
-              data-mf-link-idx="${idx}"
-              value="${esc(u)}"
-              placeholder="${esc(pLink)}"
-            />
-            <button
-              type="button"
-              class="btn btn-sm btn-icon mf-del-link"
-              data-mf-path="${esc(path)}"
-              data-mf-link-idx="${idx}"
-              title="Удалить ссылку"
-            >−</button>
-          </div>
-        `).join("")
+          return `
+            <div class="mf-row">
+              <input
+                class="mf-link mf-block"
+                data-mf-path="${esc(path)}"
+                data-mf-kind="link"
+                data-mf-idx="${idx}"
+                value="${esc(b.v || "")}"
+                placeholder="${esc(pLink)}"
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn-icon mf-del-block"
+                data-mf-path="${esc(path)}"
+                data-mf-idx="${idx}"
+                title="Удалить"
+              >−</button>
+            </div>
+          `;
+        }).join("")
       : "";
 
     return `
@@ -130,8 +145,7 @@ Components.MultiField = (() => {
           <button type="button" class="btn btn-sm mf-add-link" data-mf-path="${esc(path)}">+ ссылка</button>
         </div>
 
-        ${textInputs}
-        ${linksInputs}
+        ${inputs}
       </div>
     `;
   }

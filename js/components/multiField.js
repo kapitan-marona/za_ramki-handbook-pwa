@@ -21,7 +21,6 @@ Components.MultiField = (() => {
   }
 
   const PRESET_LABELS = ["Каталог","Фото","Реф","Чертёж","Другое"];
-  const CUSTOM_VALUE = "__custom__";
 
   function isPresetLabel(x){
     const s = (x ?? "").toString().trim();
@@ -131,14 +130,13 @@ Components.MultiField = (() => {
           }
 
           const curLabel = (b.label ?? "").toString().trim();
-          const selectVal = isPresetLabel(curLabel) ? curLabel : (curLabel ? CUSTOM_VALUE : "");
-          const showCustom = (selectVal === CUSTOM_VALUE);
+          const selectVal = isPresetLabel(curLabel) ? curLabel : "";
 
           const optionsHtml =
-            ['<option value=""></option>']
-            .concat(PRESET_LABELS.map(x => `<option value="${esc(x)}"${x===selectVal?' selected':''}>${esc(x)}</option>`))
-            .concat([`<option value="${CUSTOM_VALUE}"${selectVal===CUSTOM_VALUE?' selected':''}>Свой…</option>`])
-            .join("");
+            [
+              '<option value="" disabled' + (selectVal ? '' : ' selected') + '>Лейбл…</option>',
+              ...PRESET_LABELS.map(x => `<option value="${esc(x)}"${x===selectVal?' selected':''}>${esc(x)}</option>`)
+            ].join("");
 
           return `
             <div class="mf-row" style="align-items:flex-start; gap:8px;">
@@ -149,17 +147,8 @@ Components.MultiField = (() => {
                     data-mf-path="${esc(path)}"
                     data-mf-idx="${idx}"
                     title="Лейбл ссылки"
-                    style="max-width:160px;"
+                    style="max-width:180px;"
                   >${optionsHtml}</select>
-
-                  <input
-                    class="mf-label-custom"
-                    data-mf-path="${esc(path)}"
-                    data-mf-idx="${idx}"
-                    value="${esc(showCustom ? curLabel : "")}"
-                    placeholder="Свой лейбл…"
-                    style="flex:1; ${showCustom ? "" : "display:none;"}"
-                  />
                 </div>
 
                 <input

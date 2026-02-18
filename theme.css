@@ -371,24 +371,13 @@ input:focus, textarea:focus{
 
 /* Scrollbars */
 
-::-webkit-scrollbar{
-  width: 10px;
-  height: 10px;
-}
 
-::-webkit-scrollbar-track{
-  background: var(--brand-bg);
-}
 
-::-webkit-scrollbar-thumb{
-  background: var(--brand-card);
-  border-radius: 999px;
-  border: 2px solid var(--brand-bg);
-}
 
-::-webkit-scrollbar-thumb:hover{
-  background: var(--brand-item);
-}
+
+
+
+
 
 /* MultiField link label select */
 
@@ -692,21 +681,10 @@ body{
    ========================================================= */
 
 /* 1. Scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: var(--brand-bg) !important;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--brand-card) !important;
-  border-radius: 999px;
-  border: 2px solid var(--brand-bg) !important;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-accent) !important;
-}
+
+
+
+
 
 /* 2. Viewer / panel unified background */
 .viewer,
@@ -794,14 +772,9 @@ select:focus {
 /* ============================= */
 
 /* Scrollbar — делаем заметнее */
-::-webkit-scrollbar-thumb{
-  background: var(--brand-item);
-  border: 2px solid var(--brand-bg);
-}
 
-::-webkit-scrollbar-thumb:hover{
-  background: var(--brand-accent);
-}
+
+
 
 /* Таблица как отдельный слой */
 .bp-tablewrap{
@@ -830,4 +803,29 @@ select:focus {
   z-index: 2;
 }
 
+
+
+
+/* ============================= */
+/* Scrollbar system (final)      */
+/* ============================= */
+
+::-webkit-scrollbar{
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track{
+  background: var(--brand-bg);
+}
+
+::-webkit-scrollbar-thumb{
+  background: var(--brand-accent);
+  border-radius: 999px;
+  border: 2px solid var(--brand-bg);
+}
+
+::-webkit-scrollbar-thumb:hover{
+  background: var(--brand-headings);
+}
 

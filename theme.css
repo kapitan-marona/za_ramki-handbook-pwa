@@ -451,10 +451,9 @@ input:focus, textarea:focus{
 
 /* =========================================================
 
-
 /* =========================================================
    BriefPro Table — SINGLE SOURCE OF TRUTH (table only)
-   Sticky first column (opaque like header) + sticky thead
+   Fix: sticky must WIN over .bp-table tr[data-room-row] td background
    ========================================================= */
 
 .bp-tablewrap{
@@ -465,20 +464,24 @@ input:focus, textarea:focus{
 .bp-table{
   min-width: max-content;
   position: relative;
+  isolation: isolate;
 }
 
-/* sticky first column */
-.bp-table th:first-child,
-.bp-table td:first-child,
-.rr-sticky,
-.bp-th.sticky,
+/* sticky first column — HIGH specificity to beat row background rule */
+.bp-table td.rr-sticky,
+.bp-table th.bp-th.sticky,
 .bp-table th.sticky,
-.bp-table td.sticky{
+.bp-table td.sticky,
+.bp-table tr[data-room-row] td.rr-sticky,
+.bp-table td:first-child,
+.bp-table th:first-child{
   position: sticky;
   left: 0;
-  background: var(--card);
-  z-index: 5;
+  z-index: 50;
+  background: var(--panel);
   background-clip: padding-box;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-right: 1px solid var(--border);
 }
 
@@ -486,14 +489,16 @@ input:focus, textarea:focus{
 .bp-table thead th{
   position: sticky;
   top: 0;
-  background: var(--card);
-  z-index: 6;
+  z-index: 60;
+  background: var(--panel);
   background-clip: padding-box;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* top-left cell above everything */
 .bp-table thead th:first-child,
 .bp-table thead th.sticky{
-  z-index: 7;
+  z-index: 70;
 }
 

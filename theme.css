@@ -405,408 +405,6 @@ input:focus, textarea:focus{
   color: var(--brand-text);
 }
 
-/* BriefPro table */
-
-.bp-tablewrap{
-  background: var(--brand-card);
-  border-radius: 14px;
-}
-
-.bp-table{
-  background: var(--brand-card);
-}
-
-.bp-table,
-.bp-table th,
-.bp-table td{
-  border-color: var(--brand-border);
-}
-
-/* Sticky column */
-.bp-table th.sticky,
-.bp-table td.sticky{
-  background: var(--brand-card);
-  z-index: 5;
-}
-
-/* Header */
-.bp-table thead th{
-  background: var(--brand-item);
-  z-index: 6;
-}/* ============================= */
-/* BriefPro: kill blue gradients */
-/* ============================= */
-
-.bp-tablewrap,
-.bp-table,
-.bp-table thead,
-.bp-table tbody,
-.bp-table tr,
-.bp-table th,
-.bp-table td{
-  background-color: var(--brand-card) !important;     /* нужный тёмный */
-  background-image: none !important;       /* убиваем синий/градиенты */
-}
-
-/* Sticky first column must be opaque and above */
-.bp-table th.sticky,
-.bp-table td.sticky{
-  background-color: var(--brand-card) !important;
-  background-image: none !important;
-  z-index: 10 !important;
-}
-
-/* Header above sticky */
-.bp-table thead th{
-  z-index: 11 !important;
-}
-
-/* White strip leftovers: remove left padding/inner shadows */
-.bp-tablewrap{
-  padding-left: 0 !important;
-  box-shadow: none !important;
-}
-
-.bp-table{
-  margin-left: 0 !important;
-  border-left: 0 !important;
-}
-
-/* If there is a pseudo-element creating a strip */
-.bp-tablewrap::before,
-.bp-tablewrap::after{
-  content: none !important;
-}
-
-/* Optional: subtle separator between sticky col and rest */
-.bp-table th.sticky,
-.bp-table td.sticky{
-  box-shadow: none !important;
-}
-
-
-
-
-
-
-/* ============================= */
-/* BriefPro: force solid table   */
-/* ============================= */
-
-.bp-tablewrap{
-  background: var(--brand-bg) !important;
-  background-image: none !important;
-  overflow: hidden !important; /* убирает “просветы” у скруглений/краёв */
-}
-
-/* ВАЖНО: фон у тебя задаётся классами bp-th и td, перебиваем их */
-.bp-table,
-.bp-table td,
-.bp-th,
-.bp-th.group,
-.bp-th.mid,
-.bp-th.last{
-  background-color: var(--brand-card) !important;
-  background-image: none !important;
-}
-
-/* Sticky first column: непрозрачная и поверх */
-.bp-th.sticky,
-.bp-table td.sticky{
-  background-color: var(--brand-card) !important;
-  background-image: none !important;
-  z-index: 20 !important;
-}
-
-/* Header поверх sticky */
-.bp-table thead .bp-th{
-  z-index: 30 !important;
-}
-
-
-
-
-/* ============================= */
-/* BriefPro: cover global gradients */
-/* ============================= */
-
-/* Viewer area becomes solid dark so page gradients don't show through */
-#viewer { background: var(--brand-card) !important; }
-
-/* If BriefPro content is wrapped into .markdown – make it solid too */
-#viewer .markdown{
-  background: var(--brand-bg) !important;
-}
-
-/* Table wrapper + table must be solid */
-.bp-tablewrap{
-  background: var(--brand-bg) !important;
-  background-image: none !important;
-  overflow: hidden !important;
-}
-
-.bp-table,
-.bp-table td,
-.bp-th,
-.bp-th.group,
-.bp-th.mid,
-.bp-th.last{
-  background-color: var(--brand-card) !important;
-  background-image: none !important;
-}
-
-/* Sticky col opaque */
-.bp-th.sticky,
-.bp-table td.sticky{
-  background-color: var(--brand-card) !important;
-  background-image: none !important;
-  z-index: 20 !important;
-}
-
-
-
-/* ============================= */
-/* BriefPro: FINAL FIX (wins all)*/
-/* ============================= */
-
-/* 1) Вернуть прокрутку */
-.bp-tablewrap{
-  overflow: auto !important;
-}
-
-/* 2) Убрать “прозрачные” td из styles.css (они показывают синеву) */
-.bp-table tr[data-room-row] td{
-  background: rgba(26,23,20,.35) !important;
-}
-
-/* 3) Общий фон таблицы/шапки — тёплый, без синего */
-.bp-tablewrap{
-  background: rgba(26,23,20,.55) !important;
-}
-.bp-table{
-  background: rgba(26,23,20,.35) !important;
-}
-
-/* шапка */
-.bp-th{
-  background: rgba(26,23,20,.92) !important;
-  background-image: none !important;
-}
-
-/* обычные ячейки (если у тебя есть td без data-room-row) */
-.bp-table td{
-  background: rgba(26,23,20,.35) !important;
-  background-image: none !important;
-}
-
-/* 4) Sticky first column: непрозрачная и без белых полос */
-.bp-table td:first-child,
-.bp-table th:first-child,
-.rr-sticky,
-.bp-th.sticky{
-  background: rgba(26,23,20,.92) !important;
-  background-image: none !important;
-  z-index: 50 !important;
-}
-
-/* 5) Добить белую полоску слева (часто это псевдо-слой/тень) */
-.bp-tablewrap::before,
-.bp-tablewrap::after{
-  display:none !important;
-}
-.bp-tablewrap{
-  padding-left: 0 !important;
-}
-
-
-
-/* ============================= */
-/* BriefPro: STOP BLUE (hard)    */
-/* ============================= */
-
-/* 0) На всякий: убиваем градиенты страницы (они и дают “синеву”) */
-body{
-  background: var(--bg) !important;
-  background-image: none !important;
-}
-
-/* 1) Карточка viewer — тёплая, без синего */
-.viewer{
-  background: var(--brand-card) !important;
-  background-image: none !important;
-}
-
-/* 2) ГЛАВНОЕ: перебиваем прозрачные td из styles.css (!!important) */
-.bp-table tr[data-room-row] td{
-  background: rgba(26,23,20,.35) !important;   /* было transparent !important */
-  background-image: none !important;
-}
-
-/* 3) Шапка и таблица — тёплые */
-.bp-tablewrap{
-  background: rgba(26,23,20,.55) !important;
-  background-image: none !important;
-  overflow: auto !important;                  /* скролл должен жить */
-  padding-left: 0 !important;
-}
-
-.bp-table{
-  background: rgba(26,23,20,.35) !important;
-  background-image: none !important;
-  margin-left: 0 !important;
-}
-
-/* 4) Sticky первая колонка — непрозрачная */
-.bp-table td:first-child,
-.bp-table th:first-child,
-.rr-sticky,
-.bp-th.sticky{
-  background: rgba(26,23,20,.92) !important;
-  background-image: none !important;
-  z-index: 50 !important;
-}
-
-/* 5) Белая полоса: чаще всего псевдоэлемент/тень */
-.bp-tablewrap::before,
-.bp-tablewrap::after{
-  display:none !important;
-}
-
-
-
-
-
-/* =========================================================
-   BRAND CLEANUP — remove blue tint everywhere
-   ========================================================= */
-
-/* 1. Scrollbar */
-
-
-
-
-
-/* 2. Viewer / panel unified background */
-.viewer,
-.panel,
-.main,
-.bp-tablewrap {
-  background: var(--brand-bg) !important;
-}
-
-/* 3. Table surface */
-.bp-table,
-.bp-table td,
-.bp-th,
-.bp-th.group,
-.bp-th.mid,
-.bp-th.last {
-  background-color: var(--brand-card) !important;
-}
-
-/* 4. Sticky column without blue shadow */
-.bp-table td:first-child,
-.bp-table th:first-child,
-.rr-sticky,
-.bp-th.sticky {
-  background: var(--brand-item) !important;
-  box-shadow: none !important;
-}
-
-/* 5. Select (link label dropdown) */
-select {
-  background: var(--brand-item) !important;
-  color: var(--brand-headings) !important;
-  border: 1px solid var(--brand-border) !important;
-  border-radius: 10px;
-  padding: 6px 10px;
-  appearance: none;
-  -webkit-appearance: none;
-}
-select:focus {
-  outline: none !important;
-  border-color: var(--brand-accent) !important;
-  box-shadow: 0 0 0 1px var(--brand-accent) !important;
-}
-
-
-/* ===== Meta section cleanup ===== */
-.bp-meta,
-.bp-meta-label {
-  background: var(--brand-card) !important;
-  color: var(--brand-headings) !important;
-}
-
-/* ===== Firefox scrollbar ===== */
-* {
-  scrollbar-width: thin;
-  
-}
-
-
-/* ===== Remove blue under section headers ===== */
-.markdown h2,
-.bp-meta-label,
-.bp-meta h2 {
-  background: var(--brand-bg) !important;
-  color: var(--brand-headings) !important;
-  border-bottom: 2px solid var(--brand-border) !important;
-}
-
-/* ===== Restore horizontal scroll for table ===== */
-.bp-tablewrap {
-  overflow-x: auto !important;
-}
-
-.bp-table {
-  min-width: max-content;
-}
-
-
-
-
-
-
-/* ============================= */
-/* BriefPro layering fix         */
-/* ============================= */
-
-/* Scrollbar — делаем заметнее */
-
-
-
-
-/* Таблица как отдельный слой */
-.bp-tablewrap{
-  position: relative;
-  z-index: 1;
-}
-
-/* Sticky first column — полностью непрозрачная */
-.bp-table th.sticky,
-.bp-table td.sticky{
-  background: var(--brand-card) !important;
-  backdrop-filter: none !important;
-  z-index: 20;
-}
-
-/* Header таблицы выше sticky */
-.bp-table thead th{
-  background: var(--brand-item) !important;
-  backdrop-filter: blur(6px);
-  z-index: 30 !important;
-}
-
-/* Базовый слой таблицы */
-.bp-table{
-  position: relative;
-  z-index: 2;
-}
-
-
-
-
-/* ============================= */
 /* Scrollbar system (final)      */
 /* ============================= */
 
@@ -852,135 +450,50 @@ select:focus {
 
 
 /* =========================================================
-   BriefPro Table — FINAL (единственный финальный блок)
-   Цель: сетка, слои sticky, hover, без синевы и без хаоса
-   ========================================================= */
-
-.bp-tablewrap{
-  background: var(--bg);
-}
-
-/* Базовая таблица */
-.bp-table{
-  border-collapse: separate;
-  border-spacing: 0;
-  background: var(--bp-cell-bg);
-  border: 1px solid var(--bp-grid);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-/* Ячейки: четкая сетка */
-.bp-table th,
-.bp-table td{
-  background: var(--bp-cell-bg);
-  color: var(--text);
-  border-right: 1px solid var(--bp-grid);
-  border-bottom: 1px solid var(--bp-grid);
-}
-
-/* Убираем двойные края справа/снизу */
-.bp-table tr > *:last-child{ border-right: 0; }
-.bp-table tbody tr:last-child > *{ border-bottom: 0; }
-
-/* Шапка */
-.bp-table thead th{
-  background: var(--bp-head-bg);
-  color: var(--headings);
-  border-bottom: 1px solid var(--bp-grid);
-}
-
-/* Hover по строке (только тело таблицы) */
-.bp-table tbody tr:hover > td{
-  background: var(--bp-row-hover);
-}
-
-/* Sticky: фон + слои + разделитель, чтобы не было "грязи" */
-.bp-table th.sticky,
-.bp-table td.sticky{
-  background: var(--bp-sticky-bg);
-}
-
-/* Первый sticky столбец (если у вас именно так размечено) */
-.bp-table th.sticky{
-  z-index: 5;
-}
-.bp-table td.sticky{
-  z-index: 4;
-}
-
-/* Разделение sticky колонки справа (тонкая тень/линия) */
-.bp-table th.sticky,
-.bp-table td.sticky{
-  box-shadow: 1px 0 0 var(--bp-sticky-sep);
-}
-
-/* Если есть sticky-шапка/липкий thead — поднимаем ее выше тела */
-.bp-table thead th{
-  position: sticky;
-  top: 0;
-  z-index: 6;
-}
-.bp-table thead th.sticky{
-  z-index: 7;
-}
-
-/* Фокус без синевы (если вдруг браузер рисует системный outline) */
-.bp-table input:focus,
-.bp-table textarea:focus,
-.bp-table select:focus{
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
 
 
 /* =========================================================
-   BriefPro: sticky 1st column + sticky headers (minimal)
-   Требование: 1-й столбец как шапка по прозрачности и fixed слева
+   BriefPro Table — SINGLE SOURCE OF TRUTH (table only)
+   Sticky first column (opaque like header) + sticky thead
    ========================================================= */
 
-/* важно для sticky внутри скролла */
 .bp-tablewrap{
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
-/* на всякий случай */
 .bp-table{
+  min-width: max-content;
   position: relative;
 }
 
-/* 1) Первый столбец (если уже есть класс sticky — он тоже поддержан) */
+/* sticky first column */
 .bp-table th:first-child,
 .bp-table td:first-child,
+.rr-sticky,
+.bp-th.sticky,
 .bp-table th.sticky,
 .bp-table td.sticky{
   position: sticky;
   left: 0;
   background: var(--panel);
-  z-index: 3;
+  z-index: 5;
   background-clip: padding-box;
-}
-
-/* 2) Лёгкое разделение, чтобы не было налезания визуально */
-.bp-table th:first-child,
-.bp-table td:first-child,
-.bp-table th.sticky,
-.bp-table td.sticky{
   border-right: 1px solid var(--border);
 }
 
-/* 3) Sticky заголовки строк (thead) — опционально, но включаем */
+/* sticky thead */
 .bp-table thead th{
   position: sticky;
   top: 0;
   background: var(--panel);
-  z-index: 4;
+  z-index: 6;
   background-clip: padding-box;
 }
 
-/* 4) Пересечение: верхний левый угол должен быть самым верхним */
+/* top-left cell above everything */
 .bp-table thead th:first-child,
 .bp-table thead th.sticky{
-  z-index: 5;
+  z-index: 7;
 }
+

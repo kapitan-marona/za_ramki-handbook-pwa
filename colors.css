@@ -57,14 +57,14 @@
 
   /* Gradients */
   --hero-gradient: linear-gradient(135deg, var(--accent-95), rgba(var(--accent-rgb), .25));
+  --scrollbar-thumb: var(--brand-accent);
+  --scrollbar-track: var(--brand-bg);
 }
 
 
 
 
   /* Scrollbar */
-  --scrollbar-thumb: var(--brand-accent);
-  --scrollbar-track: var(--brand-bg);
 
 
 

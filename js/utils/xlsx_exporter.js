@@ -1,112 +1,49 @@
-﻿/**
+﻿﻿/**
  * XLSX exporter for BriefPro (true .xlsx with styles) using xlsx-js-style bundle.
  * Loads vendor lazily only on export.
  *
  * Public API:
  *   Utils.XLSXExport.downloadXLSX(state, filename)
  */
-(function () {
-  "use strict";
+window.Utils = window.Utils || {};
 
-  window.Utils = window.Utils || {};
+Utils.XLSXExport = (() => {
+  // ---------------------------
+  // Helpers
+  // ---------------------------
+  function normStr(v){ return (v ?? "").toString(); }
 
-  const VENDOR_PATH = "./js/vendor/xlsx.bundle.js";
-
-  function ensureXLSXLoaded() {
-    if (window.XLSX && window.XLSX.utils) return Promise.resolve(window.XLSX);
-    return new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = VENDOR_PATH;
-      s.async = true;
-      s.onload = () => (window.XLSX && window.XLSX.utils)
-        ? resolve(window.XLSX)
-        : reject(new Error("XLSX loaded but window.XLSX is missing"));
-      s.onerror = () => reject(new Error("Failed to load XLSX vendor: " + VENDOR_PATH));
-      document.head.appendChild(s);
-    });
+  function cellText(v, style){
+    return { v: normStr(v), t: "s", s: style || {} };
   }
 
-  const FONT_BODY = "Calibri";
-  const FONT_SIZE_BODY = 12;
-  const FONT_SIZE_HEAD = 16;
-  const FONT_SIZE_ROOM = 14; // first column (room names)
-
-  function normStr(v) { return (v === null || v === undefined) ? "" : String(v); }
-
-  function safeUrl(url) {
-    const s = normStr(url).trim();
-    if (!s) return "";
-    if (/^(https?:\/\/|mailto:|tel:)/i.test(s)) return s;
-    if (/^[\w.-]+\.[a-z]{2,}([\/?#].*)?$/i.test(s)) return "https://" + s;
-    return s;
-  }
-
-  function linkDisplay(url) {
-    const raw = normStr(url).trim();
-    if (!raw) return "";
-    let d = raw.replace(/^(https?:\/\/)/i, "").replace(/\/$/, "");
-    const MAX = 48;
-    if (d.length > MAX) d = d.slice(0, 30) + "…" + d.slice(-14);
-    return d;
-  }
-
-  function cellText(v, style) { return { t: "s", v: normStr(v), s: style || undefined }; }
-
-  function cellLink(display, url, style) {
-    const target = safeUrl(url);
-    const c = { t: "s", v: normStr(display), s: style || undefined };
-    if (target) c.l = { Target: target, Tooltip: target };
-    return c;
-  }
-
-  function makeStyles() {
-    const borderThin = {
-      top: { style: "thin", color: { rgb: "D9D9D9" } },
-      bottom: { style: "thin", color: { rgb: "D9D9D9" } },
-      left: { style: "thin", color: { rgb: "D9D9D9" } },
-      right: { style: "thin", color: { rgb: "D9D9D9" } }
+  function ensureStyleBase(){
+    const border = { style: "thin", color: { rgb: "D1D5DB" } };
+    const base = {
+      border: { top: border, bottom: border, left: border, right: border },
+      alignment: { vertical: "top", wrapText: true }
     };
+    return base;
+  }
 
+  function mkStyles(){
+    const base = ensureStyleBase();
     const head = {
-      font: { name: FONT_BODY, sz: FONT_SIZE_HEAD, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: "1F2937" } },
-      alignment: { horizontal: "center", vertical: "center", wrapText: true },
-      border: borderThin
+      ...base,
+      font: { bold: true, color: { rgb: "0F172A" } },
+      fill: { patternType: "solid", fgColor: { rgb: "F1F5F9" } },
+      alignment: { vertical: "center", horizontal: "center", wrapText: true }
     };
-
     const groupHead = {
-      font: { name: FONT_BODY, sz: 14, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: "111827" } },
-      alignment: { horizontal: "center", vertical: "center", wrapText: true },
-      border: borderThin
+      ...base,
+      font: { bold: true, color: { rgb: "0F172A" } },
+      fill: { patternType: "solid", fgColor: { rgb: "E2E8F0" } },
+      alignment: { vertical: "center", horizontal: "center", wrapText: true }
     };
-
-    const body = {
-      font: { name: FONT_BODY, sz: FONT_SIZE_BODY, color: { rgb: "111827" } },
-      alignment: { horizontal: "left", vertical: "top", wrapText: true },
-      border: borderThin
-    };
-
-    const bodyBold = {
-      font: { name: FONT_BODY, sz: FONT_SIZE_BODY, bold: true, color: { rgb: "111827" } },
-      alignment: { horizontal: "left", vertical: "top", wrapText: true },
-      border: borderThin
-    };
-
-    const firstCol = (rgb) => ({
-      font: { name: FONT_BODY, sz: FONT_SIZE_ROOM, bold: true, color: { rgb: "111827" } },
-      fill: { patternType: "solid", fgColor: { rgb: rgb || "E5E7EB" } },
-      alignment: { horizontal: "left", vertical: "top", wrapText: true },
-      border: borderThin
-    });
-
-    const link = {
-      font: { name: FONT_BODY, sz: FONT_SIZE_BODY, color: { rgb: "1D4ED8" }, underline: true },
-      alignment: { horizontal: "left", vertical: "top", wrapText: true },
-      border: borderThin
-    };
-
-    return { head, groupHead, body, bodyBold, firstCol, link };
+    const stickyBold = { ...base, font: { bold: true } };
+    const firstCol = { ...base, font: { bold: true } };
+    const link = { ...base, font: { color: { rgb: "2563EB" }, underline: true } };
+    return { base, head, groupHead, stickyBold, firstCol, link };
   }
 
   function hexToRGB(hex) {
@@ -115,188 +52,108 @@
     return h.toUpperCase();
   }
 
-  function normalizeLabel(s) {
-    return normStr(s).trim().toLowerCase().replace(/\s+/g, " ");
-  }
-
   function getBriefProModel(state) {
-  const s = state || {};
-  const bp =
-    s.briefPro || s.brief_pro || s.brief || s.briefpro ||
-    (s.data && (s.data.briefPro || s.data.brief_pro)) || {};
+    const s = state || {};
+    const bp =
+      s.briefPro || s.brief_pro || s.brief || s.briefpro ||
+      (s.data && (s.data.briefPro || s.data.brief_pro)) || {};
 
-  const rooms = bp.rooms || bp.rows || bp.items || s.rooms || [];
+    const rooms = bp.rooms || bp.rows || bp.items || s.rooms || [];
 
-  // Columns priority:
-  // 1) explicit model in state (bp.columns / bp.fields / bp.headers / s.columns)
-  // 2) UI source of truth (Components.RoomRow.getCols())
-  // 3) hard fallback (legacy)
-  let columns = bp.columns || bp.fields || bp.headers || s.columns;
+    // Columns priority:
+    // 1) explicit model in state (bp.columns / bp.fields / bp.headers / s.columns)
+    // 2) shared schema (window.BriefProSchema.COLUMNS)
+    // 3) hard fallback (legacy minimal)
+    let columns = bp.columns || bp.fields || bp.headers || s.columns;
 
-  const hasCols = Array.isArray(columns) && columns.length;
+    const schemaCols =
+      (window.BriefProSchema && Array.isArray(window.BriefProSchema.COLUMNS))
+        ? window.BriefProSchema.COLUMNS
+        : null;
 
-  if (!hasCols) {
-    const uiCols =
-      (window.Components &&
-        window.Components.RoomRow &&
-        typeof window.Components.RoomRow.getCols === "function")
-        ? window.Components.RoomRow.getCols()
-        : [];
+    if (!Array.isArray(columns) || !columns.length) {
+      columns = schemaCols || null;
+    }
 
-    if (Array.isArray(uiCols) && uiCols.length) {
-      columns = uiCols.map(c => ({
-        key: c && c.key ? String(c.key) : "",
-        label: c && (c.label || c.title || c.key) ? String(c.label || c.title || c.key) : ""
-      })).filter(c => c.key);
-    } else {
+    // Legacy minimal fallback (keeps backward compatibility even if schema isn't loaded)
+    if (!Array.isArray(columns) || !columns.length) {
       columns = [
-        { key: "walls",   label: "Стены" },
-        { key: "floor",   label: "Пол" },
-        { key: "ceiling", label: "Потолок" },
-        { key: "doors",   label: "Двери" },
-        { key: "plinth",  label: "Плинтус и карниз" },
-        { key: "light",   label: "Свет" },
-        { key: "furniture", label: "Мебель" },
-        { key: "concept", label: "Концепт" },
-        { key: "notes",   label: "Примечания" }
+        { key: "walls", label: "Стены, цвет", group: "geometry" },
+        { key: "floor", label: "Пол", group: "geometry" },
+        { key: "ceiling", label: "Потолок", group: "geometry" },
+        { key: "doors", label: "Двери", group: "geometry" },
+        { key: "plinth", label: "Плинтус, карниз", group: "geometry" },
+        { key: "light", label: "Свет", group: "content" },
+        { key: "furniture", label: "Мебель / Декор", group: "content" },
+        { key: "concept", label: "Ссылка на концепт", group: "content" },
+        { key: "notes", label: "Допы к черновикам или примечания", group: "content" }
       ];
     }
+
+    // Normalize columns to a stable shape: { key, label, group }
+    // If the explicit model has no "group", we inherit it from schema by matching keys.
+    const schemaByKey = new Map(
+      (schemaCols || []).map(c => [String(c.key || ""), c])
+    );
+
+    const normalizedCols = columns
+      .map((c) => {
+        const key = c && c.key ? String(c.key) : "";
+        if (!key) return null;
+
+        const sc = schemaByKey.get(key);
+        const label = String(
+          (c && (c.label || c.title || c.key)) ||
+          (sc && (sc.label || sc.title || sc.key)) ||
+          key
+        );
+
+        const group = String(
+          (c && c.group) ||
+          (sc && sc.group) ||
+          ""
+        );
+
+        return { key, label, group };
+      })
+      .filter(Boolean);
+
+    return { bp, rooms, columns: normalizedCols };
   }
 
-  return { rooms, columns, bp, meta: s.meta || bp.meta || {} };
-}
-
-  // Normalize multi-field object into ordered blocks.
-  // Supports link label: b.label
-  function normalizeBlocks(raw) {
-    if (raw === null || raw === undefined) return { blocks: [], links: [] };
-    if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean") {
-      const t = normStr(raw);
-      return { blocks: t.trim() ? [{ t: "text", v: t }] : [], links: [] };
-    }
-
-    const obj = (raw && typeof raw === "object") ? raw : {};
-    let blocks = Array.isArray(obj.blocks) ? obj.blocks : null;
-
-    let textItems = Array.isArray(obj.textItems) ? obj.textItems.map(normStr) : [];
-    const legacyText = normStr(obj.text ?? obj.value ?? obj.note ?? obj.content ?? obj.main ?? "");
-    if (!textItems.length && legacyText.trim()) textItems = [legacyText];
-
-    let links = obj.links || obj.urls || obj.hrefs || [];
-    if (typeof links === "string") links = [links];
-    if (!Array.isArray(links)) links = [];
-    links = links.map(normStr).filter(Boolean);
-
-    if (!blocks) {
-      blocks = [];
-      textItems.forEach((t) => blocks.push({ t: "text", v: normStr(t) }));
-      links.forEach((u) => blocks.push({ t: "link", v: normStr(u), label: "" }));
-    } else {
-      blocks = blocks
-        .filter(b => b && (b.t === "text" || b.t === "link"))
-        .map(b => ({
-          t: b.t,
-          v: normStr(b.v),
-          label: b.t === "link" ? normStr(b.label) : ""
-        }));
-    }
-
-    const flatLinks = blocks
-      .filter(b => b.t === "link" && normStr(b.v).trim())
-      .map(b => normStr(b.v).trim());
-
-    return { blocks, links: flatLinks };
-  }
-
-  function extractCellValue(room, colKey) {
-    const raw = room ? room[colKey] : "";
-    const n = normalizeBlocks(raw);
-
-    const text = n.blocks
-      .filter(b => b.t === "text")
-      .map(b => normStr(b.v))
-      .filter(s => s.trim() !== "")
-      .join("\n");
-
-    return { text, links: n.links, blocks: n.blocks };
-  }
-
-  function pushMetaRow(aoa, rowHeights, st, totalCols, label, value) {
-    const v = normStr(value).trim();
-    if (!v) return;
-
-    const row = new Array(totalCols).fill(cellText("", st.body));
-    row[0] = cellText(label, st.bodyBold);
-
-    const isLink = /^(https?:\/\/|mailto:|tel:)/i.test(v) || /^[\w.-]+\.[a-z]{2,}([\/?#].*)?$/i.test(v);
-    row[1] = isLink ? cellLink(linkDisplay(v), v, st.link) : cellText(v, st.body);
-
-    aoa.push(row);
-    rowHeights.push({ hpt: 20 });
-  }
-
-  function pushMetaMultiField(aoa, rowHeights, st, totalCols, label, mfValue) {
-    const n = normalizeBlocks(mfValue);
-    const blocks = n.blocks;
-    if (!blocks.length) return;
-
-    blocks.slice(0, 12).forEach((b, idx) => {
-      const r = new Array(totalCols).fill(cellText("", st.body));
-      r[0] = cellText(idx === 0 ? label : "", idx === 0 ? st.bodyBold : st.body);
-
-      if (b.t === "link") {
-        const u = normStr(b.v).trim();
-        const lbl = normStr(b.label).trim();
-        const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
-        r[1] = u ? cellLink(disp, u, st.link) : cellText("", st.body);
-        aoa.push(r);
-        rowHeights.push({ hpt: 18 });
-      } else {
-        const t = normStr(b.v);
-        r[1] = cellText(t, st.body);
-        aoa.push(r);
-        rowHeights.push({ hpt: 34 });
-      }
+  // ---------------------------
+  // Vendor loader (xlsx-js-style)
+  // ---------------------------
+  async function loadXLSX(){
+    if (window.XLSX && window.XLSX.utils) return window.XLSX;
+    await new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "./js/vendor/xlsx.bundle.js";
+      s.onload = resolve;
+      s.onerror = () => reject(new Error("Failed to load xlsx.bundle.js"));
+      document.head.appendChild(s);
     });
+    if (!window.XLSX || !window.XLSX.utils) throw new Error("XLSX bundle loaded, but XLSX not available");
+    return window.XLSX;
   }
 
-  function buildBriefSheet(XLSX, model) {
-    // Excel-only palette for clear room block separation (cycled by room index).
-    // Does NOT affect PWA/UI brand colors.
-    const EXCEL_ROOM_PALETTE = [
-      "FFE4D6", "DDEBFF", "EFFFF2", "FFF0F6", "F3F0FF",
-      "FFF7CC", "E6FFF8", "FCE8E6", "E9F7EF", "EDEDED",
-      "FFD6A5", "C7EFCF"
-    ];
+  // ---------------------------
+  // Main sheet builder
+  // ---------------------------
+  function buildBriefSheet(XLSX, model){
+    const st = mkStyles();
+    const rooms = Array.isArray(model.rooms) ? model.rooms : [];
+    const cols = Array.isArray(model.columns) ? model.columns : [];
 
-    function pickExcelRgb(ri) {
-      const n = EXCEL_ROOM_PALETTE.length;
-      const i = Number.isFinite(ri) ? (ri % n) : 0;
-      return EXCEL_ROOM_PALETTE[(i + n) % n];
-    }
-
-    function withFill(baseStyle, rgb) {
-      if (!rgb) return baseStyle;
-      return Object.assign({}, baseStyle, { fill: { patternType: "solid", fgColor: { rgb } } });
-    }
-    const st = makeStyles();
-    const cols = model.columns || [];
-
-    const headerTop = [cellText("Наименование помещения", st.head)];
+    // Header (2 rows): group title for geometry + labels
+    const headerTop = [cellText("Помещение", st.head)];
     const headerSub = [cellText("", st.head)];
 
-    const geoSet = new Set([
-      normalizeLabel("Стены"),
-      normalizeLabel("Пол"),
-      normalizeLabel("Потолок"),
-      normalizeLabel("Двери"),
-      normalizeLabel("Плинтус и карниз")
-    ]);
-
+    // Geometry range is defined by schema group, NOT by UI labels.
     const geoIdxs = [];
     cols.forEach((c, i) => {
-      const lbl = normalizeLabel(c.label ?? c.title ?? c.key ?? "");
-      if (geoSet.has(lbl)) geoIdxs.push(i);
+      const g = normStr(c.group).trim().toLowerCase();
+      if (g === "geometry") geoIdxs.push(i);
     });
 
     const geoStart = geoIdxs.length ? Math.min(...geoIdxs) : -1;
@@ -316,263 +173,116 @@
     const aoa = [headerTop, headerSub];
     const rowHeights = [{ hpt: 28 }, { hpt: 24 }];
 
+    // Column widths
     const colWidths = [{ wch: 26 }];
     cols.forEach((c) => {
-      const label = normalizeLabel(c.label ?? c.title ?? c.key ?? "");
+      const label = normStr(c.label ?? c.title ?? c.key ?? "").toLowerCase();
       let wch = 22;
       if (label.includes("примеч")) wch = 40;
       if (label.includes("концеп")) wch = 28;
       colWidths.push({ wch });
     });
 
-    const rooms = Array.isArray(model.rooms) ? model.rooms : [];
-    rooms.forEach((room, ri) => {
-      const roomName = normStr(room?.title ?? room?.name ?? room?.room ?? "");
-      const roomRgb = pickExcelRgb(ri);
+    // Excel room palette (independent from PWA UI)
+    const EXCEL_ROOM_PALETTE = [
+      "F8FAFC","F1F5F9","FAFAF9","FDF2F8","ECFDF5",
+      "EFF6FF","FFFBEB","F5F3FF","FFF1F2","F0FDFA"
+    ];
 
-      const firstFill = st.firstCol(roomRgb);
-      const bodyFill  = withFill(st.body, roomRgb);
-      const linkFill  = withFill(st.link, roomRgb);const values = cols.map((c) => extractCellValue(room, normStr(c.key ?? c.id ?? c.name ?? "")));
-
-      const maxBlocks = Math.min(
-        10,
-        values.reduce((m, v) => Math.max(m, Array.isArray(v.blocks) ? v.blocks.length : 0), 0)
-      );
-
-      const rowsCount = Math.max(1, maxBlocks);
-
-      for (let bi = 0; bi < rowsCount; bi++) {
-        const row = [];
-        row.push(bi === 0 ? cellText(roomName, firstFill) : cellText("", bodyFill));
-
-        let hasText = false;
-        let hasLink = false;
-
-        values.forEach((v) => {
-          const b = (v.blocks && v.blocks[bi]) ? v.blocks[bi] : null;
-          if (!b) {
-            row.push(cellText("", bodyFill));
-            return;
-          }
-          if (b.t === "link") {
-            const u = normStr(b.v).trim();
-            const lbl = normStr(b.label).trim();
-            const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
-            if (u) {
-              row.push(cellLink(disp, u, linkFill));
-              hasLink = true;
-            } else {
-              row.push(cellText("", bodyFill));
-            }
-            return;
-          }
-
-          const t = normStr(b.v);
-          row.push(cellText(t, bodyFill));
-          if (t.trim()) hasText = true;
-        });
-
-        aoa.push(row);
-
-        if (bi === 0) rowHeights.push({ hpt: 60 });
-        else if (hasText) rowHeights.push({ hpt: 34 });
-        else if (hasLink) rowHeights.push({ hpt: 18 });
-        else rowHeights.push({ hpt: 18 });
-      }
-    });
-
-    const totalCols = 1 + cols.length;
-    const meta = model.meta || {};
-
-    const radNorm = normalizeBlocks(meta.radiators);
-    const hasAnyMeta =
-      !!normStr(meta.surveyPhotosLink).trim() ||
-      !!normStr(meta.lightDwg).trim() ||
-      !!normStr(meta.furniturePlanDwg).trim() ||
-      !!normStr(meta.drawingsPdf).trim() ||
-      !!normStr(meta.conceptLink).trim() ||
-      (radNorm.blocks && radNorm.blocks.length) ||
-      !!normStr(meta.ceilingsMm).trim() ||
-      !!normStr(meta.doorsMm).trim() ||
-      !!normStr(meta.otherMm).trim();
-
-    if (hasAnyMeta) {
-      aoa.push(new Array(totalCols).fill(cellText("", st.body)));
-      rowHeights.push({ hpt: 10 });
-
-      const titleRow = new Array(totalCols).fill(cellText("", st.groupHead));
-      titleRow[0] = cellText("Файлы и ссылки проекта", st.groupHead);
-      aoa.push(titleRow);
-      rowHeights.push({ hpt: 24 });
-
-      pushMetaRow(aoa, rowHeights, st, totalCols, "Фото на замере (Google Drive)", meta.surveyPhotosLink);
-      pushMetaRow(aoa, rowHeights, st, totalCols, "Ссылка на свет (DWG)", meta.lightDwg);
-      pushMetaRow(aoa, rowHeights, st, totalCols, "Ссылка на план мебели (DWG)", meta.furniturePlanDwg);
-      pushMetaRow(aoa, rowHeights, st, totalCols, "Ссылка на чертежи (PDF)", meta.drawingsPdf);
-      pushMetaRow(aoa, rowHeights, st, totalCols, "Ссылка на концепт", meta.conceptLink);
-
-      pushMetaMultiField(aoa, rowHeights, st, totalCols, "Радиаторы", meta.radiators);
-
-      const otherTitle = (normStr(meta.otherLabel).trim() || "Прочее");
-      if (normStr(meta.ceilingsMm).trim() || normStr(meta.doorsMm).trim() || normStr(meta.otherMm).trim()) {
-        const r = new Array(totalCols).fill(cellText("", st.body));
-        r[0] = cellText("Высоты (мм)", st.bodyBold);
-        r[1] = cellText(
-          "Потолки: " + normStr(meta.ceilingsMm).trim() +
-          " | Двери: " + normStr(meta.doorsMm).trim() +
-          " | " + otherTitle + ": " + normStr(meta.otherMm).trim(),
-          st.body
-        );
-        aoa.push(r);
-        rowHeights.push({ hpt: 22 });
-      }
+    function pickExcelRgb(ri){
+      return EXCEL_ROOM_PALETTE[ri % EXCEL_ROOM_PALETTE.length];
     }
 
+    function normalizeCell(val){
+      // BriefPro cell is usually: { text: "", links: [{ url, label? }, ...] }
+      if (!val) return { text: "", links: [] };
+      if (typeof val === "string") return { text: val, links: [] };
+      if (typeof val === "object") {
+        const text = normStr(val.text || val.value || "");
+        const links = Array.isArray(val.links) ? val.links : [];
+        return { text, links };
+      }
+      return { text: "", links: [] };
+    }
+
+    function cellToExcel(cell, baseStyle){
+      const c = normalizeCell(cell);
+      const text = c.text ? c.text.trim() : "";
+      if (!c.links || !c.links.length) return cellText(text, baseStyle);
+
+      const first = c.links[0];
+      const url = normStr(first.url || first.href || first.link || "").trim();
+      const lbl = normStr(first.label || "").trim();
+
+      // If there is a URL, write it as hyperlink cell text.
+      // (We keep it simple: first link only; the UI can have more.)
+      const show = lbl || url || text;
+      const out = cellText(show, url ? { ...baseStyle, font: { color: { rgb: "2563EB" }, underline: true } } : baseStyle);
+      if (url) out.l = { Target: url, Tooltip: url };
+      return out;
+    }
+
+    rooms.forEach((room, ri) => {
+      const name = normStr(room && (room.name || room.title) || "");
+      const fillRgb = pickExcelRgb(ri);
+
+      const row = [];
+      row.push({
+        ...cellText(name || "—", st.firstCol),
+        s: {
+          ...st.firstCol,
+          fill: { patternType: "solid", fgColor: { rgb: fillRgb } }
+        }
+      });
+
+      cols.forEach((c) => {
+        const v = room ? room[c.key] : null;
+        row.push({
+          ...cellToExcel(v, st.base),
+          s: {
+            ...(cellToExcel(v, st.base).s || st.base),
+            fill: { patternType: "solid", fgColor: { rgb: fillRgb } }
+          }
+        });
+      });
+
+      aoa.push(row);
+      rowHeights.push({ hpt: 72 });
+    });
+
     const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    // Apply widths/heights
     ws["!cols"] = colWidths;
     ws["!rows"] = rowHeights;
 
-    const merges = [];
-    merges.push({ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } });
+    // Freeze header + first column
+    ws["!freeze"] = { xSplit: 1, ySplit: 2 };
 
+    // Merge group header cells
     if (geoStart !== -1) {
-      merges.push({ s: { r: 0, c: geoStart + 1 }, e: { r: 0, c: geoEnd + 1 } });
-    }
-
-    cols.forEach((c, i) => {
-      const isGeo = (geoStart !== -1 && i >= geoStart && i <= geoEnd);
-      if (!isGeo) merges.push({ s: { r: 0, c: i + 1 }, e: { r: 1, c: i + 1 } });
-    });
-
-    if (hasAnyMeta) {
-      for (let rr = aoa.length - 1; rr >= 0; rr--) {
-        const c0 = aoa[rr] && aoa[rr][0] && aoa[rr][0].v;
-        if (c0 === "Файлы и ссылки проекта") {
-          merges.push({ s: { r: rr, c: 0 }, e: { r: rr, c: totalCols - 1 } });
-          break;
-        }
-      }
-      for (let rr = 0; rr < aoa.length; rr++) {
-        const a = aoa[rr] && aoa[rr][0] && normStr(aoa[rr][0].v).trim();
-        if (!a) continue;
-        if (a === "Файлы и ссылки проекта") continue;
-        if (a === "↳ ссылки") continue;
-
-        if (
-          a === "Высоты (мм)" ||
-          a === "Фото на замере (Google Drive)" ||
-          a === "Ссылка на свет (DWG)" ||
-          a === "Ссылка на план мебели (DWG)" ||
-          a === "Ссылка на чертежи (PDF)" ||
-          a === "Ссылка на концепт"
-        ) {
-          merges.push({ s: { r: rr, c: 1 }, e: { r: rr, c: totalCols - 1 } });
-        }
-      }
-      for (let rr = 0; rr < aoa.length; rr++) {
-        const a = aoa[rr] && aoa[rr][0] && normStr(aoa[rr][0].v).trim();
-        if (a === "Радиаторы") merges.push({ s: { r: rr, c: 1 }, e: { r: rr, c: totalCols - 1 } });
-      }
-    }
-
-    ws["!merges"] = merges;
-    return ws;
-  }
-
-  function buildLinksSheet(XLSX, model) {
-    const st = makeStyles();
-    const cols = model.columns || [];
-
-    const aoa = [[
-      cellText("Помещение", st.head),
-      cellText("Поле", st.head),
-      cellText("Лейбл", st.head),
-      cellText("Ссылка", st.head)
-    ]];
-
-    const rooms = Array.isArray(model.rooms) ? model.rooms : [];
-    rooms.forEach((room) => {
-      const roomName = normStr(room?.title ?? room?.name ?? room?.room ?? "");
-      cols.forEach((c) => {
-        const key = normStr(c.key ?? c.id ?? c.name ?? "");
-        const label = normStr(c.label ?? c.title ?? key);
-
-        const v = extractCellValue(room, key);
-        const blocks = Array.isArray(v.blocks) ? v.blocks : [];
-        const links = blocks.filter(b => b && b.t === "link" && normStr(b.v).trim());
-
-        if (!links.length) return;
-
-        links.forEach((b) => {
-          const u = normStr(b.v).trim();
-          const lbl = normStr(b.label).trim();
-          const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
-
-          aoa.push([
-            cellText(roomName, st.body),
-            cellText(label, st.body),
-            cellText(lbl, st.body),
-            cellLink(disp, u, st.link)
-          ]);
-        });
-      });
-    });
-
-    const meta = model.meta || {};
-    const metaPairs = [
-      ["Фото на замере (Google Drive)", meta.surveyPhotosLink],
-      ["Ссылка на свет (DWG)", meta.lightDwg],
-      ["Ссылка на план мебели (DWG)", meta.furniturePlanDwg],
-      ["Ссылка на чертежи (PDF)", meta.drawingsPdf],
-      ["Ссылка на концепт", meta.conceptLink],
-    ];
-
-    metaPairs.forEach(([label, val]) => {
-      const v = normStr(val).trim();
-      if (!v) return;
-      aoa.push([
-        cellText("—", st.body),
-        cellText(label, st.body),
-        cellText("", st.body),
-        cellLink(linkDisplay(v), v, st.link)
-      ]);
-    });
-
-    const rad = normalizeBlocks(meta.radiators);
-    if (rad.blocks && rad.blocks.length) {
-      rad.blocks.filter(b => b && b.t === "link" && normStr(b.v).trim()).forEach((b) => {
-        const u = normStr(b.v).trim();
-        const lbl = normStr(b.label).trim();
-        const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
-
-        aoa.push([
-          cellText("—", st.body),
-          cellText("Радиаторы", st.body),
-          cellText(lbl, st.body),
-          cellLink(disp, u, st.link)
-        ]);
+      ws["!merges"] = ws["!merges"] || [];
+      // +1 because first column is room name
+      ws["!merges"].push({
+        s: { r: 0, c: 1 + geoStart },
+        e: { r: 0, c: 1 + geoEnd }
       });
     }
 
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [{ wch: 26 }, { wch: 24 }, { wch: 16 }, { wch: 60 }];
-    ws["!rows"] = [{ hpt: 24 }];
     return ws;
   }
 
-  async function downloadXLSX(state, filename) {
-    const XLSX = await ensureXLSXLoaded();
+  async function downloadXLSX(state, filename){
+    const XLSX = await loadXLSX();
     const model = getBriefProModel(state);
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, buildBriefSheet(XLSX, model), "BRIEF");
-    XLSX.utils.book_append_sheet(wb, buildLinksSheet(XLSX, model), "LINKS");
+    const ws = buildBriefSheet(XLSX, model);
 
-    const name = (filename && String(filename).trim()) ? String(filename).trim() : "BriefPro";
-    const out = name.toLowerCase().endsWith(".xlsx") ? name : (name + ".xlsx");
-    XLSX.writeFile(wb, out, { bookType: "xlsx", compression: true });
+    XLSX.utils.book_append_sheet(wb, ws, "Brief PRO");
+    const outName = filename || "BriefPro.xlsx";
+    XLSX.writeFile(wb, outName);
   }
 
-  window.Utils.XLSXExport = { downloadXLSX };
+  return { downloadXLSX };
 })();
-

@@ -740,7 +740,7 @@ select:focus {
 /* ===== Firefox scrollbar ===== */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--brand-card) var(--brand-bg) !important;
+  
 }
 
 
@@ -827,5 +827,23 @@ select:focus {
 
 ::-webkit-scrollbar-thumb:hover{
   background: var(--brand-headings);
+}
+
+
+
+/* Scrollbar final */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.viewer *::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid var(--scrollbar-track);
+}
+
+.viewer *::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
 }
 

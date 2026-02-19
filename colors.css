@@ -61,3 +61,8 @@
 
 
 
+
+  /* Scrollbar */
+  --scrollbar-thumb: var(--brand-accent);
+  --scrollbar-track: var(--brand-bg);
+

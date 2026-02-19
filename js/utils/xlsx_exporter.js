@@ -50,33 +50,33 @@ Utils.XLSXExport = (() => {
     };
 
     const head = {
-      font: { name: FONT, sz: 16, bold: true, color: { rgb: "FFFFFF" } },
+      font: { name: FONT, sz: 11, bold: true, color: { rgb: "FFFFFF" } },
       fill: { patternType: "solid", fgColor: { rgb: "1F2937" } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: borderThin
     };
 
     const groupHead = {
-      font: { name: FONT, sz: 16, bold: true, color: { rgb: "FFFFFF" } },
+      font: { name: FONT, sz: 11, bold: true, color: { rgb: "FFFFFF" } },
       fill: { patternType: "solid", fgColor: { rgb: "111827" } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: borderThin
     };
 
     const body = {
-      font: { name: FONT, sz: 12, color: { rgb: "111827" } },
+      font: { name: FONT, sz: 11, color: { rgb: "111827" } },
       alignment: { horizontal: "left", vertical: "top", wrapText: true },
       border: borderThin
     };
 
     const bodyBold = {
-      font: { name: FONT, sz: 12, bold: true, color: { rgb: "111827" } },
+      font: { name: FONT, sz: 11, bold: true, color: { rgb: "111827" } },
       alignment: { horizontal: "left", vertical: "top", wrapText: true },
       border: borderThin
     };
 
     const link = {
-      font: { name: FONT, sz: 12, color: { rgb: "1D4ED8" }, underline: true },
+      font: { name: FONT, sz: 11, color: { rgb: "1D4ED8" }, underline: true },
       alignment: { horizontal: "left", vertical: "top", wrapText: true },
       border: borderThin
     };
@@ -187,20 +187,20 @@ Utils.XLSXExport = (() => {
 
     // Fixed columns (no expanding to the right)
     const COLS = [
-      { key: "__room", label: "Наименование помещения", wch: 30 },
+      { key: "__room", label: "Наименование помещения", wch: 18 },
 
       // Geometry (5)
-      { key: "walls",   label: "Стены, цвет",     wch: 30 },
-      { key: "floor",   label: "Пол",             wch: 30 },
-      { key: "ceiling", label: "Потолок",         wch: 30 },
-      { key: "doors",   label: "Двери",           wch: 30 },
-      { key: "plinth",  label: "Плинтус, карниз", wch: 30 },
+      { key: "walls",   label: "Стены, цвет",     wch: 13 },
+      { key: "floor",   label: "Пол",             wch: 13 },
+      { key: "ceiling", label: "Потолок",         wch: 13 },
+      { key: "doors",   label: "Двери",           wch: 13 },
+      { key: "plinth",  label: "Плинтус, карниз", wch: 13 },
 
       // Other
-      { key: "light",     label: "Свет",             wch: 32 },
-      { key: "furniture", label: "Мебель / Декор",   wch: 34 },
-      { key: "concept",   label: "Ссылка на концепт",wch: 34 },
-      { key: "notes",     label: "Допы / примечания",wch: 40 },
+      { key: "light",     label: "Свет",             wch: 13 },
+      { key: "furniture", label: "Мебель / Декор",   wch: 13 },
+      { key: "concept",   label: "Ссылка на концепт",wch: 13 },
+      { key: "notes",     label: "Допы / примечания",wch: 13 },
     ];
 
     // Header rows (2)
@@ -313,7 +313,7 @@ Utils.XLSXExport = (() => {
     // heights
     const heights = [{ hpt: 32 }, { hpt: 28 }];
     // Data row heights: compact so growth is vertical and readable
-    for (let i = 0; i < (aoa.length - 2); i++) heights.push({ hpt: 34 });
+    for (let i = 0; i < (aoa.length - 2); i++) heights.push({ hpt: 33.75 });
     ws["!rows"] = heights;
 
     // Freeze: first column + 2 header rows
@@ -386,7 +386,7 @@ Utils.XLSXExport = (() => {
     });
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [{ wch: 26 }, { wch: 24 }, { wch: 16 }, { wch: 60 }];
+    ws["!cols"] = [{ wch: 13 }, { wch: 24 }, { wch: 16 }, { wch: 60 }];
     ws["!rows"] = [{ hpt: 24 }];
     ws["!freeze"] = { xSplit: 0, ySplit: 1 };
     return ws;
@@ -411,4 +411,5 @@ Utils.XLSXExport = (() => {
   window.Utils.XLSXExport = { downloadXLSX };
   return window.Utils.XLSXExport;
 })();
+
 

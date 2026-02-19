@@ -1,5 +1,7 @@
 ﻿/* ===========================
    ZA RAMKI — Brand Theme (UI-tuned)
+   theme.css = бренд/оверрайды (последний в <head>)
+   colors.css = source of truth для цветов
    =========================== */
 
 /* ---------- Fonts (local) ---------- */
@@ -10,8 +12,6 @@
   font-weight: 400;
   font-display: swap;
 }
-
-/* Roboto оставляем подключённым, но пока НЕ используем как основной */
 @font-face{
   font-family: "RobotoCustom";
   src: url("./assets/fonts/Roboto-Regular.ttf") format("truetype");
@@ -27,35 +27,7 @@
   font-display: swap;
 }
 
-/* ---------- Palette + override base tokens ---------- */
-:root{
-  /* tuned close to your brand */
-  --brand-accent: #C03A14;     /* мягче, но близко к B43202 */
-  --brand-bg: #1E1B18;         /* тёплый графит вместо “синего” */
-  --brand-headings: #FFF3EA;   /* близко к FFF4EB */
-  --brand-text: #EEE6DE;       /* почти белый, тёплый */
-  --brand-muted: rgba(238,230,222,.72);
-
-  /* no-blue surfaces */
-  --brand-panel: rgba(30,27,24,.82);   /* для шапки/панелей */
-  --brand-card: rgba(26,23,20,.88);    /* для карточек/пустых блоков */
-  --brand-item: rgba(26,23,20,.72);
-
-  /* borders */
-  --brand-border: rgba(255,243,234,.12);
-  --brand-border-accent: rgba(192,58,20,.38);
-
-  /* override tokens from styles.css */
-  --bg: var(--brand-bg);
-  --panel: var(--brand-card);
-  --card: var(--brand-item);
-  --text: var(--brand-text);
-  --muted: var(--brand-muted);
-  --accent: var(--brand-accent);
-  --border: var(--brand-border);
-}
-
-/* ---------- Typography (TEMP: no Roboto until you pick a new font) ---------- */
+/* ---------- Typography ---------- */
 body{
   background: var(--bg);
   color: var(--text);
@@ -63,27 +35,22 @@ body{
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
-
-/* Brand title */
 .brand h1{
   font-family: "Manasco", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
   font-weight: 400;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--brand-headings);
+  color: var(--headings);
 }
 .brand small{ color: var(--muted); }
 
-/* Headings */
 .article-title,
 .markdown h2,
 .markdown h3{
-  color: var(--brand-headings);
+  color: var(--headings);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
   font-weight: 600;
 }
-
-/* Sub text */
 .article-sub,
 .kv,
 .pill{ color: var(--muted); }
@@ -96,124 +63,69 @@ body{
   display:block;
 }
 
-/* ---------- Kill all blue-ish tints ---------- */
-
-/* header background (make it warm graphite, still translucent) */
+/* ---------- Warm (no-blue) component tuning ---------- */
 .header{
-  background: rgba(30,27,24,.72) !important;
-  border-bottom: 1px solid var(--border) !important;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
 }
-
-/* panels */
 .panel, .viewer{
-  background: var(--brand-card) !important;
-  border: 1px solid var(--border) !important;
+  background: var(--panel);
+  border: 1px solid var(--border);
 }
-
-/* tabs area (this is where your “синий” was) */
 .tabs{
-  background: rgba(26,23,20,.92) !important;
-  border-bottom: 1px solid var(--border) !important;
-}
-
-/* search */
-.search{
-  background: rgba(26,23,20,.78) !important;
-  border: 1px solid var(--border) !important;
-}
-.search input{ color: var(--text) !important; }
-
-/* list items */
-.item{
-  background: var(--brand-item) !important;
-  border: 1px solid var(--border) !important;
-}
-.item:hover{ border-color: var(--brand-border-accent) !important; }
-
-/* empty blocks (your “Выбери статью слева...” box) */
-.viewer .empty{
-  background: rgba(26,23,20,.72) !important;
-  border: 1px dashed var(--border) !important;
-  color: var(--muted) !important;
-}
-
-/* tabs/buttons */
-.tab{
-  background: rgba(26,23,20,.72) !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text) !important;
-}
-.tab:hover{ border-color: var(--brand-border-accent) !important; }
-.tab.is-active{
-  border-color: var(--brand-accent) !important;
-  box-shadow: 0 8px 24px rgba(192,58,20,.15) !important;
-}
-
-/* tags/buttons */
-.tag{
-  border: 1px solid var(--border) !important;
-  color: var(--muted) !important;
-}
-.tag.accent{
-  border-color: var(--brand-accent) !important;
-  color: var(--brand-accent) !important;
-}
-
-.btn{
-  border: 1px solid var(--border) !important;
-  background: rgba(26,23,20,.68) !important;
-  color: var(--text) !important;
-}
-.btn:hover{ border-color: var(--brand-accent) !important; }
-.btn .dot{ background: var(--brand-accent) !important; }
-
-/* markdown */
-.markdown a{
-  color: var(--brand-headings);
-  text-decoration-color: rgba(192,58,20,.55);
-}
-.markdown blockquote{
-  border-left: 3px solid var(--brand-accent);
-  background: rgba(192,58,20,.06);
-  color: var(--brand-headings);
-}
-
-/* forms */
-input, textarea{
-  border: 1px solid var(--border) !important;
-  background: rgba(26,23,20,.60) !important;
-  color: var(--text) !important;
-}
-input:focus, textarea:focus{
-  outline: none;
-  border-color: var(--brand-accent) !important;
-  box-shadow: 0 0 0 2px rgba(192,58,20,.15);
-}
-
-
-/* tabs-wrap-fix */
-.tabs{
+  background: var(--item);
+  border-bottom: 1px solid var(--border);
   display:flex;
   flex-wrap:wrap;
   gap:10px;
 }
-.tab{
-  flex:0 0 auto;
+.tab{ flex:0 0 auto; }
+
+.search{
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.search input{ color: var(--text); }
+
+.item:hover{ border-color: var(--accent-35); }
+
+.viewer .empty{
+  background: var(--item);
+  border: 1px dashed var(--border);
+  color: var(--muted);
 }
 
-
-/* Compact buttons (BriefPro) */
-.btn.btn-sm{
-  font-size: 12px;
-  padding: 6px 10px;
+.btn{
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
 }
-.btn.btn-sm .dot{
-  transform: scale(0.9);
+.btn:hover{ border-color: var(--accent-35); }
+.btn .dot{ background: var(--accent-95); }
+
+.markdown a{
+  color: var(--headings);
+  text-decoration-color: var(--accent-55);
+}
+.markdown blockquote{
+  border-left: 3px solid var(--accent-60);
+  background: var(--accent-08);
+  color: var(--headings);
 }
 
+/* forms */
+input, textarea, select{
+  border: 1px solid var(--border);
+  background: rgba(26,23,20,.60);
+  color: var(--text);
+}
+input:focus, textarea:focus, select:focus{
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-12);
+}
 
-/* ===== BriefPro compact UX ===== */
-
+/* ---------- Compact buttons (BriefPro) ---------- */
 .btn.btn-sm{
   font-size: 12px;
   padding: 6px 10px;
@@ -221,80 +133,126 @@ input:focus, textarea:focus{
 }
 .btn.btn-sm:hover{ opacity: .95; }
 
-/* Small round icon button (for ?) */
-.btn.btn-icon{
-  width: 26px;
-  height: 26px;
-  padding: 0;
+/* ---------- MultiField link label select ---------- */
+.mf-label-select{
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px 8px;
+  height: 30px;
+  font-size: 12px;
+}
+.mf-label-select option{
+  background: var(--panel);
+  color: var(--text);
+}
+.mf-label-select:focus,
+.mf-label-select:focus-visible,
+.mf-link:focus,
+.mf-textitem:focus{
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-12);
+  border-color: var(--accent);
+}
+
+/* ---------- Scrollbar system (final) ---------- */
+:root{ color-scheme: dark; }
+
+::-webkit-scrollbar{ width: 10px; height: 10px; }
+::-webkit-scrollbar-track{ background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb{
+  background: var(--scrollbar-thumb);
   border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  border: 2px solid var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb:hover{ background: var(--headings); }
+
+*{
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* BriefPro top actions */
-.actions.bp-top{
-  gap: 8px;
-  flex-wrap: wrap;
-}
+/* =========================================================
+   BriefPro Table — SINGLE SOURCE OF TRUTH (table only)
+   Правило: styles.css не содержит table-логики.
+   ========================================================= */
 
-/* Table layout */
+/* Wrap */
 .bp-tablewrap{
-  overflow:auto;
-  border:1px solid var(--border);
-  border-radius:14px;
-  background: rgba(26,23,20,.55);
-}
-.bp-table{
-  border-collapse:separate;
-  border-spacing:0;
-  min-width:1200px;
-  width:100%;
-}
-.bp-th{
-  text-align:left;
-  padding:10px;
-  border-bottom:1px solid var(--border);
-}
-.bp-th.group{ color:var(--brand-headings); }
-.bp-th.mid{ min-width:140px; }
-.bp-th.last{ min-width:240px; }
-.bp-th.sticky{
-  position:sticky;
-  left:0;
-  z-index:3;
-  background: rgba(26,23,20,.92);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--table-bg);
 }
 
-/* Sticky first column cells */
-.rr-sticky{
+/* Table base */
+.bp-table{
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  min-width: 1200px;
+  position: relative;
+  isolation: isolate; /* фиксит странные наложения при sticky */
+}
+
+/* Headers */
+.bp-th{
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--bp-grid);
+  background: var(--bp-head-bg);
+  background-clip: padding-box;
+}
+.bp-th.group{ color: var(--headings); }
+.bp-th.mid{ min-width: 140px; }
+.bp-th.last{ min-width: 240px; }
+
+/* Body cells (room color via --rr-bg if задан RoomRow-ом) */
+.bp-table tr[data-room-row]{ --rr-bg: var(--bp-cell-bg); }
+.bp-table tr[data-room-row] td{
+  background: var(--rr-bg);
+  border-bottom: 1px solid var(--bp-grid);
+}
+
+/* Hover without blue */
+.bp-table tbody tr:hover td{ background: var(--bp-row-hover); }
+
+/* ===== Sticky layer map =====
+   z 30: thead
+   z 20: sticky first column
+   z 10: normal cells
+*/
+.bp-table thead th{
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+/* Sticky first column: th + td */
+.bp-table thead th.bp-th.sticky,
+.bp-table thead th.sticky{
   position: sticky;
   left: 0;
-  z-index: 2;
-  background: rgba(26,23,20,.88);
-  border-right: 1px solid rgba(255,255,255,.06);
+  z-index: 40; /* top-left above thead */
+  background: var(--bp-sticky-bg);
+  border-right: 1px solid var(--bp-sticky-sep);
+}
+.bp-table td.rr-sticky,
+.bp-table tbody td.rr-sticky{
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background: var(--bp-sticky-bg);
+  background-clip: padding-box;
+  border-right: 1px solid var(--bp-sticky-sep);
 }
 
-/* Room name cell */
-.rr-namebox{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-.rr-name{
-  width:100%;
-  padding:10px;
-  border-radius:12px;
-}
-.rr-nameview{
-  white-space:pre-wrap;
-  font-weight:600;
-  color: var(--brand-headings);
-}
-.rr-x{
-  color: #ff5a5a;
-  margin-right:6px;
-}
+/* Room name cell bits (если используются RoomRow-ом) */
+.rr-namebox{ display:flex; flex-direction:column; gap:8px; }
+.rr-name{ width:100%; padding:10px; border-radius:12px; }
+.rr-nameview{ white-space:pre-wrap; font-weight:600; color: var(--headings); }
+.rr-x{ color: #ff5a5a; margin-right:6px; }
 
 /* Pending delete confirm */
 .rr-del-confirm{
@@ -307,7 +265,7 @@ input:focus, textarea:focus{
 .bp-meta-label{ font-weight:600; margin-bottom:4px; }
 .bp-meta-input{ width:100%; padding:10px; border-radius:12px; }
 .bp-meta-text{ white-space:pre-wrap; }
-.bp-meta-link{ color:var(--brand-headings); }
+.bp-meta-link{ color: var(--headings); }
 
 /* 3-col heights */
 .bp-3cols{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -320,17 +278,22 @@ input:focus, textarea:focus{
   background: rgba(26,23,20,.35);
 }
 .bp-3col-input{ width:100%; padding:8px 10px; border-radius:12px; }
+.bp-3col-title-edit{
+  width:100%;
+  padding:6px 8px;
+  border-radius:10px;
+  font-weight:700;
+  margin-bottom:6px;
+}
 
 /* MultiField spacing */
 .mf textarea.mf-text{
   width:100%;
   padding:10px;
   border-radius:12px;
-  margin-bottom:4px; /* приклеили */
+  margin-bottom:4px;
 }
-.mf-actions{
-  margin: 0 0 8px 0; /* меньше пустоты */
-}
+.mf-actions{ margin: 0 0 8px 0; }
 .mf-row{
   display:flex;
   gap:6px;
@@ -343,162 +306,6 @@ input:focus, textarea:focus{
   border-radius:12px;
 }
 .mf-linkrow{ margin-top:6px; }
-.mf-linkview{ color:var(--brand-headings); text-decoration-color: rgba(192,58,20,.55); }
+.mf-linkview{ color: var(--headings); text-decoration-color: var(--accent-55); }
 .mf-muted{ color: var(--muted); }
 .mf-textview{ white-space:pre-wrap; }
-
-
-/* BriefPro: editable title in 3rd column (Other) */
-.bp-3col-title-edit{
-  width:100%;
-  padding:6px 8px;
-  border-radius:10px;
-  font-weight:700;
-  margin-bottom:6px;
-}
-
-
-
-
-
-/* ============================= */
-/* BriefPro + Scrollbars system  */
-/* ============================= */
-
-:root{
-  color-scheme: dark;
-}
-
-/* Scrollbars */
-
-
-
-
-
-
-
-
-
-/* MultiField link label select */
-
-.mf-label-select{
-  background: var(--brand-card);
-  color: var(--brand-text);
-  border: 1px solid var(--brand-border);
-  border-radius: 10px;
-  padding: 4px 8px;
-  height: 30px;
-  font-size: 12px;
-}
-
-.mf-label-select:focus,
-.mf-label-select:focus-visible,
-.mf-link:focus,
-.mf-textitem:focus{
-  outline: none;
-  box-shadow: 0 0 0 2px var(--brand-border-accent);
-  border-color: var(--brand-accent);
-}
-
-.mf-label-select option{
-  background: var(--brand-card);
-  color: var(--brand-text);
-}
-
-/* Scrollbar system (final)      */
-/* ============================= */
-
-::-webkit-scrollbar{
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track{
-  background: var(--brand-bg);
-}
-
-::-webkit-scrollbar-thumb{
-  background: var(--brand-accent);
-  border-radius: 999px;
-  border: 2px solid var(--brand-bg);
-}
-
-::-webkit-scrollbar-thumb:hover{
-  background: var(--brand-headings);
-}
-
-
-
-/* Scrollbar final */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-}
-
-.viewer *::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 999px;
-  border: 2px solid var(--scrollbar-track);
-}
-
-.viewer *::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-}
-
-
-
-
-
-/* =========================================================
-
-/* =========================================================
-   BriefPro Table — SINGLE SOURCE OF TRUTH (table only)
-   Fix: sticky must WIN over .bp-table tr[data-room-row] td background
-   ========================================================= */
-
-.bp-tablewrap{
-  overflow-x: auto;
-  overflow-y: auto;
-}
-
-.bp-table{
-  min-width: max-content;
-  position: relative;
-  isolation: isolate;
-}
-
-/* sticky first column — HIGH specificity to beat row background rule */
-.bp-table td.rr-sticky,
-.bp-table th.bp-th.sticky,
-.bp-table th.sticky,
-.bp-table td.sticky,
-.bp-table tr[data-room-row] td.rr-sticky,
-.bp-table td:first-child,
-.bp-table th:first-child{
-  position: sticky;
-  left: 0;
-  z-index: 50;
-  background: var(--panel);
-  background-clip: padding-box;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-right: 1px solid var(--border);
-}
-
-/* sticky thead */
-.bp-table thead th{
-  position: sticky;
-  top: 0;
-  z-index: 60;
-  background: var(--panel);
-  background-clip: padding-box;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-/* top-left cell above everything */
-.bp-table thead th:first-child,
-.bp-table thead th.sticky{
-  z-index: 70;
-}
-

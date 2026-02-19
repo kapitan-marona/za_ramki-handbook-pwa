@@ -518,7 +518,7 @@ function collectHeights(meta){
   // 3) Custom "label + value" pairs (common patterns)
   const cLabel = pickMeta(meta, ["heights.customLabel","customHeightLabel","heightCustomLabel","customLabel","extraLabel","heightsExtraLabel"]);
   const cVal   = pickMeta(meta, ["heights.custom","customHeight","customHeightMm","customValue","extraValue","heightsExtra"]);
-  if (cVal) add("customPair", (cLabel ? cLabel : "Дополнительно"), cVal);
+  if (cVal) add("customPair", (normStr(cLabel).trim() ? normStr(cLabel).trim() : "Прочее"), cVal);
 
   // Build final text in stable order
   const parts = [];
@@ -709,4 +709,5 @@ addMetaRow("Высоты (мм)", heightsOut, false);// ------------------------
   window.Utils.XLSXExport = { downloadXLSX };
   return window.Utils.XLSXExport;
 })();
+
 

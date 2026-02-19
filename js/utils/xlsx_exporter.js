@@ -464,7 +464,16 @@ function collectHeights(meta){
   const hits = []; // {kind, label, val}
   const seen = new Set();
 
-  const rxCeil = /(ceiling|ceil|potol|потол|потолок)/i;
+  
+  // Preferred keys from BriefPro UI (renderHeightsRow):
+  // meta.ceilingsMm, meta.doorsMm, meta.otherMm, meta.otherLabel (default "Прочее")
+  const preferredCeil = normStr(meta?.ceilingsMm ?? "").trim();
+  const preferredDoor = normStr(meta?.doorsMm ?? "").trim();
+  const preferredOtherVal = normStr(meta?.otherMm ?? "").trim();
+  const preferredOtherLabel = (normStr(meta?.otherLabel ?? "").trim() || "Прочее");
+
+  // Exclude these from heuristic deep-scan to avoid duplicates:
+  const EXCLUDE_KEYS = new Set(["ceilingsMm","doorsMm","otherMm","otherLabel"]);const rxCeil = /(ceiling|ceil|potol|потол|потолок)/i;
   const rxDoor = /(door|doors|двер|porta)/i;
   const rxWhite = /(white|бел)/i;
   const rxCustom = /(custom|extra|доп|кастом|свой|проч|other|misc)/i;
@@ -488,7 +497,8 @@ function collectHeights(meta){
       const v = heightsObj[k];
       if (!isScalar(v)) return;
       const kk = String(k);
-      if (rxCeil.test(kk)) add("ceil", "Потолки", v);
+      
+    if (EXCLUDE_KEYS && EXCLUDE_KEYS.has(kk)) return;if (rxCeil.test(kk)) add("ceil", "Потолки", v);
       else if (rxDoor.test(kk) && rxWhite.test(kk)) add("doorWhite", "Дверь белая", v);
       else if (rxDoor.test(kk)) add("door", "Двери", v);
       else if (rxCustom.test(kk) || rxHeight.test(kk)) add("custom", kk, v);
@@ -500,7 +510,8 @@ function collectHeights(meta){
     if (!isScalar(v)) return;
 
     const kk = String(k);
-    const pp = String(p);
+    
+    if (EXCLUDE_KEYS && EXCLUDE_KEYS.has(kk)) return;const pp = String(p);
 
     // Only consider height-ish fields to avoid garbage
     const looksHeight = rxHeight.test(kk) || rxHeight.test(pp) || /\d/.test(String(v));
@@ -515,22 +526,11 @@ function collectHeights(meta){
     }
   });
 
-  // 3) Custom "label + value" pairs (common patterns + robust heuristics)
-const cLabelRaw = pickMeta(meta, [
-  "heights.customLabel","customHeightLabel","heightCustomLabel","customLabel","extraLabel","heightsExtraLabel",
-  "heights.otherLabel","otherLabel","miscLabel","прочееLabel","otherTitle","miscTitle"
-]);
-const cValRaw = pickMeta(meta, [
-  "heights.custom","customHeight","customHeightMm","customValue","extraValue","heightsExtra",
-  "heights.other","otherValue","miscValue","прочееValue","otherMm","miscMm"
-]);
-
-// If value exists but label empty -> "Прочее"
-const cLabel = normStr(cLabelRaw).trim() ? normStr(cLabelRaw).trim() : "Прочее";
-const cVal = normStr(cValRaw).trim();
-if (cVal) add("customPair", cLabel, cVal);
-
-// Heuristic: find any object with {label/title/name} + {value/mm/size} anywhere in meta
+  // 3) Custom block from UI (otherLabel + otherMm)
+// If otherLabel empty -> default "Прочее"
+const cLabel = preferredOtherLabel;
+const cVal   = preferredOtherVal;
+if (cVal) add("customPair", cLabel, cVal);// Heuristic: find any object with {label/title/name} + {value/mm/size} anywhere in meta
 let foundPair = false;
 walk(meta, (k, v, p) => {
   if (foundPair) return;
@@ -549,7 +549,10 @@ walk(meta, (k, v, p) => {
   foundPair = true;
 });// Build final text in stable order
   const parts = [];
-  const ceil = hits.filter(x => x.kind === "ceil").map(x => x.val);
+  
+  // Force preferred values first (from UI keys)
+  if (preferredCeil) add("ceil", "Потолки", preferredCeil);
+  if (preferredDoor) add("door", "Двери", preferredDoor);const ceil = hits.filter(x => x.kind === "ceil").map(x => x.val);
   const door = hits.filter(x => x.kind === "door").map(x => x.val);
   const white = hits.filter(x => x.kind === "doorWhite").map(x => x.val);
 
@@ -736,6 +739,7 @@ addMetaRow("Высоты (мм)", heightsOut, false);// ------------------------
   window.Utils.XLSXExport = { downloadXLSX };
   return window.Utils.XLSXExport;
 })();
+
 
 
 

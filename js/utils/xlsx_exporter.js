@@ -8,12 +8,13 @@
  * - Room name centered both horizontally and vertically.
  * - Column widths ~164px for room name, ~140px others (wch 23 and 19).
  * - Text wraps by words (wrapText:true).
- * - Link cells: no-wrap + truncated display, clickable full URL, no overflow glow.
+ * - Link cells: no-wrap + truncated display, clickable full URL.
  * - Prevent Excel text overflow into next empty cell by using a single space instead of "".
  *
- * Adds a compact meta block under the table:
- * "Файлы и ссылки проекта" in A:D (not full width),
- * with merged value cells B:D and neat styling.
+ * Adds a compact meta block under the table (A:D):
+ * - Project files/links
+ * - Radiators text + radiators links
+ * - Heights from separate inputs (+ fallback)
  *
  * Sheets: BRIEF + LINKS.
  */
@@ -128,7 +129,6 @@ Utils.XLSXExport = (() => {
       border: borderThin
     };
 
-    // Separator row style (no fill; soft borders off by default)
     const separator = {
       font: { name: FONT, sz: 11, color: { rgb: "FFFFFF" } },
       alignment: { horizontal: "left", vertical: "center", wrapText: false }
@@ -372,43 +372,23 @@ Utils.XLSXExport = (() => {
     });
 
     // --- Separator (one row) after rooms table
-    // Make it visually empty and not stretched: we keep it blank (no borders),
-    // and only put a space in A to avoid weird Excel behaviour.
-    aoa.push([
-      cellText(" ", st.separator),
-      cellText(" ", st.separator),
-      cellText(" ", st.separator),
-      cellText(" ", st.separator),
-      cellText(" ", st.separator),
-      cellText(" ", st.separator),
-      cellText(" ", st.separator),
-      cellText(" ", st.separator),
-      cellText(" ", st.separator),
-      cellText(" ", st.separator),
-    ]);
-    const metaStartRow = aoa.length; // 1-based would be metaStartRow+1; keep 0-based here
-    // (No merges needed for separator)
+    aoa.push(new Array(10).fill(0).map(() => cellText(" ", st.separator)));
+    const metaTitleRowIdx = aoa.length; // next push will be this row index (0-based)
 
     // --- Meta block (compact width A:D)
-    // Title row: A:D merged
     aoa.push([
       cellText("Файлы и ссылки проекта", st.metaTitle),
       cellText("", st.metaTitle),
       cellText("", st.metaTitle),
       cellText("", st.metaTitle),
-      // E..J empty (no styling) - keep as spaces but with no style
       cellText(" ", null), cellText(" ", null), cellText(" ", null), cellText(" ", null), cellText(" ", null), cellText(" ", null),
     ]);
 
-    // Helper to add a meta row: key in A, value in B:D merged
     function addMetaRow(label, value, isLink){
       const v = normStr(value).trim();
 
       const keyCell = cellText(label, st.metaKey);
-
       let valCellA;
-      let valCellB;
-      let valCellC;
 
       if (isLink && v) {
         const shown = truncate(linkDisplay(v), 60);
@@ -417,8 +397,8 @@ Utils.XLSXExport = (() => {
         valCellA = cellText(v, st.metaVal);
       }
 
-      valCellB = cellText("", st.metaVal);
-      valCellC = cellText("", st.metaVal);
+      const valCellB = cellText("", st.metaVal);
+      const valCellC = cellText("", st.metaVal);
 
       aoa.push([
         keyCell,
@@ -427,7 +407,7 @@ Utils.XLSXExport = (() => {
       ]);
     }
 
-    // Pull meta links (new structure + legacy keys)
+    // Project file links (new structure + legacy keys)
     const surveyPhotos = pickMeta(meta, ["files.surveyPhotos", "files.surveyPhotosLink", "surveyPhotos", "surveyPhotosLink", "surveyPhotosUrl"]);
     const lightDwg     = pickMeta(meta, ["files.lightDwg", "lightDwg", "lightDWG"]);
     const furnDwg      = pickMeta(meta, ["files.furniturePlanDwg", "furniturePlanDwg", "furnitureDWG", "furniturePlanDWG"]);
@@ -440,18 +420,58 @@ Utils.XLSXExport = (() => {
     addMetaRow("Ссылка на чертежи (PDF)", drawingsPdf, true);
     addMetaRow("Ссылка на концепт", concept, true);
 
-    // Radiators: can be MultiField or plain text
+    // Radiators: text + links (MultiField supported)
     const radRaw = meta.radiators ?? meta.radiator ?? meta.radiatorsLink ?? "";
     const radNorm = normalizeBlocks(radRaw);
+
     const radText = (radNorm.blocks || [])
       .filter(b => b && b.t === "text" && normStr(b.v).trim())
       .map(b => normStr(b.v).trim())
       .join("\n");
     addMetaRow("Радиаторы", radText, false);
 
-    // Heights
-    const heights = pickMeta(meta, ["heightsMm", "heights", "heightNotes", "heightsText"]);
-    addMetaRow("Высоты (мм)", heights, false);
+    (radNorm.blocks || [])
+      .filter(b => b && b.t === "link" && normStr(b.v).trim())
+      .forEach((b) => {
+        const u = normStr(b.v).trim();
+        const lbl = normStr(b.label).trim();
+        const rowLabel = lbl ? ("Радиаторы — " + lbl) : "Радиаторы — ссылка";
+        addMetaRow(rowLabel, u, true);
+      });
+
+    // Heights: separate inputs + fallback (covers your "last inputs" case)
+    const hCeil = pickMeta(meta, [
+      "heights.ceiling", "heights.ceilingMm", "ceilingHeight", "ceilingHeightMm", "hCeiling", "h_ceiling",
+      "ceiling_mm", "ceilingMm"
+    ]);
+    const hDoors = pickMeta(meta, [
+      "heights.doors", "heights.doorsMm", "doorHeight", "doorHeightMm", "hDoors", "h_doors",
+      "doors_mm", "doorsMm"
+    ]);
+    const hDoorsWhite = pickMeta(meta, [
+      "heights.doorsWhite", "heights.doorWhite", "doorWhiteHeight", "doorWhiteHeightMm", "hDoorWhite", "h_door_white",
+      "door_white_mm", "doorsWhiteMm"
+    ]);
+
+    const hCustomLabel = pickMeta(meta, [
+      "heights.customLabel", "heights.label", "customHeightLabel", "heightCustomLabel", "heightsExtraLabel",
+      "customHeightTitle", "heightExtraTitle"
+    ]);
+    const hCustomVal = pickMeta(meta, [
+      "heights.custom", "heights.customMm", "customHeight", "customHeightMm", "heightCustom", "heightsExtra",
+      "customHeightValue", "heightExtraValue"
+    ]);
+
+    const heightsFallback = pickMeta(meta, ["heightsMm", "heights", "heightNotes", "heightsText"]);
+
+    const parts = [];
+    if (hCeil) parts.push("Потолки: " + hCeil);
+    if (hDoors) parts.push("Двери: " + hDoors);
+    if (hDoorsWhite) parts.push("Дверь белая: " + hDoorsWhite);
+    if (hCustomVal) parts.push((hCustomLabel ? (hCustomLabel + ": ") : "Дополнительно: ") + hCustomVal);
+
+    const heightsOut = parts.length ? parts.join(" | ") : heightsFallback;
+    addMetaRow("Высоты (мм)", heightsOut, false);
 
     // ---------------------------
     // Build sheet + merges
@@ -460,11 +480,7 @@ Utils.XLSXExport = (() => {
 
     ws["!cols"] = COLS.map(c => ({ wch: c.wch }));
 
-    // Row heights:
-    // - headers specified
-    // - data rows left to Excel defaults (auto-ish); link rows won't expand due to wrapText:false
-    // - meta title row a bit taller
-    // We must align indexes: !rows is optional; we only set first two + title row.
+    // only header heights; data left to Excel defaults (links won't expand due to no-wrap)
     ws["!rows"] = [{ hpt: 31.5 }, { hpt: 27.75 }];
 
     ws["!freeze"] = { xSplit: 1, ySplit: 2 };
@@ -479,13 +495,11 @@ Utils.XLSXExport = (() => {
       { s: { r: 0, c: 9 }, e: { r: 1, c: 9 } }
     );
 
-    // Meta title merge A:D
-    const titleRowIdx = metaStartRow; // 0-based index in aoa for the meta title row
-    merges.push({ s: { r: titleRowIdx, c: 0 }, e: { r: titleRowIdx, c: 3 } });
+    // Meta title merge A:D (metaTitleRowIdx is the index where title was pushed)
+    merges.push({ s: { r: metaTitleRowIdx, c: 0 }, e: { r: metaTitleRowIdx, c: 3 } });
 
-    // Merge meta value cells B:D for each meta row beneath title:
-    // rows: titleRowIdx+1 .. end, merge cols 1..3
-    for (let rr = titleRowIdx + 1; rr < aoa.length; rr++){
+    // Merge meta value cells B:D for each row beneath title (until end)
+    for (let rr = metaTitleRowIdx + 1; rr < aoa.length; rr++){
       merges.push({ s: { r: rr, c: 1 }, e: { r: rr, c: 3 } });
     }
 
@@ -544,22 +558,36 @@ Utils.XLSXExport = (() => {
       });
     });
 
-    // Add meta links into LINKS too (optional but useful)
+    // Add meta links into LINKS too
+    function pickMeta(meta, pathCandidates){
+      for (const p of pathCandidates) {
+        const parts = p.split(".");
+        let cur = meta;
+        let ok = true;
+        for (const k of parts){
+          if (cur && typeof cur === "object" && k in cur) cur = cur[k];
+          else { ok = false; break; }
+        }
+        if (!ok) continue;
+        const s = normStr(cur).trim();
+        if (s) return s;
+      }
+      return "";
+    }
+
     const surveyPhotos = pickMeta(meta, ["files.surveyPhotos", "files.surveyPhotosLink", "surveyPhotos", "surveyPhotosLink", "surveyPhotosUrl"]);
     const lightDwg     = pickMeta(meta, ["files.lightDwg", "lightDwg", "lightDWG"]);
     const furnDwg      = pickMeta(meta, ["files.furniturePlanDwg", "furniturePlanDwg", "furnitureDWG", "furniturePlanDWG"]);
     const drawingsPdf  = pickMeta(meta, ["files.drawingsPdf", "drawingsPdf", "drawingsPDF", "drawings", "drawingsLink"]);
     const concept      = pickMeta(meta, ["files.concept", "conceptLink", "concept", "conceptUrl"]);
 
-    const metaRows = [
+    [
       ["—", "Фото на замере (Google Drive)", "", surveyPhotos],
       ["—", "Ссылка на свет (DWG)", "", lightDwg],
       ["—", "Ссылка на план мебели (DWG)", "", furnDwg],
       ["—", "Ссылка на чертежи (PDF)", "", drawingsPdf],
       ["—", "Ссылка на концепт", "", concept],
-    ];
-
-    metaRows.forEach(([roomName, field, label, url]) => {
+    ].forEach(([roomName, field, label, url]) => {
       const u = normStr(url).trim();
       if (!u) return;
       aoa.push([
@@ -569,6 +597,22 @@ Utils.XLSXExport = (() => {
         cellLink(truncate(linkDisplay(u), 80), u, st.link)
       ]);
     });
+
+    // Radiators meta links too (if any)
+    const radRaw = meta.radiators ?? meta.radiator ?? meta.radiatorsLink ?? "";
+    const radNorm = normalizeBlocks(radRaw);
+    (radNorm.blocks || [])
+      .filter(b => b && b.t === "link" && normStr(b.v).trim())
+      .forEach((b) => {
+        const u = normStr(b.v).trim();
+        const lbl = normStr(b.label).trim();
+        aoa.push([
+          cellText("—", st.body),
+          cellText("Радиаторы", st.body),
+          cellText(lbl, st.body),
+          cellLink(truncate(linkDisplay(u), 80), u, st.link)
+        ]);
+      });
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = [{ wch: 26 }, { wch: 28 }, { wch: 16 }, { wch: 60 }];

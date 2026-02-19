@@ -847,3 +847,88 @@ select:focus {
   background: var(--scrollbar-track);
 }
 
+
+
+
+
+/* =========================================================
+   BriefPro Table — FINAL (единственный финальный блок)
+   Цель: сетка, слои sticky, hover, без синевы и без хаоса
+   ========================================================= */
+
+.bp-tablewrap{
+  background: var(--bg);
+}
+
+/* Базовая таблица */
+.bp-table{
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bp-cell-bg);
+  border: 1px solid var(--bp-grid);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Ячейки: четкая сетка */
+.bp-table th,
+.bp-table td{
+  background: var(--bp-cell-bg);
+  color: var(--text);
+  border-right: 1px solid var(--bp-grid);
+  border-bottom: 1px solid var(--bp-grid);
+}
+
+/* Убираем двойные края справа/снизу */
+.bp-table tr > *:last-child{ border-right: 0; }
+.bp-table tbody tr:last-child > *{ border-bottom: 0; }
+
+/* Шапка */
+.bp-table thead th{
+  background: var(--bp-head-bg);
+  color: var(--headings);
+  border-bottom: 1px solid var(--bp-grid);
+}
+
+/* Hover по строке (только тело таблицы) */
+.bp-table tbody tr:hover > td{
+  background: var(--bp-row-hover);
+}
+
+/* Sticky: фон + слои + разделитель, чтобы не было "грязи" */
+.bp-table th.sticky,
+.bp-table td.sticky{
+  background: var(--bp-sticky-bg);
+}
+
+/* Первый sticky столбец (если у вас именно так размечено) */
+.bp-table th.sticky{
+  z-index: 5;
+}
+.bp-table td.sticky{
+  z-index: 4;
+}
+
+/* Разделение sticky колонки справа (тонкая тень/линия) */
+.bp-table th.sticky,
+.bp-table td.sticky{
+  box-shadow: 1px 0 0 var(--bp-sticky-sep);
+}
+
+/* Если есть sticky-шапка/липкий thead — поднимаем ее выше тела */
+.bp-table thead th{
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+.bp-table thead th.sticky{
+  z-index: 7;
+}
+
+/* Фокус без синевы (если вдруг браузер рисует системный outline) */
+.bp-table input:focus,
+.bp-table textarea:focus,
+.bp-table select:focus{
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

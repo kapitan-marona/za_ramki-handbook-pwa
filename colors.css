@@ -66,3 +66,29 @@
   --scrollbar-thumb: var(--brand-accent);
   --scrollbar-track: var(--brand-bg);
 
+
+
+
+
+/* ==========================
+   BriefPro Table Tokens
+   Источник правды: colors.css
+   ========================== */
+
+:root{
+  /* Сетка/границы таблицы */
+  --bp-grid: var(--border);
+
+  /* Hover строки (теплый, без синевы) */
+  --bp-row-hover: rgba(255,243,234,.06);
+
+  /* Фон sticky-колонок (контролируемая "прозрачность", без грязи) */
+  --bp-sticky-bg: rgba(26,23,20,.92);
+
+  /* Разделитель sticky-колонки (тонкая тень справа) */
+  --bp-sticky-sep: rgba(255,243,234,.08);
+
+  /* Шапка таблицы (если нужно отличать от body) */
+  --bp-head-bg: var(--panel);
+  --bp-cell-bg: var(--card);
+}

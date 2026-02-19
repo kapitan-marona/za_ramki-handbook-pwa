@@ -1,13 +1,19 @@
 ﻿﻿/**
  * BriefPro XLSX exporter (xlsx-js-style).
- * BRIEF grows DOWN (vertical): blocks go to new rows, not new columns.
  *
- * Requirements implemented:
- * 1) Geometry group spans 5 fields: walls, floor, ceiling, doors, plinth.
- * 2) Headers vertically centered.
- * 3) Room name cell centered both horizontally and vertically.
- * 4) Column widths ~164px for room name, ~140px others (wch 23 and 19).
- * 5) Text wraps by words (wrapText:true). Link cells: fixed visual height behavior by wrapText:false and truncated display.
+ * BRIEF:
+ * - grows DOWN: blocks go to new rows, not new columns.
+ * - Geometry group spans 5 fields: walls, floor, ceiling, doors, plinth.
+ * - Header vertically centered.
+ * - Room name centered both horizontally and vertically.
+ * - Column widths ~164px for room name, ~140px others (wch 23 and 19).
+ * - Text wraps by words (wrapText:true).
+ * - Link cells: no-wrap + truncated display, clickable full URL, no overflow glow.
+ * - Prevent Excel text overflow into next empty cell by using a single space instead of "".
+ *
+ * Adds a compact meta block under the table:
+ * "Файлы и ссылки проекта" in A:D (not full width),
+ * with merged value cells B:D and neat styling.
  *
  * Sheets: BRIEF + LINKS.
  */
@@ -75,28 +81,61 @@ Utils.XLSXExport = (() => {
       border: borderThin
     };
 
-    // Body text: wrap by words
     const body = {
       font: { name: FONT, sz: 11, color: { rgb: "111827" } },
       alignment: { horizontal: "left", vertical: "top", wrapText: true },
       border: borderThin
     };
 
-    // Room name: centered both ways
     const roomName = {
       font: { name: FONT, sz: 11, bold: true, color: { rgb: "111827" } },
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
       border: borderThin
     };
 
-    // Link cells: fixed-height-friendly (no wrap), show truncated display
     const link = {
       font: { name: FONT, sz: 11, color: { rgb: "1D4ED8" }, underline: true },
       alignment: { horizontal: "left", vertical: "center", wrapText: false, shrinkToFit: true },
       border: borderThin
     };
 
-    return { head, groupHead, body, roomName, link };
+    // Meta block styles (compact, pleasant)
+    const metaTitle = {
+      font: { name: FONT, sz: 12, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: "0F172A" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: borderThin
+    };
+
+    const metaKey = {
+      font: { name: FONT, sz: 11, bold: true, color: { rgb: "0F172A" } },
+      fill: { patternType: "solid", fgColor: { rgb: "F1F5F9" } },
+      alignment: { horizontal: "left", vertical: "center", wrapText: true },
+      border: borderThin
+    };
+
+    const metaVal = {
+      font: { name: FONT, sz: 11, color: { rgb: "0F172A" } },
+      fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
+      alignment: { horizontal: "left", vertical: "top", wrapText: true },
+      border: borderThin
+    };
+
+    const metaLink = {
+      font: { name: FONT, sz: 11, color: { rgb: "1D4ED8" }, underline: true },
+      fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
+      alignment: { horizontal: "left", vertical: "center", wrapText: false, shrinkToFit: true },
+      border: borderThin
+    };
+
+    // Separator row style (no fill; soft borders off by default)
+    const separator = {
+      font: { name: FONT, sz: 11, color: { rgb: "FFFFFF" } },
+      alignment: { horizontal: "left", vertical: "center", wrapText: false }
+      // no border
+    };
+
+    return { head, groupHead, body, roomName, link, metaTitle, metaKey, metaVal, metaLink, separator };
   }
 
   function withFill(style, rgb){
@@ -104,10 +143,10 @@ Utils.XLSXExport = (() => {
     return Object.assign({}, style, { fill: { patternType: "solid", fgColor: { rgb } } });
   }
 
+  // IMPORTANT: Excel overflows text into next EMPTY cell visually.
+  // A single space makes the cell non-empty but visually blank, preventing overflow.
   function cellText(v, style){
     const s = normStr(v);
-    // IMPORTANT: Excel visually overflows text into next EMPTY cell.
-    // Using a single space makes the cell non-empty but still visually blank.
     const vv = (s === "") ? " " : s;
     return { v: vv, t: "s", s: style || {} };
   }
@@ -184,9 +223,7 @@ Utils.XLSXExport = (() => {
     const lbl = normStr(block && block.label).trim();
     if (!v) return { text: "", url: "" };
 
-    if (t === "link") {
-      return { text: lbl ? (lbl + ": " + v) : v, url: v };
-    }
+    if (t === "link") return { text: lbl ? (lbl + ": " + v) : v, url: v };
     return { text: v, url: "" };
   }
 
@@ -200,13 +237,31 @@ Utils.XLSXExport = (() => {
   function pickRoomFill(idx){ return ROOM_FILLS[idx % ROOM_FILLS.length]; }
 
   // ---------------------------
-  // BRIEF sheet (GROWS DOWN)
+  // Meta mapping (improved structure + backwards compatibility)
+  // ---------------------------
+  function pickMeta(meta, pathCandidates){
+    for (const p of pathCandidates) {
+      const parts = p.split(".");
+      let cur = meta;
+      let ok = true;
+      for (const k of parts){
+        if (cur && typeof cur === "object" && k in cur) cur = cur[k];
+        else { ok = false; break; }
+      }
+      if (!ok) continue;
+      const s = normStr(cur).trim();
+      if (s) return s;
+    }
+    return "";
+  }
+
+  // ---------------------------
+  // BRIEF sheet (GROWS DOWN + META block)
   // ---------------------------
   function buildBriefSheet(XLSX, model){
     const st = makeStyles();
 
-    // Fixed columns
-    // Width mapping: ~164px => wch 23, ~140px => wch 19
+    // Fixed columns (164px / 140px approximations)
     const COLS = [
       { key: "__room", label: "Наименование помещения", wch: 23 },
 
@@ -225,7 +280,6 @@ Utils.XLSXExport = (() => {
     ];
 
     // Header rows (2)
-    // Row1: group header for geometry (B1:F1), other headers merged vertically
     const r1 = [
       cellText(COLS[0].label, st.head),
       cellText("Геометрия помещения", st.groupHead),
@@ -239,7 +293,6 @@ Utils.XLSXExport = (() => {
       cellText(COLS[9].label, st.head),
     ];
 
-    // Row2: geometry field labels, other columns blank (because merged)
     const r2 = [
       cellText("", st.head),
       cellText(COLS[1].label, st.head),
@@ -255,6 +308,7 @@ Utils.XLSXExport = (() => {
 
     const aoa = [r1, r2];
     const rooms = Array.isArray(model.rooms) ? model.rooms : [];
+    const meta = model.meta || {};
 
     function countNonEmptyBlocks(room, key){
       const n = normalizeBlocks(room ? room[key] : null);
@@ -264,17 +318,16 @@ Utils.XLSXExport = (() => {
     let excelRowIndex = 2; // data starts at row 3 (0-based index 2)
     const merges = [];
 
+    // --- Rooms block
     rooms.forEach((room, ri) => {
       const fill = pickRoomFill(ri);
       const roomName = normStr(room?.name ?? room?.title ?? room?.room ?? "");
 
-      // span = max blocks across fields, at least 1
       let span = 1;
       for (let ci = 1; ci < COLS.length; ci++){
         span = Math.max(span, countNonEmptyBlocks(room, COLS[ci].key));
       }
 
-      // blocks per field
       const blocksByKey = {};
       for (let ci = 1; ci < COLS.length; ci++){
         const key = COLS[ci].key;
@@ -285,7 +338,6 @@ Utils.XLSXExport = (() => {
       for (let k = 0; k < span; k++){
         const row = [];
 
-        // room name only on first row, centered; merged later
         if (k === 0) row.push(cellText(roomName, withFill(st.roomName, fill)));
         else row.push(cellText("", withFill(st.roomName, fill)));
 
@@ -295,7 +347,6 @@ Utils.XLSXExport = (() => {
           const bc = blockToCell(b);
 
           if (bc.url) {
-            // Show short text (label + short URL), keep clickable full URL, and avoid wrapping.
             const short = truncate(linkDisplay(bc.url), 34);
             const shown = bc.text && bc.text.includes(":")
               ? truncate(bc.text.split(":")[0] + ": " + short, 40)
@@ -310,7 +361,6 @@ Utils.XLSXExport = (() => {
         aoa.push(row);
       }
 
-      // Merge room name vertically for this room block
       if (span > 1) {
         merges.push({
           s: { r: excelRowIndex, c: 0 },
@@ -321,17 +371,102 @@ Utils.XLSXExport = (() => {
       excelRowIndex += span;
     });
 
+    // --- Separator (one row) after rooms table
+    // Make it visually empty and not stretched: we keep it blank (no borders),
+    // and only put a space in A to avoid weird Excel behaviour.
+    aoa.push([
+      cellText(" ", st.separator),
+      cellText(" ", st.separator),
+      cellText(" ", st.separator),
+      cellText(" ", st.separator),
+      cellText(" ", st.separator),
+      cellText(" ", st.separator),
+      cellText(" ", st.separator),
+      cellText(" ", st.separator),
+      cellText(" ", st.separator),
+      cellText(" ", st.separator),
+    ]);
+    const metaStartRow = aoa.length; // 1-based would be metaStartRow+1; keep 0-based here
+    // (No merges needed for separator)
+
+    // --- Meta block (compact width A:D)
+    // Title row: A:D merged
+    aoa.push([
+      cellText("Файлы и ссылки проекта", st.metaTitle),
+      cellText("", st.metaTitle),
+      cellText("", st.metaTitle),
+      cellText("", st.metaTitle),
+      // E..J empty (no styling) - keep as spaces but with no style
+      cellText(" ", null), cellText(" ", null), cellText(" ", null), cellText(" ", null), cellText(" ", null), cellText(" ", null),
+    ]);
+
+    // Helper to add a meta row: key in A, value in B:D merged
+    function addMetaRow(label, value, isLink){
+      const v = normStr(value).trim();
+
+      const keyCell = cellText(label, st.metaKey);
+
+      let valCellA;
+      let valCellB;
+      let valCellC;
+
+      if (isLink && v) {
+        const shown = truncate(linkDisplay(v), 60);
+        valCellA = cellLink(shown || v, v, st.metaLink);
+      } else {
+        valCellA = cellText(v, st.metaVal);
+      }
+
+      valCellB = cellText("", st.metaVal);
+      valCellC = cellText("", st.metaVal);
+
+      aoa.push([
+        keyCell,
+        valCellA, valCellB, valCellC,
+        cellText(" ", null), cellText(" ", null), cellText(" ", null), cellText(" ", null), cellText(" ", null), cellText(" ", null),
+      ]);
+    }
+
+    // Pull meta links (new structure + legacy keys)
+    const surveyPhotos = pickMeta(meta, ["files.surveyPhotos", "files.surveyPhotosLink", "surveyPhotos", "surveyPhotosLink", "surveyPhotosUrl"]);
+    const lightDwg     = pickMeta(meta, ["files.lightDwg", "lightDwg", "lightDWG"]);
+    const furnDwg      = pickMeta(meta, ["files.furniturePlanDwg", "furniturePlanDwg", "furnitureDWG", "furniturePlanDWG"]);
+    const drawingsPdf  = pickMeta(meta, ["files.drawingsPdf", "drawingsPdf", "drawingsPDF", "drawings", "drawingsLink"]);
+    const concept      = pickMeta(meta, ["files.concept", "conceptLink", "concept", "conceptUrl"]);
+
+    addMetaRow("Фото на замере (Google Drive)", surveyPhotos, true);
+    addMetaRow("Ссылка на свет (DWG)", lightDwg, true);
+    addMetaRow("Ссылка на план мебели (DWG)", furnDwg, true);
+    addMetaRow("Ссылка на чертежи (PDF)", drawingsPdf, true);
+    addMetaRow("Ссылка на концепт", concept, true);
+
+    // Radiators: can be MultiField or plain text
+    const radRaw = meta.radiators ?? meta.radiator ?? meta.radiatorsLink ?? "";
+    const radNorm = normalizeBlocks(radRaw);
+    const radText = (radNorm.blocks || [])
+      .filter(b => b && b.t === "text" && normStr(b.v).trim())
+      .map(b => normStr(b.v).trim())
+      .join("\n");
+    addMetaRow("Радиаторы", radText, false);
+
+    // Heights
+    const heights = pickMeta(meta, ["heightsMm", "heights", "heightNotes", "heightsText"]);
+    addMetaRow("Высоты (мм)", heights, false);
+
+    // ---------------------------
+    // Build sheet + merges
+    // ---------------------------
     const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-    // widths
     ws["!cols"] = COLS.map(c => ({ wch: c.wch }));
 
-    // heights:
-    // - keep headers sized
-    // - do NOT force data row heights (helps Excel keep default; links won't expand because wrapText=false)
+    // Row heights:
+    // - headers specified
+    // - data rows left to Excel defaults (auto-ish); link rows won't expand due to wrapText:false
+    // - meta title row a bit taller
+    // We must align indexes: !rows is optional; we only set first two + title row.
     ws["!rows"] = [{ hpt: 31.5 }, { hpt: 27.75 }];
 
-    // Freeze: first column + 2 header rows
     ws["!freeze"] = { xSplit: 1, ySplit: 2 };
 
     // Header merges: A1:A2, B1:F1, G1:G2, H1:H2, I1:I2, J1:J2
@@ -343,6 +478,16 @@ Utils.XLSXExport = (() => {
       { s: { r: 0, c: 8 }, e: { r: 1, c: 8 } },
       { s: { r: 0, c: 9 }, e: { r: 1, c: 9 } }
     );
+
+    // Meta title merge A:D
+    const titleRowIdx = metaStartRow; // 0-based index in aoa for the meta title row
+    merges.push({ s: { r: titleRowIdx, c: 0 }, e: { r: titleRowIdx, c: 3 } });
+
+    // Merge meta value cells B:D for each meta row beneath title:
+    // rows: titleRowIdx+1 .. end, merge cols 1..3
+    for (let rr = titleRowIdx + 1; rr < aoa.length; rr++){
+      merges.push({ s: { r: rr, c: 1 }, e: { r: rr, c: 3 } });
+    }
 
     ws["!merges"] = merges;
     return ws;
@@ -361,6 +506,7 @@ Utils.XLSXExport = (() => {
     ]];
 
     const rooms = Array.isArray(model.rooms) ? model.rooms : [];
+    const meta = model.meta || {};
 
     const FIELDS = [
       ["walls","Стены, цвет"],
@@ -398,8 +544,34 @@ Utils.XLSXExport = (() => {
       });
     });
 
+    // Add meta links into LINKS too (optional but useful)
+    const surveyPhotos = pickMeta(meta, ["files.surveyPhotos", "files.surveyPhotosLink", "surveyPhotos", "surveyPhotosLink", "surveyPhotosUrl"]);
+    const lightDwg     = pickMeta(meta, ["files.lightDwg", "lightDwg", "lightDWG"]);
+    const furnDwg      = pickMeta(meta, ["files.furniturePlanDwg", "furniturePlanDwg", "furnitureDWG", "furniturePlanDWG"]);
+    const drawingsPdf  = pickMeta(meta, ["files.drawingsPdf", "drawingsPdf", "drawingsPDF", "drawings", "drawingsLink"]);
+    const concept      = pickMeta(meta, ["files.concept", "conceptLink", "concept", "conceptUrl"]);
+
+    const metaRows = [
+      ["—", "Фото на замере (Google Drive)", "", surveyPhotos],
+      ["—", "Ссылка на свет (DWG)", "", lightDwg],
+      ["—", "Ссылка на план мебели (DWG)", "", furnDwg],
+      ["—", "Ссылка на чертежи (PDF)", "", drawingsPdf],
+      ["—", "Ссылка на концепт", "", concept],
+    ];
+
+    metaRows.forEach(([roomName, field, label, url]) => {
+      const u = normStr(url).trim();
+      if (!u) return;
+      aoa.push([
+        cellText(roomName, st.body),
+        cellText(field, st.body),
+        cellText(label, st.body),
+        cellLink(truncate(linkDisplay(u), 80), u, st.link)
+      ]);
+    });
+
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [{ wch: 26 }, { wch: 24 }, { wch: 16 }, { wch: 60 }];
+    ws["!cols"] = [{ wch: 26 }, { wch: 28 }, { wch: 16 }, { wch: 60 }];
     ws["!rows"] = [{ hpt: 24 }];
     ws["!freeze"] = { xSplit: 0, ySplit: 1 };
     return ws;
@@ -424,5 +596,3 @@ Utils.XLSXExport = (() => {
   window.Utils.XLSXExport = { downloadXLSX };
   return window.Utils.XLSXExport;
 })();
-
-

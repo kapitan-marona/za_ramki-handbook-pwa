@@ -105,12 +105,17 @@ Utils.XLSXExport = (() => {
   }
 
   function cellText(v, style){
-    return { v: normStr(v), t: "s", s: style || {} };
+    const s = normStr(v);
+    // IMPORTANT: Excel visually overflows text into next EMPTY cell.
+    // Using a single space makes the cell non-empty but still visually blank.
+    const vv = (s === "") ? " " : s;
+    return { v: vv, t: "s", s: style || {} };
   }
 
   function cellLink(display, url, style){
     const u = normStr(url).trim();
-    const out = { v: normStr(display), t: "s", s: style || {} };
+    const d = normStr(display);
+    const out = { v: (d === "" ? " " : d), t: "s", s: style || {} };
     if (u) out.l = { Target: u, Tooltip: u };
     return out;
   }
@@ -419,4 +424,5 @@ Utils.XLSXExport = (() => {
   window.Utils.XLSXExport = { downloadXLSX };
   return window.Utils.XLSXExport;
 })();
+
 

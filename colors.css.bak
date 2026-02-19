@@ -1,13 +1,11 @@
-/* TEST MARKER 123 */
-
-/* =========================================================
+﻿/* =========================================================
    ZA RAMKI — Color System (single source of truth)
    Меняй оттенки ТУТ. Не пиши хексы в styles.css.
    =========================================================
 
    Быстрые правила:
-   - Теплее: чуть ^ R и G в --brand-bg / --brand-card
-   - Светлее: ^ R,G,B одинаково
+   - Теплее: чуть ↑ R и G в --brand-bg / --brand-card
+   - Светлее: ↑ R,G,B одинаково
    - Контраст: --brand-bg темный, --brand-card чуть светлее
 */
 
@@ -37,8 +35,9 @@
   --item: var(--brand-item);
 
   /* Extra surfaces (helpers) */
-  --table-bg: #141210;       /* briefpro table base */
+  --surface-soft: rgba(26,23,20,.35);   /* soft fill (table cells etc) */
   --overlay: rgba(18,18,18,.98);        /* modal / overlay */
+  --table-bg: rgba(20,20,20,.98);       /* briefpro table base */
 
   --text: var(--brand-text);
   --muted: var(--brand-muted);
@@ -79,13 +78,17 @@
 :root{
   /* Сетка/границы таблицы */
   --bp-grid: var(--border);
-  --bp-row-hover: var(--bp-cell-bg);
+
   /* Hover строки (теплый, без синевы) */
-  --bp-sticky-bg: var(--bp-cell-bg);
+  --bp-row-hover: rgba(255,243,234,.06);
+
   /* Фон sticky-колонок (контролируемая "прозрачность", без грязи) */
+  --bp-sticky-bg: rgba(26,23,20,.92);
 
   /* Разделитель sticky-колонки (тонкая тень справа) */
   --bp-sticky-sep: rgba(255,243,234,.08);
-  --bp-head-bg: #1D1916;
-  --bp-cell-bg: #1A1714;
+
+  /* Шапка таблицы (если нужно отличать от body) */
+  --bp-head-bg: var(--panel);
+  --bp-cell-bg: var(--card);
 }

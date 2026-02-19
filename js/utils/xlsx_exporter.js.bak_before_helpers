@@ -261,42 +261,20 @@
   }
 
   function buildBriefSheet(XLSX, model) {
-    // Excel-only palette for clear room block separation (cycled by room index).
-    // Does NOT affect PWA/UI brand colors.
-    const EXCEL_ROOM_PALETTE = [
-      "FFE4D6", "DDEBFF", "EFFFF2", "FFF0F6", "F3F0FF",
-      "FFF7CC", "E6FFF8", "FCE8E6", "E9F7EF", "EDEDED",
-      "FFD6A5", "C7EFCF"
-    ];
-
-    function pickExcelRgb(ri) {
-      const n = EXCEL_ROOM_PALETTE.length;
-      const i = Number.isFinite(ri) ? (ri % n) : 0;
-      return EXCEL_ROOM_PALETTE[(i + n) % n];
-    }
-
-    function withFill(baseStyle, rgb) {
-      if (!rgb) return baseStyle;
-      return Object.assign({}, baseStyle, { fill: { patternType: "solid", fgColor: { rgb } } });
-    }
     const st = makeStyles();
     const cols = model.columns || [];
 
     const headerTop = [cellText("Наименование помещения", st.head)];
     const headerSub = [cellText("", st.head)];
 
-    const geoSet = new Set([
-      normalizeLabel("Стены"),
-      normalizeLabel("Пол"),
-      normalizeLabel("Потолок"),
-      normalizeLabel("Двери"),
-      normalizeLabel("Плинтус и карниз")
-    ]);
+    // "Геометрия помещения" должна зависеть от ключей, а не от текста заголовков
+    // (чтобы переименования вроде "Стены, цвет" не ломали merges).
+    const geoKeySet = new Set(["walls", "floor", "ceiling", "doors", "plinth"]);
 
     const geoIdxs = [];
     cols.forEach((c, i) => {
-      const lbl = normalizeLabel(c.label ?? c.title ?? c.key ?? "");
-      if (geoSet.has(lbl)) geoIdxs.push(i);
+      const k = normStr(c.key ?? c.id ?? c.name ?? "").trim();
+      if (geoKeySet.has(k)) geoIdxs.push(i);
     });
 
     const geoStart = geoIdxs.length ? Math.min(...geoIdxs) : -1;
@@ -331,8 +309,10 @@
       const roomRgb = pickExcelRgb(ri);
 
       const firstFill = st.firstCol(roomRgb);
-      const bodyFill  = withFill(st.body, roomRgb);
-      const linkFill  = withFill(st.link, roomRgb);const values = cols.map((c) => extractCellValue(room, normStr(c.key ?? c.id ?? c.name ?? "")));
+      const bodyFill = withFill(st.body, roomRgb);
+      const linkFill = withFill(st.link, roomRgb);
+
+      const values = cols.map((c) => extractCellValue(room, normStr(c.key ?? c.id ?? c.name ?? "")));
 
       const maxBlocks = Math.min(
         10,
@@ -575,4 +555,5 @@
 
   window.Utils.XLSXExport = { downloadXLSX };
 })();
+
 

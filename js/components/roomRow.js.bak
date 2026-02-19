@@ -60,7 +60,8 @@ Components.RoomRow = (() => {
     });
 
     // Accent color (no background fill in UI)
-    const rowStyle = "";
+    const bg = (r && r.__bg) ? r.__bg : "";
+    const rowStyle = bg ? `--rr-bg:${esc(bg)};` : "";
 
     const tdWidth = (key) => (key === "notes" ? 260 : 170);
 

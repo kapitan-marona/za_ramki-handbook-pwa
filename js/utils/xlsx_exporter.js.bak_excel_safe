@@ -261,24 +261,6 @@
   }
 
   function buildBriefSheet(XLSX, model) {
-    // Excel-only palette for clear room block separation (cycled by room index).
-    // Does NOT affect PWA/UI brand colors.
-    const EXCEL_ROOM_PALETTE = [
-      "FFE4D6", "DDEBFF", "EFFFF2", "FFF0F6", "F3F0FF",
-      "FFF7CC", "E6FFF8", "FCE8E6", "E9F7EF", "EDEDED",
-      "FFD6A5", "C7EFCF"
-    ];
-
-    function pickExcelRgb(ri) {
-      const n = EXCEL_ROOM_PALETTE.length;
-      const i = Number.isFinite(ri) ? (ri % n) : 0;
-      return EXCEL_ROOM_PALETTE[(i + n) % n];
-    }
-
-    function withFill(baseStyle, rgb) {
-      if (!rgb) return baseStyle;
-      return Object.assign({}, baseStyle, { fill: { patternType: "solid", fgColor: { rgb } } });
-    }
     const st = makeStyles();
     const cols = model.columns || [];
 
@@ -326,13 +308,12 @@
     });
 
     const rooms = Array.isArray(model.rooms) ? model.rooms : [];
-    rooms.forEach((room, ri) => {
+    rooms.forEach((room) => {
       const roomName = normStr(room?.title ?? room?.name ?? room?.room ?? "");
-      const roomRgb = pickExcelRgb(ri);
+      const bg = hexToRGB(room?.__bg || room?.bg || room?.color || "");
+      const roomStyle = st.firstCol(bg || "E5E7EB");
 
-      const firstFill = st.firstCol(roomRgb);
-      const bodyFill  = withFill(st.body, roomRgb);
-      const linkFill  = withFill(st.link, roomRgb);const values = cols.map((c) => extractCellValue(room, normStr(c.key ?? c.id ?? c.name ?? "")));
+      const values = cols.map((c) => extractCellValue(room, normStr(c.key ?? c.id ?? c.name ?? "")));
 
       const maxBlocks = Math.min(
         10,
@@ -343,7 +324,7 @@
 
       for (let bi = 0; bi < rowsCount; bi++) {
         const row = [];
-        row.push(bi === 0 ? cellText(roomName, firstFill) : cellText("", bodyFill));
+        row.push(bi === 0 ? cellText(roomName, roomStyle) : cellText("", st.body));
 
         let hasText = false;
         let hasLink = false;
@@ -351,7 +332,7 @@
         values.forEach((v) => {
           const b = (v.blocks && v.blocks[bi]) ? v.blocks[bi] : null;
           if (!b) {
-            row.push(cellText("", bodyFill));
+            row.push(cellText("", st.body));
             return;
           }
           if (b.t === "link") {
@@ -359,16 +340,16 @@
             const lbl = normStr(b.label).trim();
             const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
             if (u) {
-              row.push(cellLink(disp, u, linkFill));
+              row.push(cellLink(disp, u, st.link));
               hasLink = true;
             } else {
-              row.push(cellText("", bodyFill));
+              row.push(cellText("", st.body));
             }
             return;
           }
 
           const t = normStr(b.v);
-          row.push(cellText(t, bodyFill));
+          row.push(cellText(t, st.body));
           if (t.trim()) hasText = true;
         });
 

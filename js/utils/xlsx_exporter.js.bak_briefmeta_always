@@ -261,42 +261,20 @@
   }
 
   function buildBriefSheet(XLSX, model) {
-    // Excel-only palette for clear room block separation (cycled by room index).
-    // Does NOT affect PWA/UI brand colors.
-    const EXCEL_ROOM_PALETTE = [
-      "FFE4D6", "DDEBFF", "EFFFF2", "FFF0F6", "F3F0FF",
-      "FFF7CC", "E6FFF8", "FCE8E6", "E9F7EF", "EDEDED",
-      "FFD6A5", "C7EFCF"
-    ];
-
-    function pickExcelRgb(ri) {
-      const n = EXCEL_ROOM_PALETTE.length;
-      const i = Number.isFinite(ri) ? (ri % n) : 0;
-      return EXCEL_ROOM_PALETTE[(i + n) % n];
-    }
-
-    function withFill(baseStyle, rgb) {
-      if (!rgb) return baseStyle;
-      return Object.assign({}, baseStyle, { fill: { patternType: "solid", fgColor: { rgb } } });
-    }
     const st = makeStyles();
     const cols = model.columns || [];
 
     const headerTop = [cellText("Наименование помещения", st.head)];
     const headerSub = [cellText("", st.head)];
 
-    const geoSet = new Set([
-      normalizeLabel("Стены"),
-      normalizeLabel("Пол"),
-      normalizeLabel("Потолок"),
-      normalizeLabel("Двери"),
-      normalizeLabel("Плинтус и карниз")
-    ]);
+    // "Геометрия помещения" должна зависеть от ключей, а не от текста заголовков
+    // (чтобы переименования вроде "Стены, цвет" не ломали merges).
+    const geoKeySet = new Set(["walls", "floor", "ceiling", "doors", "plinth"]);
 
     const geoIdxs = [];
     cols.forEach((c, i) => {
-      const lbl = normalizeLabel(c.label ?? c.title ?? c.key ?? "");
-      if (geoSet.has(lbl)) geoIdxs.push(i);
+      const k = normStr(c.key ?? c.id ?? c.name ?? "").trim();
+      if (geoKeySet.has(k)) geoIdxs.push(i);
     });
 
     const geoStart = geoIdxs.length ? Math.min(...geoIdxs) : -1;
@@ -326,13 +304,12 @@
     });
 
     const rooms = Array.isArray(model.rooms) ? model.rooms : [];
-    rooms.forEach((room, ri) => {
+    rooms.forEach((room) => {
       const roomName = normStr(room?.title ?? room?.name ?? room?.room ?? "");
-      const roomRgb = pickExcelRgb(ri);
+      const bg = hexToRGB(room?.__bg || room?.bg || room?.color || "");
+      const roomStyle = st.firstCol(bg || "E5E7EB");
 
-      const firstFill = st.firstCol(roomRgb);
-      const bodyFill  = withFill(st.body, roomRgb);
-      const linkFill  = withFill(st.link, roomRgb);const values = cols.map((c) => extractCellValue(room, normStr(c.key ?? c.id ?? c.name ?? "")));
+      const values = cols.map((c) => extractCellValue(room, normStr(c.key ?? c.id ?? c.name ?? "")));
 
       const maxBlocks = Math.min(
         10,
@@ -343,7 +320,7 @@
 
       for (let bi = 0; bi < rowsCount; bi++) {
         const row = [];
-        row.push(bi === 0 ? cellText(roomName, firstFill) : cellText("", bodyFill));
+        row.push(bi === 0 ? cellText(roomName, roomStyle) : cellText("", st.body));
 
         let hasText = false;
         let hasLink = false;
@@ -351,7 +328,7 @@
         values.forEach((v) => {
           const b = (v.blocks && v.blocks[bi]) ? v.blocks[bi] : null;
           if (!b) {
-            row.push(cellText("", bodyFill));
+            row.push(cellText("", st.body));
             return;
           }
           if (b.t === "link") {
@@ -359,16 +336,16 @@
             const lbl = normStr(b.label).trim();
             const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
             if (u) {
-              row.push(cellLink(disp, u, linkFill));
+              row.push(cellLink(disp, u, st.link));
               hasLink = true;
             } else {
-              row.push(cellText("", bodyFill));
+              row.push(cellText("", st.body));
             }
             return;
           }
 
           const t = normStr(b.v);
-          row.push(cellText(t, bodyFill));
+          row.push(cellText(t, st.body));
           if (t.trim()) hasText = true;
         });
 
@@ -479,7 +456,61 @@
     return ws;
   }
 
-  function buildLinksSheet(XLSX, model) {
+    function buildMetaSheet(XLSX, model) {
+    const st = makeStyles();
+    const meta = model.meta || {};
+
+    const aoa = [
+      [ cellText("Параметр", st.head), cellText("Значение", st.head) ]
+    ];
+
+    const pushKV = (k, v) => {
+      const s = normStr(v).trim();
+      const isLink = /^(https?:\/\/|mailto:|tel:)/i.test(s) || /^[\w.-]+\.[a-z]{2,}([\/?#].*)?$/i.test(s);
+      aoa.push([
+        cellText(k, st.bodyBold),
+        isLink ? cellLink(linkDisplay(s), s, st.link) : cellText(s, st.body)
+      ]);
+    };
+
+    // Всегда показываем шаблон (даже если значения пустые)
+    pushKV("Фото на замере (Google Drive)", meta.surveyPhotosLink || "");
+    pushKV("Ссылка на свет (DWG)", meta.lightDwg || "");
+    pushKV("Ссылка на план мебели (DWG)", meta.furniturePlanDwg || "");
+    pushKV("Ссылка на чертежи (PDF)", meta.drawingsPdf || "");
+    pushKV("Ссылка на концепт", meta.conceptLink || "");
+
+    // Радиаторы: поддержка multi-field, но тоже всегда показываем секцию
+    aoa.push([cellText("Радиаторы", st.groupHead), cellText("", st.groupHead)]);
+    const rad = normalizeBlocks(meta.radiators);
+    if (rad.blocks && rad.blocks.length) {
+      rad.blocks.slice(0, 12).forEach((b) => {
+        if (!b) return;
+        if (b.t === "link") {
+          const u = normStr(b.v).trim();
+          const lbl = normStr(b.label).trim();
+          const disp = (lbl ? (lbl + ": ") : "") + linkDisplay(u);
+          aoa.push([cellText("", st.body), u ? cellLink(disp, u, st.link) : cellText("", st.body)]);
+        } else {
+          aoa.push([cellText("", st.body), cellText(normStr(b.v), st.body)]);
+        }
+      });
+    } else {
+      aoa.push([cellText("", st.body), cellText("", st.body)]);
+    }
+
+    // Высоты и прочее (всегда строки присутствуют)
+    pushKV("Высота потолков (мм)", meta.ceilingsMm || "");
+    pushKV("Высота дверей (мм)", meta.doorsMm || "");
+    const otherLabel = (normStr(meta.otherLabel).trim() || "Прочее");
+    pushKV(otherLabel + " (мм)", meta.otherMm || "");
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 34 }, { wch: 80 }];
+    ws["!rows"] = [{ hpt: 24 }];
+    return ws;
+  }
+function buildLinksSheet(XLSX, model) {
     const st = makeStyles();
     const cols = model.columns || [];
 
@@ -567,6 +598,7 @@
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, buildBriefSheet(XLSX, model), "BRIEF");
     XLSX.utils.book_append_sheet(wb, buildLinksSheet(XLSX, model), "LINKS");
+    XLSX.utils.book_append_sheet(wb, buildMetaSheet(XLSX, model), "META");
 
     const name = (filename && String(filename).trim()) ? String(filename).trim() : "BriefPro";
     const out = name.toLowerCase().endsWith(".xlsx") ? name : (name + ".xlsx");
@@ -575,4 +607,7 @@
 
   window.Utils.XLSXExport = { downloadXLSX };
 })();
+
+
+
 

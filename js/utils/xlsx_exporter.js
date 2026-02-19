@@ -92,7 +92,7 @@ Utils.XLSXExport = (() => {
     // Link cells: fixed-height-friendly (no wrap), show truncated display
     const link = {
       font: { name: FONT, sz: 11, color: { rgb: "1D4ED8" }, underline: true },
-      alignment: { horizontal: "left", vertical: "center", wrapText: false },
+      alignment: { horizontal: "left", vertical: "center", wrapText: false, shrinkToFit: true },
       border: borderThin
     };
 
@@ -419,3 +419,4 @@ Utils.XLSXExport = (() => {
   window.Utils.XLSXExport = { downloadXLSX };
   return window.Utils.XLSXExport;
 })();
+

@@ -467,7 +467,7 @@ function collectHeights(meta){
   const rxCeil = /(ceiling|ceil|potol|потол|потолок)/i;
   const rxDoor = /(door|doors|двер|porta)/i;
   const rxWhite = /(white|бел)/i;
-  const rxCustom = /(custom|extra|доп|кастом|свой)/i;
+  const rxCustom = /(custom|extra|доп|кастом|свой|проч|other|misc)/i;
   const rxHeight = /(height|h_|mm|мм|высот)/i;
 
   function add(kind, label, val){
@@ -515,12 +515,39 @@ function collectHeights(meta){
     }
   });
 
-  // 3) Custom "label + value" pairs (common patterns)
-  const cLabel = pickMeta(meta, ["heights.customLabel","customHeightLabel","heightCustomLabel","customLabel","extraLabel","heightsExtraLabel"]);
-  const cVal   = pickMeta(meta, ["heights.custom","customHeight","customHeightMm","customValue","extraValue","heightsExtra"]);
-  if (cVal) add("customPair", (normStr(cLabel).trim() ? normStr(cLabel).trim() : "Прочее"), cVal);
+  // 3) Custom "label + value" pairs (common patterns + robust heuristics)
+const cLabelRaw = pickMeta(meta, [
+  "heights.customLabel","customHeightLabel","heightCustomLabel","customLabel","extraLabel","heightsExtraLabel",
+  "heights.otherLabel","otherLabel","miscLabel","прочееLabel","otherTitle","miscTitle"
+]);
+const cValRaw = pickMeta(meta, [
+  "heights.custom","customHeight","customHeightMm","customValue","extraValue","heightsExtra",
+  "heights.other","otherValue","miscValue","прочееValue","otherMm","miscMm"
+]);
 
-  // Build final text in stable order
+// If value exists but label empty -> "Прочее"
+const cLabel = normStr(cLabelRaw).trim() ? normStr(cLabelRaw).trim() : "Прочее";
+const cVal = normStr(cValRaw).trim();
+if (cVal) add("customPair", cLabel, cVal);
+
+// Heuristic: find any object with {label/title/name} + {value/mm/size} anywhere in meta
+let foundPair = false;
+walk(meta, (k, v, p) => {
+  if (foundPair) return;
+  if (!v || typeof v !== "object" || Array.isArray(v)) return;
+
+  const keys = Object.keys(v);
+  const kLabel = keys.find(x => /(label|title|name|заголовок|название)/i.test(String(x))) || null;
+  const kVal = keys.find(x => /(value|mm|мм|size|amount|val|значение)/i.test(String(x))) || null;
+  if (!kLabel || !kVal) return;
+
+  const labelV = normStr(v[kLabel]).trim();
+  const valV = normStr(v[kVal]).trim();
+  if (!valV) return;
+
+  add("customPair", (labelV ? labelV : "Прочее"), valV);
+  foundPair = true;
+});// Build final text in stable order
   const parts = [];
   const ceil = hits.filter(x => x.kind === "ceil").map(x => x.val);
   const door = hits.filter(x => x.kind === "door").map(x => x.val);
@@ -709,5 +736,6 @@ addMetaRow("Высоты (мм)", heightsOut, false);// ------------------------
   window.Utils.XLSXExport = { downloadXLSX };
   return window.Utils.XLSXExport;
 })();
+
 
 

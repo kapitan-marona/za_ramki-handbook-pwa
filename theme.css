@@ -932,3 +932,55 @@ select:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+
+
+/* =========================================================
+   BriefPro: sticky 1st column + sticky headers (minimal)
+   Требование: 1-й столбец как шапка по прозрачности и fixed слева
+   ========================================================= */
+
+/* важно для sticky внутри скролла */
+.bp-tablewrap{
+  overflow: auto;
+}
+
+/* на всякий случай */
+.bp-table{
+  position: relative;
+}
+
+/* 1) Первый столбец (если уже есть класс sticky — он тоже поддержан) */
+.bp-table th:first-child,
+.bp-table td:first-child,
+.bp-table th.sticky,
+.bp-table td.sticky{
+  position: sticky;
+  left: 0;
+  background: var(--panel);
+  z-index: 3;
+  background-clip: padding-box;
+}
+
+/* 2) Лёгкое разделение, чтобы не было налезания визуально */
+.bp-table th:first-child,
+.bp-table td:first-child,
+.bp-table th.sticky,
+.bp-table td.sticky{
+  border-right: 1px solid var(--border);
+}
+
+/* 3) Sticky заголовки строк (thead) — опционально, но включаем */
+.bp-table thead th{
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 4;
+  background-clip: padding-box;
+}
+
+/* 4) Пересечение: верхний левый угол должен быть самым верхним */
+.bp-table thead th:first-child,
+.bp-table thead th.sticky{
+  z-index: 5;
+}

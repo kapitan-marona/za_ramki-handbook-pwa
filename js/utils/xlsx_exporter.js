@@ -439,41 +439,110 @@ Utils.XLSXExport = (() => {
         addMetaRow(rowLabel, u, true);
       });
 
-    // Heights: separate inputs + fallback (covers your "last inputs" case)
-    const hCeil = pickMeta(meta, [
-      "heights.ceiling", "heights.ceilingMm", "ceilingHeight", "ceilingHeightMm", "hCeiling", "h_ceiling",
-      "ceiling_mm", "ceilingMm"
-    ]);
-    const hDoors = pickMeta(meta, [
-      "heights.doors", "heights.doorsMm", "doorHeight", "doorHeightMm", "hDoors", "h_doors",
-      "doors_mm", "doorsMm"
-    ]);
-    const hDoorsWhite = pickMeta(meta, [
-      "heights.doorsWhite", "heights.doorWhite", "doorWhiteHeight", "doorWhiteHeightMm", "hDoorWhite", "h_door_white",
-      "door_white_mm", "doorsWhiteMm"
-    ]);
+    // Heights: robust auto-collector (no guessing exact keys)
+// - finds ceiling/doors/custom-like fields anywhere inside meta (deep search)
+// - keeps backward compatible fallback
+function walk(obj, cb, path = ""){
+  if (!obj || typeof obj !== "object") return;
+  if (Array.isArray(obj)) {
+    obj.forEach((v, i) => walk(v, cb, path ? (path + "[" + i + "]") : ("[" + i + "]")));
+    return;
+  }
+  Object.keys(obj).forEach((k) => {
+    const v = obj[k];
+    const p = path ? (path + "." + k) : k;
+    cb(k, v, p);
+    walk(v, cb, p);
+  });
+}
 
-    const hCustomLabel = pickMeta(meta, [
-      "heights.customLabel", "heights.label", "customHeightLabel", "heightCustomLabel", "heightsExtraLabel",
-      "customHeightTitle", "heightExtraTitle"
-    ]);
-    const hCustomVal = pickMeta(meta, [
-      "heights.custom", "heights.customMm", "customHeight", "customHeightMm", "heightCustom", "heightsExtra",
-      "customHeightValue", "heightExtraValue"
-    ]);
+function isScalar(v){
+  return (typeof v === "string" || typeof v === "number" || typeof v === "boolean");
+}
 
-    const heightsFallback = pickMeta(meta, ["heightsMm", "heights", "heightNotes", "heightsText"]);
+function collectHeights(meta){
+  const hits = []; // {kind, label, val}
+  const seen = new Set();
 
-    const parts = [];
-    if (hCeil) parts.push("Потолки: " + hCeil);
-    if (hDoors) parts.push("Двери: " + hDoors);
-    if (hDoorsWhite) parts.push("Дверь белая: " + hDoorsWhite);
-    if (hCustomVal) parts.push((hCustomLabel ? (hCustomLabel + ": ") : "Дополнительно: ") + hCustomVal);
+  const rxCeil = /(ceiling|ceil|potol|потол|потолок)/i;
+  const rxDoor = /(door|doors|двер|porta)/i;
+  const rxWhite = /(white|бел)/i;
+  const rxCustom = /(custom|extra|доп|кастом|свой)/i;
+  const rxHeight = /(height|h_|mm|мм|высот)/i;
 
-    const heightsOut = parts.length ? parts.join(" | ") : heightsFallback;
-    addMetaRow("Высоты (мм)", heightsOut, false);
+  function add(kind, label, val){
+    const v = normStr(val).trim();
+    if (!v) return;
+    const key = kind + "|" + label + "|" + v;
+    if (seen.has(key)) return;
+    seen.add(key);
+    hits.push({ kind, label, val: v });
+  }
 
-    // ---------------------------
+  // 1) Try structured places first (if exist)
+  const hFallback = pickMeta(meta, ["heightsMm", "heights", "heightNotes", "heightsText"]);
+  // If heights is an object, take its scalar fields
+  const heightsObj = (meta && meta.heights && typeof meta.heights === "object") ? meta.heights : null;
+  if (heightsObj) {
+    Object.keys(heightsObj).forEach((k) => {
+      const v = heightsObj[k];
+      if (!isScalar(v)) return;
+      const kk = String(k);
+      if (rxCeil.test(kk)) add("ceil", "Потолки", v);
+      else if (rxDoor.test(kk) && rxWhite.test(kk)) add("doorWhite", "Дверь белая", v);
+      else if (rxDoor.test(kk)) add("door", "Двери", v);
+      else if (rxCustom.test(kk) || rxHeight.test(kk)) add("custom", kk, v);
+    });
+  }
+
+  // 2) Deep scan meta for likely height fields (ceiling/doors/custom)
+  walk(meta, (k, v, p) => {
+    if (!isScalar(v)) return;
+
+    const kk = String(k);
+    const pp = String(p);
+
+    // Only consider height-ish fields to avoid garbage
+    const looksHeight = rxHeight.test(kk) || rxHeight.test(pp) || /\d/.test(String(v));
+    if (!looksHeight) return;
+
+    if (rxCeil.test(kk) || rxCeil.test(pp)) add("ceil", "Потолки", v);
+    else if ((rxDoor.test(kk) || rxDoor.test(pp)) && (rxWhite.test(kk) || rxWhite.test(pp))) add("doorWhite", "Дверь белая", v);
+    else if (rxDoor.test(kk) || rxDoor.test(pp)) add("door", "Двери", v);
+    else if (rxCustom.test(kk) || rxCustom.test(pp)) {
+      // Try to use neighbor label if present
+      add("custom", kk, v);
+    }
+  });
+
+  // 3) Custom "label + value" pairs (common patterns)
+  const cLabel = pickMeta(meta, ["heights.customLabel","customHeightLabel","heightCustomLabel","customLabel","extraLabel","heightsExtraLabel"]);
+  const cVal   = pickMeta(meta, ["heights.custom","customHeight","customHeightMm","customValue","extraValue","heightsExtra"]);
+  if (cVal) add("customPair", (cLabel ? cLabel : "Дополнительно"), cVal);
+
+  // Build final text in stable order
+  const parts = [];
+  const ceil = hits.filter(x => x.kind === "ceil").map(x => x.val);
+  const door = hits.filter(x => x.kind === "door").map(x => x.val);
+  const white = hits.filter(x => x.kind === "doorWhite").map(x => x.val);
+
+  if (ceil.length) parts.push("Потолки: " + ceil[0]);
+  if (door.length) parts.push("Двери: " + door[0]);
+  if (white.length) parts.push("Дверь белая: " + white[0]);
+
+  // customs: take up to 2 to keep it neat
+  const customs = hits.filter(x => x.kind.startsWith("custom")).slice(0, 2);
+  customs.forEach((x) => {
+    const lab = x.label && x.label.length <= 24 ? x.label : "Дополнительно";
+    parts.push(lab + ": " + x.val);
+  });
+
+  const out = parts.length ? parts.join(" | ") : hFallback;
+  return out;
+}
+
+const heightsOut = collectHeights(meta);
+addMetaRow("Высоты (мм)", heightsOut, false);// ---------------------------
     // Build sheet + merges
     // ---------------------------
     const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -640,3 +709,4 @@ Utils.XLSXExport = (() => {
   window.Utils.XLSXExport = { downloadXLSX };
   return window.Utils.XLSXExport;
 })();
+

@@ -476,7 +476,7 @@ input:focus, textarea:focus{
 .bp-table td.sticky{
   position: sticky;
   left: 0;
-  background: var(--panel);
+  background: var(--card);
   z-index: 5;
   background-clip: padding-box;
   border-right: 1px solid var(--border);
@@ -486,7 +486,7 @@ input:focus, textarea:focus{
 .bp-table thead th{
   position: sticky;
   top: 0;
-  background: var(--panel);
+  background: var(--card);
   z-index: 6;
   background-clip: padding-box;
 }

@@ -229,7 +229,7 @@ body{
 /* BriefPro row accent */
 .bp-table tr[data-room-row] { --rr-bg: transparent; }
 .bp-table tr[data-room-row] td { background: var(--surface-soft); }
-.bp-table tr[data-room-row] td.rr-sticky { box-shadow: inset 6px 0 0 var(--rr-bg); }
+.bp-table tr[data-room-row] td.rr-sticky { box-shadow: none; }
 
 
 /* BriefPro: sticky first column must have solid background (no see-through overlap) */

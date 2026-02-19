@@ -1,14 +1,11 @@
 ﻿﻿/**
  * BriefPro XLSX exporter (xlsx-js-style).
  * Requirements:
- * 1) Geometry group spans 5 fields: walls, floor, ceiling, doors, plinth.
- * 2) Text and links must be written into separate cells based on user-created block order.
- *    (blocks: text/link/text/link...) => columns #1, #2, #3...
- * 3) Each room row has its own fill color; all cells in that room row share the same fill.
- *
- * Output sheets:
- * - BRIEF (main)
- * - LINKS (flattened links list)
+ * - Table grows DOWN (vertical): blocks go to new rows, not new columns.
+ * - Geometry group spans 5 fields: walls, floor, ceiling, doors, plinth.
+ * - Each room is colored with its own fill; all rows for that room share the same fill.
+ * - Rows are created only for existing rooms (even if room.name is empty).
+ * - Sheets: BRIEF + LINKS.
  */
 window.Utils = window.Utils || {};
 
@@ -34,7 +31,6 @@ Utils.XLSXExport = (() => {
   // Utils
   // ---------------------------
   function normStr(v){ return (v ?? "").toString(); }
-
   function linkDisplay(url){
     const s = normStr(url).trim();
     if (!s) return "";
@@ -67,20 +63,6 @@ Utils.XLSXExport = (() => {
       border: borderThin
     };
 
-    const subHead = {
-      font: { name: FONT, sz: 13, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: "334155" } },
-      alignment: { horizontal: "center", vertical: "center", wrapText: true },
-      border: borderThin
-    };
-
-    const idxHead = {
-      font: { name: FONT, sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { patternType: "solid", fgColor: { rgb: "475569" } },
-      alignment: { horizontal: "center", vertical: "center", wrapText: true },
-      border: borderThin
-    };
-
     const body = {
       font: { name: FONT, sz: 12, color: { rgb: "111827" } },
       alignment: { horizontal: "left", vertical: "top", wrapText: true },
@@ -99,7 +81,7 @@ Utils.XLSXExport = (() => {
       border: borderThin
     };
 
-    return { head, groupHead, subHead, idxHead, body, bodyBold, link, borderThin };
+    return { head, groupHead, body, bodyBold, link };
   }
 
   function withFill(style, rgb){
@@ -133,9 +115,7 @@ Utils.XLSXExport = (() => {
   }
 
   // ---------------------------
-  // MultiField normalization (compatible with UI)
-  // blocks preserve user order: text/link/text/link...
-  // link label supported: b.label
+  // MultiField normalization (preserve user order)
   // ---------------------------
   function normalizeBlocks(raw){
     if (raw === null || raw === undefined) return { blocks: [], links: [] };
@@ -178,246 +158,177 @@ Utils.XLSXExport = (() => {
     return { blocks, links: flatLinks };
   }
 
-  // Convert a single block to a cell value + optional hyperlink
   function blockToCell(block){
     const t = block && block.t ? block.t : "";
     const v = normStr(block && block.v).trim();
     const lbl = normStr(block && block.label).trim();
-
     if (!v) return { text: "", url: "" };
 
     if (t === "link") {
-      // Display includes label if exists
       return { text: lbl ? (lbl + ": " + v) : v, url: v };
     }
-
-    // text
     return { text: v, url: "" };
   }
 
   // ---------------------------
-  // Palette (distinct per room, no repeating same shades in a row)
+  // Palette (distinct per room, all rows of the room share it)
   // ---------------------------
   const ROOM_FILLS = [
-    "FFE4D6", // warm peach
-    "DDEBFF", // soft blue
-    "EFFFF2", // mint
-    "FFF0F6", // pink
-    "F3F0FF", // violet
-    "FFF7CC", // light yellow
-    "E7FAFE", // cyan tint
-    "FDECC8", // sand
-    "E9F7D9", // green tint
-    "FCE7F3", // rose tint
-    "E0E7FF", // indigo tint
-    "DCFCE7"  // green tint 2
+    "FFE4D6", "DDEBFF", "EFFFF2", "FFF0F6", "F3F0FF", "FFF7CC",
+    "E7FAFE", "FDECC8", "E9F7D9", "FCE7F3", "E0E7FF", "DCFCE7"
   ];
-
-  function pickRoomFill(idx){
-    return ROOM_FILLS[idx % ROOM_FILLS.length];
-  }
+  function pickRoomFill(idx){ return ROOM_FILLS[idx % ROOM_FILLS.length]; }
 
   // ---------------------------
-  // BRIEF layout (dynamic columns by max blocks per field)
+  // BRIEF sheet (GROWS DOWN)
   // ---------------------------
   function buildBriefSheet(XLSX, model){
     const st = makeStyles();
 
-    // Fixed field order for XLSX (independent from PWA table styling)
-    const GEOMETRY_FIELDS = [
-      { key: "walls",   label: "Стены, цвет" },
-      { key: "floor",   label: "Пол" },
-      { key: "ceiling", label: "Потолок" },
-      { key: "doors",   label: "Двери" },
-      { key: "plinth",  label: "Плинтус, карниз" },
+    // Fixed columns (no expanding to the right)
+    const COLS = [
+      { key: "__room", label: "Наименование помещения", wch: 30 },
+
+      // Geometry (5)
+      { key: "walls",   label: "Стены, цвет",     wch: 26 },
+      { key: "floor",   label: "Пол",             wch: 26 },
+      { key: "ceiling", label: "Потолок",         wch: 26 },
+      { key: "doors",   label: "Двери",           wch: 26 },
+      { key: "plinth",  label: "Плинтус, карниз", wch: 26 },
+
+      // Other
+      { key: "light",     label: "Свет",             wch: 26 },
+      { key: "furniture", label: "Мебель / Декор",   wch: 26 },
+      { key: "concept",   label: "Ссылка на концепт",wch: 26 },
+      { key: "notes",     label: "Допы / примечания",wch: 30 },
     ];
 
-    const OTHER_FIELDS = [
-      { key: "light",     label: "Свет" },
-      { key: "furniture", label: "Мебель / Декор" },
-      { key: "concept",   label: "Ссылка на концепт" },
-      { key: "notes",     label: "Допы / примечания" },
+    // Header rows (2)
+    // Row1: group header for geometry (B1:F1), other headers merged vertically
+    const r1 = [
+      cellText(COLS[0].label, st.head),
+      cellText("Геометрия помещения", st.groupHead),
+      cellText("", st.groupHead),
+      cellText("", st.groupHead),
+      cellText("", st.groupHead),
+      cellText("", st.groupHead),
+      cellText(COLS[6].label, st.head),
+      cellText(COLS[7].label, st.head),
+      cellText(COLS[8].label, st.head),
+      cellText(COLS[9].label, st.head),
     ];
+
+    // Row2: geometry field labels, other columns blank (because merged)
+    const r2 = [
+      cellText("", st.head),
+      cellText(COLS[1].label, st.head),
+      cellText(COLS[2].label, st.head),
+      cellText(COLS[3].label, st.head),
+      cellText(COLS[4].label, st.head),
+      cellText(COLS[5].label, st.head),
+      cellText("", st.head),
+      cellText("", st.head),
+      cellText("", st.head),
+      cellText("", st.head),
+    ];
+
+    const aoa = [r1, r2];
 
     const rooms = Array.isArray(model.rooms) ? model.rooms : [];
 
-    // Find max number of blocks per field across all rooms (cap to avoid extreme width)
-    const MAX_CAP = 12;
-    const maxByKey = new Map();
-
-    function countBlocksFor(room, key){
+    // For each room, compute how many rows it needs (max blocks across all fields).
+    // At least 1 row per room (even if empty name and no content).
+    function countNonEmptyBlocks(room, key){
       const n = normalizeBlocks(room ? room[key] : null);
-      // Count only non-empty blocks
       return (n.blocks || []).filter(b => normStr(b && b.v).trim()).length;
     }
 
-    [...GEOMETRY_FIELDS, ...OTHER_FIELDS].forEach(f => {
-      let m = 0;
-      rooms.forEach(r => { m = Math.max(m, countBlocksFor(r, f.key)); });
-      m = Math.min(Math.max(m, 1), MAX_CAP); // at least 1 column per field
-      maxByKey.set(f.key, m);
-    });
+    let excelRowIndex = 2; // current last row index in AOAs (0-based headers used: 0,1). Data starts at 2.
 
-    // Build columns:
-    // [RoomName] + for each field: N block-columns (#1..#N)
-    // We'll create 3 header rows:
-    // Row1: group headers (Geometry) + other field headers
-    // Row2: field labels inside geometry; blanks for others
-    // Row3: #1..#N indices
-    const cols = [];
-    cols.push({ kind: "room", label: "Наименование помещения", wch: 30 });
+    const merges = [];
 
-    function pushFieldCols(field, group){
-      const n = maxByKey.get(field.key) || 1;
-      for (let i = 1; i <= n; i++){
-        cols.push({
-          kind: "field",
-          group,
-          key: field.key,
-          fieldLabel: field.label,
-          idx: i,
-          wch: (field.key === "notes" ? 30 : 26)
-        });
-      }
-    }
-
-    GEOMETRY_FIELDS.forEach(f => pushFieldCols(f, "geometry"));
-    OTHER_FIELDS.forEach(f => pushFieldCols(f, "content"));
-
-    // Header rows
-    const row1 = [];
-    const row2 = [];
-    const row3 = [];
-
-    // Room header (will be merged A1:A3)
-    row1.push(cellText("Наименование помещения", st.head));
-    row2.push(cellText("", st.head));
-    row3.push(cellText("", st.head));
-
-    // Determine geometry span in columns
-    const geoStart = 1;
-    const geoWidth = GEOMETRY_FIELDS.reduce((acc, f) => acc + (maxByKey.get(f.key) || 1), 0);
-    const geoEnd = geoStart + geoWidth - 1;
-
-    // Row1: Geometry group merged across all geometry subcolumns
-    // For columns within geometry: write group header only at first cell, others empty
-    for (let c = 1; c < cols.length; c++){
-      const isGeo = (c >= geoStart && c <= geoEnd);
-      if (isGeo) {
-        row1.push(cellText(c === geoStart ? "Геометрия помещения" : "", st.groupHead));
-      } else {
-        // For content fields: we will set row1 as field label merged across its subcols (later merges),
-        // but we still need the row1 cells present.
-        // We'll write label at the first subcol of each field, and empty on the rest.
-        const col = cols[c];
-        const prev = cols[c-1];
-        const isFirstOfField = !prev || prev.key !== col.key;
-        row1.push(cellText(isFirstOfField ? col.fieldLabel : "", st.groupHead));
-      }
-    }
-
-    // Row2: For geometry: field labels merged across its subcols. For content: blank (merged later).
-    // Row3: For all fields: #1..#N
-    // We'll fill row2/row3 by scanning cols.
-    for (let c = 1; c < cols.length; c++){
-      const col = cols[c];
-      const isGeo = (c >= geoStart && c <= geoEnd);
-
-      // Row2
-      if (isGeo) {
-        const prev = cols[c-1];
-        const isFirstOfField = !prev || prev.key !== col.key;
-        row2.push(cellText(isFirstOfField ? col.fieldLabel : "", st.subHead));
-      } else {
-        row2.push(cellText("", st.subHead));
-      }
-
-      // Row3
-      row3.push(cellText("#" + col.idx, st.idxHead));
-    }
-
-    const aoa = [row1, row2, row3];
-
-    // Data rows (ONLY for rooms, even if room name is empty)
     rooms.forEach((room, ri) => {
       const fill = pickRoomFill(ri);
-      const r = [];
 
-      // Room name cell
       const roomName = normStr(room?.name ?? room?.title ?? room?.room ?? "");
-      r.push(cellText(roomName, withFill(st.bodyBold, fill)));
 
-      // Field blocks laid into separate cells preserving order
-      for (let c = 1; c < cols.length; c++){
-        const col = cols[c];
-        const n = normalizeBlocks(room ? room[col.key] : null);
-        const blocks = (n.blocks || []).filter(b => normStr(b && b.v).trim());
-
-        const b = blocks[col.idx - 1]; // idx is 1-based
-        const bc = blockToCell(b);
-
-        if (bc.url) {
-          r.push(cellLink(bc.text, bc.url, withFill(st.link, fill)));
-        } else {
-          r.push(cellText(bc.text, withFill(st.body, fill)));
-        }
+      // How many vertical rows this room spans:
+      let span = 1;
+      for (let ci = 1; ci < COLS.length; ci++){
+        const key = COLS[ci].key;
+        span = Math.max(span, countNonEmptyBlocks(room, key));
       }
 
-      aoa.push(r);
+      // Prepare blocks per field once
+      const blocksByKey = {};
+      for (let ci = 1; ci < COLS.length; ci++){
+        const key = COLS[ci].key;
+        const n = normalizeBlocks(room ? room[key] : null);
+        blocksByKey[key] = (n.blocks || []).filter(b => normStr(b && b.v).trim());
+      }
+
+      // Create 'span' rows
+      for (let k = 0; k < span; k++){
+        const row = [];
+
+        // Room name only on the first row; merged for the whole span
+        if (k === 0) {
+          row.push(cellText(roomName, withFill(st.bodyBold, fill)));
+        } else {
+          row.push(cellText("", withFill(st.bodyBold, fill)));
+        }
+
+        // Each column gets k-th block in that field (if any)
+        for (let ci = 1; ci < COLS.length; ci++){
+          const key = COLS[ci].key;
+          const b = (blocksByKey[key] && blocksByKey[key][k]) ? blocksByKey[key][k] : null;
+          const bc = blockToCell(b);
+
+          if (bc.url) {
+            row.push(cellLink(bc.text, bc.url, withFill(st.link, fill)));
+          } else {
+            row.push(cellText(bc.text, withFill(st.body, fill)));
+          }
+        }
+
+        aoa.push(row);
+      }
+
+      // Merge room name cell vertically if span > 1
+      if (span > 1) {
+        merges.push({
+          s: { r: excelRowIndex, c: 0 },
+          e: { r: excelRowIndex + span - 1, c: 0 }
+        });
+      }
+
+      excelRowIndex += span;
     });
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-    // Column widths
-    ws["!cols"] = cols.map(c => ({ wch: c.wch || 26 }));
+    // widths
+    ws["!cols"] = COLS.map(c => ({ wch: c.wch }));
 
-    // Row heights: 3 header rows + data rows
-    const heights = [{ hpt: 28 }, { hpt: 22 }, { hpt: 18 }];
-    for (let i = 0; i < rooms.length; i++) heights.push({ hpt: 60 });
+    // heights
+    const heights = [{ hpt: 28 }, { hpt: 24 }];
+    // Data row heights: compact so growth is vertical and readable
+    for (let i = 0; i < (aoa.length - 2); i++) heights.push({ hpt: 22 });
     ws["!rows"] = heights;
 
-    // Freeze: first column + 3 header rows
-    ws["!freeze"] = { xSplit: 1, ySplit: 3 };
+    // Freeze: first column + 2 header rows
+    ws["!freeze"] = { xSplit: 1, ySplit: 2 };
 
-    // Merges
-    const merges = [];
-
-    // A1:A3 (room header)
-    merges.push({ s: { r: 0, c: 0 }, e: { r: 2, c: 0 } });
-
-    // Geometry group merge (Row1, across geometry span)
-    merges.push({ s: { r: 0, c: geoStart }, e: { r: 0, c: geoEnd } });
-
-    // Geometry field label merges on Row2
-    // Content field label merges on Row1+Row2 across subcols
-    // Also merge Row1+Row2 for each content field span to keep it clean.
-    function addFieldMerges(fieldList, startCol, rowForLabel, mergeRow1Row2){
-      let colCursor = startCol;
-      fieldList.forEach(f => {
-        const span = maxByKey.get(f.key) || 1;
-        const c1 = colCursor;
-        const c2 = colCursor + span - 1;
-
-        // If span > 1, merge the label row across that field span
-        if (span > 1) {
-          merges.push({ s: { r: rowForLabel, c: c1 }, e: { r: rowForLabel, c: c2 } });
-        }
-
-        // For content fields, we merge Row1..Row2 for the whole span (keeps Row2 blank)
-        if (mergeRow1Row2) {
-          merges.push({ s: { r: 0, c: c1 }, e: { r: 1, c: c2 } });
-        }
-
-        colCursor = c2 + 1;
-      });
-    }
-
-    // Geometry labels are on Row2 (r=1), no Row1..Row2 merge (Row1 is group)
-    addFieldMerges(GEOMETRY_FIELDS, geoStart, 1, false);
-
-    // Content starts right after geometry
-    const contentStart = geoEnd + 1;
-    addFieldMerges(OTHER_FIELDS, contentStart, 0, true);
+    // Header merges (v36-like, but geometry spans 5 columns)
+    // A1:A2, B1:F1, G1:G2, H1:H2, I1:I2, J1:J2
+    merges.unshift(
+      { s: { r: 0, c: 0 }, e: { r: 1, c: 0 } },
+      { s: { r: 0, c: 1 }, e: { r: 0, c: 5 } },
+      { s: { r: 0, c: 6 }, e: { r: 1, c: 6 } },
+      { s: { r: 0, c: 7 }, e: { r: 1, c: 7 } },
+      { s: { r: 0, c: 8 }, e: { r: 1, c: 8 } },
+      { s: { r: 0, c: 9 }, e: { r: 1, c: 9 } }
+    );
 
     ws["!merges"] = merges;
 
@@ -451,13 +362,12 @@ Utils.XLSXExport = (() => {
     ];
 
     rooms.forEach((room) => {
-      const roomName = normStr(room?.name ?? room?.title ?? room?.room ?? ""); // may be empty, ok
+      const roomName = normStr(room?.name ?? room?.title ?? room?.room ?? "");
 
       FIELDS.forEach(([key, label]) => {
         const n = normalizeBlocks(room ? room[key] : null);
         const blocks = Array.isArray(n.blocks) ? n.blocks : [];
         const links = blocks.filter(b => b && b.t === "link" && normStr(b.v).trim());
-
         if (!links.length) return;
 
         links.forEach((b) => {
@@ -473,27 +383,6 @@ Utils.XLSXExport = (() => {
           ]);
         });
       });
-    });
-
-    // Meta links (if present)
-    const meta = model.meta || {};
-    const metaPairs = [
-      ["Фото на замере (Google Drive)", meta.surveyPhotosLink],
-      ["Ссылка на свет (DWG)", meta.lightDwg],
-      ["Ссылка на план мебели (DWG)", meta.furniturePlanDwg],
-      ["Ссылка на чертежи (PDF)", meta.drawingsPdf],
-      ["Ссылка на концепт", meta.conceptLink],
-    ];
-
-    metaPairs.forEach(([label, val]) => {
-      const v = normStr(val).trim();
-      if (!v) return;
-      aoa.push([
-        cellText("—", st.body),
-        cellText(label, st.body),
-        cellText("", st.body),
-        cellLink(linkDisplay(v), v, st.link)
-      ]);
     });
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);

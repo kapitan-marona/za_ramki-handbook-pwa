@@ -190,17 +190,17 @@ Utils.XLSXExport = (() => {
       { key: "__room", label: "Наименование помещения", wch: 30 },
 
       // Geometry (5)
-      { key: "walls",   label: "Стены, цвет",     wch: 26 },
-      { key: "floor",   label: "Пол",             wch: 26 },
-      { key: "ceiling", label: "Потолок",         wch: 26 },
-      { key: "doors",   label: "Двери",           wch: 26 },
-      { key: "plinth",  label: "Плинтус, карниз", wch: 26 },
+      { key: "walls",   label: "Стены, цвет",     wch: 30 },
+      { key: "floor",   label: "Пол",             wch: 30 },
+      { key: "ceiling", label: "Потолок",         wch: 30 },
+      { key: "doors",   label: "Двери",           wch: 30 },
+      { key: "plinth",  label: "Плинтус, карниз", wch: 30 },
 
       // Other
-      { key: "light",     label: "Свет",             wch: 26 },
-      { key: "furniture", label: "Мебель / Декор",   wch: 26 },
-      { key: "concept",   label: "Ссылка на концепт",wch: 26 },
-      { key: "notes",     label: "Допы / примечания",wch: 30 },
+      { key: "light",     label: "Свет",             wch: 32 },
+      { key: "furniture", label: "Мебель / Декор",   wch: 34 },
+      { key: "concept",   label: "Ссылка на концепт",wch: 34 },
+      { key: "notes",     label: "Допы / примечания",wch: 40 },
     ];
 
     // Header rows (2)
@@ -311,9 +311,9 @@ Utils.XLSXExport = (() => {
     ws["!cols"] = COLS.map(c => ({ wch: c.wch }));
 
     // heights
-    const heights = [{ hpt: 28 }, { hpt: 24 }];
+    const heights = [{ hpt: 32 }, { hpt: 28 }];
     // Data row heights: compact so growth is vertical and readable
-    for (let i = 0; i < (aoa.length - 2); i++) heights.push({ hpt: 22 });
+    for (let i = 0; i < (aoa.length - 2); i++) heights.push({ hpt: 34 });
     ws["!rows"] = heights;
 
     // Freeze: first column + 2 header rows
@@ -411,3 +411,4 @@ Utils.XLSXExport = (() => {
   window.Utils.XLSXExport = { downloadXLSX };
   return window.Utils.XLSXExport;
 })();
+

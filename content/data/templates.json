@@ -1,4 +1,20 @@
-﻿[
-  { "id": "brief_visualizer", "title": "ТЗ для визуализатора (быстро заполнить)", "format": "form", "link": "" },
-  { "id": "brief_visualizer_pro", "title": "ТЗ для визуализатора — PRO (таблица квартиры)", "format": "form", "link": "" }
+[
+  {
+    "id": "brief_visualizer",
+    "title": "ТЗ для визуализатора (быстро заполнить)",
+    "format": "form",
+    "link": ""
+  },
+  {
+    "id": "brief_visualizer_pro",
+    "title": "ТЗ для визуализатора — PRO (таблица квартиры)",
+    "format": "form",
+    "link": ""
+  },
+  {
+    "id": "site_measurements_guide",
+    "title": "Обмер помещения — инструкция + чек-лист",
+    "format": "guide",
+    "link": ""
+  }
 ]

@@ -88,6 +88,16 @@ Views.Templates = (() => {
     }
 
 
+    if(templateId === "site_measurements_guide"){
+      if(!window.Views || !Views.Measurements){
+        viewer.innerHTML = `<div class="empty">Measurements view не подключён (js/views/measurements.js).</div>`;
+        return;
+      }
+      await Views.Measurements.open();
+      return;
+    }
+
+
     // For demo we implement one interactive template: brief_visualizer
     if(templateId !== "brief_visualizer"){
       viewer.innerHTML = `

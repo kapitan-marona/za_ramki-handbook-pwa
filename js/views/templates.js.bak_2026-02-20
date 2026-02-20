@@ -68,10 +68,7 @@ Views.Templates = (() => {
   }
 
   async function open(templateId){
-    
-    // Per-template isolation: remove previous template assets (CSS/JS) from <head>
-    if (window.Utils && Utils.TemplateRuntime) Utils.TemplateRuntime.reset();
-const viewer = $("#viewer");
+    const viewer = $("#viewer");
     const data = await API.json("./content/data/templates.json");
     const t = data.find(x => x.id === templateId);
 
@@ -96,10 +93,8 @@ const viewer = $("#viewer");
         viewer.innerHTML = `<div class="empty">Measurements view не подключён (js/views/measurements.js).</div>`;
         return;
       }
-      // Measurements isolation: mount root + css (no global theme changes)
-      const TR = (window.Utils && Utils.TemplateRuntime) ? Utils.TemplateRuntime : null;
-      const msrRoot = TR ? TR.mountRoot(templateId) : null;
-await Views.Measurements.open({ root: msrRoot });return;
+      await Views.Measurements.open();
+      return;
     }
 
 
@@ -181,7 +176,4 @@ await Views.Measurements.open({ root: msrRoot });return;
 
   return { show, open };
 })();
-
-
-
 

@@ -1,0 +1,137 @@
+/* Measurements isolated theme (scoped) */
+/* No global vars, no :root, no rgba, no blue/slate */
+
+/* --- Measurements scope (tpl-root) --- */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) img,
+{
+  max-width:100%;
+  height:auto;
+  display:block;
+}
+
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .markdown img,
+{
+  max-width:100%;
+  height:auto;
+  display:block;
+  margin:12px 0;
+  border-radius:14px;
+  border:1px solid #232329;
+  background:#1f1f23;
+  max-height:70vh;
+  object-fit:contain;
+}
+
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .markdown p > img,
+{
+  margin-left:auto;
+  margin-right:auto;
+}
+
+/* Optional: make image grids behave nicely */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid,
+{
+  display:grid;
+  gap:12px;
+  grid-template-columns:1fr;
+}
+
+@media (min-width: 900px){
+  :is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid,
+  [data-tpl-root="site_measurements_guide"] .m-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+
+
+
+
+
+
+
+
+/* --- Media sizing (premium default + grid exception) --- */
+
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) img{
+  max-width:100%;
+  height:auto;
+  display:block;
+}
+
+/* Красивый дефолт для всех картинок в markdown */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .markdown img{
+  margin:12px 0;
+  border-radius:14px;
+  border:1px solid #232329;
+  background:#1f1f23;
+  max-height:55vh;
+  object-fit:contain;
+}
+
+/* Центровка для одиночных картинок */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .markdown p > img{
+  margin-left:auto;
+  margin-right:auto;
+}
+
+/* Два изображения рядом (или любые в m-grid): без фона/рамки, компактнее */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid{
+  display:grid;
+  gap:16px;
+  grid-template-columns:1fr;
+}
+
+@media (min-width: 820px){
+  :is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid{
+    grid-template-columns:1fr 1fr;
+    align-items:start;
+  }
+}
+
+/* Исключение для картинок ВНУТРИ m-grid */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid img{
+  margin:0;
+  border-radius:12px; /* чуть меньше, чтобы рядом смотрелось аккуратнее */
+  border:none;
+  background:none;
+  max-height:40vh;
+}
+
+/* --- m-grid: stretch cells so vertical photos fill columns --- */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid{
+  width:100%;
+  justify-items:stretch;
+  align-items:start;
+}
+
+@media (min-width: 820px){
+  :is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Если внутри grid есть обертки (p/div/a) — растягиваем их */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid > *{
+  width:100%;
+  max-width:none;
+  margin:0;
+}
+
+/* Картинки внутри grid занимают всю ширину колонки */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid img{
+  width:100%;
+  max-width:none;
+  height:auto;
+  display:block;
+  margin:0;
+}
+
+/* Optional: make paired vertical photos visually consistent */
+@media (min-width: 820px){
+  :is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid img{
+    aspect-ratio:3/4;
+    object-fit:cover;
+    height:auto;
+  }
+}

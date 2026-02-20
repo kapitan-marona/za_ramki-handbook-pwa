@@ -1,0 +1,87 @@
+/* Measurements isolated theme (scoped) */
+/* No global vars, no :root, no rgba, no blue/slate */
+
+/* --- Measurements scope (tpl-root) --- */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) img,
+{
+  max-width:100%;
+  height:auto;
+  display:block;
+}
+
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .markdown img,
+{
+  max-width:100%;
+  height:auto;
+  display:block;
+  margin:12px 0;
+  border-radius:14px;
+  border:1px solid #232329;
+  background:#1f1f23;
+  max-height:70vh;
+  object-fit:contain;
+}
+
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .markdown p > img,
+{
+  margin-left:auto;
+  margin-right:auto;
+}
+
+/* Optional: make image grids behave nicely */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid,
+{
+  display:grid;
+  gap:12px;
+  grid-template-columns:1fr;
+}
+
+@media (min-width: 900px){
+  :is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid,
+  [data-tpl-root="site_measurements_guide"] .m-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+
+
+
+
+
+
+/* --- Media sizing (compact, measurements only) --- */
+
+/* Общие изображения */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) img{
+  max-width:100%;
+  height:auto;
+  display:block;
+}
+
+/* Чертежи — компактнее */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .markdown img{
+  max-height:55vh;
+  object-fit:contain;
+  margin:16px auto;
+  border-radius:0;
+  border:none;
+  background:none;
+}
+
+/* Блок с двумя изображениями рядом */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid{
+  display:grid;
+  gap:20px;
+  grid-template-columns:1fr;
+}
+
+/* На широком экране — в две колонки */
+@media (min-width: 800px){
+  :is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  :is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid img{
+    max-height:45vh;
+  }
+}

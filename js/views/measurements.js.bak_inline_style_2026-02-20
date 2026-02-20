@@ -1,0 +1,100 @@
+window.Views = window.Views || {};
+Views.Measurements = (() => {
+  const $ = (s) => document.querySelector(s);
+  const esc = (str) => (str ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[c]));
+
+  function setPanelTitle(t){ $("#panelTitle").textContent = t; }
+
+  async function open(opts = {}){
+    const viewer = (opts && opts.root) ? opts.root : document.querySelector("#viewer");
+    setPanelTitle("Шаблоны");
+
+    const checklistUrl = "./checklist/index.html";
+
+    viewer.innerHTML = `
+      <style>
+        .m-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 18px}
+        .m-actions .btn{display:inline-flex;align-items:center;gap:8px}
+        .m-note{border:1px solid var(--border);background:rgba(255,255,255,.03);padding:12px 14px;border-radius:14px}
+        .m-note b{color:var(--text)}
+        .m-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0 16px}
+        .m-grid img{width:100%;height:auto;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.02)}
+        @media (max-width: 900px){ .m-grid{grid-template-columns:1fr} }
+        .m-step h2{margin-top:18px}
+        .m-sub{color:var(--muted);margin-top:6px}
+        .m-small{color:var(--muted);font-size:.95rem}
+      </style>
+
+      <h1 class="article-title">Обмер помещения</h1>
+      <p class="article-sub">Инструкция для выезда на объект + офлайн чек‑лист с галочками.</p>
+
+      <div class="m-actions">
+        <a class="btn" href="${esc(checklistUrl)}" target="_blank" rel="noopener">
+          <span class="dot"></span>Скачать чек‑лист (офлайн)
+        </a>
+        <a class="btn" href="#/articles/measurements-faq">
+          <span class="dot"></span>Вопросы
+        </a>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="markdown m-step">
+        <h2>1) Перед замером</h2>
+        <p class="m-sub">Подготовить план для нанесения размеров (общие габариты и привязки).</p>
+
+        <div class="m-grid">
+          <img src="./assets/img/measurements/plan-gabarits.png" alt="Пример: общие габариты стен" loading="lazy"/>
+          <img src="./assets/img/measurements/plan-bindings.png" alt="Пример: привязки окон и дверей" loading="lazy"/>
+        </div>
+
+        <div class="m-note">
+          <div style="font-weight:700;margin-bottom:6px">Важно (не пропустить)</div>
+          <ul style="margin:0;padding-left:18px">
+            <li><b>Общие габариты всех стен</b></li>
+            <li><b>Привязки по стенам всех окон и дверей</b></li>
+          </ul>
+        </div>
+
+        <h2>2) Замер</h2>
+        <p class="m-sub">Замерить высоты:</p>
+        <ol>
+          <li><b>дверей</b></li>
+          <li><b>подоконников</b></li>
+          <li><b>окон</b></li>
+          <li><b>ступеней</b></li>
+          <li><b>коммуникаций</b></li>
+          <li><b>потолков</b></li>
+        </ol>
+
+        <p class="m-sub">Сделать фото/видео фиксацию объекта:</p>
+        <div class="m-grid">
+          <img src="./assets/img/measurements/photo-example-1.png" alt="Пример фотофиксации 1" loading="lazy"/>
+          <img src="./assets/img/measurements/photo-example-2.png" alt="Пример фотофиксации 2" loading="lazy"/>
+        </div>
+
+        <h2>3) После выезда на замер</h2>
+        <ol>
+          <li>Вычертить обмерный план.</li>
+          <li>
+            Загрузить папку <b>«Обмерный план»</b> в исходную папку проекта (внутри должны быть):
+            <ul>
+              <li>фото фиксация</li>
+              <li>видео фиксация</li>
+              <li>исходный файл архивом <b>PLA</b></li>
+              <li>файл <b>PDF</b></li>
+            </ul>
+          </li>
+        </ol>
+
+        <p class="m-small">Чек‑лист открывается отдельно и работает без интернета после первого открытия.</p>
+      </div>
+    `;
+  }
+
+  return { open };
+})();
+
+

@@ -1,0 +1,126 @@
+/* Measurements isolated theme (scoped) */
+/* No global vars, no :root, no rgba, no blue/slate */
+
+.msr-root{
+  background:#15161a;
+  color:#e8e8ea;
+  padding:16px;
+}
+
+.msr-root h1,
+.msr-root h2,
+.msr-root h3{
+  color:#e8e8ea;
+}
+
+.msr-root a{ color:#b43202; }
+
+.msr-root .msr-card{
+  background:#1f1f23;
+  border:1px solid #232329;
+  border-radius:14px;
+  padding:14px;
+}
+
+.msr-root input,
+.msr-root textarea,
+.msr-root select{
+  background:#1f1f23;
+  color:#e8e8ea;
+  border:1px solid #232329;
+  border-radius:10px;
+}
+
+.msr-root button{
+  background:#1f1f23;
+  color:#e8e8ea;
+  border:1px solid #232329;
+  border-radius:12px;
+}
+
+.msr-root button:hover{
+  border-color:#b43202;
+}
+
+/* --- Images & media (scoped) --- */
+.msr-root img,
+.msr-root svg,
+.msr-root video,
+.msr-root canvas{
+  max-width:100%;
+  height:auto;
+  display:block;
+}
+
+.msr-root .markdown img{
+  max-width:100%;
+  height:auto;
+  display:block;
+  margin:12px 0;
+  border-radius:14px;
+  border:1px solid #232329;
+  background:#1f1f23;
+}
+
+/* Если картинки очень “высокие” — ограничим высоту, но без кропа */
+.msr-root .markdown img{
+  max-height:70vh;
+  object-fit:contain;
+}
+
+/* Центровка, если у вас картинки внутри <p> или других оберток */
+.msr-root .markdown p > img{
+  margin-left:auto;
+  margin-right:auto;
+}
+
+/* Optional: limit media width on large screens */
+@media (min-width: 900px){
+  .msr-root .markdown img{
+    max-width:720px;
+  }
+}
+
+/* --- Measurements scope (tpl-root) --- */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) img,
+{
+  max-width:100%;
+  height:auto;
+  display:block;
+}
+
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .markdown img,
+{
+  max-width:100%;
+  height:auto;
+  display:block;
+  margin:12px 0;
+  border-radius:14px;
+  border:1px solid #232329;
+  background:#1f1f23;
+  max-height:70vh;
+  object-fit:contain;
+}
+
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .markdown p > img,
+{
+  margin-left:auto;
+  margin-right:auto;
+}
+
+/* Optional: make image grids behave nicely */
+:is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid,
+{
+  display:grid;
+  gap:12px;
+  grid-template-columns:1fr;
+}
+
+@media (min-width: 900px){
+  :is(.tpl--site_measurements_guide,[data-tpl-root="site_measurements_guide"]) .m-grid,
+  [data-tpl-root="site_measurements_guide"] .m-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+

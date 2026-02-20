@@ -63,7 +63,6 @@
   <script src="./js/views/articles.js?v=f5e40be"></script>
   <script src="./js/views/contacts.js?v=f5e40be"></script>
   <script src="./js/views/measurements.js?v=f5e40be"></script>
-  <script src="./js/utils/template_runtime.js?v=f5e40be"></script>
   <script src="./js/views/templates.js?v=f5e40be"></script>
   <script src="./js/views/pdf.js?v=f5e40be"></script>
   <script src="./js/views/updates.js?v=f5e40be"></script>
@@ -79,6 +78,5 @@
   <script src="./js/app.js?v=f5e40be"></script>
 </body>
 </html>
-
 
 

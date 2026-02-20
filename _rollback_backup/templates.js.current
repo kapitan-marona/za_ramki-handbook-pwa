@@ -99,7 +99,8 @@ const viewer = $("#viewer");
       // Measurements isolation: mount root + css (no global theme changes)
       const TR = (window.Utils && Utils.TemplateRuntime) ? Utils.TemplateRuntime : null;
       const msrRoot = TR ? TR.mountRoot(templateId) : null;
-await Views.Measurements.open({ root: msrRoot });return;
+      if (TR) TR.useCSS(templateId, "./js/views/measurements.theme.css?v=f5e40be");
+      await Views.Measurements.open({ root: msrRoot });return;
     }
 
 
@@ -181,7 +182,6 @@ await Views.Measurements.open({ root: msrRoot });return;
 
   return { show, open };
 })();
-
 
 
 

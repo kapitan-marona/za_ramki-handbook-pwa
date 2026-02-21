@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const $ = (s) => document.querySelector(s);
 
   function setActiveTab(tab){
@@ -45,6 +45,16 @@
       return;
     }
 
+    if(section === "tasks"){
+      if(!window.Views || !Views.Tasks){
+        $("#viewer").innerHTML = `<div class="empty">Tasks не подключён (js/views/tasks.js).</div>`;
+        return;
+      }
+      await Views.Tasks.show();
+      await Views.Tasks.open(param);
+      return;
+    }
+
     Router.go("articles");
   }
 
@@ -68,7 +78,10 @@
     // default route
     if(!location.hash) Router.go("articles");
     render();
+    if (window.Views && Views.Tasks) { Views.Tasks.show().then(()=>{}); }
   }
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+

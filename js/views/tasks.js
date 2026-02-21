@@ -3,6 +3,7 @@ Views.Tasks = (() => {
   const $ = (s) => document.querySelector(s);
   const ACK_PREFIX = "tsk:ack:";
   const ARCH_PREFIX = "tsk:arch:";
+  const CHK_PREFIX = "tsk:chk:"; // local checklist state (per device)
 
   function esc(str){
     return (str ?? "").toString().replace(/[&<>"']/g, c => ({
@@ -19,6 +20,25 @@ Views.Tasks = (() => {
 
   function isArchivedLocal(id){ return !!localStorage.getItem(ARCH_PREFIX + id); }
   function setArchivedLocal(id){ localStorage.setItem(ARCH_PREFIX + id, new Date().toISOString()); }
+
+  function getChkState(id, n){
+    const key = CHK_PREFIX + id;
+    let arr = null;
+    try { arr = JSON.parse(localStorage.getItem(key) || "null"); } catch(e){ arr = null; }
+    if(!Array.isArray(arr)) arr = [];
+    const out = [];
+    for(let i=0;i<n;i++) out[i] = !!arr[i];
+    if(out.length !== arr.length) {
+      try { localStorage.setItem(key, JSON.stringify(out)); } catch(e){}
+    }
+    return out;
+  }
+
+  function setChkItem(id, idx, val, n){
+    const arr = getChkState(id, n);
+    arr[idx] = !!val;
+    try { localStorage.setItem(CHK_PREFIX + id, JSON.stringify(arr)); } catch(e){}
+  }
 
   function formatDate(s){
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((s||"").trim());
@@ -69,6 +89,33 @@ Views.Tasks = (() => {
     `;
   }
 
+  function renderChecklist(t){
+    const list = Array.isArray(t.checklist) ? t.checklist : [];
+    if(!list.length) return "";
+    const id = t.id || "";
+    const state = getChkState(id, list.length);
+    const items = list.map((raw, i) => {
+      const txt = (raw && typeof raw === "object") ? (raw.text || raw.title || "") : (raw ?? "");
+      const checked = !!state[i];
+      const safe = esc(txt || `Пункт ${i+1}`);
+      return `
+        <label class="tsk-chk-row" data-idx="${i}" style="display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border-radius:12px; border:1px solid var(--border); background:rgba(10,10,12,.25);">
+          <input type="checkbox" class="tsk-chk" data-tsk-id="${esc(id)}" data-idx="${i}" ${checked ? "checked" : ""} style="margin-top:3px;" />
+          <span class="tsk-chk-text" style="line-height:1.35; ${checked ? "text-decoration:line-through; opacity:.72;" : ""}">${safe}</span>
+        </label>
+      `;
+    }).join("");
+
+    return `
+      <div style="margin-top:12px;">
+        <div class="article-sub" style="margin:0 0 8px 0;">Чек-лист</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${items}
+        </div>
+      </div>
+    `;
+  }
+
   function renderCard(t){
     const id = t.id || "";
     const title = t.title || "Задача";
@@ -100,6 +147,8 @@ Views.Tasks = (() => {
         )
       : `<div class="empty" style="margin-top:10px">Нет текста</div>`;
 
+    const checklistHtml = renderChecklist(t);
+
     return `
       <div style="border:1px solid var(--border); border-radius:16px; padding:14px; background: rgba(26,23,20,.55);">
         <div style="display:flex; gap:10px; align-items:flex-start; justify-content:space-between;">
@@ -120,6 +169,7 @@ Views.Tasks = (() => {
         </div>
         ${imgHtml}
         ${textHtml}
+        ${checklistHtml}
         ${linkHtml}
       </div>
     `;
@@ -138,7 +188,6 @@ Views.Tasks = (() => {
 
     const sorted = items.slice().sort((a,b) => (b.date || "").localeCompare(a.date || ""));
 
-    // LEFT: список всех активных (и прочитанных тоже)
     if(list){
       const top = document.createElement("div");
       top.style.marginBottom = "10px";
@@ -168,7 +217,6 @@ Views.Tasks = (() => {
       });
     }
 
-    // MAIN: только непрочитанные плитки 3 в ряд
     if(viewer){
       const unread = sorted.filter(x => x && x.id && !isAck(x.id));
       if(!unread.length){
@@ -210,6 +258,25 @@ Views.Tasks = (() => {
     }
 
     if(viewer) viewer.innerHTML = renderCard(t);
+
+    const checklist = Array.isArray(t.checklist) ? t.checklist : [];
+    if(viewer && checklist.length){
+      const n = checklist.length;
+      viewer.querySelectorAll(".tsk-chk").forEach(cb => {
+        cb.onchange = () => {
+          const tid = cb.dataset.tskId || id;
+          const idx = parseInt(cb.dataset.idx || "0", 10) || 0;
+          setChkItem(tid, idx, cb.checked, n);
+
+          const row = cb.closest(".tsk-chk-row");
+          const txt = row ? row.querySelector(".tsk-chk-text") : null;
+          if(txt){
+            txt.style.textDecoration = cb.checked ? "line-through" : "none";
+            txt.style.opacity = cb.checked ? ".72" : "1";
+          }
+        };
+      });
+    }
 
     const ackBtn = viewer ? viewer.querySelector(".tsk-ack") : null;
     if(ackBtn && !ackBtn.disabled){

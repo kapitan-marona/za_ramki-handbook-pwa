@@ -1,14 +1,23 @@
 [
   {
     "id": "t-001",
-    "title": "Замер: объект A (приоритет)",
-    "date": "2026-02-20",
-    "assignee": "Марина",
-    "text": "- Уточнить дату выезда\n- Собрать замеры кухни\n- Проверить радиаторы",
-    "link": "",
-    "image": "",
-    "status": "active",
-    "urgency": "regular"
+    "title": "Передать ТЗ визаулизатору",
+    "date": "2026-02-22",
+    "assignee": "Саша",
+    "urgency": "urgent",
+    "text": "текст текст тексттексттекст тексттексттексттекст  текст тексттексттекст",
+    "link": "https://mail.google.com/mail/u/0/#inbox",
+    "image": "https://drive.google.com/drive/u/0/folders/11lTuP4h_TvbG1LvzVjW9OWYym3Bb-cUY",
+    "checklist": [
+      "текст",
+      "текст",
+      "текст",
+      "тексттексттекст",
+      "тексттекст",
+      "текст",
+      "текст",
+      "текст"
+    ]
   },
   {
     "id": "t-002",
@@ -57,13 +66,22 @@
   {
     "id": "t-006",
     "title": "Коммуникация с подрядчиками",
-    "date": "2026-02-18",
-    "assignee": "Лёша",
+    "date": "2026-02-21",
+    "assignee": "Вика",
     "text": "- Запросить сроки у 2 бригад\n- Сверить состав работ\n- Подготовить короткий отчёт",
-    "link": "",
-    "image": "",
+    "link": "https://drive.google.com/drive/u/0/folders/11lTuP4h_TvbG1LvzVjW9OWYym3Bb-cUY",
+    "image": "https://drive.google.com/drive/u/0/folders/11lTuP4h_TvbG1LvzVjW9OWYym3Bb-cUY",
     "status": "active",
-    "urgency": "regular"
+    "urgency": "regular",
+    "checklist": [
+      "Запросить сроки у 2 бригад",
+      "Сверить состав работ",
+      "Подготовить короткий отчёт",
+      "Заполнить таблицу",
+      "Отправить",
+      "Чекнуть",
+      "Записать"
+    ]
   },
   {
     "id": "t-007",
@@ -75,5 +93,20 @@
     "image": "",
     "status": "active",
     "urgency": "regular"
+  },
+  {
+    "id": "t-008",
+    "title": "Чек-лист правка",
+    "checklist": [
+      "Пункт 1",
+      "Пункт 2"
+    ],
+    "date": "2026-02-21",
+    "assignee": "Юрий Гагарин",
+    "text": "- Собрать правки в один список\n- Разнести по разделам\n- Пометить “критично/можно позже”",
+    "link": "",
+    "image": "",
+    "status": "active",
+    "urgency": "urgent"
   }
 ]

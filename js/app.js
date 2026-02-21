@@ -55,6 +55,15 @@
       return;
     }
 
+    if(section === "admin"){
+      if(!window.Views || !Views.Admin){
+        $("#viewer").innerHTML = `<div class="empty">Admin не подключён (js/views/admin.js).</div>`;
+        return;
+      }
+      await Views.Admin.show();
+      await Views.Admin.open(param);
+      return;
+    }
     Router.go("articles");
   }
 
@@ -83,5 +92,6 @@
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
 
 

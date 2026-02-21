@@ -301,7 +301,7 @@ Views.Admin = (() => {
     `;
   }
 
-  function taskFormBlock(staffList){
+  function taskFormBlock(staffList, templates){
     const staffOpts = ['<option value="">—</option>']
       .concat((staffList||[]).map(n => `<option value="${esc(n)}">${esc(n)}</option>`))
       .join("");
@@ -309,6 +309,16 @@ Views.Admin = (() => {
     return `
       <div style="border:1px solid var(--border); border-radius:16px; padding:14px; background: rgba(26,23,20,.55); margin-bottom:12px;">
         <div class="article-title" style="margin:0 0 10px 0; font-size:18px;">Постановка задачи</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin:0 0 10px 0;">
+          <div style="min-width:260px; flex:1;">
+            <div class="article-sub" style="margin:0 0 6px 0;">Шаблон задачи</div>
+            <select id="admTpl" class="input" style="width:100%;">
+              <option value="">—</option>
+              ${(Array.isArray(templates)?templates:[]).map(t => `<option value="${esc(t.key||"")}">${esc(t.title||t.key||"Шаблон")}</option>`).join("")}
+            </select>
+          </div>
+          <button type="button" class="btn" id="admTplApply">✨ Применить</button>
+        </div>
 
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <div style="min-width:220px; flex:1;">
@@ -586,12 +596,21 @@ Views.Admin = (() => {
   }
 
   function wireTaskForm(){
+    const btnTpl = $("#admTplApply");
     const btnFill = $("#admTFill");
     const btnAdd = $("#admTAdd");
     const btnUpd = $("#admTUpdate");
     const btnDel = $("#admTDelete");
     const btnArch = $("#admTArchive");
     const btnClr = $("#admTClear");
+
+    const getTpl = () => {
+      const key = ($("#admTpl")?.value || "").trim();
+      if(!key) return null;
+      const raw = parseOrNull("adm_task_templates_json");
+      const arr = Array.isArray(raw) ? raw : [];
+      return arr.find(x => x && (x.key === key)) || null;
+    };
 
     const getArrays = () => {
       const tasks = parseOrNull("adm_tasks_json");
@@ -601,6 +620,28 @@ Views.Admin = (() => {
     };
 
     const findTask = (arr, id) => arr.find(x => x && x.id === id) || null;
+
+    if(btnTpl){
+      btnTpl.onclick = () => {
+        const raw = parseOrNull("adm_task_templates_json");
+        const arr = Array.isArray(raw) ? raw : [];
+        const key = ($("#admTpl")?.value || "").trim();
+        const tpl = arr.find(x => x && (x.key === key));
+        if(!tpl){ setTMsg(`<span class="tag accent">Выбери шаблон</span>`); return; }
+
+        // НЕ трогаем assignee/date/urgency/id/link/image
+        $("#admTTitle").value = (tpl.title || "").trim();
+        $("#admTText").value  = (tpl.text  || "").trim();
+        const list = Array.isArray(tpl.checklist) ? tpl.checklist : [];
+        $("#admTChk").value = list.map(x => (typeof x === "string" ? x : (x?.text || x?.title || ""))).filter(Boolean).join("\n");
+
+        // defaultUrgency применим только если сейчас пусто/regular
+        const du = (tpl.defaultUrgency || "").trim();
+        if(du && ($("#admTUrg").value || "regular") === "regular") $("#admTUrg").value = du;
+
+        setTMsg(`<span class="tag">OK</span> Шаблон применён`);
+      };
+    }
 
     if(btnFill){
       btnFill.onclick = () => {
@@ -694,14 +735,17 @@ Views.Admin = (() => {
     if(!viewer) return;
 
     const staff = await API.json("./content/data/staff.json").catch(()=>[]);
+    const templates = await API.json("./content/data/task_templates.json").catch(()=>[]);
     const tasks = await API.json("./content/data/tasks.json").catch(()=>[]);
     const arch  = await API.json("./content/data/tasks_archive.json").catch(()=>[]);
 
     const staffNames = getStaffNames(staff);
 
     viewer.innerHTML = `
+      <textarea id="adm_task_templates_json" style="display:none;">${esc(pretty(templates))}</textarea>
+
       ${opsBlock()}
-      ${taskFormBlock(staffNames)}
+      ${taskFormBlock(staffNames, templates)}
       ${block("Сотрудники", "staff.json", pretty(staff))}
       ${block("Задачи (активные)", "tasks.json", pretty(tasks))}
       ${block("Архив задач", "tasks_archive.json", pretty(arch))}
@@ -747,3 +791,4 @@ Views.Admin = (() => {
   async function open(){ await show(); }
   return { show, open };
 })();
+

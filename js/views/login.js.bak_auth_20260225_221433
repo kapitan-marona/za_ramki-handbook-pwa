@@ -1,0 +1,52 @@
+window.Views = window.Views || {};
+
+Views.Login = (() => {
+  function $(s){ return document.querySelector(s); }
+
+  async function show(){
+    var viewer = document.querySelector("#viewer");
+    var list = document.querySelector("#list");
+    if(list) list.innerHTML = "";
+
+    if(!viewer) return;
+
+    viewer.innerHTML =
+      '<h1 class="article-title">Вход</h1>' +
+      '<p class="article-sub">Только для сотрудников.</p>' +
+      '<div style="max-width:360px;">' +
+        '<input id="loginEmail" type="email" placeholder="Email" style="width:100%; padding:10px; border-radius:12px; margin: 10px 0;">' +
+        '<input id="loginPass" type="password" placeholder="Пароль" style="width:100%; padding:10px; border-radius:12px; margin: 0 0 10px 0;">' +
+        '<button id="loginBtn" class="btn">Войти</button>' +
+        '<div id="loginError" style="margin-top:10px; color:#ff6b6b;"></div>' +
+      '</div>';
+
+    $("#loginBtn").onclick = async function(){
+      var email = (($("#loginEmail").value || "") + "").trim();
+      var password = ($("#loginPass").value || "") + "";
+
+      if(!window.SB || !SB.auth){
+        $("#loginError").textContent = "Supabase не подключён.";
+        return;
+      }
+
+      $("#loginError").textContent = "";
+
+      var res = await SB.auth.signInWithPassword({ email: email, password: password });
+      if(res && res.error){
+        $("#loginError").textContent = res.error.message;
+        return;
+      }
+
+      // подтянуть роль/шапку без перезагрузки
+      if(typeof window.initAuth === "function") await window.initAuth();
+
+      // если get_role вернул null -> initAuth разлогинит и уведёт на login
+      if(window.App && App.session && App.session.user){
+        if(window.Router) Router.go("articles");
+        else location.hash = "#/articles";
+      }
+    };
+  }
+
+  return { show: show };
+})();

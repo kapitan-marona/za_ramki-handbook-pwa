@@ -9,13 +9,15 @@ window.clearMainArea = function(){
   if(l) l.innerHTML = "";
 };
 
-// Header auth area
+// Safe UI renderer (no template literals, no backticks)
 window.renderAuthArea = function(){
   var el = document.querySelector("#authArea");
   if(!el) return;
 
   if(!window.App || !App.session || !App.session.user){
-    el.innerHTML = '<a href="#/login" class="btn btn-sm">Войти</a>';
+    el.innerHTML = '<button type="button" class="btn btn-sm" id="loginGo">Войти</button>';
+  var go = document.querySelector("#loginGo");
+  if(go){ go.onclick = function(){ if(window.Router) Router.go("login"); else location.hash = "#/login"; }; }
     return;
   }
 
@@ -27,13 +29,11 @@ window.renderAuthArea = function(){
   if(btn){
     btn.onclick = async function(){
       try{ if(window.SB && SB.auth) await SB.auth.signOut(); }catch(e){}
-
       App.session.user = null;
       App.session.role = null;
       App.session.ready = true;
       window.renderAuthArea();
       window.clearMainArea();
-
       if(window.Router) Router.go("login");
     };
   }
@@ -48,38 +48,7 @@ window.fetchRole = async function(){
   return null;
 };
 
-window.applyAuthState = async function(user){
-  if(!user){
-    App.session.user = null;
-    App.session.role = null;
-    App.session.ready = true;
-    window.renderAuthArea();
-    window.clearMainArea();
-    if(window.Router) Router.go("login");
-    return;
-  }
-
-  var role = await window.fetchRole();
-
-  // Если залогинен, но роли нет (не в allowlist / disabled) — выкидываем на логин
-  if(!role){
-    try{ if(window.SB && SB.auth) await SB.auth.signOut(); }catch(e){}
-    App.session.user = null;
-    App.session.role = null;
-    App.session.ready = true;
-    window.renderAuthArea();
-    window.clearMainArea();
-    if(window.Router) Router.go("login");
-    return;
-  }
-
-  App.session.user = user;
-  App.session.role = role;
-  App.session.ready = true;
-  window.renderAuthArea();
-};
-
-// Auth bootstrap
+// Auth bootstrap (email + password, role via rpc('get_role'))
 window.initAuth = async function(){
   try{
     App.session.ready = false;
@@ -92,18 +61,71 @@ window.initAuth = async function(){
       return;
     }
 
-    // 1) initial session
+    // 1) session
     var sres = await SB.auth.getSession();
     var user = (sres && sres.data && sres.data.session) ? sres.data.session.user : null;
 
-    await window.applyAuthState(user);
+    if(user){
+      // 2) role
+      var role = await window.fetchRole();
 
-    // 2) subscribe once
+      // нет роли = нет доступа -> вылогиниваем и чистим
+      if(!role){
+        try{ await SB.auth.signOut(); }catch(e){}
+        App.session.user = null;
+        App.session.role = null;
+        App.session.ready = true;
+        window.renderAuthArea();
+        window.clearMainArea();
+        if(window.Router) Router.go("login");
+      }else{
+        App.session.user = user;
+        App.session.role = role;
+        App.session.ready = true;
+        window.renderAuthArea();
+      }
+    }else{
+      App.session.user = null;
+      App.session.role = null;
+      App.session.ready = true;
+      window.renderAuthArea();
+    }
+
+    // 3) subscribe once
     if(!App._authSub){
       App._authSub = SB.auth.onAuthStateChange(async function(event, session){
         var u = (session && session.user) ? session.user : null;
-        await window.applyAuthState(u);
 
+        if(!u){
+          App.session.user = null;
+          App.session.role = null;
+          App.session.ready = true;
+          window.renderAuthArea();
+          window.clearMainArea();
+          if(window.Router) Router.go("login");
+          if(typeof App._render === "function") App._render();
+          return;
+        }
+
+        var role2 = await window.fetchRole();
+        if(!role2){
+          try{ await SB.auth.signOut(); }catch(e){}
+          App.session.user = null;
+          App.session.role = null;
+          App.session.ready = true;
+          window.renderAuthArea();
+          window.clearMainArea();
+          if(window.Router) Router.go("login");
+          if(typeof App._render === "function") App._render();
+          return;
+        }
+
+        App.session.user = u;
+        App.session.role = role2;
+        App.session.ready = true;
+        window.renderAuthArea();
+
+        // мягкий перерендер текущего view (без reload)
         if(typeof App._render === "function") App._render();
       });
     }
@@ -126,26 +148,19 @@ window.initAuth = async function(){
   }
 
   function applySearch(q){
-    const p = Router.parse();
-    if(p.section === "articles" && Views.Articles?.setFilter) Views.Articles.setFilter(q);
-    if(p.section === "templates" && Views.Templates?.setFilter) Views.Templates.setFilter(q);
-    if(p.section === "checklists" && Views.Checklists?.setFilter) Views.Checklists.setFilter(q);
+    const { section } = Router.parse();
+    if(section === "articles" && Views.Articles?.setFilter) Views.Articles.setFilter(q);
+    if(section === "templates" && Views.Templates?.setFilter) Views.Templates.setFilter(q);
+    if(section === "checklists" && Views.Checklists?.setFilter) Views.Checklists.setFilter(q);
   }
 
   async function render(){
-    const p = Router.parse();
-    const section = p.section;
-    const param = p.param;
+    const { section, param } = Router.parse();
     const q = $("#q");
 
-    // Gate: если не залогинены — всегда на login
-    if(section !== "login" && (!App.session || !App.session.user)){
-      window.clearMainArea();
-      Router.go("login");
-      return;
-    }
-
     setActiveTab(section);
+
+    // Search is enabled for all remaining sections
     q.disabled = false;
 
     if(section === "login"){
@@ -187,13 +202,15 @@ window.initAuth = async function(){
 
     window.addEventListener("hashchange", render);
 
+    // allow auth to trigger rerender
     App._render = render;
 
     await window.initAuth();
 
-    if(!location.hash) Router.go("login");
+    if(!location.hash) Router.go("articles");
     render();
   }
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+

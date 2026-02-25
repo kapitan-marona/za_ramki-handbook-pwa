@@ -39,10 +39,22 @@ window.renderAuthArea = function(){
       App.session.role = null;
       App.session.ready = true;
       window.renderAuthArea();
+      window.syncRoleUI();
       window.clearMainArea();
       if(window.Router) Router.go("login");
     };
   }
+};
+
+window.syncRoleUI = function(){
+  // ADMIN_TAB_MARKER_001
+  try{
+    var adminTab = document.querySelector('.tab.zr-admin-tab[data-tab="admin"]');
+    if(!adminTab) return;
+
+    var isAdmin = !!(window.App && App.session && App.session.role === "admin");
+    adminTab.style.display = isAdmin ? "" : "none";
+  }catch(e){}
 };
 
 window.applySession = async function(user){
@@ -59,6 +71,7 @@ window.applySession = async function(user){
       App.session.user = null;
       App.session.role = null;
       window.renderAuthArea();
+      window.syncRoleUI();
       window.clearMainArea();
       if(window.Router) Router.go("login");
 
@@ -72,6 +85,7 @@ window.applySession = async function(user){
   }
 
   window.renderAuthArea();
+  window.syncRoleUI();
 };
 
 window.initAuth = async function(){
@@ -83,6 +97,7 @@ window.initAuth = async function(){
       App.session.role = null;
       App.session.ready = true;
       window.renderAuthArea();
+      window.syncRoleUI();
       return;
     }
 
@@ -108,6 +123,7 @@ window.initAuth = async function(){
     App.session.role = null;
     App.session.ready = true;
     window.renderAuthArea();
+    window.syncRoleUI();
     window.clearMainArea();
     if(window.Router) Router.go("login");
   }
@@ -151,7 +167,6 @@ window.initAuth = async function(){
     // gate 0: ждём, пока auth определится
     if(!App.session || App.session.ready !== true){
       if(q) q.disabled = true;
-      // если мы не на login — не редиректим, просто показываем загрузку
       if(section !== "login") showLoading();
       return;
     }
@@ -163,6 +178,12 @@ window.initAuth = async function(){
       return;
     }
 
+    // gate 2: admin-only route
+    if(section === "admin" && (!App.session || App.session.role !== "admin")){
+      Router.go("articles");
+      return;
+    }
+
     setActiveTab(section);
     if(q) q.disabled = false;
 
@@ -170,6 +191,7 @@ window.initAuth = async function(){
     if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q.value||"") : ""); return; }
     if(section === "templates"){ await Views.Templates.show(); await Views.Templates.open(param); applySearch(q ? (q.value||"") : ""); return; }
     if(section === "checklists"){ await Views.Checklists.show(); await Views.Checklists.open(param); applySearch(q ? (q.value||"") : ""); return; }
+    if(section === "admin"){ await Views.Admin.show(); return; }
 
     Router.go("articles");
   }

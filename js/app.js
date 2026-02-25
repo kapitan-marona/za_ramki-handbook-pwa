@@ -1,3 +1,29 @@
+window.App = window.App || {
+  session: { user: null, role: null, ready: false }
+};
+
+// Safe UI renderer (no template literals, no backticks)
+window.renderAuthArea = function(){
+  var el = document.querySelector("#authArea");
+  if(!el) return;
+
+  if(!window.App || !App.session || !App.session.user){
+    el.innerHTML = '<a href="#/login" class="btn btn-sm">Войти</a>';
+    return;
+  }
+
+  el.innerHTML = '<span class="pill">' + (App.session.role || 'staff') + '</span>' +
+                 '<button type="button" class="btn btn-sm" id="logoutBtn">Выйти</button>';
+
+  var btn = document.querySelector("#logoutBtn");
+  if(btn){
+    btn.onclick = async function(){
+      if(window.SB && SB.auth) await SB.auth.signOut();
+      location.hash = "#/articles";
+      location.reload();
+    };
+  }
+};
 (() => {
   const $ = (s) => document.querySelector(s);
 
@@ -5,89 +31,65 @@
     document.querySelectorAll(".tab").forEach(b => b.classList.toggle("is-active", b.dataset.tab === tab));
   }
 
+  function applySearch(q){
+    const { section } = Router.parse();
+    if(section === "articles" && Views.Articles?.setFilter) Views.Articles.setFilter(q);
+    if(section === "templates" && Views.Templates?.setFilter) Views.Templates.setFilter(q);
+    if(section === "checklists" && Views.Checklists?.setFilter) Views.Checklists.setFilter(q);
+  }
+
   async function render(){
     const { section, param } = Router.parse();
     const q = $("#q");
 
-    // Tabs -> routes
-    setActiveTab(section === "articles" ? "articles" : section);
+    setActiveTab(section);
 
-    if(section === "articles"){
-      q.disabled = false;
-      await Views.Articles.show(param);
-      Views.Articles.setFilter(q.value || "");
+    // Search is enabled for all remaining sections
+    q.disabled = false;
+
+    
+    if(section === "login"){
+      await Views.Login.show();
       return;
     }
-
-    // Other sections do not use search (for now)
-    q.value = "";
-    q.disabled = true;
-
-    if(section === "contacts"){
-      await Views.Contacts.show();
-      await Views.Contacts.open(param);
+if(section === "articles"){
+      await Views.Articles.show(param);
+      applySearch(q.value || "");
       return;
     }
 
     if(section === "templates"){
       await Views.Templates.show();
       await Views.Templates.open(param);
+      applySearch(q.value || "");
       return;
     }
 
-    if(section === "updates"){
-      if(!window.Views || !Views.Updates){
-        $("#viewer").innerHTML = `<div class="empty">Updates не подключён (js/views/updates.js).</div>`;
-        return;
-      }
-      await Views.Updates.show();
-      await Views.Updates.open(param);
+    if(section === "checklists"){
+      await Views.Checklists.show();
+      await Views.Checklists.open(param);
+      applySearch(q.value || "");
       return;
     }
 
-    if(section === "tasks"){
-      if(!window.Views || !Views.Tasks){
-        $("#viewer").innerHTML = `<div class="empty">Tasks не подключён (js/views/tasks.js).</div>`;
-        return;
-      }
-      await Views.Tasks.show();
-      await Views.Tasks.open(param);
-      return;
-    }
-
-    if(section === "admin"){
-      if(!window.Views || !Views.Admin){
-        $("#viewer").innerHTML = `<div class="empty">Admin не подключён (js/views/admin.js).</div>`;
-        return;
-      }
-      await Views.Admin.show();
-      await Views.Admin.open(param);
-      return;
-    }
     Router.go("articles");
   }
 
   function boot(){
-    // tab click
     $("#tabs").addEventListener("click", (e) => {
       const btn = e.target.closest(".tab");
       if(!btn) return;
-      Router.go(btn.dataset.tab === "articles" ? "articles" : btn.dataset.tab);
+      Router.go(btn.dataset.tab);
     });
 
-    // search only for articles
-    $("#q").addEventListener("input", (e) => {
-      const { section } = Router.parse();
-      if(section !== "articles") return;
-      Views.Articles.setFilter(e.target.value || "");
-    });
+    $("#q").addEventListener("input", (e) => applySearch(e.target.value || ""));
 
     window.addEventListener("hashchange", render);
 
-    // default route
-    if(!location.hash) Router.go("articles");
+    
+    window.renderAuthArea();
+if(!location.hash) Router.go("articles");
     render();
-    if (window.Views && Views.Tasks) { Views.Tasks.show().then(()=>{}); }
   }
 
   document.addEventListener("DOMContentLoaded", boot);

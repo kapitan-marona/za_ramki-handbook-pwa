@@ -1,4 +1,4 @@
-﻿window.Router = {
+window.Router = {
   parse(){
     // Routes:
     // #/articles/<id>

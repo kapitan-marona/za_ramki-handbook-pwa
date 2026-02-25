@@ -1,0 +1,3 @@
+*.bak
+js/views/*.bak
+_rollback_backup/

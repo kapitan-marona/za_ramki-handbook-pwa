@@ -5,8 +5,13 @@ Views.Templates = (() => {
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[c]));
 
+  let _data = [];
+  let _q = "";
+
   function setStatus(t){ $("#status").textContent = t; }
   function setPanelTitle(t){ $("#panelTitle").textContent = t; }
+
+  function norm(s){ return (s ?? "").toString().toLowerCase(); }
 
   function downloadText(filename, text){
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
@@ -40,17 +45,22 @@ Views.Templates = (() => {
     ].join("\n");
   }
 
-  async function show(){
-    setPanelTitle("Шаблоны");
+  function renderList(){
     const list = $("#list");
-    const viewer = $("#viewer");
     list.innerHTML = "";
-    viewer.innerHTML = `<div class="empty">Выберите шаблон слева.</div>`;
 
-    const data = await API.json("./content/data/templates.json");
-    setStatus(`${data.length}`);
+    const q = norm(_q).trim();
+    const items = Array.isArray(_data) ? _data : [];
+    const filtered = !q ? items : items.filter(t => {
+      const title = norm(t.title);
+      const id = norm(t.id);
+      const fmt = norm(t.format);
+      return title.includes(q) || id.includes(q) || fmt.includes(q);
+    });
 
-    data.forEach((t) => {
+    setStatus(`${filtered.length}`);
+
+    filtered.forEach((t) => {
       const a = document.createElement("a");
       a.className = "item";
       a.href = `#/${encodeURIComponent("templates")}/${encodeURIComponent(t.id)}`;
@@ -63,47 +73,141 @@ Views.Templates = (() => {
         </div>`;
       list.appendChild(a);
     });
+  }
 
-    return data;
+  async function show(){
+    setPanelTitle("Шаблоны");
+    const viewer = $("#viewer");
+    viewer.innerHTML = `<div class="empty">Выберите шаблон слева.</div>`;
+
+    _data = await API.json("./content/data/templates.json");
+    renderList();
   }
 
   async function open(templateId){
-    
-    // Per-template isolation: remove previous template assets (CSS/JS) from <head>
-    if (window.Utils && Utils.TemplateRuntime) Utils.TemplateRuntime.reset();
-const viewer = $("#viewer");
-    const data = await API.json("./content/data/templates.json");
+    const viewer = $("#viewer");
+    const data = Array.isArray(_data) && _data.length ? _data : await API.json("./content/data/templates.json");
     const t = data.find(x => x.id === templateId);
 
     if(!t){
       viewer.innerHTML = `<div class="empty">Шаблон не найден.</div>`;
       return;
     }
-    
-    // Custom interactive templates
-    if(templateId === "brief_visualizer_pro"){
-      if(!window.Views || !Views.BriefPro){
-        viewer.innerHTML = `<div class="empty">BriefPro не подключён (js/views/brief_pro.js).</div>`;
-        return;
+
+    // ===== Template: Project links + Excel =====
+    if(templateId === "project_links_excel"){
+      const key = "tpl:project_links_excel:v1";
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
+
+      viewer.innerHTML = `
+        <h1 class="article-title">${esc(t.title)}</h1>
+        <p class="article-sub">Вставь ссылки → скачай Excel.</p>
+        <div class="hr"></div>
+
+        <div class="markdown">
+          <div class="zr-form-grid">
+
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">Адрес объекта</span>
+              <input id="f_address" class="zr-input" placeholder="Например: Oulu, Isokatu 10" />
+            </div>
+
+            <div class="zr-field">
+              <span class="zr-label">Ссылка на свет (PDF)</span>
+              <input id="f_light_pdf" class="zr-input" />
+            </div>
+
+            <div class="zr-field">
+              <span class="zr-label">Ссылка на обмерный план (PDF)</span>
+              <input id="f_meas_pdf" class="zr-input" />
+            </div>
+
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">План мебели</span>
+              <div class="zr-row-2">
+                <input id="f_furn_dwg" class="zr-input" placeholder="DWG" />
+                <input id="f_furn_pdf" class="zr-input" placeholder="PDF" />
+              </div>
+            </div>
+
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">Концепт + ТЗ визуализатору</span>
+              <div class="zr-row-2">
+                <input id="f_concept" class="zr-input" placeholder="Концепт" />
+                <input id="f_tz" class="zr-input" placeholder="ТЗ" />
+              </div>
+            </div>
+
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">Ссылка на ведомость материалов</span>
+              <input id="f_materials" class="zr-input" />
+            </div>
+
+          </div>
+
+          <div class="zr-actions-right">
+            <button class="btn" id="btn_save"><span class="dot"></span>Сохранить</button>
+            <button class="btn" id="btn_xlsx"><span class="dot"></span>Скачать Excel</button>
+          </div>
+        </div>
+      `;
+
+      const fields = {
+        address: $("#f_address"),
+        lightPdf: $("#f_light_pdf"),
+        furnitureDwg: $("#f_furn_dwg"),
+        furniturePdf: $("#f_furn_pdf"),
+        measPdf: $("#f_meas_pdf"),
+        concept: $("#f_concept"),
+        tz: $("#f_tz"),
+        materials: $("#f_materials"),
+      };
+
+      Object.entries(fields).forEach(([k, el]) => el.value = saved[k] || "");
+
+      function readValues(){
+        const v = {};
+        Object.entries(fields).forEach(([k, el]) => v[k] = (el.value || "").trim());
+        return v;
       }
-      await Views.BriefPro.open();
+
+      $("#btn_save").onclick = () => {
+        localStorage.setItem(key, JSON.stringify(readValues()));
+        alert("Сохранено ✅");
+      };
+
+      $("#btn_xlsx").onclick = async () => {
+        const v = readValues();
+        if(!window.Utils || !Utils.LinksXLSX){
+          alert("XLSX-экспорт не подключён (js/utils/links_xlsx.js).");
+          return;
+        }
+
+        const rows = [
+          { label: "Адрес объекта", value: v.address },
+          { label: "Ссылка на свет (PDF)", value: v.lightPdf },
+          { label: "Ссылка на план мебели (DWG)", value: v.furnitureDwg },
+          { label: "Ссылка на план мебели (PDF)", value: v.furniturePdf },
+          { label: "Ссылка на обмерный план (PDF)", value: v.measPdf },
+          { label: "Ссылка на концепт", value: v.concept },
+          { label: "Ссылка на ТЗ визуализатору", value: v.tz },
+          { label: "Ссылка на ведомость материалов", value: v.materials }
+        ];
+
+        const rawAddr = (v.address || "").trim();
+        const safeAddr = rawAddr
+          .replace(/[^a-zA-Z0-9А-Яа-яЁё]+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .slice(0, 60);
+
+        const fileBase = safeAddr ? `${safeAddr}_Project_Links` : "Project_Links";
+        await Utils.LinksXLSX.downloadLinksXLSX(rows, fileBase, rawAddr);
+      };
+
       return;
     }
 
-
-    if(templateId === "site_measurements_guide"){
-      if(!window.Views || !Views.Measurements){
-        viewer.innerHTML = `<div class="empty">Measurements view не подключён (js/views/measurements.js).</div>`;
-        return;
-      }
-      // Measurements isolation: mount root + css (no global theme changes)
-      const TR = (window.Utils && Utils.TemplateRuntime) ? Utils.TemplateRuntime : null;
-      const msrRoot = TR ? TR.mountRoot(templateId) : null;
-await Views.Measurements.open({ root: msrRoot });return;
-    }
-
-
-    // For demo we implement one interactive template: brief_visualizer
+    // ===== Default "link-only" templates =====
     if(templateId !== "brief_visualizer"){
       viewer.innerHTML = `
         <h1 class="article-title">${esc(t.title)}</h1>
@@ -114,74 +218,108 @@ await Views.Measurements.open({ root: msrRoot });return;
       return;
     }
 
+    // ===== Template: Visualizer brief (text) =====
+    {
+      const key = "tpl:brief_visualizer:v1";
+      const saved = JSON.parse(localStorage.getItem(key) || "{}");
 
-    const key = "tpl:brief_visualizer:v1";
-    const saved = JSON.parse(localStorage.getItem(key) || "{}");
+      viewer.innerHTML = `
+        <h1 class="article-title">${esc(t.title)}</h1>
+        <p class="article-sub">Заполни быстро → скачай .txt или скопируй.</p>
+        <div class="hr"></div>
 
-    viewer.innerHTML = `
-      <h1 class="article-title">${esc(t.title)}</h1>
-      <p class="article-sub">Заполни быстро → скачай .txt или скопируй и отправь визуализатору.</p>
+        <div class="markdown">
+          <div class="zr-form-grid">
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">Проект</span>
+              <input id="f_project" class="zr-input" />
+            </div>
 
-      <div class="hr"></div>
+            <div class="zr-field">
+              <span class="zr-label">Зона/помещение</span>
+              <input id="f_zone" class="zr-input" />
+            </div>
 
-      <div class="markdown">
-        <p><b>Проект</b><br/><input id="f_project" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:rgba(15,23,42,.6);color:var(--text)" /></p>
-        <p><b>Зона/помещение</b><br/><input id="f_zone" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:rgba(15,23,42,.6);color:var(--text)" /></p>
-        <p><b>Стиль/настроение</b><br/><input id="f_style" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:rgba(15,23,42,.6);color:var(--text)" /></p>
-        <p><b>Палитра</b><br/><input id="f_palette" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:rgba(15,23,42,.6);color:var(--text)" /></p>
-        <p><b>Камеры</b><br/><textarea id="f_cameras" rows="4" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:rgba(15,23,42,.6);color:var(--text)"></textarea></p>
-        <p><b>Обязательные позиции</b><br/><textarea id="f_must" rows="4" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:rgba(15,23,42,.6);color:var(--text)"></textarea></p>
-        <p><b>Материалы/примечания</b><br/><textarea id="f_notes" rows="5" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:rgba(15,23,42,.6);color:var(--text)"></textarea></p>
-        <p><b>Дедлайн</b><br/><input id="f_deadline" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--border);background:rgba(15,23,42,.6);color:var(--text)" /></p>
+            <div class="zr-field">
+              <span class="zr-label">Дедлайн</span>
+              <input id="f_deadline" class="zr-input" />
+            </div>
 
-        <div class="actions">
-          <button class="btn" id="btn_save"><span class="dot"></span>Сохранить локально</button>
-          <button class="btn" id="btn_copy"><span class="dot"></span>Скопировать</button>
-          <button class="btn" id="btn_download"><span class="dot"></span>Скачать .txt</button>
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">Стиль/настроение</span>
+              <input id="f_style" class="zr-input" />
+            </div>
+
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">Палитра</span>
+              <input id="f_palette" class="zr-input" />
+            </div>
+
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">Камеры</span>
+              <textarea id="f_cameras" rows="4" class="zr-input"></textarea>
+            </div>
+
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">Обязательные позиции</span>
+              <textarea id="f_must" rows="4" class="zr-input"></textarea>
+            </div>
+
+            <div class="zr-field" style="grid-column:1 / -1;">
+              <span class="zr-label">Материалы/примечания</span>
+              <textarea id="f_notes" rows="5" class="zr-input"></textarea>
+            </div>
+          </div>
+
+          <div class="zr-actions-right">
+            <button class="btn" id="btn_save"><span class="dot"></span>Сохранить</button>
+            <button class="btn" id="btn_copy"><span class="dot"></span>Скопировать</button>
+            <button class="btn" id="btn_download"><span class="dot"></span>Скачать .txt</button>
+          </div>
         </div>
-      </div>
-    `;
+      `;
 
-    const fields = {
-      project: $("#f_project"),
-      zone: $("#f_zone"),
-      style: $("#f_style"),
-      palette: $("#f_palette"),
-      cameras: $("#f_cameras"),
-      mustHave: $("#f_must"),
-      notes: $("#f_notes"),
-      deadline: $("#f_deadline"),
-    };
+      const fields = {
+        project: $("#f_project"),
+        zone: $("#f_zone"),
+        style: $("#f_style"),
+        palette: $("#f_palette"),
+        cameras: $("#f_cameras"),
+        mustHave: $("#f_must"),
+        notes: $("#f_notes"),
+        deadline: $("#f_deadline"),
+      };
 
-    // load saved
-    Object.entries(fields).forEach(([k, el]) => el.value = saved[k] || "");
+      Object.entries(fields).forEach(([k, el]) => el.value = saved[k] || "");
 
-    function readValues(){
-      const v = {};
-      Object.entries(fields).forEach(([k, el]) => v[k] = (el.value || "").trim());
-      return v;
+      function readValues(){
+        const v = {};
+        Object.entries(fields).forEach(([k, el]) => v[k] = (el.value || "").trim());
+        return v;
+      }
+
+      $("#btn_save").onclick = () => {
+        localStorage.setItem(key, JSON.stringify(readValues()));
+        alert("Сохранено ✅");
+      };
+
+      $("#btn_copy").onclick = async () => {
+        const text = buildBriefText(readValues());
+        await navigator.clipboard.writeText(text);
+        alert("Скопировано ✅");
+      };
+
+      $("#btn_download").onclick = () => {
+        const text = buildBriefText(readValues());
+        downloadText("TZ_dlya_vizualizatora.txt", text);
+      };
     }
-
-    $("#btn_save").onclick = () => {
-      localStorage.setItem(key, JSON.stringify(readValues()));
-      alert("Сохранено ✅");
-    };
-
-    $("#btn_copy").onclick = async () => {
-      const text = buildBriefText(readValues());
-      await navigator.clipboard.writeText(text);
-      alert("Скопировано ✅");
-    };
-
-    $("#btn_download").onclick = () => {
-      const text = buildBriefText(readValues());
-      downloadText("TZ_dlya_vizualizatora.txt", text);
-    };
   }
 
-  return { show, open };
+  function setFilter(q){
+    _q = (q ?? "").toString();
+    renderList();
+  }
+
+  return { show, open, setFilter };
 })();
-
-
-
-

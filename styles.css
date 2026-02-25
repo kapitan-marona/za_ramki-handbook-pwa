@@ -225,3 +225,58 @@ body{
 /* Simple cards in contacts/templates lists */
 .kv{ color:var(--muted); font-size:12px; margin-top:6px; line-height:1.5; }
 .kv b{ color: var(--text); font-weight:600; }
+
+/* Callouts (blockquote variants) */
+.markdown blockquote.kb-callout{
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--item);
+}
+
+.markdown blockquote.kb-callout p{ margin: 0; }
+
+.markdown blockquote.kb-callout .kb-callout-title{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--headings);
+}
+
+/* ВАЖНО — терракотовый прозрачный фон + яркая обводка */
+.markdown blockquote.kb-callout.kb-important{
+  background: var(--accent-08);
+  border-color: var(--accent-55);
+}
+
+/* ОСТОРОЖНО — светлая вертикальная полоса слева */
+.markdown blockquote.kb-callout.kb-caution{
+  background: var(--item);
+  border-color: var(--border);
+  border-left: 4px solid rgba(255,243,234,.22);
+  padding-left: 12px;
+}
+
+/* НЕ ЗАБУДЬ — фон чуть темнее (как карточки) */
+.markdown blockquote.kb-callout.kb-remember{
+  background: var(--card);
+  border-color: var(--border);
+}
+
+/* НЕДАВНЕЕ — видно постоянному читателю, но не кричит */
+.markdown blockquote.kb-callout.kb-recent{
+  background: rgba(255,243,234,.04);
+  border-color: rgba(255,243,234,.18);
+}
+
+.markdown blockquote.kb-callout.kb-recent .kb-callout-title{
+  color: rgba(255,243,234,.82);
+}
+

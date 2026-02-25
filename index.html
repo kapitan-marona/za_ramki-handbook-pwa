@@ -16,16 +16,16 @@
         <img src="./assets/img/logo.png" class="logo-img" />
         <div>
           <h1>БАЗА</h1>
-          <small>Поиск, инструкции, регламенты, контакты</small>
+          <small>Инструкции, шаблоны, чек-листы</small>
         </div>
       </div>
 
       <div class="search">
-        <input id="q" type="search" placeholder="Поиск по статьям, тегам, ролям…" />
-        <span class="pill">Статей: <span id="status">—</span></span>
+        <input id="q" type="search" placeholder="Поиск по базе…" />
+        <span class="pill">Найдено: <span id="status">—</span></span>
       </div>
 
-      <div class="pill">v0</div>
+      <div style="display:flex; gap:10px; align-items:center;"><div class="pill">v0</div><div id="authArea"></div></div>
     </div>
   </div>
 
@@ -37,12 +37,9 @@
       </div>
 
       <div class="tabs" id="tabs">
-        <button class="tab" data-tab="tasks">Задачи</button>
         <button class="tab is-active" data-tab="articles">Инструкции</button>
-        <button class="tab" data-tab="contacts">Контакты</button>
         <button class="tab" data-tab="templates">Шаблоны</button>
-        <button class="tab" data-tab="updates">Обновления</button>
-        <button class="tab" data-tab="admin">Админка</button>
+        <button class="tab" data-tab="checklists">Чек-листы</button>
       </div>
 
       <div id="list" class="list"></div>
@@ -52,43 +49,40 @@
   </div>
 
   <div class="footer">
-    Совет: позже мы добавим PWA (установка на экран), роли/доступ и избранное — без переделки контента.
+    ZA RAMKI — офлайн-база знаний студии.
   </div>
 
   <!-- Markdown renderer -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-  <!-- App modules -->
-  <script src="./js/api.js?v=f5e40be"></script>
-  <script src="./js/router.js?v=f5e40be"></script>
+  <!-- Supabase client (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // IMPORTANT: use ONLY anon key (public). NEVER use service_role key in client code.
+    window.SUPABASE_URL  = "https://oedmueajusqhekgnyfsl.supabase.co";
+    window.SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lZG11ZWFqdXNxaGVrZ255ZnNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NzEzNjUsImV4cCI6MjA4NzM0NzM2NX0.Blndb_1_aJBg9WOV1YwvroIhK9eYuMTltBEh-hD7Yws";
+  </script>
+  <script src="./js/utils/supabase_client.js?v=clean"></script>
 
-  <script src="./js/views/articles.js?v=f5e40be"></script>
-  <script src="./js/views/contacts.js?v=f5e40be"></script>
-  <script src="./js/views/measurements.js?v=f5e40be"></script>
-  <script src="./js/utils/template_runtime.js?v=f5e40be"></script>
-  <script src="./js/views/templates.js?v=f5e40be"></script>
-  <script src="./js/views/pdf.js?v=f5e40be"></script>
-  <script src="./js/views/tasks.js?v=202602212153"></script>
-  <script src="./js/views/updates.js?v=f5e40be"></script>
-  <script src="./js/views/admin.js?v=202602212153"></script>
+  <!-- Core -->
+  <script src="./js/api.js?v=clean"></script>
+  <script src="./js/router.js?v=clean"></script>
 
-  <!-- Brief PRO -->
-  <script src="./js/briefpro/schema.js?v=f5e40be"></script>
-  <script src="./js/utils/exporters.js?v=f5e40be"></script>
-  <script src="./js/utils/xlsx_exporter.js?v=f5e40be"></script>
-  <script src="./js/components/multiField.js?v=f5e40be"></script>
-  <script src="./js/components/roomRow.js?v=f5e40be"></script>
-  <script src="./js/views/brief_pro.js?v=f5e40be"></script>
+  <!-- Views -->
+  
+  <script src="./js/views/login.js?v=clean"></script>
+<script src="./js/views/articles.js?v=clean"></script>
+  <script src="./js/views/templates.js?v=clean"></script>
+  <script src="./js/views/checklists.js?v=clean"></script>
 
-  <script src="./js/app.js?v=f5e40be"></script>
+  <!-- Utils -->
+  <script src="./js/utils/template_runtime.js?v=clean"></script>
+  <script src="./js/utils/links_xlsx.js?v=clean"></script>
+
+  <!-- App -->
+  <script src="./js/app.js?v=clean"></script>
 </body>
 </html>
-
-
-
-
-
-
 
 
 

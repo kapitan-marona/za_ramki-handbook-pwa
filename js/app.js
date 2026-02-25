@@ -129,13 +129,34 @@ window.initAuth = async function(){
     if(p.section === "checklists" && Views.Checklists && Views.Checklists.setFilter) Views.Checklists.setFilter(q);
   }
 
+  function showLoading(){
+    // ZAGRUZKA_MARKER_001
+    var viewer = $("#viewer");
+    var list = $("#list");
+    if(list) list.innerHTML = "";
+    if(viewer){
+      viewer.innerHTML =
+        '<div class="empty" style="margin-top:10px;">' +
+          'Загрузка…' +
+        '</div>';
+    }
+  }
+
   async function render(){
     var p = Router.parse();
     var section = p.section;
     var param = p.param;
     var q = $("#q");
 
-    // gate: все кроме login требует user
+    // gate 0: ждём, пока auth определится
+    if(!App.session || App.session.ready !== true){
+      if(q) q.disabled = true;
+      // если мы не на login — не редиректим, просто показываем загрузку
+      if(section !== "login") showLoading();
+      return;
+    }
+
+    // gate 1: все кроме login требует user
     if(section !== "login" && (!App.session || !App.session.user)){
       window.clearMainArea();
       Router.go("login");

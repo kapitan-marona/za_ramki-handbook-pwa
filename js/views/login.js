@@ -22,6 +22,7 @@ Views.Login = (() => {
     function setErr(t){ var e = $("#loginError"); if(e) e.textContent = t || ""; }
 
     async function doLogin(){
+      // LOGIN_MARKER_001
       try{
         setErr("");
 
@@ -44,11 +45,12 @@ Views.Login = (() => {
           return;
         }
 
-        // подтягиваем сессию + роль
-        if(typeof window.initAuth === "function") await window.initAuth();
+        // Вместо повторного initAuth(): применяем сессию напрямую
+        const user = (res && res.data && res.data.session) ? res.data.session.user : null;
+        if(typeof window.applySession === "function") await window.applySession(user);
+        if(window.App && App.session) App.session.ready = true;
 
         if(window.App && App.session && App.session.user){
-          // роль обязательна, иначе initAuth уже вылогинил
           if(App.session.role === "admin" || App.session.role === "staff"){
             if(window.Router) Router.go("articles");
             return;

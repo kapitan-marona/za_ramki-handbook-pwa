@@ -1,3 +1,12 @@
 *.bak
 js/views/*.bak
 _rollback_backup/
+
+# local safety backups (do not commit)
+_local_backups/
+_quarantine/
+_rollback_backup/
+
+# editor backup files
+*.bak
+*.bak2

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ZA RAMKI — Чек-лист обмера</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="./styles.css" />
+  <meta name="theme-color" content="#1f1f23" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <img class="logo" src="../assets/img/logo.png" alt="ZA RAMKI" />
+        <div class="brandText">
+          <div class="title">Чек-лист обмера</div>
+          <div class="subtitle">Оффлайн • галочки сохраняются</div>
+        </div>
+      </div>
+
+      <div class="topActions">
+        <button id="resetBtn" class="btn btn-outline" type="button">Сбросить</button>
+        <button id="exportBtn" class="btn btn-outline" type="button">Экспорт .txt</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="fields">
+        <label class="field">
+          <span>Дата</span>
+          <input id="jobDate" type="date" />
+        </label>
+
+        <label class="field">
+          <span>Адрес</span>
+          <input id="jobAddress" type="text" placeholder="Например: Helsinki, ..."/>
+        </label>
+
+        <label class="field">
+          <span>Сотрудник</span>
+          <input id="jobEmployee" type="text" placeholder="Имя / фамилия"/>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div id="list" class="list"></div>
+    </section>
+
+    <footer class="footNote">
+      <span>Подсказка:</span> открой один раз — будет работать оффлайн. Если нужно “установить”, используй “Добавить на главный экран”.
+    </footer>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -13,6 +13,28 @@ Views.Templates = (() => {
 
   function norm(s){ return (s ?? "").toString().toLowerCase(); }
 
+  async function loadTemplates(){
+    // Supabase-first, JSON fallback
+    try{
+      if(!window.SB) throw new Error("SB not ready");
+      const r = await SB
+        .from("kb_templates")
+        .select("id,title,format,link,tags,published,sort")
+        .eq("published", true)
+        .order("sort", { ascending: true })
+        .order("title", { ascending: true });
+
+      if(r.error) throw r.error;
+      const rows = Array.isArray(r.data) ? r.data : [];
+      if(rows.length) return rows;
+      // если таблица есть, но пустая — fallback на файлы
+    }catch(e){
+      console.warn("[Templates] Supabase load failed, fallback to JSON", e);
+    }
+
+    return await API.json("./content/data/templates.json");
+  }
+
   function downloadText(filename, text){
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -55,7 +77,8 @@ Views.Templates = (() => {
       const title = norm(t.title);
       const id = norm(t.id);
       const fmt = norm(t.format);
-      return title.includes(q) || id.includes(q) || fmt.includes(q);
+      const tags = Array.isArray(t.tags) ? norm(t.tags.join(" ")) : "";
+      return title.includes(q) || id.includes(q) || fmt.includes(q) || tags.includes(q);
     });
 
     setStatus(`${filtered.length}`);
@@ -69,6 +92,7 @@ Views.Templates = (() => {
         <div class="item-meta">
           ${t.format ? `<span class="tag">${esc(t.format)}</span>` : ""}
           ${t.link ? `<span class="tag">link</span>` : ""}
+          ${t.tags && t.tags.length ? `<span class="tag">${esc(t.tags.join(", "))}</span>` : ""}
           <span class="tag accent">заполнить</span>
         </div>`;
       list.appendChild(a);
@@ -80,13 +104,13 @@ Views.Templates = (() => {
     const viewer = $("#viewer");
     viewer.innerHTML = `<div class="empty">Выберите шаблон слева.</div>`;
 
-    _data = await API.json("./content/data/templates.json");
+    _data = await loadTemplates();
     renderList();
   }
 
   async function open(templateId){
     const viewer = $("#viewer");
-    const data = Array.isArray(_data) && _data.length ? _data : await API.json("./content/data/templates.json");
+    const data = Array.isArray(_data) && _data.length ? _data : await loadTemplates();
     const t = data.find(x => x.id === templateId);
 
     if(!t){

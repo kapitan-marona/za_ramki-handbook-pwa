@@ -18,16 +18,6 @@ window.fetchRole = async function(){
   return null;
 };
 
-window.syncRoleUI = function(){
-  // ADMIN_TAB_MARKER_002
-  try{
-    var adminTab = document.querySelector('.tab.zr-admin-tab[data-tab="admin"]');
-    if(!adminTab) return;
-    var isAdmin = !!(window.App && App.session && App.session.role === "admin");
-    adminTab.style.display = isAdmin ? "" : "none";
-  }catch(e){}
-};
-
 window.renderAuthArea = function(){
   var el = document.querySelector("#authArea");
   if(!el) return;
@@ -49,7 +39,6 @@ window.renderAuthArea = function(){
       App.session.role = null;
       App.session.ready = true;
       window.renderAuthArea();
-      window.syncRoleUI();
       window.clearMainArea();
       if(window.Router) Router.go("login");
     };
@@ -70,10 +59,10 @@ window.applySession = async function(user){
       App.session.user = null;
       App.session.role = null;
       window.renderAuthArea();
-      window.syncRoleUI();
       window.clearMainArea();
       if(window.Router) Router.go("login");
 
+      // покажем причину на экране логина (если он есть)
       try{
         var err = document.querySelector("#loginError");
         if(err) err.textContent = "Нет доступа: ваш email не добавлен в allowlist.";
@@ -83,7 +72,6 @@ window.applySession = async function(user){
   }
 
   window.renderAuthArea();
-  window.syncRoleUI();
 };
 
 window.initAuth = async function(){
@@ -95,19 +83,20 @@ window.initAuth = async function(){
       App.session.role = null;
       App.session.ready = true;
       window.renderAuthArea();
-      window.syncRoleUI();
       return;
     }
 
+    // initial
     var sres = await SB.auth.getSession();
     var user = (sres && sres.data && sres.data.session) ? sres.data.session.user : null;
     await window.applySession(user);
 
     App.session.ready = true;
 
+    // subscribe once
     if(!App._authSub){
       App._authSub = SB.auth.onAuthStateChange(async function(evt, session){
-        // пока тянем роль — ready=false, чтобы не ловить роль=null промежуточно
+        // важно: пока тянем роль — ready=false, чтобы не рендерить "Только admin" из-за role=null
         App.session.ready = false;
         var u = (session && session.user) ? session.user : null;
         await window.applySession(u);
@@ -121,7 +110,6 @@ window.initAuth = async function(){
     App.session.role = null;
     App.session.ready = true;
     window.renderAuthArea();
-    window.syncRoleUI();
     window.clearMainArea();
     if(window.Router) Router.go("login");
   }
@@ -142,6 +130,7 @@ window.initAuth = async function(){
       if(p.section === "articles" && Views.Articles && Views.Articles.setFilter) Views.Articles.setFilter(q);
       if(p.section === "templates" && Views.Templates && Views.Templates.setFilter) Views.Templates.setFilter(q);
       if(p.section === "checklists" && Views.Checklists && Views.Checklists.setFilter) Views.Checklists.setFilter(q);
+      if(p.section === "admin" && Views.Admin && Views.Admin.setFilter) Views.Admin.setFilter(q);
     }catch(e){
       console.warn("[UI] applySearch failed", e);
     }
@@ -151,7 +140,9 @@ window.initAuth = async function(){
     var v = $("#viewer");
     var l = $("#list");
     if(l) l.innerHTML = "";
-    if(v) v.innerHTML = '<div class="empty">Загрузка…</div>';
+    if(v){
+      v.innerHTML = '<div class="empty">Загрузка…</div>';
+    }
   }
 
   function showFatal(e){
@@ -179,17 +170,11 @@ window.initAuth = async function(){
       return;
     }
 
-    // gate: ждём роль/session
+    // gate: ждём роль/session, чтобы не ловить role=null промежуточно
     if(section !== "login" && App.session && App.session.ready !== true){
       setActiveTab(section);
       if(q) q.disabled = true;
       showLoading();
-      return;
-    }
-
-    // gate: admin-only route
-    if(section === "admin" && (!App.session || App.session.role !== "admin")){
-      Router.go("articles");
       return;
     }
 
@@ -219,8 +204,10 @@ window.initAuth = async function(){
         return;
       }
 
+      // optional admin route (если существует)
       if(section === "admin" && Views.Admin && Views.Admin.show){
         await Views.Admin.show(param);
+        applySearch(q ? (q.value||"") : "");
         return;
       }
 

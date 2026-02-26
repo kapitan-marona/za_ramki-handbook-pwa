@@ -18,16 +18,6 @@ window.fetchRole = async function(){
   return null;
 };
 
-window.syncRoleUI = function(){
-  // ADMIN_TAB_MARKER_002
-  try{
-    var adminTab = document.querySelector('.tab.zr-admin-tab[data-tab="admin"]');
-    if(!adminTab) return;
-    var isAdmin = !!(window.App && App.session && App.session.role === "admin");
-    adminTab.style.display = isAdmin ? "" : "none";
-  }catch(e){}
-};
-
 window.renderAuthArea = function(){
   var el = document.querySelector("#authArea");
   if(!el) return;
@@ -56,6 +46,17 @@ window.renderAuthArea = function(){
   }
 };
 
+window.syncRoleUI = function(){
+  // ADMIN_TAB_MARKER_001
+  try{
+    var adminTab = document.querySelector('.tab.zr-admin-tab[data-tab="admin"]');
+    if(!adminTab) return;
+
+    var isAdmin = !!(window.App && App.session && App.session.role === "admin");
+    adminTab.style.display = isAdmin ? "" : "none";
+  }catch(e){}
+};
+
 window.applySession = async function(user){
   App.session.user = user || null;
   App.session.role = null;
@@ -74,6 +75,7 @@ window.applySession = async function(user){
       window.clearMainArea();
       if(window.Router) Router.go("login");
 
+      // покажем причину на экране логина (если он есть)
       try{
         var err = document.querySelector("#loginError");
         if(err) err.textContent = "Нет доступа: ваш email не добавлен в allowlist.";
@@ -99,16 +101,16 @@ window.initAuth = async function(){
       return;
     }
 
+    // initial
     var sres = await SB.auth.getSession();
     var user = (sres && sres.data && sres.data.session) ? sres.data.session.user : null;
     await window.applySession(user);
 
     App.session.ready = true;
 
+    // subscribe once
     if(!App._authSub){
       App._authSub = SB.auth.onAuthStateChange(async function(evt, session){
-        // пока тянем роль — ready=false, чтобы не ловить роль=null промежуточно
-        App.session.ready = false;
         var u = (session && session.user) ? session.user : null;
         await window.applySession(u);
         App.session.ready = true;
@@ -138,31 +140,21 @@ window.initAuth = async function(){
 
   function applySearch(q){
     var p = Router.parse();
-    try{
-      if(p.section === "articles" && Views.Articles && Views.Articles.setFilter) Views.Articles.setFilter(q);
-      if(p.section === "templates" && Views.Templates && Views.Templates.setFilter) Views.Templates.setFilter(q);
-      if(p.section === "checklists" && Views.Checklists && Views.Checklists.setFilter) Views.Checklists.setFilter(q);
-    }catch(e){
-      console.warn("[UI] applySearch failed", e);
-    }
+    if(p.section === "articles" && Views.Articles && Views.Articles.setFilter) Views.Articles.setFilter(q);
+    if(p.section === "templates" && Views.Templates && Views.Templates.setFilter) Views.Templates.setFilter(q);
+    if(p.section === "checklists" && Views.Checklists && Views.Checklists.setFilter) Views.Checklists.setFilter(q);
   }
 
   function showLoading(){
-    var v = $("#viewer");
-    var l = $("#list");
-    if(l) l.innerHTML = "";
-    if(v) v.innerHTML = '<div class="empty">Загрузка…</div>';
-  }
-
-  function showFatal(e){
-    console.error("[UI] render failed", e);
-    var v = $("#viewer");
-    if(v){
-      v.innerHTML =
-        '<h1 class="article-title">Ошибка в интерфейсе</h1>' +
-        '<p class="article-sub">Открой консоль (F12) — там причина. Навигация должна продолжать работать.</p>' +
-        '<div class="hr"></div>' +
-        '<div class="markdown"><code class="mono">' + String((e && e.message) ? e.message : e) + '</code></div>';
+    // ZAGRUZKA_MARKER_001
+    var viewer = $("#viewer");
+    var list = $("#list");
+    if(list) list.innerHTML = "";
+    if(viewer){
+      viewer.innerHTML =
+        '<div class="empty" style="margin-top:10px;">' +
+          'Загрузка…' +
+        '</div>';
     }
   }
 
@@ -172,62 +164,36 @@ window.initAuth = async function(){
     var param = p.param;
     var q = $("#q");
 
-    // gate: всё кроме login требует user
+    // gate 0: ждём, пока auth определится
+    if(!App.session || App.session.ready !== true){
+      if(q) q.disabled = true;
+      if(section !== "login") showLoading();
+      return;
+    }
+
+    // gate 1: все кроме login требует user
     if(section !== "login" && (!App.session || !App.session.user)){
       window.clearMainArea();
       Router.go("login");
       return;
     }
 
-    // gate: ждём роль/session
-    if(section !== "login" && App.session && App.session.ready !== true){
-      setActiveTab(section);
-      if(q) q.disabled = true;
-      showLoading();
-      return;
-    }
-
-    // gate: admin-only route
+    // gate 2: admin-only route
     if(section === "admin" && (!App.session || App.session.role !== "admin")){
       Router.go("articles");
       return;
     }
 
-    try{
-      setActiveTab(section);
-      if(q) q.disabled = false;
+    setActiveTab(section);
+    if(q) q.disabled = false;
 
-      if(section === "login"){ await Views.Login.show(); return; }
+    if(section === "login"){ await Views.Login.show(); return; }
+    if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q.value||"") : ""); return; }
+    if(section === "templates"){ await Views.Templates.show(); await Views.Templates.open(param); applySearch(q ? (q.value||"") : ""); return; }
+    if(section === "checklists"){ await Views.Checklists.show(); await Views.Checklists.open(param); applySearch(q ? (q.value||"") : ""); return; }
+    if(section === "admin"){ await Views.Admin.show(); return; }
 
-      if(section === "articles"){
-        await Views.Articles.show(param);
-        applySearch(q ? (q.value||"") : "");
-        return;
-      }
-
-      if(section === "templates"){
-        await Views.Templates.show();
-        await Views.Templates.open(param);
-        applySearch(q ? (q.value||"") : "");
-        return;
-      }
-
-      if(section === "checklists"){
-        await Views.Checklists.show();
-        await Views.Checklists.open(param);
-        applySearch(q ? (q.value||"") : "");
-        return;
-      }
-
-      if(section === "admin" && Views.Admin && Views.Admin.show){
-        await Views.Admin.show(param);
-        return;
-      }
-
-      Router.go("articles");
-    }catch(e){
-      showFatal(e);
-    }
+    Router.go("articles");
   }
 
   async function boot(){

@@ -5,6 +5,10 @@ Views.Articles = (() => {
   let INDEX = [];
   let FILTER = "";
   let CATMAP = {};
+  let CATFILTER = ""; // category id; "" = all
+
+  const LS_CAT = "kb:articles:cat";
+  const LS_Q   = "kb:articles:q";
 
   function esc(str){
     return (str ?? "").replace(/[&<>"']/g, c => ({
@@ -13,36 +17,102 @@ Views.Articles = (() => {
   }
   function norm(s){ return (s ?? "").toString().toLowerCase().trim(); }
 
-  function setStatus(t){ $("#status").textContent = t; }
-  function setPanelTitle(t){ $("#panelTitle").textContent = t; }
+  function setStatus(t){ const el = $("#status"); if(el) el.textContent = t; }
+  function setPanelTitle(t){ const el = $("#panelTitle"); if(el) el.textContent = t; }
+
+  function getCatTitle(catId){
+    return CATMAP[catId] || catId || "";
+  }
 
   function matches(it, q){
     if(!q) return true;
     const hay = [
       it.title,
-      CATMAP[it.category] || it.category,
+      getCatTitle(it.category) || it.category,
       ...(it.tags||[]),
       ...(it.roles||[])
     ].map(norm).join(" | ");
     return hay.includes(q);
   }
 
+  function inCategory(it){
+    if(!CATFILTER) return true;
+    return (it.category || "") === CATFILTER;
+  }
+
+  function uniqCategories(items){
+    const set = new Set();
+    for(const it of items){
+      if(it && it.category) set.add(it.category);
+    }
+    return Array.from(set.values()).sort((a,b) => getCatTitle(a).localeCompare(getCatTitle(b)));
+  }
+
+  function renderCategoryFilter(allItems, visibleItems){
+    const cats = uniqCategories(allItems);
+    if(!cats.length) return "";
+
+    const btn = (id, label, active) =>
+      `<button class="btn btn-sm zr-catbtn ${active ? "is-active" : ""}" data-cat="${esc(id)}"><span class="dot"></span>${esc(label)}</button>`;
+
+    const allActive = !CATFILTER;
+    const row =
+      `<div class="actions" style="margin-top:0; margin-bottom:10px; flex-wrap:wrap;">` +
+        btn("", "Все", allActive) +
+        cats.map(id => btn(id, getCatTitle(id), id === CATFILTER)).join("") +
+      `</div>`;
+
+    // micro-hint
+    const hint =
+      `<div class="muted" style="margin:-6px 0 10px 0;">Фильтр по разделам + поиск.</div>`;
+
+    return row + hint;
+  }
+
+  function bindCategoryFilter(){
+    document.querySelectorAll(".zr-catbtn").forEach(b => {
+      b.onclick = () => {
+        const id = b.getAttribute("data-cat") || "";
+        CATFILTER = id;
+        try{ localStorage.setItem(LS_CAT, CATFILTER); }catch(e){}
+        renderList();
+      };
+    });
+  }
+
   function renderList(){
     const list = $("#list");
+    if(!list) return;
     list.innerHTML = "";
-    setPanelTitle("Статьи");
+    setPanelTitle("Инструкции");
 
     const q = norm(FILTER);
-    const items = INDEX.filter(it => matches(it, q));
+    const all = INDEX.slice();
+    const items = INDEX.filter(it => inCategory(it)).filter(it => matches(it, q));
+
+    // статус показываем по “видимым”
     setStatus(`${items.length} / ${INDEX.length}`);
 
+    // фильтр категорий (на основе полного индекса)
+    const catUi = renderCategoryFilter(all, items);
+    if(catUi){
+      const wrap = document.createElement("div");
+      wrap.innerHTML = catUi;
+      list.appendChild(wrap);
+      bindCategoryFilter();
+    }
+
     if(items.length === 0){
-      list.innerHTML = `<div class="empty" style="padding:12px;color:var(--muted)">Ничего не найдено.</div>`;
+      const catTitle = CATFILTER ? getCatTitle(CATFILTER) : "";
+      const msg = catTitle
+        ? `Ничего не найдено в разделе «${esc(catTitle)}».`
+        : `Ничего не найдено.`;
+      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">${msg}</div>`);
       return;
     }
 
     for(const it of items){
-      const catTitle = CATMAP[it.category] || it.category || "";
+      const catTitle = getCatTitle(it.category) || it.category || "";
       const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
       const tags = (it.tags||[]).slice(0,4).map(t => `<span class="tag">${esc(t)}</span>`).join("");
       const roles = (it.roles||[]).slice(0,2).map(r => `<span class="tag">${esc(r)}</span>`).join("");
@@ -60,7 +130,6 @@ Views.Articles = (() => {
 
   function normalizeMd(md){
     md = (md ?? "").toString();
-    // Если в базе/файле текст попал как строка с буквальными "\n"
     if(md.includes("\\n") || md.includes("\\r\\n")){
       md = md.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
     }
@@ -71,7 +140,6 @@ Views.Articles = (() => {
     if(!html) return html;
 
     const rules = [
-      // > **Важно:** ...  или  > Важно: ...
       { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*Важно:\s*(?:<\/strong>)?\s*/gi,
         cls: "kb-important", title: "☝️ ВАЖНО" },
 
@@ -112,8 +180,7 @@ Views.Articles = (() => {
     if(!id){
       viewer.innerHTML = `
         <div class="empty">
-          Выбери статью слева или используй поиск сверху.<br/><br/>
-          Подсказка: позже добавим роли, избранное и «что нового».
+          Выбери статью слева или используй поиск сверху.
         </div>`;
       return;
     }
@@ -168,7 +235,7 @@ Views.Articles = (() => {
 
     md = normalizeMd(md);
 
-    const catTitle = CATMAP[meta.category] || meta.category || "";
+    const catTitle = getCatTitle(meta.category) || meta.category || "";
     const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
     const tags = (meta.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join("");
     const roles = (meta.roles||[]).map(r => `<span class="tag">${esc(r)}</span>`).join("");
@@ -248,6 +315,10 @@ Views.Articles = (() => {
       CATMAP = Object.fromEntries(cats.map(c => [c.id, c.title]));
     }catch(e){ CATMAP = {}; }
 
+    // restore filters
+    try{ CATFILTER = localStorage.getItem(LS_CAT) || ""; }catch(e){ CATFILTER = ""; }
+    try{ FILTER = localStorage.getItem(LS_Q) || FILTER; }catch(e){}
+
     // 1) файловый индекс (надёжный fallback)
     let fileItems = [];
     try{
@@ -293,6 +364,7 @@ Views.Articles = (() => {
     },
     setFilter(q){
       FILTER = q || "";
+      try{ localStorage.setItem(LS_Q, FILTER); }catch(e){}
       renderList();
     }
   };

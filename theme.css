@@ -309,3 +309,7 @@ input:focus, textarea:focus, select:focus{
 .mf-linkview{ color: var(--headings); text-decoration-color: var(--accent-55); }
 .mf-muted{ color: var(--muted); }
 .mf-textview{ white-space:pre-wrap; }
+
+/* Header click fix (above sticky tables) */
+.header{ z-index: 500; }
+

@@ -1,15 +1,33 @@
+<PASTE THE FILE ABOVE HERE>
 window.Views = window.Views || {};
 
 Views.Login = (() => {
   const $ = (s) => document.querySelector(s);
 
-  function buildRedirectTo(){
-    // hash-router friendly: возвращаемся на текущую страницу, дальше app сам разрулит
-    // (важно, чтобы домен/путь был разрешён в Supabase Auth Redirect URLs)
-    try{
-      return window.location.origin + window.location.pathname;
-    }catch(e){
-      return undefined;
+  function esc(s){
+    return (s ?? "").toString().replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  function withTimeout(promise, ms, label){
+    let t;
+    const timeout = new Promise((_, rej) => {
+      t = setTimeout(() => rej(new Error(`Timeout (${ms}ms): ${label || "request"}`)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+  }
+
+  function setBusy(on, text){
+    const btn = $("#loginBtn");
+    const btnLink = $("#magicBtn");
+    if(btn){
+      btn.disabled = !!on;
+      btn.textContent = on ? (text || "Входим…") : "Войти";
+    }
+    if(btnLink){
+      btnLink.disabled = !!on;
+      btnLink.textContent = on ? "Отправляю…" : "Войти по ссылке";
     }
   }
 
@@ -19,134 +37,143 @@ Views.Login = (() => {
     if(list) list.innerHTML = "";
     if(!viewer) return;
 
+    // if already logged in — go to articles
+    if(window.App && App.session && App.session.user && App.session.ready === true){
+      if(window.Router) Router.go("articles");
+      return;
+    }
+
     viewer.innerHTML =
       '<h1 class="article-title">Вход</h1>' +
-      '<p class="article-sub">Можно войти по паролю или получить ссылку на e-mail.</p>' +
-
+      '<p class="article-sub">Пароль или magic link.</p>' +
       '<div style="max-width:380px;">' +
-        '<input id="loginEmail" type="email" placeholder="Email" style="width:100%; padding:10px; border-radius:12px; margin:10px 0;" />' +
-        '<input id="loginPass" type="password" placeholder="Пароль (если есть)" style="width:100%; padding:10px; border-radius:12px; margin:0 0 10px 0;" />' +
-
-        '<div style="display:flex; gap:10px; flex-wrap:wrap;">' +
-          '<button id="loginBtn" class="btn"><span class="dot"></span>Войти по паролю</button>' +
-          '<button id="magicBtn" class="btn"><span class="dot"></span>Войти по ссылке</button>' +
+        '<div class="muted" style="margin:0 0 6px 2px;">Email</div>' +
+        '<input id="loginEmail" type="email" autocomplete="email" style="width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); color:var(--text); outline:none;" />' +
+        '<div class="muted" style="margin:12px 0 6px 2px;">Пароль</div>' +
+        '<input id="loginPass" type="password" autocomplete="current-password" style="width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); color:var(--text); outline:none;" />' +
+        '<div id="loginError" class="muted" style="margin-top:10px; color:#ffb4b4;"></div>' +
+        '<div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">' +
+          '<button class="btn" id="loginBtn"><span class="dot"></span>Войти</button>' +
+          '<button class="btn btn-sm" id="magicBtn"><span class="dot"></span>Войти по ссылке</button>' +
         '</div>' +
-
-        '<div id="loginError" style="margin-top:10px; color:#ff6b6b;"></div>' +
-        '<div id="loginInfo" style="margin-top:8px; color:var(--muted);"></div>' +
+        '<div class="muted" style="margin-top:10px;">Ссылка придёт на e-mail. Открой её на этом же устройстве.</div>' +
       '</div>';
 
-    function setErr(t){
-      var e = $("#loginError");
-      if(e) e.textContent = t || "";
-    }
-    function setInfo(t){
-      var e = $("#loginInfo");
-      if(e) e.textContent = t || "";
-    }
-    function setBusy(isBusy){
-      var b1 = $("#loginBtn");
-      var b2 = $("#magicBtn");
-      var em = $("#loginEmail");
-      var pw = $("#loginPass");
-      if(b1) b1.disabled = !!isBusy;
-      if(b2) b2.disabled = !!isBusy;
-      if(em) em.disabled = !!isBusy;
-      if(pw) pw.disabled = !!isBusy;
+    const setErr = (t) => { const e = $("#loginError"); if(e) e.textContent = t || ""; };
+
+    const getEmail = () => (($("#loginEmail").value || "") + "").trim();
+
+    async function finishAuthAndGo(){
+      try{
+        if(typeof window.initAuth === "function"){
+          await withTimeout(window.initAuth(), 20000, "initAuth");
+        }
+        if(window.App && App.session && App.session.user){
+          if(window.Router) Router.go("articles");
+          return;
+        }
+        setErr("Не удалось завершить вход. Попробуй ещё раз.");
+      }catch(e){
+        setErr(e.message || "Ошибка авторизации. Смотри консоль.");
+      }
     }
 
-    async function doPasswordLogin(){
-      // LOGIN_MARKER_002_PASSWORD
+    async function doLogin(){
       try{
-        setErr(""); setInfo("");
-        const email = (($("#loginEmail").value || "") + "").trim().toLowerCase();
+        setErr("");
+        setBusy(true, "Входим…");
+
+        const email = getEmail();
         const password = ($("#loginPass").value || "");
 
         if(!email || !password){
+          setBusy(false);
           setErr("Введите e-mail и пароль.");
           return;
         }
+
         if(!window.SB || !SB.auth){
+          setBusy(false);
           setErr("Supabase не подключён.");
           return;
         }
 
-        setBusy(true);
+        const res = await withTimeout(
+          SB.auth.signInWithPassword({ email, password }),
+          15000,
+          "signInWithPassword"
+        );
 
-        const res = await SB.auth.signInWithPassword({ email, password });
         if(res && res.error){
+          setBusy(false);
           setErr(res.error.message);
           return;
         }
 
-        // применяем сессию напрямую (роль подтянется внутри applySession)
-        const user = (res && res.data && res.data.session) ? res.data.session.user : null;
-        if(typeof window.applySession === "function") await window.applySession(user);
-        if(window.App && App.session) App.session.ready = true;
-
-        if(window.App && App.session && App.session.user){
-          if(App.session.role === "admin" || App.session.role === "staff"){
-            if(window.Router) Router.go("articles");
-            return;
-          }
-        }
-
-        setErr("Нет доступа (роль не назначена).");
-      }catch(e){
-        console.warn("[Login] password login failed", e);
-        setErr("Ошибка входа. Смотри консоль.");
-      }finally{
         setBusy(false);
+        await finishAuthAndGo();
+      }catch(e){
+        console.warn("[Login] failed", e);
+        setBusy(false);
+        setErr(e.message || "Ошибка входа. Смотри консоль.");
       }
     }
 
-    async function doMagicLink(){
-      // LOGIN_MARKER_003_MAGIC
+    async function doMagic(){
       try{
-        setErr(""); setInfo("");
+        setErr("");
+        setBusy(true, "Отправляю…");
 
-        const email = (($("#loginEmail").value || "") + "").trim().toLowerCase();
+        const email = getEmail();
         if(!email){
+          setBusy(false);
           setErr("Введите e-mail.");
           return;
         }
-        if(!email.includes("@")){
-          setErr("Введите корректный e-mail.");
-          return;
-        }
+
         if(!window.SB || !SB.auth){
+          setBusy(false);
           setErr("Supabase не подключён.");
           return;
         }
 
-        setBusy(true);
+        // Redirect back to this PWA root (hash router will handle the rest)
+        const redirectTo = location.origin + location.pathname;
 
-        const redirectTo = buildRedirectTo();
-        const res = await SB.auth.signInWithOtp({
-          email,
-          options: redirectTo ? { emailRedirectTo: redirectTo } : undefined
-        });
+        const res = await withTimeout(
+          SB.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } }),
+          20000,
+          "signInWithOtp"
+        );
 
         if(res && res.error){
+          setBusy(false);
           setErr(res.error.message);
           return;
         }
 
-        setInfo("Готово. Проверьте почту — мы отправили ссылку для входа.");
-      }catch(e){
-        console.warn("[Login] magic link failed", e);
-        setErr("Не удалось отправить ссылку. Смотри консоль.");
-      }finally{
         setBusy(false);
+        setErr("Ссылка отправлена. Проверь почту (и спам).");
+      }catch(e){
+        console.warn("[Login] magic failed", e);
+        setBusy(false);
+        setErr(e.message || "Ошибка. Смотри консоль.");
       }
     }
 
-    $("#loginBtn").onclick = doPasswordLogin;
-    $("#magicBtn").onclick = doMagicLink;
+    $("#loginBtn").onclick = doLogin;
+    $("#magicBtn").onclick = doMagic;
 
-    $("#loginPass").addEventListener("keydown", (e) => {
-      if(e.key === "Enter") doPasswordLogin();
-    });
+    $("#loginPass").addEventListener("keydown", (e) => { if(e.key === "Enter") doLogin(); });
+
+    // If the user opened the magic link and is back here, Supabase will detect the session in URL.
+    // We gently try to finalize auth once.
+    if(location.href.includes("access_token") || location.href.includes("refresh_token") || location.href.includes("type=recovery") || location.href.includes("type=magiclink")){
+      setErr("Завершаю вход по ссылке…");
+      setBusy(true, "Завершаю…");
+      await finishAuthAndGo();
+      setBusy(false);
+    }
   }
 
   return { show };

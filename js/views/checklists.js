@@ -13,27 +13,6 @@ Views.Checklists = (() => {
 
   function norm(s){ return (s ?? "").toString().toLowerCase(); }
 
-  async function loadChecklists(){
-    // Supabase-first, JSON fallback
-    try{
-      if(!window.SB) throw new Error("SB not ready");
-      const r = await SB
-        .from("kb_checklists")
-        .select('id,title,"desc",url,tags,published,sort')
-        .eq("published", true)
-        .order("sort", { ascending: true })
-        .order("title", { ascending: true });
-
-      if(r.error) throw r.error;
-      const rows = Array.isArray(r.data) ? r.data : [];
-      if(rows.length) return rows;
-    }catch(e){
-      console.warn("[Checklists] Supabase load failed, fallback to JSON", e);
-    }
-
-    return await API.json("./content/data/checklists.json");
-  }
-
   function renderList(){
     const list = $("#list");
     const viewer = $("#viewer");
@@ -68,7 +47,7 @@ Views.Checklists = (() => {
 
   async function show(){
     setPanelTitle("Чек-листы");
-    _data = await loadChecklists();
+    _data = await API.json("./content/data/checklists.json");
     renderList();
   }
 

@@ -5,10 +5,6 @@ Views.Articles = (() => {
   let INDEX = [];
   let FILTER = "";
   let CATMAP = {};
-  let CATFILTER = ""; // "" = all
-
-  const LS_CAT = "kb:articles:cat";
-  const LS_Q   = "kb:articles:q";
 
   function esc(str){
     return (str ?? "").replace(/[&<>"']/g, c => ({
@@ -17,94 +13,36 @@ Views.Articles = (() => {
   }
   function norm(s){ return (s ?? "").toString().toLowerCase().trim(); }
 
-  function setStatus(t){ const el = $("#status"); if(el) el.textContent = t; }
-  function setPanelTitle(t){ const el = $("#panelTitle"); if(el) el.textContent = t; }
-
-  function getCatTitle(catId){
-    return CATMAP[catId] || catId || "";
-  }
+  function setStatus(t){ $("#status").textContent = t; }
+  function setPanelTitle(t){ $("#panelTitle").textContent = t; }
 
   function matches(it, q){
     if(!q) return true;
     const hay = [
       it.title,
-      getCatTitle(it.category) || it.category,
+      CATMAP[it.category] || it.category,
       ...(it.tags||[]),
       ...(it.roles||[])
     ].map(norm).join(" | ");
     return hay.includes(q);
   }
 
-  function inCategory(it){
-    if(!CATFILTER) return true;
-    return (it.category || "") === CATFILTER;
-  }
-
-  function uniqCategories(items){
-    const set = new Set();
-    for(const it of items){
-      if(it && it.category) set.add(it.category);
-    }
-    return Array.from(set.values()).sort((a,b) => getCatTitle(a).localeCompare(getCatTitle(b)));
-  }
-
-  function renderCategoryFilter(allItems){
-    const cats = uniqCategories(allItems);
-    if(!cats.length) return "";
-
-    const btn = (id, label, active) =>
-      `<button class="btn btn-sm zr-catbtn ${active ? "is-active" : ""}" data-cat="${esc(id)}"><span class="dot"></span>${esc(label)}</button>`;
-
-    return (
-      `<div class="actions" style="margin-top:0; margin-bottom:10px; flex-wrap:wrap;">` +
-        btn("", "Все разделы", !CATFILTER) +
-        cats.map(id => btn(id, getCatTitle(id), id === CATFILTER)).join("") +
-      `</div>` +
-      `<div class="muted" style="margin:-6px 0 10px 0;">Разделы + роли + поиск.</div>`
-    );
-  }
-
-  function bindCategoryFilter(){
-    document.querySelectorAll(".zr-catbtn").forEach(b => {
-      b.onclick = () => {
-        const id = b.getAttribute("data-cat") || "";
-        CATFILTER = id;
-        try{ localStorage.setItem(LS_CAT, CATFILTER); }catch(e){}
-        renderList();
-      };
-    });
-  }
-
   function renderList(){
     const list = $("#list");
-    if(!list) return;
     list.innerHTML = "";
-    setPanelTitle("Инструкции");
+    setPanelTitle("Статьи");
 
     const q = norm(FILTER);
-    const all = INDEX.slice();
-    const items = INDEX
-      .filter(it => inCategory(it))
-      .filter(it => matches(it, q));
-
+    const items = INDEX.filter(it => matches(it, q));
     setStatus(`${items.length} / ${INDEX.length}`);
 
-    const catUi = renderCategoryFilter(all);
-    if(catUi){
-      const wrap = document.createElement("div");
-      wrap.innerHTML = catUi;
-      list.appendChild(wrap);
-      bindCategoryFilter();
-    }
-
     if(items.length === 0){
-      const msg = (CATFILTER ? "Ничего не найдено в выбранном разделе." : "Ничего не найдено.");
-      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">${esc(msg)}</div>`);
+      list.innerHTML = `<div class="empty" style="padding:12px;color:var(--muted)">Ничего не найдено.</div>`;
       return;
     }
 
     for(const it of items){
-      const catTitle = getCatTitle(it.category) || it.category || "";
+      const catTitle = CATMAP[it.category] || it.category || "";
       const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
       const tags = (it.tags||[]).slice(0,4).map(t => `<span class="tag">${esc(t)}</span>`).join("");
       const roles = (it.roles||[]).slice(0,2).map(r => `<span class="tag">${esc(r)}</span>`).join("");
@@ -122,6 +60,7 @@ Views.Articles = (() => {
 
   function normalizeMd(md){
     md = (md ?? "").toString();
+    // Если в базе/файле текст попал как строка с буквальными "\n"
     if(md.includes("\\n") || md.includes("\\r\\n")){
       md = md.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
     }
@@ -132,6 +71,7 @@ Views.Articles = (() => {
     if(!html) return html;
 
     const rules = [
+      // > **Важно:** ...  или  > Важно: ...
       { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*Важно:\s*(?:<\/strong>)?\s*/gi,
         cls: "kb-important", title: "☝️ ВАЖНО" },
 
@@ -170,7 +110,11 @@ Views.Articles = (() => {
     const viewer = $("#viewer");
 
     if(!id){
-      viewer.innerHTML = `<div class="empty">Выбери статью слева или используй поиск сверху.</div>`;
+      viewer.innerHTML = `
+        <div class="empty">
+          Выбери статью слева или используй поиск сверху.<br/><br/>
+          Подсказка: позже добавим роли, избранное и «что нового».
+        </div>`;
       return;
     }
 
@@ -184,28 +128,30 @@ Views.Articles = (() => {
 
     let md = "";
 
-    // 1) Supabase priority
-    if(meta.source === "sb" && window.SB){
-      const { data, error } = await SB
-        .from("kb_articles")
-        .select("content_md,actions,updated_at,category,tags,roles,title")
-        .eq("id", id)
-        .single();
+    // 1) Supabase приоритет
+    if(meta.source === "sb"){
+      if(window.SB){
+        const { data, error } = await SB
+          .from("kb_articles")
+          .select("content_md,actions,updated_at,category,tags,roles,title")
+          .eq("id", id)
+          .single();
 
-      if(!error && data){
-        md = data.content_md || "";
-        meta.title = meta.title || data.title;
-        meta.category = meta.category || data.category;
-        meta.tags = (meta.tags && meta.tags.length) ? meta.tags : (data.tags || []);
-        meta.roles = (meta.roles && meta.roles.length) ? meta.roles : (data.roles || []);
-        meta.updatedAt = meta.updatedAt || data.updated_at;
-        meta.actions = (meta.actions && meta.actions.length) ? meta.actions : (data.actions || []);
-      } else {
-        console.error("KB open error:", error);
+        if(!error && data){
+          md = data.content_md || "";
+          meta.title = meta.title || data.title;
+          meta.category = meta.category || data.category;
+          meta.tags = (meta.tags && meta.tags.length) ? meta.tags : (data.tags || []);
+          meta.roles = (meta.roles && meta.roles.length) ? meta.roles : (data.roles || []);
+          meta.updatedAt = meta.updatedAt || data.updated_at;
+          meta.actions = (meta.actions && meta.actions.length) ? meta.actions : (data.actions || []);
+        } else {
+          console.error("KB open error:", error);
+        }
       }
     }
 
-    // 2) file fallback
+    // 2) fallback на файлы
     if(!md && meta.path){
       try{
         md = await API.text(meta.path);
@@ -222,7 +168,7 @@ Views.Articles = (() => {
 
     md = normalizeMd(md);
 
-    const catTitle = getCatTitle(meta.category) || meta.category || "";
+    const catTitle = CATMAP[meta.category] || meta.category || "";
     const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
     const tags = (meta.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join("");
     const roles = (meta.roles||[]).map(r => `<span class="tag">${esc(r)}</span>`).join("");
@@ -239,7 +185,6 @@ Views.Articles = (() => {
       <div class="hr"></div>
       <div class="markdown">${html}</div>
     `;
-
     setStatus("готово");
   }
 
@@ -297,17 +242,13 @@ Views.Articles = (() => {
   }
 
   async function init(){
-    // category labels
+    // categories labels (optional)
     try{
       const cats = await API.json("./content/ui/categories.json");
       CATMAP = Object.fromEntries(cats.map(c => [c.id, c.title]));
     }catch(e){ CATMAP = {}; }
 
-    // restore filters
-    try{ CATFILTER = localStorage.getItem(LS_CAT) || ""; }catch(e){ CATFILTER = ""; }
-    try{ FILTER = localStorage.getItem(LS_Q) || FILTER; }catch(e){}
-
-    // file index (fallback)
+    // 1) файловый индекс (надёжный fallback)
     let fileItems = [];
     try{
       fileItems = await loadFileIndex();
@@ -316,7 +257,7 @@ Views.Articles = (() => {
       fileItems = [];
     }
 
-    // supabase index (preferred)
+    // 2) Supabase; если не получилось или пусто — остаёмся на файлах
     let sbItems = [];
     try{
       sbItems = await loadSbIndex();
@@ -330,14 +271,14 @@ Views.Articles = (() => {
       return;
     }
 
-    // merge by id (Supabase wins, but keep file path as fallback)
+    // 3) merge без дублей: Supabase приоритет по id
     const map = new Map();
     for(const it of fileItems){
       map.set(it.id, it);
     }
     for(const it of sbItems){
       const prev = map.get(it.id);
-      if(prev && prev.path && !it.path) it.path = prev.path;
+      if(prev && prev.path && !it.path) it.path = prev.path; // запасной fallback
       map.set(it.id, it);
     }
 
@@ -352,7 +293,6 @@ Views.Articles = (() => {
     },
     setFilter(q){
       FILTER = q || "";
-      try{ localStorage.setItem(LS_Q, FILTER); }catch(e){}
       renderList();
     }
   };

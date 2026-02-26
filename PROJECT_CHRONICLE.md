@@ -1,5 +1,5 @@
 # ZA RAMKI — Project Chronicle (летопись проекта)
-Дата обновления: утро 2026-02-25
+Дата обновления: 2026-02-25
 
 Это документ для передачи контекста следующему ассистенту: текущее состояние PWA, Supabase, гибрид статей, зачатки auth, артефакты/грабли, и план продолжения.
 
@@ -192,185 +192,67 @@ Email подтверждён.
 ```powershell
 git status --porcelain
 
+Предыдущие правки:
 
-## 13) Изменения, внесённые вечером 25–26.02.2026 (Auth стабилизация + allowlist + RLS-фундамент)
+Дата обновления: 2026-02-24
+## 11) Изменения, внесённые в этом чате (Supabase KB / статьи)
 
-### 13.1 Переход на email+password авторизацию (без magic link)
+### 11.1 Подключение Supabase в PWA (client-only)
+- В `index.html` добавлено:
+  - CDN `@supabase/supabase-js@2`
+  - глобальные переменные `window.SUPABASE_URL` и `window.SUPABASE_ANON` (только anon key; **service_role запрещён**)
+  - подключение `./js/utils/supabase_client.js?v=clean`
+- Создан файл `js/utils/supabase_client.js`:
+  - инициализирует `window.SB = supabase.createClient(URL, ANON, ...)`
+  - включает `persistSession/autoRefreshToken/detectSessionInUrl`
+  - пишет в консоль `[Supabase] client ready` при успешной инициализации
 
-Реализован полноценный вход через:
+### 11.2 Supabase: база знаний (kb_articles) + права
+- В Supabase подтверждено наличие таблиц: `profiles`, `tasks`, `task_comments`, `task_checklist_items`, `allowlist`, и добавлена `kb_articles`.
+- При попытке читать `kb_articles` из PWA возникала ошибка `500` с кодом Postgres `42P17` (infinite recursion).
+  - Итоговый диагноз: рекурсия происходила в RLS-политиках таблицы `profiles`.
+- Решение (фикс):
+  - Создана `SECURITY DEFINER` функция `public.is_admin()` (читает `profiles` и определяет администратора по `is_admin=true` или `role='admin'`).
+  - Даны права на выполнение `public.is_admin()` для `anon` и `authenticated`.
+  - Политики для `kb_articles` переписаны так, чтобы проверка админа шла через `public.is_admin()` и не вызывала чтение `profiles` напрямую из policy.
+  - Чтение опубликованных статей (`status='published'`) разрешено публично (anon), чтобы база статей могла работать без логина на этапе миграции.
+
+### 11.3 Схема kb_articles и actions
+- В `kb_articles` используются поля (минимальный набор для KB):
+  - `id`, `title`, `type`, `status`, `category`, `tags`, `roles`, `pinned`, `updated_at`, `content_md`
+- Добавлена/используется колонка `actions jsonb` (массив объектов вида `{label,url,external}`) для кнопок-действий в статье.
+
+### 11.4 Перевод статей на Supabase (js/views/articles.js)
+- `js/views/articles.js` переведён на загрузку статей из Supabase:
+  - `init()` делает `SB.from("kb_articles").select(...).eq("status","published").order(...)`
+  - `openArticle(id)` загружает `content_md` по `id` и рендерит через `marked`
+- Добавлено декорирование callouts внутри markdown (после `marked.parse`):
+  - `> **Важно:** ...` → блок `kb-callout kb-important` с заголовком `☝️ ВАЖНО`
+  - `> **Осторожно:** ...` и `> **Нельзя:** ...` → `kb-callout kb-caution` с `❌ ОСТОРОЖНО`
+  - `> **Недавнее:** ...` → `kb-callout kb-recent` с `🕒 НЕДАВНЕЕ`
+  - `> **Не забудь:** ...` → `kb-callout kb-remember` с `✨ НЕ ЗАБУДЬ`
+- Возвращена загрузка маппинга категорий (CATMAP) из `./content/ui/categories.json` для красивых названий категорий в UI.
+- В список статей прокидывается `actions` (если есть) и рендерится блок кнопок действий над контентом статьи.
+
+### 11.5 Важные наблюдения по тестам
+- `favicon.ico 404` на localhost — косметика, не влияет на работу.
+- После перевода на Supabase “старые” статьи из файлов перестали отображаться — ожидаемо, потому что источник данных изменился.
+  - Принято решение: миграция будет постепенной, нужен гибрид “Supabase → fallback files”.
+
+Предыдущие обновления
+Дата обновления: 2026-02-23
+Да, я поняла.
+Редактируем файл , **ничего не меняя выше**, а аккуратно добавляя блок после:
 
 ```
-SB.auth.signInWithPassword({ email, password })
+Предыдущие обновления
+Дата обновления: 2026-02-23
 ```
 
-Magic link больше не используется как основной сценарий.
-
-Причины:
-
-* redirect в production ломал локальную отладку,
-* recovery URL создавал “Session issued 120s ago” warnings,
-* появлялись визуальные несоответствия версии PWA.
-
-Текущее состояние:
-
-* вход работает без перезагрузки страницы,
-* logout работает без reload,
-* `onAuthStateChange` корректно обновляет UI,
-* кнопка в header меняется `Войти` ↔ `Выйти`,
-* роль отображается через pill (`admin` / `staff`).
+Ниже — готовый текст, оформленный **в том же стиле и формате**, что и раздел 11.
+Ты можешь просто вставить это в конец файла.
 
 ---
-
-### 13.2 Таблица allowlist как источник ролей
-
-Текущая схема:
-
-`public.allowlist`
-Колонки:
-
-* `email` (PRIMARY KEY)
-* `enabled` (bool)
-* `role` (text, CHECK: 'admin' | 'staff')
-
-⚠️ Важное:
-
-* Колонки `is_admin` нет.
-* Любые попытки вставки `Сотрудник` / `Админ` ломаются из-за CHECK-констрейнта.
-* Используются только `'admin'` и `'staff'`.
-
-Пример корректного upsert:
-
-```sql
-insert into public.allowlist(email, enabled, role)
-values ('user@gmail.com', true, 'staff')
-on conflict (email) do update
-set enabled = excluded.enabled,
-    role    = excluded.role;
-```
-
----
-
-### 13.3 RPC get_role()
-
-Создана функция:
-
-```
-public.get_role() → returns text
-```
-
-Возвращает:
-
-* `'admin'`
-* `'staff'`
-* `null`
-
-Особенности:
-
-* `SECURITY DEFINER`
-* использует `auth.jwt() ->> 'email'`
-* проверяет `enabled = true`
-* возвращает `null`, если email не найден
-
-Разрешение:
-
-```
-grant execute on function public.get_role() to authenticated;
-```
-
-В PWA:
-
-```
-SB.rpc("get_role")
-```
-
----
-
-### 13.4 Архитектура auth в PWA (app.js)
-
-Добавлены:
-
-* `window.fetchRole()`
-* `window.applySession(user)`
-* `window.initAuth()`
-* `window.renderAuthArea()`
-* `window.clearMainArea()`
-
-Логика:
-
-1. При старте:
-
-   * `getSession()`
-   * если есть user → `get_role()`
-   * если роли нет → signOut + редирект на login
-2. Подписка `onAuthStateChange`
-3. UI-гейтинг:
-
-   * любой route кроме `login` требует `App.session.user`
-
-Это устранило:
-
-* бесконечные reload
-* “тихий” сброс формы
-* дублирование session-перезаписи
-* потерю role после логина
-
----
-
-### 13.5 RLS состояние
-
-RLS включён.
-
-Промежуточные проблемы:
-
-* infinite recursion (42P17)
-* политики, читающие profiles внутри policy
-* залипшие promise (pending) при RPC
-
-Исправлено через:
-
-* SECURITY DEFINER функции
-* разделение логики ролей от policy
-* отказ от сложных вложенных проверок
-
-Текущее состояние:
-
-* get_role работает
-* staff/admin определяются корректно
-* UI-гейтинг работает
-
----
-
-### 13.6 Опасные артефакты и риски
-
-1. ⚠️ PowerShell here-strings могут вставить мусор в начало JS (например путь `C:\Users\...`)
-   → вызывает `Unexpected identifier 'C'`
-
-2. ⚠️ Дублирование кода в `app.js` (повторное обнуление `App.session.role`)
-   → приводило к отображению `—` вместо роли
-
-3. ⚠️ RLS + SECURITY DEFINER
-   Если в будущем изменить search_path или структуру allowlist, get_role может начать возвращать null.
-
-4. ⚠️ CHECK constraint allowlist_role_check
-   Любые значения кроме `'admin' | 'staff'` будут ломать вставку.
-
-5. ⚠️ Production vs localhost
-   При тестировании auth нужно работать только через localhost.
-
----
-
-### 13.7 Текущее стабильное состояние
-
-* Login работает
-* Logout работает
-* Role отображается
-* allowlist управляет доступом
-* RPC get_role стабилен
-* UI-гейтинг стабилен
-* reload больше не используется
-
-Фундамент можно считать production-ready для внутренней системы.
-
 
 ## 12) Изменения, внесённые 23.02.2026 (PWA / Templates / UI)
 

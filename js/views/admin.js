@@ -1,327 +1,313 @@
 window.Views = window.Views || {};
-
 Views.Admin = (() => {
   const $ = (s) => document.querySelector(s);
-  const esc = (str) => (str ?? "").toString().replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[c]));
 
-  function setPanelTitle(t){ const el = $("#panelTitle"); if(el) el.textContent = t; }
+  const TYPE_LABELS = {
+    standard:  "Стандарт",
+    procedure: "Пошаговая инструкция",
+    check:     "Проверка",
+    reference: "Референс",
+    policy:    "Документация"
+  };
+
+  function esc(str){
+    return (str ?? "").toString().replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+  function norm(s){ return (s ?? "").toString().trim(); }
+
   function setStatus(t){ const el = $("#status"); if(el) el.textContent = t; }
+  function setPanelTitle(t){ const el = $("#panelTitle"); if(el) el.textContent = t; }
 
-  function ensureAdmin(){
-    return !!(window.App && App.session && App.session.user && App.session.role === "admin");
+  function toCsv(arr){
+    return Array.isArray(arr) ? arr.join(", ") : "";
+  }
+  function fromCsv(s){
+    return (s || "")
+      .split(",")
+      .map(x => x.trim())
+      .filter(Boolean);
   }
 
-  function viewerHtml(title, sub, bodyHtml){
-    return `
-      <h1 class="article-title">${esc(title)}</h1>
-      <p class="article-sub">${esc(sub || "")}</p>
-      <div class="hr"></div>
-      ${bodyHtml || ""}
-    `;
+  function parseActions(s){
+    const raw = (s || "").trim();
+    if(!raw) return [];
+    try{
+      const v = JSON.parse(raw);
+      return Array.isArray(v) ? v : [];
+    }catch(e){
+      throw new Error("Actions должен быть JSON-массивом. Пример: [{\"label\":\"Открыть\",\"url\":\"#\",\"external\":false}]");
+    }
   }
 
-  function renderAdminTabs(active){
-    const tabs = [
-      { id: "staff", title: "Сотрудники" },
-      { id: "tasks", title: "Задачи" },
-      { id: "content", title: "Контент" },
-    ];
-    return `
-      <div class="actions" style="margin-top:0;">
-        ${tabs.map(t => `
-          <button class="btn btn-sm zr-admtab ${t.id === active ? "is-active" : ""}" data-adm="${t.id}">
-            <span class="dot"></span>${esc(t.title)}
-          </button>
-        `).join("")}
-      </div>
-    `;
+  async function sbSelectAll(){
+    if(!window.SB) throw new Error("Supabase не готов");
+    const { data, error } = await SB
+      .from("kb_articles")
+      .select("id,title,category,type,tags,roles,status,pinned,updated_at")
+      .order("updated_at", { ascending: false });
+
+    if(error) throw error;
+    return data || [];
   }
 
-  function bindAdminTabs(){
-    document.querySelectorAll(".zr-admtab").forEach(btn => {
-      btn.onclick = () => {
-        const id = btn.getAttribute("data-adm") || "staff";
-        show(id);
-      };
-    });
+  async function sbGetOne(id){
+    const { data, error } = await SB
+      .from("kb_articles")
+      .select("id,title,category,type,tags,roles,status,pinned,content_md,actions,updated_at")
+      .eq("id", id)
+      .single();
+
+    if(error) throw error;
+    return data;
   }
 
-  async function fetchAllowlist(){
-    if(!window.SB) throw new Error("Supabase не подключён.");
-    // ожидаем таблицу public.allowlist: email (pk), role, enabled
-    const res = await SB.from("allowlist").select("email, role, enabled").order("email", { ascending: true });
-    if(res.error) throw res.error;
-    return Array.isArray(res.data) ? res.data : [];
+  async function sbUpsert(row){
+    const { data, error } = await SB
+      .from("kb_articles")
+      .upsert(row, { onConflict: "id" })
+      .select("id")
+      .single();
+
+    if(error) throw error;
+    return data;
   }
 
-  async function upsertAllowlistRow(email, role, enabled){
-    if(!window.SB) throw new Error("Supabase не подключён.");
-    const row = { email, role, enabled: !!enabled };
-    const res = await SB.from("allowlist").upsert(row, { onConflict: "email" }).select("email, role, enabled").single();
-    if(res.error) throw res.error;
-    return res.data;
+  async function sbDelete(id){
+    const { error } = await SB.from("kb_articles").delete().eq("id", id);
+    if(error) throw error;
   }
 
-  async function updateAllowlistRow(email, patch){
-    if(!window.SB) throw new Error("Supabase не подключён.");
-    const res = await SB.from("allowlist").update(patch).eq("email", email).select("email, role, enabled").single();
-    if(res.error) throw res.error;
-    return res.data;
-  }
-
-  async function deleteAllowlistRow(email){
-    if(!window.SB) throw new Error("Supabase не подключён.");
-    const res = await SB.from("allowlist").delete().eq("email", email);
-    if(res.error) throw res.error;
-    return true;
-  }
-
-  function roleSelectHtml(current){
-    const v = (current === "admin" || current === "staff") ? current : "staff";
-    return `
-      <select class="mf-label-select zr-role" style="height:32px;">
-        <option value="staff" ${v==="staff" ? "selected" : ""}>staff</option>
-        <option value="admin" ${v==="admin" ? "selected" : ""}>admin</option>
-      </select>
-    `;
-  }
-
-  function enabledToggleHtml(enabled){
-    return `
-      <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; user-select:none;">
-        <input type="checkbox" class="zr-enabled" ${enabled ? "checked" : ""} />
-        <span class="muted">enabled</span>
-      </label>
-    `;
-  }
-
-  function renderAllowlistTable(rows){
-    const r = Array.isArray(rows) ? rows : [];
-    return `
-      <div class="markdown">
-        <blockquote class="kb-callout kb-important">
-          <span class="kb-callout-title">Важно</span>
-          Только admin видит и редактирует список доступов (allowlist).
-        </blockquote>
-
-        <div class="zr-form-grid" style="margin-top:12px;">
-          <div class="zr-field" style="grid-column:1 / -1;">
-            <span class="zr-label">Добавить сотрудника</span>
-            <div class="zr-row-2" style="grid-template-columns: 1fr 160px;">
-              <input id="al_email" class="zr-input" placeholder="email@example.com" />
-              <select id="al_role" class="mf-label-select" style="height:40px;">
-                <option value="staff">staff</option>
-                <option value="admin">admin</option>
-              </select>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center; margin-top:10px;">
-              <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
-                <input id="al_enabled" type="checkbox" checked />
-                <span class="muted">enabled</span>
-              </label>
-              <button class="btn btn-sm" id="al_add"><span class="dot"></span>Добавить / обновить</button>
-              <span class="muted" id="al_msg"></span>
-            </div>
-          </div>
-        </div>
-
-        <div class="hr"></div>
-
-        <div class="muted" style="margin-bottom:8px;">Сотрудников: <b>${r.length}</b></div>
-
-        <div class="bp-tablewrap" style="background: var(--item);">
-          <table class="bp-table" style="min-width: 900px;">
-            <thead>
-              <tr>
-                <th class="bp-th sticky">Email</th>
-                <th class="bp-th mid">Роль</th>
-                <th class="bp-th mid">Enabled</th>
-                <th class="bp-th last">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${r.map(x => `
-                <tr data-email="${esc(x.email || "")}">
-                  <td class="rr-sticky">
-                    <div class="rr-namebox">
-                      <div class="rr-nameview">${esc(x.email || "")}</div>
-                    </div>
-                  </td>
-                  <td>
-                    ${roleSelectHtml(x.role)}
-                  </td>
-                  <td>
-                    ${enabledToggleHtml(!!x.enabled)}
-                  </td>
-                  <td>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                      <button class="btn btn-sm zr-save"><span class="dot"></span>Сохранить</button>
-                      <button class="btn btn-sm rr-del-confirm zr-del" style="border-color: rgba(255,90,90,.55);">
-                        <span class="dot"></span>Удалить
-                      </button>
-                    </div>
-                    <div class="muted zr-rowmsg" style="margin-top:6px;"></div>
-                  </td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  async function show(section = "staff"){
-    const viewer = $("#viewer");
+  function renderList(items){
     const list = $("#list");
-    if(list) list.innerHTML = "";
-    if(!viewer) return;
+    if(!list) return;
 
-    setPanelTitle("Админка");
-    setStatus("—");
+    list.innerHTML = `
+      <div class="actions" style="margin-bottom:10px; flex-wrap:wrap;">
+        <button class="btn btn-sm" id="adm_new"><span class="dot"></span>Новая инструкция</button>
+        <button class="btn btn-sm" id="adm_reload"><span class="dot"></span>Обновить</button>
+      </div>
+    `;
 
-    if(!ensureAdmin()){
-      viewer.innerHTML = viewerHtml("Админка", "Доступ запрещён.", `<div class="empty">Только admin.</div>`);
-      return;
+    if(!items.length){
+      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">Пока нет записей в kb_articles.</div>`);
+    } else {
+      items.forEach(it => {
+        const typeTitle = TYPE_LABELS[it.type] || (it.type || "");
+        const t = typeTitle ? `<span class="tag">${esc(typeTitle)}</span>` : "";
+        const st = it.status ? `<span class="tag accent">${esc(it.status)}</span>` : "";
+        const pin = it.pinned ? `<span class="tag">pinned</span>` : "";
+        const cat = it.category ? `<span class="tag">${esc(it.category)}</span>` : "";
+
+        const a = document.createElement("a");
+        a.className = "item";
+        a.href = `#/admin/${encodeURIComponent(it.id)}`;
+        a.innerHTML = `
+          <div class="item-title">${esc(it.title || it.id)}</div>
+          <div class="item-meta">${st}${t}${cat}${pin}</div>
+        `;
+        list.appendChild(a);
+      });
     }
 
-    // STAFF (allowlist)
-    if(section === "staff"){
-      viewer.innerHTML =
-        viewerHtml("Админка", "Управление доступами и контентом.", renderAdminTabs("staff") + `<div id="adm_body"><div class="empty">Загрузка…</div></div>`);
-      bindAdminTabs();
+    $("#adm_new").onclick = () => openEditorNew();
+    $("#adm_reload").onclick = () => loadAndRender("");
+  }
 
+  function openEditorNew(){
+    const v = $("#viewer");
+    v.innerHTML = editorHtml({
+      id: "",
+      title: "",
+      category: "",
+      type: "standard",
+      tags: [],
+      roles: [],
+      status: "draft",
+      pinned: false,
+      content_md: "",
+      actions: []
+    }, true);
+
+    bindEditor(true);
+  }
+
+  function typeOptions(selected){
+    const ids = ["standard","procedure","check","reference","policy"];
+    return ids.map(id => {
+      const t = TYPE_LABELS[id] || id;
+      return `<option value="${esc(id)}" ${id===selected ? "selected" : ""}>${esc(t)}</option>`;
+    }).join("");
+  }
+
+  function editorHtml(row, isNew){
+    const actionsStr = JSON.stringify(row.actions || [], null, 2);
+
+    return `
+      <h1 class="article-title">Админка → Инструкции</h1>
+      <p class="article-sub">${isNew ? "Создание новой инструкции" : ("Редактирование: " + esc(row.id))}</p>
+      <div class="hr"></div>
+
+      <div class="markdown">
+        <div class="zr-form-grid">
+
+          <div class="zr-field" style="grid-column:1 / -1;">
+            <span class="zr-label">ID (латиница, без пробелов)</span>
+            <input id="a_id" class="zr-input" value="${esc(row.id)}" ${isNew ? "" : "disabled"} />
+          </div>
+
+          <div class="zr-field" style="grid-column:1 / -1;">
+            <span class="zr-label">Заголовок</span>
+            <input id="a_title" class="zr-input" value="${esc(row.title)}" />
+          </div>
+
+          <div class="zr-field">
+            <span class="zr-label">Раздел (category)</span>
+            <input id="a_category" class="zr-input" value="${esc(row.category || "")}" />
+          </div>
+
+          <div class="zr-field">
+            <span class="zr-label">Тип (только для админа)</span>
+            <select id="a_type" class="zr-input">
+              ${typeOptions(row.type || "")}
+            </select>
+          </div>
+
+          <div class="zr-field">
+            <span class="zr-label">Статус</span>
+            <select id="a_status" class="zr-input">
+              ${["draft","published","archived"].map(s => `<option value="${s}" ${s===(row.status||"")?"selected":""}>${s}</option>`).join("")}
+            </select>
+          </div>
+
+          <div class="zr-field">
+            <span class="zr-label">Pinned</span>
+            <select id="a_pinned" class="zr-input">
+              <option value="0" ${row.pinned ? "" : "selected"}>нет</option>
+              <option value="1" ${row.pinned ? "selected" : ""}>да</option>
+            </select>
+          </div>
+
+          <div class="zr-field" style="grid-column:1 / -1;">
+            <span class="zr-label">Теги (через запятую)</span>
+            <input id="a_tags" class="zr-input" value="${esc(toCsv(row.tags))}" />
+          </div>
+
+          <div class="zr-field" style="grid-column:1 / -1;">
+            <span class="zr-label">Роли (через запятую)</span>
+            <input id="a_roles" class="zr-input" value="${esc(toCsv(row.roles))}" />
+          </div>
+
+          <div class="zr-field" style="grid-column:1 / -1;">
+            <span class="zr-label">Actions (JSON массив)</span>
+            <textarea id="a_actions" class="zr-input" rows="6">${esc(actionsStr)}</textarea>
+          </div>
+
+          <div class="zr-field" style="grid-column:1 / -1;">
+            <span class="zr-label">Контент (Markdown)</span>
+            <textarea id="a_md" class="zr-input" rows="16">${esc(row.content_md || "")}</textarea>
+          </div>
+
+        </div>
+
+        <div class="zr-actions-right">
+          <button class="btn" id="a_save"><span class="dot"></span>Сохранить</button>
+          ${isNew ? "" : `<button class="btn" id="a_del"><span class="dot"></span>Удалить</button>`}
+        </div>
+      </div>
+    `;
+  }
+
+  function bindEditor(isNew){
+    const get = (id) => $(id);
+
+    $("#a_save").onclick = async () => {
       try{
-        const rows = await fetchAllowlist();
-        setStatus(`${rows.length}`);
-        $("#adm_body").innerHTML = renderAllowlistTable(rows);
+        const id = norm(get("#a_id").value);
+        if(!id) return alert("ID обязателен.");
 
-        // add/upsert
-        $("#al_add").onclick = async () => {
-          const email = (($("#al_email").value || "") + "").trim().toLowerCase();
-          const role = ($("#al_role").value || "staff").toString();
-          const enabled = !!$("#al_enabled").checked;
-          const msg = $("#al_msg");
-
-          if(msg) msg.textContent = "";
-          if(!email || !email.includes("@")){
-            if(msg) msg.textContent = "Введите корректный email.";
-            return;
-          }
-          if(role !== "admin" && role !== "staff"){
-            if(msg) msg.textContent = "Роль должна быть admin или staff.";
-            return;
-          }
-
-          try{
-            await upsertAllowlistRow(email, role, enabled);
-            if(msg) msg.textContent = "Сохранено ✅";
-            // refresh
-            const updated = await fetchAllowlist();
-            setStatus(`${updated.length}`);
-            $("#adm_body").innerHTML = renderAllowlistTable(updated);
-            // rebind after rerender
-            bindAdminTabs();
-            // rebind current section actions
-            show("staff");
-          }catch(e){
-            console.warn("[Admin] upsert failed", e);
-            if(msg) msg.textContent = (e && e.message) ? e.message : "Ошибка сохранения.";
-          }
+        const row = {
+          id,
+          title: norm(get("#a_title").value),
+          category: norm(get("#a_category").value),
+          type: norm(get("#a_type").value),
+          status: norm(get("#a_status").value) || "draft",
+          pinned: get("#a_pinned").value === "1",
+          tags: fromCsv(get("#a_tags").value),
+          roles: fromCsv(get("#a_roles").value),
+          actions: parseActions(get("#a_actions").value),
+          content_md: (get("#a_md").value || "")
         };
 
-        // row actions
-        document.querySelectorAll('tr[data-email]').forEach(tr => {
-          const email = (tr.getAttribute("data-email") || "").trim();
-          const roleSel = tr.querySelector("select.zr-role");
-          const enCb = tr.querySelector("input.zr-enabled");
-          const msg = tr.querySelector(".zr-rowmsg");
-
-          const setRowMsg = (t) => { if(msg) msg.textContent = t || ""; };
-
-          const saveBtn = tr.querySelector("button.zr-save");
-          if(saveBtn){
-            saveBtn.onclick = async () => {
-              setRowMsg("");
-              const role = roleSel ? (roleSel.value || "staff") : "staff";
-              const enabled = enCb ? !!enCb.checked : false;
-              try{
-                await updateAllowlistRow(email, { role, enabled });
-                setRowMsg("Сохранено ✅");
-              }catch(e){
-                console.warn("[Admin] update failed", e);
-                setRowMsg((e && e.message) ? e.message : "Ошибка сохранения.");
-              }
-            };
-          }
-
-          const delBtn = tr.querySelector("button.zr-del");
-          if(delBtn){
-            delBtn.onclick = async () => {
-              setRowMsg("");
-              const ok = confirm(`Удалить из allowlist?\n\n${email}`);
-              if(!ok) return;
-              try{
-                await deleteAllowlistRow(email);
-                setRowMsg("Удалено ✅");
-                // refresh
-                const updated = await fetchAllowlist();
-                setStatus(`${updated.length}`);
-                $("#adm_body").innerHTML = renderAllowlistTable(updated);
-                // full re-render to rebind everything
-                show("staff");
-              }catch(e){
-                console.warn("[Admin] delete failed", e);
-                setRowMsg((e && e.message) ? e.message : "Ошибка удаления.");
-              }
-            };
-          }
-        });
-
+        await sbUpsert(row);
+        alert("Сохранено ✅");
+        await loadAndRender(id);
+        location.hash = `#/admin/${encodeURIComponent(id)}`;
       }catch(e){
-        console.warn("[Admin] allowlist load failed", e);
-        const m = (e && e.message) ? e.message : "Ошибка загрузки.";
-        $("#adm_body").innerHTML = `<div class="empty">Не удалось загрузить allowlist. ${esc(m)}</div>`;
+        console.error(e);
+        alert(e.message || String(e));
       }
+    };
 
-      return;
+    const del = $("#a_del");
+    if(del){
+      del.onclick = async () => {
+        const id = norm($("#a_id").value);
+        if(!id) return;
+        if(!confirm("Удалить инструкцию?")) return;
+        try{
+          await sbDelete(id);
+          alert("Удалено ✅");
+          await loadAndRender("");
+          location.hash = "#/admin";
+        }catch(e){
+          console.error(e);
+          alert(e.message || String(e));
+        }
+      };
     }
-
-    // TASKS stub
-    if(section === "tasks"){
-      viewer.innerHTML = viewerHtml(
-        "Админка",
-        "Задачи (в разработке).",
-        renderAdminTabs("tasks") + `
-          <div class="markdown">
-            <div class="empty">
-              Здесь будет создание задач по шаблону, чекбоксы, назначение ответственного, статусы, комментарии, архив.
-              <div class="hr"></div>
-              Первым делом подключим таблицы Supabase и минимальный CRUD без файлов.
-            </div>
-          </div>
-        `
-      );
-      bindAdminTabs();
-      return;
-    }
-
-    // CONTENT stub
-    viewer.innerHTML = viewerHtml(
-      "Админка",
-      "Контент (в разработке).",
-      renderAdminTabs("content") + `
-        <div class="markdown">
-          <div class="empty">
-            Здесь будут редакторы: статьи/инструкции (markdown + publish), шаблоны, чек-листы — всё в Supabase.
-          </div>
-        </div>
-      `
-    );
-    bindAdminTabs();
   }
 
-  return { show };
+  async function loadAndRender(openId){
+    setPanelTitle("Админка");
+    setStatus("…");
+
+    const v = $("#viewer");
+    v.innerHTML = `<div class="empty">Загрузка…</div>`;
+
+    try{
+      const items = await sbSelectAll();
+      renderList(items);
+      setStatus(String(items.length));
+
+      if(openId){
+        const row = await sbGetOne(openId);
+        v.innerHTML = editorHtml(row, false);
+        bindEditor(false);
+      }else{
+        v.innerHTML = `<div class="empty">Выбери инструкцию слева или создай новую.</div>`;
+      }
+    }catch(e){
+      console.error(e);
+      $("#list").innerHTML = "";
+      v.innerHTML = `
+        <h1 class="article-title">Админка</h1>
+        <p class="article-sub">Не удалось загрузить kb_articles</p>
+        <div class="hr"></div>
+        <div class="markdown">
+          <code class="mono">${esc(e.message || String(e))}</code>
+          <div style="height:10px"></div>
+          <div class="muted">Проверь, что ты admin, и что в таблице kb_articles есть поля: id,title,category,type,tags,roles,status,pinned,content_md,actions,updated_at.</div>
+        </div>
+      `;
+      setStatus("ошибка");
+    }
+  }
+
+  return {
+    async show(param){
+      await loadAndRender(param || "");
+    }
+  };
 })();

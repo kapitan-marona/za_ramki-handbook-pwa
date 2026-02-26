@@ -19,7 +19,6 @@ window.fetchRole = async function(){
 };
 
 window.syncRoleUI = function(){
-  // ADMIN_TAB_MARKER_002
   try{
     var adminTab = document.querySelector('.tab.zr-admin-tab[data-tab="admin"]');
     if(!adminTab) return;
@@ -64,7 +63,6 @@ window.applySession = async function(user){
     var role = await window.fetchRole();
     App.session.role = role;
 
-    // нет роли -> нет доступа
     if(!role){
       try{ await SB.auth.signOut(); }catch(e){}
       App.session.user = null;
@@ -107,7 +105,6 @@ window.initAuth = async function(){
 
     if(!App._authSub){
       App._authSub = SB.auth.onAuthStateChange(async function(evt, session){
-        // пока тянем роль — ready=false, чтобы не ловить роль=null промежуточно
         App.session.ready = false;
         var u = (session && session.user) ? session.user : null;
         await window.applySession(u);
@@ -160,7 +157,7 @@ window.initAuth = async function(){
     if(v){
       v.innerHTML =
         '<h1 class="article-title">Ошибка в интерфейсе</h1>' +
-        '<p class="article-sub">Открой консоль (F12) — там причина. Навигация должна продолжать работать.</p>' +
+        '<p class="article-sub">Открой консоль (F12) — там причина.</p>' +
         '<div class="hr"></div>' +
         '<div class="markdown"><code class="mono">' + String((e && e.message) ? e.message : e) + '</code></div>';
     }
@@ -172,14 +169,12 @@ window.initAuth = async function(){
     var param = p.param;
     var q = $("#q");
 
-    // gate: всё кроме login требует user
     if(section !== "login" && (!App.session || !App.session.user)){
       window.clearMainArea();
       Router.go("login");
       return;
     }
 
-    // gate: ждём роль/session
     if(section !== "login" && App.session && App.session.ready !== true){
       setActiveTab(section);
       if(q) q.disabled = true;
@@ -187,7 +182,6 @@ window.initAuth = async function(){
       return;
     }
 
-    // gate: admin-only route
     if(section === "admin" && (!App.session || App.session.role !== "admin")){
       Router.go("articles");
       return;
@@ -198,26 +192,9 @@ window.initAuth = async function(){
       if(q) q.disabled = false;
 
       if(section === "login"){ await Views.Login.show(); return; }
-
-      if(section === "articles"){
-        await Views.Articles.show(param);
-        applySearch(q ? (q.value||"") : "");
-        return;
-      }
-
-      if(section === "templates"){
-        await Views.Templates.show();
-        await Views.Templates.open(param);
-        applySearch(q ? (q.value||"") : "");
-        return;
-      }
-
-      if(section === "checklists"){
-        await Views.Checklists.show();
-        await Views.Checklists.open(param);
-        applySearch(q ? (q.value||"") : "");
-        return;
-      }
+      if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q.value||"") : ""); return; }
+      if(section === "templates"){ await Views.Templates.show(); await Views.Templates.open(param); applySearch(q ? (q.value||"") : ""); return; }
+      if(section === "checklists"){ await Views.Checklists.show(); await Views.Checklists.open(param); applySearch(q ? (q.value||"") : ""); return; }
 
       if(section === "admin" && Views.Admin && Views.Admin.show){
         await Views.Admin.show(param);

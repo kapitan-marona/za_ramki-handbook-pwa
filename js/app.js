@@ -18,12 +18,22 @@ window.fetchRole = async function(){
   return null;
 };
 
+window.syncRoleUI = function(){
+  try{
+    var adminTab = document.querySelector('.tab.zr-admin-tab[data-tab="admin"]');
+    if(!adminTab) return;
+    var isAdmin = !!(window.App && App.session && App.session.role === "admin");
+    adminTab.style.display = isAdmin ? "" : "none";
+  }catch(e){}
+};
+
 window.renderAuthArea = function(){
   var el = document.querySelector("#authArea");
   if(!el) return;
 
   if(!window.App || !App.session || !App.session.user){
     el.innerHTML = '<a href="#/login" class="btn btn-sm">Войти</a>';
+    window.syncRoleUI();
     return;
   }
 
@@ -40,9 +50,12 @@ window.renderAuthArea = function(){
       App.session.ready = true;
       window.renderAuthArea();
       window.clearMainArea();
+      window.syncRoleUI();
       if(window.Router) Router.go("login");
     };
   }
+
+  window.syncRoleUI();
 };
 
 window.applySession = async function(user){
@@ -60,9 +73,9 @@ window.applySession = async function(user){
       App.session.role = null;
       window.renderAuthArea();
       window.clearMainArea();
+      window.syncRoleUI();
       if(window.Router) Router.go("login");
 
-      // покажем причину на экране логина (если он есть)
       try{
         var err = document.querySelector("#loginError");
         if(err) err.textContent = "Нет доступа: ваш email не добавлен в allowlist.";
@@ -72,6 +85,7 @@ window.applySession = async function(user){
   }
 
   window.renderAuthArea();
+  window.syncRoleUI();
 };
 
 window.initAuth = async function(){
@@ -83,6 +97,7 @@ window.initAuth = async function(){
       App.session.role = null;
       App.session.ready = true;
       window.renderAuthArea();
+      window.syncRoleUI();
       return;
     }
 
@@ -109,6 +124,7 @@ window.initAuth = async function(){
     App.session.ready = true;
     window.renderAuthArea();
     window.clearMainArea();
+    window.syncRoleUI();
     if(window.Router) Router.go("login");
   }
 };
@@ -150,6 +166,24 @@ window.initAuth = async function(){
     if(section === "templates"){ await Views.Templates.show(); await Views.Templates.open(param); applySearch(q ? (q.value||"") : ""); return; }
     if(section === "checklists"){ await Views.Checklists.show(); await Views.Checklists.open(param); applySearch(q ? (q.value||"") : ""); return; }
 
+    // ✅ admin route
+    if(section === "admin"){
+      // если не admin — не пускаем
+      if(!App.session || App.session.role !== "admin"){
+        Router.go("articles");
+        return;
+      }
+      if(Views.Admin && Views.Admin.show){
+        await Views.Admin.show(param);
+        return;
+      }
+      // если вдруг view не загрузился — покажем ошибку вместо отката/тишины
+      var v = $("#viewer");
+      if(v) v.innerHTML = '<div class="empty">Админка не загружена (Views.Admin отсутствует).</div>';
+      return;
+    }
+
+    // неизвестный роут -> статьи
     Router.go("articles");
   }
 

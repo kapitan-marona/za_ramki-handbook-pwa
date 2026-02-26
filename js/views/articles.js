@@ -5,7 +5,7 @@ Views.Articles = (() => {
   let INDEX = [];
   let FILTER = "";
   let CATMAP = {};
-  let CATFILTER = ""; // category id; "" = all
+  let CATFILTER = ""; // "" = all
 
   const LS_CAT = "kb:articles:cat";
   const LS_Q   = "kb:articles:q";
@@ -48,25 +48,20 @@ Views.Articles = (() => {
     return Array.from(set.values()).sort((a,b) => getCatTitle(a).localeCompare(getCatTitle(b)));
   }
 
-  function renderCategoryFilter(allItems, visibleItems){
+  function renderCategoryFilter(allItems){
     const cats = uniqCategories(allItems);
     if(!cats.length) return "";
 
     const btn = (id, label, active) =>
       `<button class="btn btn-sm zr-catbtn ${active ? "is-active" : ""}" data-cat="${esc(id)}"><span class="dot"></span>${esc(label)}</button>`;
 
-    const allActive = !CATFILTER;
-    const row =
+    return (
       `<div class="actions" style="margin-top:0; margin-bottom:10px; flex-wrap:wrap;">` +
-        btn("", "Все", allActive) +
+        btn("", "Все разделы", !CATFILTER) +
         cats.map(id => btn(id, getCatTitle(id), id === CATFILTER)).join("") +
-      `</div>`;
-
-    // micro-hint
-    const hint =
-      `<div class="muted" style="margin:-6px 0 10px 0;">Фильтр по разделам + поиск.</div>`;
-
-    return row + hint;
+      `</div>` +
+      `<div class="muted" style="margin:-6px 0 10px 0;">Разделы + роли + поиск.</div>`
+    );
   }
 
   function bindCategoryFilter(){
@@ -88,13 +83,13 @@ Views.Articles = (() => {
 
     const q = norm(FILTER);
     const all = INDEX.slice();
-    const items = INDEX.filter(it => inCategory(it)).filter(it => matches(it, q));
+    const items = INDEX
+      .filter(it => inCategory(it))
+      .filter(it => matches(it, q));
 
-    // статус показываем по “видимым”
     setStatus(`${items.length} / ${INDEX.length}`);
 
-    // фильтр категорий (на основе полного индекса)
-    const catUi = renderCategoryFilter(all, items);
+    const catUi = renderCategoryFilter(all);
     if(catUi){
       const wrap = document.createElement("div");
       wrap.innerHTML = catUi;
@@ -103,11 +98,8 @@ Views.Articles = (() => {
     }
 
     if(items.length === 0){
-      const catTitle = CATFILTER ? getCatTitle(CATFILTER) : "";
-      const msg = catTitle
-        ? `Ничего не найдено в разделе «${esc(catTitle)}».`
-        : `Ничего не найдено.`;
-      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">${msg}</div>`);
+      const msg = (CATFILTER ? "Ничего не найдено в выбранном разделе." : "Ничего не найдено.");
+      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">${esc(msg)}</div>`);
       return;
     }
 
@@ -178,10 +170,7 @@ Views.Articles = (() => {
     const viewer = $("#viewer");
 
     if(!id){
-      viewer.innerHTML = `
-        <div class="empty">
-          Выбери статью слева или используй поиск сверху.
-        </div>`;
+      viewer.innerHTML = `<div class="empty">Выбери статью слева или используй поиск сверху.</div>`;
       return;
     }
 
@@ -195,30 +184,28 @@ Views.Articles = (() => {
 
     let md = "";
 
-    // 1) Supabase приоритет
-    if(meta.source === "sb"){
-      if(window.SB){
-        const { data, error } = await SB
-          .from("kb_articles")
-          .select("content_md,actions,updated_at,category,tags,roles,title")
-          .eq("id", id)
-          .single();
+    // 1) Supabase priority
+    if(meta.source === "sb" && window.SB){
+      const { data, error } = await SB
+        .from("kb_articles")
+        .select("content_md,actions,updated_at,category,tags,roles,title")
+        .eq("id", id)
+        .single();
 
-        if(!error && data){
-          md = data.content_md || "";
-          meta.title = meta.title || data.title;
-          meta.category = meta.category || data.category;
-          meta.tags = (meta.tags && meta.tags.length) ? meta.tags : (data.tags || []);
-          meta.roles = (meta.roles && meta.roles.length) ? meta.roles : (data.roles || []);
-          meta.updatedAt = meta.updatedAt || data.updated_at;
-          meta.actions = (meta.actions && meta.actions.length) ? meta.actions : (data.actions || []);
-        } else {
-          console.error("KB open error:", error);
-        }
+      if(!error && data){
+        md = data.content_md || "";
+        meta.title = meta.title || data.title;
+        meta.category = meta.category || data.category;
+        meta.tags = (meta.tags && meta.tags.length) ? meta.tags : (data.tags || []);
+        meta.roles = (meta.roles && meta.roles.length) ? meta.roles : (data.roles || []);
+        meta.updatedAt = meta.updatedAt || data.updated_at;
+        meta.actions = (meta.actions && meta.actions.length) ? meta.actions : (data.actions || []);
+      } else {
+        console.error("KB open error:", error);
       }
     }
 
-    // 2) fallback на файлы
+    // 2) file fallback
     if(!md && meta.path){
       try{
         md = await API.text(meta.path);
@@ -252,6 +239,7 @@ Views.Articles = (() => {
       <div class="hr"></div>
       <div class="markdown">${html}</div>
     `;
+
     setStatus("готово");
   }
 
@@ -309,7 +297,7 @@ Views.Articles = (() => {
   }
 
   async function init(){
-    // categories labels (optional)
+    // category labels
     try{
       const cats = await API.json("./content/ui/categories.json");
       CATMAP = Object.fromEntries(cats.map(c => [c.id, c.title]));
@@ -319,7 +307,7 @@ Views.Articles = (() => {
     try{ CATFILTER = localStorage.getItem(LS_CAT) || ""; }catch(e){ CATFILTER = ""; }
     try{ FILTER = localStorage.getItem(LS_Q) || FILTER; }catch(e){}
 
-    // 1) файловый индекс (надёжный fallback)
+    // file index (fallback)
     let fileItems = [];
     try{
       fileItems = await loadFileIndex();
@@ -328,7 +316,7 @@ Views.Articles = (() => {
       fileItems = [];
     }
 
-    // 2) Supabase; если не получилось или пусто — остаёмся на файлах
+    // supabase index (preferred)
     let sbItems = [];
     try{
       sbItems = await loadSbIndex();
@@ -342,14 +330,14 @@ Views.Articles = (() => {
       return;
     }
 
-    // 3) merge без дублей: Supabase приоритет по id
+    // merge by id (Supabase wins, but keep file path as fallback)
     const map = new Map();
     for(const it of fileItems){
       map.set(it.id, it);
     }
     for(const it of sbItems){
       const prev = map.get(it.id);
-      if(prev && prev.path && !it.path) it.path = prev.path; // запасной fallback
+      if(prev && prev.path && !it.path) it.path = prev.path;
       map.set(it.id, it);
     }
 

@@ -10,3 +10,10 @@ _rollback_backup/
 # editor backup files
 *.bak
 *.bak2
+
+# local backups
+_local_backups/
+_fix_*/
+_rollback_backup/
+*.bak
+

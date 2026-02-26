@@ -110,11 +110,26 @@ window.initAuth = async function(){
 
     // subscribe once
     if(!App._authSub){
-      App._authSub = SB.auth.onAuthStateChange(async function(evt, session){
+      App._authSub = SB.auth.onAuthStateChange(function(evt, session){
         var u = (session && session.user) ? session.user : null;
-        await window.applySession(u);
-        App.session.ready = true;
-        if(typeof App._render === "function") App._render();
+
+        // IMPORTANT: do not call async Supabase APIs inside onAuthStateChange callback.
+        // Defer applySession to the next tick to avoid auth deadlocks (Navigator Lock).
+        window._applySessionSeq = (window._applySessionSeq || 0) + 1;
+        var seq = window._applySessionSeq;
+        if(window._applySessionTimer) clearTimeout(window._applySessionTimer);
+        window._applySessionTimer = setTimeout(function(){
+          (async function(){
+            if(seq !== window._applySessionSeq) return;
+            try{
+              await window.applySession(u);
+            }catch(e){
+              console.warn("[Auth] applySession failed", e);
+            }
+            App.session.ready = true;
+            if(!App._navLock && typeof App._render === "function") App._render();
+          })();
+        }, 0);
       });
     }
   }catch(e){
@@ -208,3 +223,5 @@ window.initAuth = async function(){
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+

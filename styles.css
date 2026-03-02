@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    ZA RAMKI — LAYER MAP
 
    LAYER 0  Page background     → var(--bg)
@@ -137,6 +137,8 @@ body{
 
 .viewer{
   padding: 18px 18px 22px 18px;
+  max-height: calc(100vh - 140px);
+  overflow: auto;
 }
 .viewer .empty{
   color: var(--muted);
@@ -166,6 +168,53 @@ body{
   color: var(--headings);
 }
 .markdown ul{ padding-left: 18px; }
+
+	/* KB: Article layout + TOC (H2 only) */
+.article-layout{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 16px;
+  align-items: start;
+}
+.article-toc{
+  position: sticky;
+  top: 12px;
+  align-self: start;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--item);
+}
+.article-toc-title{
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.article-toc a{
+  display: block;
+  padding: 6px 8px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+.article-toc a:hover{
+  color: var(--text);
+  border-color: var(--border);
+}
+.article-toc a.is-active{
+  color: var(--accent-95);
+  background: var(--accent-08);
+  border-color: var(--accent-35);
+}
+
+/* Mobile: TOC on top */
+@media (max-width: 960px){
+  .article-layout{ grid-template-columns: 1fr; }
+  .article-toc{ position: relative; top: 0; }
+}
 .footer{
   max-width:1200px;
   margin: 0 auto;
@@ -270,13 +319,33 @@ body{
   border-color: var(--border);
 }
 
-/* НЕДАВНЕЕ — видно постоянному читателю, но не кричит */
-.markdown blockquote.kb-callout.kb-recent{
-  background: rgba(255,243,234,.04);
-  border-color: rgba(255,243,234,.18);
+/* KB: Updated badge on article cards (appears if updatedAt is within NEW window) */
+.kb-updated-badge{
+  display:inline-flex;
+  align-items:center;
+  margin-left:10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent-95);
+  background: var(--accent-08);
+  border: 1px solid var(--accent-35);
+}/* KB: inline NEW highlight
+   Markers supported:
+   - >text<
+   - [[new]]text[[/new]]
+*/
+.markdown mark.kb-newmark{
+  background: linear-gradient(180deg, transparent 58%, var(--accent-35) 58%);
+  color: inherit;
+  padding: 0 .08em;
+  border-radius: 2px;
 }
 
-.markdown blockquote.kb-callout.kb-recent .kb-callout-title{
-  color: rgba(255,243,234,.82);
-}
+
+
+
 

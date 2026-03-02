@@ -13,7 +13,47 @@ Views.Articles = (() => {
   }
   function norm(s){ return (s ?? "").toString().toLowerCase().trim(); }
 
-  function setStatus(t){ $("#status").textContent = t; }
+  
+  function parseUpdatedAt(meta){
+    const v = meta?.updatedAt || meta?.updated_at || "";
+    if(!v) return null;
+
+    // YYYY-MM-DD -> local midnight (avoid UTC shift)
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v).trim());
+    if(m){
+      const y = parseInt(m[1],10), mo = parseInt(m[2],10)-1, d = parseInt(m[3],10);
+      return new Date(y, mo, d, 0, 0, 0, 0);
+    }
+
+    // ISO or any parseable timestamp
+    const t = Date.parse(String(v));
+    if(Number.isFinite(t)) return new Date(t);
+    return null;
+  }
+
+  function isNewWindowActive(meta, days=7){
+    const dt = parseUpdatedAt(meta);
+    if(!dt) return false;
+    const ms = days * 24 * 60 * 60 * 1000;
+    return (Date.now() - dt.getTime()) <= ms;
+  }
+
+  function applyInlineNewMarkers(md, active){
+    md = (md ?? "").toString();
+
+    // Markers: >text< (single-line only)
+    if(active){
+      md = md.replace(/>([^<\r\n]+)</g, '<mark class="kb-newmark">$1</mark>');
+      md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '<mark class="kb-newmark">$1</mark>');
+    }else{
+      // Remove markers after window expires (no visual garbage)
+      md = md.replace(/>([^<\r\n]+)</g, '$1');
+      md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '$1');
+    }
+
+    return md;
+  }
+function setStatus(t){ $("#status").textContent = t; }
   function setPanelTitle(t){ $("#panelTitle").textContent = t; }
 
   function matches(it, q){
@@ -42,6 +82,8 @@ Views.Articles = (() => {
     }
 
     for(const it of items){
+      const isNew = isNewWindowActive(it, 7);
+      const badge = isNew ? `<span class="kb-updated-badge">обновлено</span>` : "";
       const catTitle = CATMAP[it.category] || it.category || "";
       const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
       const tags = (it.tags||[]).slice(0,4).map(t => `<span class="tag">${esc(t)}</span>`).join("");
@@ -51,7 +93,7 @@ Views.Articles = (() => {
       a.className = "item";
       a.href = `#/${encodeURIComponent("articles")}/${encodeURIComponent(it.id)}`;
       a.innerHTML = `
-        <div class="item-title">${esc(it.title)}</div>
+        <div class="item-title">${esc(it.title)}${badge}</div>
         <div class="item-meta">${cat}${tags}${roles}</div>
       `;
       list.appendChild(a);
@@ -78,8 +120,6 @@ Views.Articles = (() => {
       { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*(Нельзя|Осторожно):\s*(?:<\/strong>)?\s*/gi,
         cls: "kb-caution", title: "❌ ОСТОРОЖНО" },
 
-      { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*Недавнее:\s*(?:<\/strong>)?\s*/gi,
-        cls: "kb-recent", title: "🕒 НЕДАВНЕЕ" },
 
       { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*Не забудь:\s*(?:<\/strong>)?\s*/gi,
         cls: "kb-remember", title: "✨ НЕ ЗАБУДЬ" },
@@ -95,7 +135,120 @@ Views.Articles = (() => {
     return html;
   }
 
-  function renderActions(actions){
+  
+  // ===== KB: TOC (H2 only) =====
+  function slugify(s){
+    return (s ?? "")
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/[^\p{L}\p{N}\s-]+/gu, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .slice(0, 80);
+  }
+
+  function setupArticleToc(viewer){
+    if(!viewer) return;
+
+    const mdRoot = viewer.querySelector(".markdown");
+    if(!mdRoot) return;
+
+    const h2s = Array.from(mdRoot.querySelectorAll("h2"));
+    if(!h2s.length) return;
+
+    // Ensure stable ids
+    const used = new Set();
+    h2s.forEach((h, idx) => {
+      let id = h.getAttribute("id");
+      if(!id){
+        id = slugify(h.textContent) || ("h2-" + (idx+1));
+      }
+      let base = id, n = 2;
+      while(used.has(id)) id = base + "-" + (n++);
+      used.add(id);
+      h.setAttribute("id", id);
+    });
+
+    // Build toc
+    const toc = document.createElement("aside");
+    toc.className = "article-toc";
+    toc.innerHTML = `
+      <div class="article-toc-title">В этой инструкции</div>
+      <nav class="article-toc-list">
+        ${h2s.map(h => `<a href="#${h.id}" data-toc="${h.id}">${esc(h.textContent || "")}</a>`).join("")}
+      </nav>
+    `;
+
+    // Wrap main + toc in layout
+    const layout = document.createElement("div");
+    layout.className = "article-layout";
+
+    const main = document.createElement("div");
+    main.className = "article-main";
+
+    // Move everything except the toc (currently none) into main
+    Array.from(viewer.childNodes).forEach(n => main.appendChild(n));
+    layout.appendChild(main);
+    layout.appendChild(toc);
+
+    viewer.appendChild(layout);
+
+    // Click: scroll within viewer (not window)
+    toc.querySelectorAll("[data-toc]").forEach(a => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const id = a.getAttribute("data-toc");
+        const target = mdRoot.querySelector("#" + CSS.escape(id));
+        if(!target) return;
+        viewer.scrollTo({ top: Math.max(0, target.offsetTop - 12), behavior: "smooth" });
+      });
+    });
+
+    // Scrollspy using IntersectionObserver (root = viewer)
+    const links = new Map();
+    toc.querySelectorAll("[data-toc]").forEach(a => links.set(a.getAttribute("data-toc"), a));
+
+    let activeId = "";
+    const setActive = (id) => {
+      if(!id || id === activeId) return;
+      activeId = id;
+      links.forEach((el, key) => el.classList.toggle("is-active", key === id));
+    };
+
+    const io = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter(en => en.isIntersecting)
+        .sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if(visible.length){
+        setActive(visible[0].target.getAttribute("id"));
+      }
+    }, {
+      root: viewer,
+      threshold: [0.01, 0.1],
+      rootMargin: "-10% 0px -70% 0px"
+    });
+
+    h2s.forEach(h => io.observe(h));
+    setActive(h2s[0].getAttribute("id"));
+  }
+
+  function enhanceArticleWithToc(viewer){
+    // Remove previous layout if any (safety on rerender)
+    const old = viewer.querySelector(".article-layout");
+    if(old){
+      // Move main content back out then remove
+      const main = old.querySelector(".article-main");
+      if(main){
+        viewer.innerHTML = "";
+        Array.from(main.childNodes).forEach(n => viewer.appendChild(n));
+      }else{
+        old.remove();
+      }
+    }
+    setupArticleToc(viewer);
+  }
+function renderActions(actions){
     if(!actions || !actions.length) return "";
     const btns = actions.map(a => {
       const label = esc(a.label || "Открыть");
@@ -167,8 +320,9 @@ Views.Articles = (() => {
     }
 
     md = normalizeMd(md);
-
-    const catTitle = CATMAP[meta.category] || meta.category || "";
+md = md.replace(/>([^<\r\n]+)</g, '<mark class="kb-newmark">$1</mark>');
+md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '<mark class="kb-newmark">$1</mark>');
+const catTitle = CATMAP[meta.category] || meta.category || "";
     const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
     const tags = (meta.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join("");
     const roles = (meta.roles||[]).map(r => `<span class="tag">${esc(r)}</span>`).join("");
@@ -297,3 +451,9 @@ Views.Articles = (() => {
     }
   };
 })();
+
+
+
+
+
+

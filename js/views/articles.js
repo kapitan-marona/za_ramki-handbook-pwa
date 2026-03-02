@@ -268,12 +268,16 @@ function renderActions(actions){
           Выбери статью слева или используй поиск сверху.<br/><br/>
           Подсказка: позже добавим роли, избранное и «что нового».
         </div>`;
+    // TOC: build right-side table of contents (H2 only)
+    enhanceArticleWithToc(viewer);
       return;
     }
 
     const meta = INDEX.find(x => x.id === id);
     if(!meta){
       viewer.innerHTML = `<div class="empty">Статья не найдена: <b>${esc(id)}</b></div>`;
+    // TOC: build right-side table of contents (H2 only)
+    enhanceArticleWithToc(viewer);
       return;
     }
 
@@ -315,6 +319,8 @@ function renderActions(actions){
 
     if(!md){
       viewer.innerHTML = `<div class="empty">Не удалось загрузить статью</div>`;
+    // TOC: build right-side table of contents (H2 only)
+    enhanceArticleWithToc(viewer);
       setStatus("ошибка");
       return;
     }
@@ -339,6 +345,8 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
       <div class="hr"></div>
       <div class="markdown">${html}</div>
     `;
+    // TOC: build right-side table of contents (H2 only)
+    enhanceArticleWithToc(viewer);
     setStatus("готово");
   }
 
@@ -453,6 +461,7 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
     }
   };
 })();
+
 
 
 

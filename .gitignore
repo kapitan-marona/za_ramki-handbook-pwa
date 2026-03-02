@@ -17,3 +17,22 @@ _fix_*/
 _rollback_backup/
 *.bak
 
+# Local backups / rollback
+_backup_*/
+_pre_rollback_*/
+_rollback_backup/
+_patch_*/
+_bak_*/
+*.bak*
+*.RECOVER_*.js
+articles.RECOVER_TODAY.js
+
+# Local unpack/test
+__test_unpack/
+
+# Local logs/exports
+git_status.txt
+git_log_last30.txt
+git_diff.txt
+RESTORE_README.txt
+

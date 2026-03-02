@@ -82,7 +82,7 @@ function setStatus(t){ $("#status").textContent = t; }
     }
 
     for(const it of items){
-      const isNew = isNewWindowActive(it, 7);
+      const isNew = isNewWindowActive(it, 7) && !!it.hasInlineNew;
       const badge = isNew ? `<span class="kb-updated-badge">обновлено</span>` : "";
       const catTitle = CATMAP[it.category] || it.category || "";
       const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
@@ -363,6 +363,7 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
       tags: it.tags || [],
       roles: it.roles || [],
       updatedAt: it.updatedAt,
+      hasInlineNew: !!it.hasInlineNew,
       pinned: !!it.pinned,
       path: it.path,
       actions: it.actions || [],
@@ -375,7 +376,7 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
 
     const { data, error } = await SB
       .from("kb_articles")
-      .select("id,title,category,tags,roles,updated_at,pinned,actions,status")
+      .select("id,title,category,tags,roles,updated_at,pinned,actions,status,has_inline_new")
       .eq("status","published")
       .order("pinned",{ ascending:false })
       .order("updated_at",{ ascending:false });
@@ -391,6 +392,7 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
       updatedAt: r.updated_at,
       pinned: !!r.pinned,
       actions: r.actions || [],
+      hasInlineNew: !!r.has_inline_new,
       source: "sb"
     }));
   }
@@ -451,6 +453,9 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
     }
   };
 })();
+
+
+
 
 
 

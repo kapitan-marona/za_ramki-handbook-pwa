@@ -397,7 +397,7 @@ Views.Admin = (() => {
   // =============================
   async function sbArticlesListAll(){
     const p = SB.from("kb_articles")
-      .select("id,title,category,type,tags,roles,status,updated_at,excerpt")
+      .select("id,title,category,type,tags,roles,status,updated_at,excerpt,has_inline_new")
       .order("updated_at", { ascending:false });
     const { data, error } = await withTimeout(p, 12000, "kb_articles list");
     if(error) throw error;
@@ -406,7 +406,7 @@ Views.Admin = (() => {
 
   async function sbArticlesGet(id){
     const p = SB.from("kb_articles")
-      .select("id,title,category,type,tags,roles,status,updated_at,excerpt,content_md,actions")
+      .select("id,title,category,type,tags,roles,status,updated_at,excerpt,content_md,actions,has_inline_new")
       .eq("id", id).single();
     const { data, error } = await withTimeout(p, 12000, "kb_articles get");
     if(error) throw error;
@@ -775,7 +775,8 @@ Views.Admin = (() => {
             roles: parseSelectedRoles(root),
             tags: parseSelectedTags(root),
             actions: readActionsFromUI(root),
-            content_md: ($("#a_md").value || "")
+            content_md: ($("#a_md").value || ""),
+            has_inline_new: (/>[^<\r\n]+</.test(($("#a_md").value || "").toString()) || /&gt;[^&\r\n]+&lt;/.test(($("#a_md").value || "").toString()))
           };
 
           await sbArticlesUpsert(row);
@@ -915,3 +916,4 @@ Views.Admin = (() => {
     }
   };
 })();
+

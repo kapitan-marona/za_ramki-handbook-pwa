@@ -177,7 +177,8 @@ window.initAuth = async function(){
     if(q) q.disabled = false;
 
     if(section === "login"){ await Views.Login.show(); return; }
-    if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q.value||"") : ""); return; }
+  if(section === "planner"){ await Views.Planner.show(); return; }
+if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q.value||"") : ""); return; }
     if(section === "templates"){ await Views.Templates.show(); await Views.Templates.open(param); applySearch(q ? (q.value||"") : ""); return; }
     if(section === "checklists"){ await Views.Checklists.show(); await Views.Checklists.open(param); applySearch(q ? (q.value||"") : ""); return; }
 
@@ -185,7 +186,7 @@ window.initAuth = async function(){
     if(section === "admin"){
       // если не admin — не пускаем
       if(!App.session || App.session.role !== "admin"){
-        Router.go("articles");
+        Router.go("planner");
         return;
       }
       if(Views.Admin && Views.Admin.show){
@@ -199,7 +200,7 @@ window.initAuth = async function(){
     }
 
     // неизвестный роут -> статьи
-    Router.go("articles");
+    Router.go("planner");
   }
 
   async function boot(){
@@ -223,5 +224,8 @@ window.initAuth = async function(){
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
+
 
 

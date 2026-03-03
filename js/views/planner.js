@@ -189,9 +189,10 @@ Views.Planner = (() => {
         const cards = items.length
           ? items.map(t => {
               const due = t.due_date ? `до ${esc(t.due_date)}` : "без дедлайна";
+              const isProblem = (String(t.status || "") === "problem");
               const isSel = selectedId && String(selectedId) === String(t.id);
               return `
-                <div class="item" data-id="${esc(t.id)}" style="margin-top:10px; ${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
+                <div class="item" data-id="${esc(t.id)}" style="margin-top:10px; ${isProblem ? 'outline:1px solid rgba(255,80,80,.45); box-shadow:0 0 0 1px rgba(255,80,80,.18), 0 12px 30px rgba(0,0,0,.35);' : ''} ${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
                   <div class="item-title">${esc(t.title || "(без названия)")}</div>
                   <div class="item-meta">${esc(due)} · ${esc(t.status || "")}</div>
                 </div>
@@ -222,11 +223,287 @@ Views.Planner = (() => {
       });
     }
 
+        async function rpcSetStatus(taskId, newStatus){
+      if(!window.SB) throw new Error("SB not available");
+      const res = await SB.rpc("set_task_status", { p_new_status: newStatus, p_task_id: taskId });
+      if(res && res.error) throw res.error;
+      return true;
+    }
+
+    // Future rail: first real action (checklist/comment/file) should move taken -> in_progress
+    async function ensureInProgress(task){
+      if(!task) return false;
+      const cur = String(task.status || "");
+      if(cur === "taken"){
+        await rpcSetStatus(task.id, "in_progress");
+        return true;
+      }
+      return false;
+    }
+    async function fetchChecklistItems(taskId){
+      if(!window.SB) throw new Error("SB not available");
+      const res = await SB
+        .from("task_checklist_items")
+        .select("id,task_id,pos,text,done,done_at")
+        .eq("task_id", taskId)
+        .order("pos", { ascending: true });
+
+      if(res && res.error) throw res.error;
+      return res.data || [];
+    }
+
+    function renderChecklist(items){
+      const host = document.getElementById("plChecklist");
+      if(!host) return;
+
+      if(!items || items.length === 0){
+        host.innerHTML = `<div class="muted" style="font-size:12px;">Пункты пока не добавлены.</div>`;
+        return;
+      }
+
+      const doneCount = items.filter(x => !!x.done).length;
+      const total = items.length;
+
+      host.innerHTML = `
+        <div class="muted" style="font-size:12px; margin-bottom:8px;">${doneCount}/${total} выполнено</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${items.map(it => `
+            <label style="display:flex; gap:10px; align-items:flex-start; cursor:pointer;">
+              <input type="checkbox" class="pl-ci" data-id="${esc(it.id)}" ${it.done ? "checked" : ""} style="margin-top:3px;">
+              <span style="${it.done ? "opacity:.75; text-decoration:line-through;" : ""}">${esc(it.text || "(пусто)")}</span>
+            </label>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function bindChecklist(task){
+      const host = document.getElementById("plChecklist");
+      if(!host) return;
+
+      host.querySelectorAll(".pl-ci").forEach(cb => {
+        cb.onchange = async () => {
+          const id = cb.dataset.id;
+          const newDone = !!cb.checked;
+
+          // optimistic disable
+          host.querySelectorAll(".pl-ci").forEach(x => x.disabled = true);
+
+          try{
+            const rpc = await SB.rpc("set_task_checklist_done", { p_item_id: id, p_done: newDone });
+            if(rpc && rpc.error) throw rpc.error;
+
+            // If this was the first action, RPC may have bumped task taken -> in_progress.
+            // To avoid blinking: reload checklist only, then do a full refresh only if status likely changed.
+            const needFull = (String(task.status || "") === "taken");
+
+            if(needFull){
+              await show();
+            }else{
+              const items = await fetchChecklistItems(task.id);
+              renderChecklist(items);
+              bindChecklist(task);
+            }
+          }catch(err){
+            console.warn("[Planner] checklist toggle error", err);
+            const items = await fetchChecklistItems(task.id);
+            renderChecklist(items);
+            bindChecklist(task);
+          }
+        };
+      });
+    }
+
+    async function loadChecklist(task){
+      try{
+        const items = await fetchChecklistItems(task.id);
+        renderChecklist(items);
+        bindChecklist(task);
+      }catch(err){
+        console.warn("[Planner] checklist load error", err);
+        const host = document.getElementById("plChecklist");
+        if(host){
+          const text = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+          host.innerHTML = `<div class="muted" style="font-size:12px;">Ошибка загрузки чекбоксов: ${esc(text)}</div>`;
+        }
+      }
+    }
+    async function fetchTaskFiles(taskId){
+      if(!window.SB) throw new Error("SB not available");
+      const res = await SB
+        .from("task_files")
+        .select("id,task_id,bucket_id,object_path,file_name,mime_type,created_at")
+        .eq("task_id", taskId)
+        .order("created_at", { ascending: true });
+      if(res && res.error) throw res.error;
+      return res.data || [];
+    }
+
+    function parseInternalDoc(f){
+      if(!f) return null;
+      if(String(f.bucket_id || "") !== "internal") return null;
+
+      const p = String(f.object_path || "").trim();
+      const label = (f.file_name || p);
+
+      // preferred format (same as admin internal links): "#/section/id"
+      let m = p.match(/^#\/([^\/]+)\/(.+)$/);
+      if(m){
+        const section = m[1];
+        const id = m[2];
+        if(!["articles","checklists","templates"].includes(section)) return null;
+        return { section, id, label };
+      }
+
+      // fallback: "section/id"
+      m = p.match(/^([^\/]+)\/(.+)$/);
+      if(m){
+        const section = m[1];
+        const id = m[2];
+        if(!["articles","checklists","templates"].includes(section)) return null;
+        return { section, id, label };
+      }
+
+      return null;
+    }
+
+    async function loadDocs(task){
+      const host = document.getElementById("plDocs");
+      if(!host) return;
+      host.innerHTML = `<div class="muted" style="font-size:12px;">Загружаю…</div>`;
+
+      try{
+        const files = await fetchTaskFiles(task.id);
+        const docs = files.map(parseInternalDoc).filter(Boolean);
+
+        if(docs.length === 0){
+          host.innerHTML = `<div class="muted" style="font-size:12px;">Связанных документов нет.</div>`;
+          return;
+        }
+
+        host.innerHTML = `
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            ${docs.map(d => `<button class="btn btn-sm pl-doc" data-sec="${esc(d.section)}" data-id="${esc(d.id)}" type="button">${esc(d.label)}</button>`).join("")}
+          </div>
+        `;
+
+        host.querySelectorAll(".pl-doc").forEach(b => {
+          b.onclick = () => Router.go(b.dataset.sec, b.dataset.id);
+        });
+      }catch(err){
+        console.warn("[Planner] docs load error", err);
+        const text = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+        host.innerHTML = `<div class="muted" style="font-size:12px;">Ошибка загрузки документов: ${esc(text)}</div>`;
+      }
+    }
+
+    async function fetchComments(taskId){
+      if(!window.SB) throw new Error("SB not available");
+      const res = await SB
+        .from("task_comments")
+        .select("id,task_id,author_id,body,created_at,deleted_at")
+        .eq("task_id", taskId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: true });
+      if(res && res.error) throw res.error;
+      return res.data || [];
+    }
+
+    function renderComments(task, items){
+      const host = document.getElementById("plComments");
+      if(!host) return;
+
+      const list = (!items || items.length === 0)
+        ? `<div class="muted" style="font-size:12px;">Комментариев пока нет.</div>`
+        : `<div style="display:flex; flex-direction:column; gap:10px;">
+            ${items.map(c => `
+              <div class="item" style="cursor:default;">
+                <div class="item-meta" style="font-size:12px;">
+                  <span class="muted">${esc(String(c.created_at || "").replace("T"," ").slice(0,16))}</span>
+                  ${c.author_id ? `<span class="muted"> · ${esc(String(c.author_id).slice(0,8))}…</span>` : ``}
+                </div>
+                <div style="margin-top:6px;">${esc(c.body || "")}</div>
+              </div>
+            `).join("")}
+          </div>`;
+
+      host.innerHTML = `
+        ${list}
+        <div style="margin-top:12px;">
+          <textarea id="plCommentInput" rows="3" style="width:100%; resize:vertical;"></textarea>
+          <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-sm" id="plCommentSend" type="button">Отправить</button>
+            <span class="muted" id="plCommentMsg" style="font-size:12px;"></span>
+          </div>
+        </div>
+      `;
+
+      const send = document.getElementById("plCommentSend");
+      const inp = document.getElementById("plCommentInput");
+      const msg = document.getElementById("plCommentMsg");
+
+      if(send){
+        send.onclick = async () => {
+          const text = (inp && inp.value) ? inp.value.trim() : "";
+          if(!text){ if(msg) msg.textContent = "Пустой комментарий."; return; }
+
+          send.disabled = true;
+          if(msg) msg.textContent = "Сохраняю…";
+
+          try{
+            const r = await SB.rpc("add_task_comment", { p_task_id: task.id, p_body: text });
+            if(r && r.error) throw r.error;
+            if(inp) inp.value = "";
+            if(msg) msg.textContent = "Готово.";
+            await loadComments(task);
+          }catch(err){
+            console.warn("[Planner] add comment error", err);
+            const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+            if(msg) msg.textContent = "Ошибка: " + t;
+            send.disabled = false;
+          }
+        };
+      }
+    }
+
+    async function loadComments(task){
+      const host = document.getElementById("plComments");
+      if(host) host.innerHTML = `<div class="muted" style="font-size:12px;">Загружаю…</div>`;
+      try{
+        const items = await fetchComments(task.id);
+        renderComments(task, items);
+      }catch(err){
+        console.warn("[Planner] comments load error", err);
+        const text = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+        if(host) host.innerHTML = `<div class="muted" style="font-size:12px;">Ошибка загрузки комментариев: ${esc(text)}</div>`;
+      }
+    }
     function renderDetails(task){
       const due = task.due_date ? `<span class="pill">due: ${esc(task.due_date)}</span>` : "";
       const st  = task.status ? `<span class="pill">status: ${esc(task.status)}</span>` : "";
+
+      const cur = String(task.status || "new");
+      const isAdmin = (role === "admin");
+
+      const next = [];
+      if(cur === "new") next.push(["taken","Взять в работу"]);
+      if(cur === "taken") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
+      if(cur === "in_progress") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
+      if(cur === "problem") next.push(["in_progress","Проблема решена"], ["done","Успешно завершена"]);
+      if(isAdmin && cur !== "canceled" && cur !== "done") next.push(["canceled","Отменить задачу"]);
+
+      const actionsHtml = (next.length === 0) ? "" : `
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          ${next.map(([s,label]) => `<button class="btn btn-sm pl-status" data-s="${esc(s)}" type="button">${esc(label)}</button>`).join("")}
+          ${isAdmin ? `<button class="btn btn-sm" type="button" disabled title="Скоро">Архив (скоро)</button>` : ``}
+        </div>
+        <div class="muted pl-status-msg" style="margin-top:8px; font-size:12px;"></div>
+      `;
       const urg = task.urgency ? `<span class="pill">urgency: ${esc(task.urgency)}</span>` : "";
       const start = task.start_date ? `<span class="pill">start: ${esc(task.start_date)}</span>` : "";
+      const detailsProblemStyle = (cur === "problem")
+        ? "outline:1px solid rgba(255,80,80,.45); box-shadow:0 0 0 1px rgba(255,80,80,.18), 0 10px 26px rgba(0,0,0,.35);"
+        : "";
 
       viewerEl.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px;">
@@ -241,13 +518,71 @@ Views.Planner = (() => {
           </div>
         </div>
 
-        <div class="item" style="cursor:default;">
-          <div class="item-meta">${task.body ? esc(task.body) : '<span class="muted">Описание пустое.</span>'}</div>
+        ${actionsHtml}
+
+        <!-- Row 1: core + docs -->
+        <div style="display:flex; gap:12px; padding:0 12px; align-items:flex-start; flex-wrap:wrap;">
+          <!-- Left: core -->
+          <div style="flex:2; min-width:320px;">
+            
+
+            <div class="item" style="cursor:default;">
+              <div class="item-title">Пункты задачи</div>
+              <div class="item-meta" id="plChecklist" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="item" style="cursor:default;">
+              <div class="item-title">Описание</div>
+              <div class="item-meta" style="margin-top:8px;">${task.body ? esc(task.body) : '<span class="muted">Описание пустое.</span>'}</div>
+            </div>
+          </div>
+
+          <!-- Right: linked docs -->
+          <div style="flex:1; min-width:240px;">
+            <div class="item" style="cursor:default;">
+              <div class="item-title">Документы</div>
+              <div class="item-meta" id="plDocs" style="margin-top:10px;"></div>
+</div>
+          </div>
+        </div>
+
+        <!-- Row 2: comments -->
+        <div style="padding:0 12px 12px 12px;">
+          <div class="item" style="cursor:default;">
+            <div class="item-title">Комментарии</div>
+            <div class="item-meta" id="plComments" style="margin-top:10px;"></div>
+          </div>
         </div>
       `;
 
       const back = document.getElementById("plBack");
       if(back) back.onclick = () => goTask(null);
+
+      // bind status buttons (RPC)
+      viewerEl.querySelectorAll(".pl-status").forEach(btn => {
+        btn.onclick = async () => {
+          const s = btn.dataset.s;
+          const msg = viewerEl.querySelector(".pl-status-msg");
+
+          viewerEl.querySelectorAll(".pl-status").forEach(x => x.disabled = true);
+          if(msg) msg.textContent = "Сохраняю…";
+
+          try{
+            await rpcSetStatus(task.id, s);
+            if(msg) msg.textContent = "Готово.";
+            await show(); // reload tasks + rerender
+          }catch(err){
+            console.warn("[Planner] set status error", err);
+            const text = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+            if(msg) msg.textContent = "Ошибка: " + text;
+            viewerEl.querySelectorAll(".pl-status").forEach(x => x.disabled = false);
+          }
+        };
+      });
+
+loadChecklist(task);
+      loadDocs(task);
+      loadComments(task);
     }
 
     function renderEmpty(){
@@ -295,6 +630,28 @@ Views.Planner = (() => {
 
   return { show };
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -349,3 +349,9 @@ body{
 
 
 
+
+/* Planner: disable item hover motion (tasks are static) */
+#list .item:hover,
+#viewer .item:hover{
+  transform: none !important;
+}

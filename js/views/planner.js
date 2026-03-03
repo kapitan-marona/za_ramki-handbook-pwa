@@ -168,7 +168,7 @@ Views.Planner = (() => {
       const st  = t.status ? `· ${esc(t.status)}` : "";
       const isSel = selected && String(t.id) === String(selected);
       return `
-        <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18);' : ''}">
+        <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
           <div class="item-title">${esc(t.title || "(без названия)")}</div>
           <div class="item-meta">${due} ${urg} ${st}</div>
         </div>
@@ -332,7 +332,7 @@ Views.Planner = (() => {
         const badge = isOverdue(t) ? `<span class="tag" style="margin-left:6px;">overdue</span>` : ``;
         const isSel = selectedId && String(selectedId) === String(t.id);
         return `
-          <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18);' : ''}">
+          <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
             <div class="item-title">${esc(t.title || "(без названия)")}${badge}</div>
             <div class="item-meta">${due} ${st}</div>
           </div>
@@ -345,15 +345,26 @@ Views.Planner = (() => {
     }
 
     // ---------- RIGHT ----------
-    function renderRightHeader(){
+    function renderRightHeader(tasks){
+      const total = Array.isArray(tasks) ? tasks.length : 0;
+      const done = total ? tasks.filter(t => t.status === "done").length : 0;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+
       viewerEl.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px;">
           <div>
             <div style="font-weight:700; letter-spacing:.08em;">PLANNER</div>
             <div class="muted" style="margin-top:6px; font-size:12px;">Обзор по статусам · клик по карточке открывает детали</div>
+
+            <div style="margin-top:10px; height:6px; border-radius:999px; background:rgba(255,255,255,.10); overflow:hidden;">
+              <div style="height:100%; width:${pct}%; background:var(--brand-accent, #c45a2a);"></div>
+            </div>
+            <div class="muted" style="margin-top:6px; font-size:12px;">Прогресс дня: ${done}/${total} (${pct}%)</div>
           </div>
+
           <button class="btn btn-sm" id="plRefresh" type="button">Обновить</button>
         </div>
+
         <div id="plBoard"></div>
       `;
 
@@ -379,7 +390,7 @@ Views.Planner = (() => {
               const due = t.due_date ? `до ${esc(t.due_date)}` : "без дедлайна";
               const isSel = selectedId && String(selectedId) === String(t.id);
               return `
-                <div class="item" data-id="${esc(t.id)}" style="margin-top:10px; ${isSel ? 'outline:1px solid rgba(255,255,255,.18);' : ''}">
+                <div class="item" data-id="${esc(t.id)}" style="margin-top:10px; ${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
                   <div class="item-title">${esc(t.title || "(без названия)")}</div>
                   <div class="item-meta">${esc(due)} · ${esc(t.status || "")}</div>
                 </div>
@@ -439,7 +450,7 @@ Views.Planner = (() => {
     }
 
     function renderEmpty(){
-      renderRightHeader();
+      renderRightHeader(tasks);
       const board = document.getElementById("plBoard");
       if(!board) return;
 
@@ -469,12 +480,12 @@ Views.Planner = (() => {
       const t = tasks.find(x => String(x.id) === String(selectedId));
       if(t) renderDetails(t);
       else {
-        renderRightHeader();
+        renderRightHeader(tasks);
         const board = document.getElementById("plBoard");
         if(board) board.innerHTML = `<div class="empty"><span class="muted">Задача не найдена.</span></div>`;
       }
     }else{
-      renderRightHeader();
+      renderRightHeader(tasks);
       renderBoard(tasks);
     }
 
@@ -483,5 +494,7 @@ Views.Planner = (() => {
 
   return { show };
 })();
+
+
 
 

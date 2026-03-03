@@ -3,6 +3,32 @@ window.Views = window.Views || {};
 Views.Planner = (() => {
   console.log("[PLANNER_BUILD] 2026-03-03");
 
+  function esc(s){
+    return (s==null?"":String(s))
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+
+  function todayISO(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function getSelectedTaskId(){
+    try{
+      const p = (window.Router && Router.parse) ? Router.parse() : null;
+      return p && p.param ? String(p.param) : null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function goTask(id){
+    location.hash = id ? ("#/planner/" + encodeURIComponent(id)) : "#/planner";
+  }
   async function show(){
     const listEl = document.getElementById("list");
     const viewerEl = document.getElementById("viewer");
@@ -14,7 +40,7 @@ Views.Planner = (() => {
     const uid  = window.App?.session?.user?.id || null;
 
     window.__plannerState = window.__plannerState || { leftFilter: "mine", ownerKey: null }; // mine | all
-    const state = window.__plannerState;
+    let state = window.__plannerState;
     // Reset planner UI state when user/role changes (prevents state leaking between accounts)
     const ownerKey = ((window.App && App.session && App.session.user) ? App.session.user.id : "anon") + "|" + ((window.App && App.session) ? (App.session.role || "none") : "none");
     if(state.ownerKey !== ownerKey){
@@ -23,57 +49,15 @@ Views.Planner = (() => {
       state.ownerKey = ownerKey;
     }
     // rebind after possible reset
-    const state2 = window.__plannerState;const esc = (s) => (s==null?"":String(s))
-      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-
-    const todayISO = () => {
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth()+1).padStart(2,"0");
-      const day = String(d.getDate()).padStart(2,"0");
-      return `${y}-${m}-${day}`;
-    };
     const today = todayISO();
-
-    const selectedId = (() => {
-      try{
-        const p = (window.Router && Router.parse) ? Router.parse() : null;
-        return p && p.param ? String(p.param) : null;
-      }catch(e){ return null; }
-    })();
-
-    const goTask = (id) => {
-      location.hash = id ? ("#/planner/" + encodeURIComponent(id)) : "#/planner";
-    };
-
-    const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status !== "done");
+    const selectedId = getSelectedTaskId();
+const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status !== "done");
 
     // ---------- DATA (SELECT-only) ----------
     async function fetchAllActiveTasks(){
-      if(!window.SB) return [];
-      const res = await SB
-        .from("tasks")
-        .select("id,title,body,status,urgency,role,assignee_id,start_date,due_date,archived_at,created_at,updated_at")
-        .is("archived_at", null)
-        .order("due_date", { ascending:true, nullsFirst:false })
-        .order("updated_at", { ascending:false });
-
-      if(res.error){
-        console.warn("[Planner] fetch tasks error", res.error);
-        return [];
-      }
-
-      let tasks = res.data || [];
-
-      // publish rule on UI for non-admin (предсказуемость)
-      if(role !== "admin"){
-        tasks = tasks.filter(t => !t.start_date || String(t.start_date) <= today);
-      }
-
-      return tasks;
+      if(!window.PlannerAPI) throw new Error("PlannerAPI missing");
+      return await PlannerAPI.fetchAllActiveTasks({ role, today });
     }
-
     // ---------- LEFT ----------
     function renderLeft(tasks){
       const head = `
@@ -224,13 +208,9 @@ Views.Planner = (() => {
     }
 
         async function rpcSetStatus(taskId, newStatus){
-      if(!window.SB) throw new Error("SB not available");
-      const res = await SB.rpc("set_task_status", { p_new_status: newStatus, p_task_id: taskId });
-      if(res && res.error) throw res.error;
-      return true;
-    }
-
-    // Future rail: first real action (checklist/comment/file) should move taken -> in_progress
+    if(!window.PlannerAPI) throw new Error("PlannerAPI missing");
+    return await PlannerAPI.setTaskStatus(taskId, newStatus);
+  }// Future rail: first real action (checklist/comment/file) should move taken -> in_progress
     async function ensureInProgress(task){
       if(!task) return false;
       const cur = String(task.status || "");
@@ -241,18 +221,9 @@ Views.Planner = (() => {
       return false;
     }
     async function fetchChecklistItems(taskId){
-      if(!window.SB) throw new Error("SB not available");
-      const res = await SB
-        .from("task_checklist_items")
-        .select("id,task_id,pos,text,done,done_at")
-        .eq("task_id", taskId)
-        .order("pos", { ascending: true });
-
-      if(res && res.error) throw res.error;
-      return res.data || [];
-    }
-
-    function renderChecklist(items){
+    if(!window.PlannerAPI) throw new Error("PlannerAPI missing");
+    return await PlannerAPI.fetchChecklistItems(taskId);
+  }function renderChecklist(items){
       const host = document.getElementById("plChecklist");
       if(!host) return;
 
@@ -290,7 +261,7 @@ Views.Planner = (() => {
           host.querySelectorAll(".pl-ci").forEach(x => x.disabled = true);
 
           try{
-            const rpc = await SB.rpc("set_task_checklist_done", { p_item_id: id, p_done: newDone });
+            const rpc = await (PlannerAPI.setChecklistDone(id, newDone).then(() => ({ error: null })).catch(error => ({ error })));
             if(rpc && rpc.error) throw rpc.error;
 
             // If this was the first action, RPC may have bumped task taken -> in_progress.
@@ -298,7 +269,15 @@ Views.Planner = (() => {
             const needFull = (String(task.status || "") === "taken");
 
             if(needFull){
-              await show();
+              // local refresh (anti-jitter): status may have changed taken -> in_progress
+              const tasks2 = await fetchAllActiveTasks();
+              renderLeft(tasks2);
+
+              const sel2 = getSelectedTaskId();
+              if(sel2){
+                const t2 = tasks2.find(x => String(x.id) === String(sel2));
+                if(t2) renderDetails(t2);
+              }
             }else{
               const items = await fetchChecklistItems(task.id);
               renderChecklist(items);
@@ -329,17 +308,9 @@ Views.Planner = (() => {
       }
     }
     async function fetchTaskFiles(taskId){
-      if(!window.SB) throw new Error("SB not available");
-      const res = await SB
-        .from("task_files")
-        .select("id,task_id,bucket_id,object_path,file_name,mime_type,created_at")
-        .eq("task_id", taskId)
-        .order("created_at", { ascending: true });
-      if(res && res.error) throw res.error;
-      return res.data || [];
-    }
-
-    function parseInternalDoc(f){
+    if(!window.PlannerAPI) throw new Error("PlannerAPI missing");
+    return await PlannerAPI.fetchTaskFiles(taskId);
+  }function parseInternalDoc(f){
       if(!f) return null;
       if(String(f.bucket_id || "") !== "internal") return null;
 
@@ -398,18 +369,9 @@ Views.Planner = (() => {
     }
 
     async function fetchComments(taskId){
-      if(!window.SB) throw new Error("SB not available");
-      const res = await SB
-        .from("task_comments")
-        .select("id,task_id,author_id,body,created_at,deleted_at")
-        .eq("task_id", taskId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: true });
-      if(res && res.error) throw res.error;
-      return res.data || [];
-    }
-
-    function renderComments(task, items){
+    if(!window.PlannerAPI) throw new Error("PlannerAPI missing");
+    return await PlannerAPI.fetchComments(taskId);
+  }function renderComments(task, items){
       const host = document.getElementById("plComments");
       if(!host) return;
 
@@ -451,7 +413,7 @@ Views.Planner = (() => {
           if(msg) msg.textContent = "Сохраняю…";
 
           try{
-            const r = await SB.rpc("add_task_comment", { p_task_id: task.id, p_body: text });
+            const r = await (PlannerAPI.addTaskComment(task.id, text).then(() => ({ error: null })).catch(error => ({ error })));
             if(r && r.error) throw r.error;
             if(inp) inp.value = "";
             if(msg) msg.textContent = "Готово.";
@@ -570,7 +532,15 @@ Views.Planner = (() => {
           try{
             await rpcSetStatus(task.id, s);
             if(msg) msg.textContent = "Готово.";
-            await show(); // reload tasks + rerender
+            // local refresh (anti-jitter): update list + details without re-mounting full planner
+            const tasks2 = await fetchAllActiveTasks();
+            renderLeft(tasks2);
+
+            const sel2 = getSelectedTaskId();
+            if(sel2){
+              const t2 = tasks2.find(x => String(x.id) === String(sel2));
+              if(t2) renderDetails(t2);
+            }
           }catch(err){
             console.warn("[Planner] set status error", err);
             const text = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);

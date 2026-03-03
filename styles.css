@@ -355,3 +355,28 @@ body{
 #viewer .item:hover{
   transform: none !important;
 }
+
+/* ================================
+   PLANNER — anti-jitter stabilizer
+   ================================ */
+
+/* Правая панель уже имеет overflow:auto,
+   но явно фиксируем поведение */
+.viewer{
+  overflow: auto;
+}
+
+/* Стабилизируем высоту async-блоков */
+#plChecklist,
+#plDocs,
+#plComments{
+  min-height: 96px;
+  transition: opacity .08s ease;
+}
+
+/* Мягкий fade вместо резкого появления */
+#plChecklist:empty,
+#plDocs:empty,
+#plComments:empty{
+  opacity: .65;
+}

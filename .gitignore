@@ -40,3 +40,7 @@ RESTORE_README.txt
 backups/
 
 *.bak_*
+
+# Planner internal notes
+Planner 2.0*
+Ошибки, баги и косметика.txt

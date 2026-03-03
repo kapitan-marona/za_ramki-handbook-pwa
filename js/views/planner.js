@@ -236,7 +236,6 @@ Views.Planner = (() => {
       const day = String(d.getDate()).padStart(2,"0");
       return `${y}-${m}-${day}`;
     };
-
     const today = todayISO();
 
     const selectedId = (() => {
@@ -252,7 +251,7 @@ Views.Planner = (() => {
 
     const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status !== "done");
 
-    // --------- DATA (SELECT-only) ----------
+    // ---------- DATA (SELECT-only) ----------
     async function fetchAllActiveTasks(){
       if(!window.SB) return [];
       const res = await SB
@@ -277,55 +276,44 @@ Views.Planner = (() => {
       return tasks;
     }
 
-    // --------- LEFT PANEL ----------
+    // ---------- LEFT ----------
     function renderLeft(tasks){
-      const mineBtn = `<button class="btn btn-sm pl-left" data-f="mine" type="button">Мои</button>`;
-      const allBtn  = `<button class="btn btn-sm pl-left" data-f="all" type="button">Все</button>`;
-
-      const pills = (role === "admin")
-        ? `${mineBtn}${allBtn}`
-        : ``; // для staff позже, как ты сказала
-
-      // header
-      listEl.innerHTML = `
-        <div class="item" style="cursor:default;">
-          <div class="item-title">PLANNER</div>
-          <div class="item-meta">
-            today: <span class="muted">${esc(today)}</span>
-            ${role ? ` · роль: <b>${esc(role)}</b>` : ""}
-            ${uid ? ` · user: <span class="muted">${esc(uid.slice(0,8))}…</span>` : ""}
-          </div>
-          <div class="actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-            ${pills}
-            <button class="btn btn-sm" id="plRefresh" type="button">Обновить</button>
+      const head = `
+        <div style="padding:10px 10px 6px 10px;">
+          <div style="font-weight:700; letter-spacing:.08em;">PLANNER</div>
+          <div class="muted" style="margin-top:6px; font-size:12px;">
+            today: ${esc(today)}${role ? ` · роль: ${esc(role)}` : ""}${uid ? ` · user: ${esc(uid.slice(0,8))}…` : ""}
           </div>
         </div>
-
-        <div class="item" style="cursor:default;">
-          <div class="item-title">Мои + общие</div>
-          <div class="item-meta"><span class="muted">${role === "admin" ? "Фильтр: Мои / Все" : "Список: назначенные вам + общие"}</span></div>
-        </div>
-
-        <div id="plLeftList"></div>
       `;
 
-      const rf = document.getElementById("plRefresh");
-      if(rf) rf.onclick = () => show();
+      const pills = (role === "admin")
+        ? `
+          <div style="padding:0 10px 10px 10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-sm pl-left ${state.leftFilter==="mine" ? "is-active" : ""}" data-f="mine" type="button">Мои</button>
+            <button class="btn btn-sm pl-left ${state.leftFilter==="all" ? "is-active" : ""}" data-f="all" type="button">Все</button>
+          </div>
+        `
+        : `
+          <div style="padding:0 10px 10px 10px;">
+            <span class="muted" style="font-size:12px;">Мои + общие</span>
+          </div>
+        `;
 
+      listEl.innerHTML = head + pills + `<div id="plLeftList"></div>`;
+
+      // bind pills
       listEl.querySelectorAll(".pl-left").forEach(b => {
-        b.classList.toggle("is-active", b.dataset.f === state.leftFilter);
         b.onclick = () => { state.leftFilter = b.dataset.f; show(); };
       });
 
       const host = document.getElementById("plLeftList");
       if(!host) return;
 
-      // left list logic
       const leftTasks = tasks.filter(t => {
         const isMine = uid && t.assignee_id && String(t.assignee_id) === String(uid);
         const isCommon = !t.assignee_id;
         if(state.leftFilter === "all" && role === "admin") return true;
-        // default: mine + common
         return isMine || isCommon;
       });
 
@@ -356,8 +344,27 @@ Views.Planner = (() => {
       });
     }
 
-    // --------- RIGHT PANEL: OVERVIEW / DETAILS ----------
-    function renderOverview(tasks){
+    // ---------- RIGHT ----------
+    function renderRightHeader(){
+      viewerEl.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px;">
+          <div>
+            <div style="font-weight:700; letter-spacing:.08em;">PLANNER</div>
+            <div class="muted" style="margin-top:6px; font-size:12px;">Обзор по статусам · клик по карточке открывает детали</div>
+          </div>
+          <button class="btn btn-sm" id="plRefresh" type="button">Обновить</button>
+        </div>
+        <div id="plBoard"></div>
+      `;
+
+      const rf = document.getElementById("plRefresh");
+      if(rf) rf.onclick = () => show();
+    }
+
+    function renderBoard(tasks){
+      const board = document.getElementById("plBoard");
+      if(!board) return;
+
       const cols = [
         { key:"new", label:"Новые", match: (t) => t.status === "new" },
         { key:"work", label:"В работе", match: (t) => ["taken","in_progress","problem"].includes(t.status) },
@@ -372,32 +379,27 @@ Views.Planner = (() => {
               const due = t.due_date ? `до ${esc(t.due_date)}` : "без дедлайна";
               const isSel = selectedId && String(selectedId) === String(t.id);
               return `
-                <div class="item" data-id="${esc(t.id)}" style="margin:10px 0; ${isSel ? 'outline:1px solid rgba(255,255,255,.18);' : ''}">
+                <div class="item" data-id="${esc(t.id)}" style="margin-top:10px; ${isSel ? 'outline:1px solid rgba(255,255,255,.18);' : ''}">
                   <div class="item-title">${esc(t.title || "(без названия)")}</div>
                   <div class="item-meta">${esc(due)} · ${esc(t.status || "")}</div>
                 </div>
               `;
             }).join("")
-          : `<div class="item" style="cursor:default;"><div class="item-meta"><span class="muted">Пусто</span></div></div>`;
+          : `<div class="muted" style="padding:10px 2px; font-size:12px;">Пусто</div>`;
 
         return `
-          <div style="min-width:240px; flex:1;">
-            <div class="item" style="cursor:default;">
-              <div class="item-title">${esc(c.label)}</div>
-              <div class="item-meta"><span class="muted">${items.length} шт.</span></div>
+          <div style="flex:1; min-width:260px; padding:10px 12px; border:1px solid rgba(255,255,255,.10); border-radius:16px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
+              <div style="font-weight:650;">${esc(c.label)}</div>
+              <div class="muted" style="font-size:12px;">${items.length}</div>
             </div>
             ${cards}
           </div>
         `;
       }).join("");
 
-      viewerEl.innerHTML = `
-        <div class="item" style="cursor:default;">
-          <div class="item-title">Обзор</div>
-          <div class="item-meta"><span class="muted">Клик по карточке открывает детали</span></div>
-        </div>
-
-        <div style="display:flex; gap:12px; overflow:auto; padding-bottom:8px;">
+      board.innerHTML = `
+        <div style="display:flex; gap:12px; overflow:auto; padding:0 12px 12px 12px;">
           ${colHtml}
         </div>
       `;
@@ -415,6 +417,11 @@ Views.Planner = (() => {
       const start = task.start_date ? `<span class="pill">start: ${esc(task.start_date)}</span>` : "";
 
       viewerEl.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px;">
+          <div style="font-weight:700; letter-spacing:.08em;">PLANNER</div>
+          <button class="btn btn-sm" id="plBack" type="button">Назад</button>
+        </div>
+
         <div class="item" style="cursor:default;">
           <div class="item-title">${esc(task.title || "(без названия)")}</div>
           <div class="item-meta" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
@@ -425,10 +432,6 @@ Views.Planner = (() => {
         <div class="item" style="cursor:default;">
           <div class="item-meta">${task.body ? esc(task.body) : '<span class="muted">Описание пустое.</span>'}</div>
         </div>
-
-        <div class="actions" style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn btn-sm" id="plBack" type="button">Назад к обзору</button>
-        </div>
       `;
 
       const back = document.getElementById("plBack");
@@ -436,11 +439,14 @@ Views.Planner = (() => {
     }
 
     function renderEmpty(){
-      // если задач нет вообще
+      renderRightHeader();
+      const board = document.getElementById("plBoard");
+      if(!board) return;
+
       if(role === "admin"){
-        viewerEl.innerHTML = `<div class="empty"><h2>PLANNER пуст.</h2><p>Создайте первую задачу.</p></div>`;
+        board.innerHTML = `<div class="empty"><h2>PLANNER пуст.</h2><p>Создайте первую задачу.</p></div>`;
       }else{
-        viewerEl.innerHTML = `
+        board.innerHTML = `
           <div class="empty" style="text-align:center;">
             <div style="font-size:72px;">😎</div>
             <div style="margin-top:12px;">Новых задач нет. Всё разобрали.</div>
@@ -449,13 +455,11 @@ Views.Planner = (() => {
       }
     }
 
-    // --------- FLOW ----------
+    // ---------- FLOW ----------
     const tasks = await fetchAllActiveTasks();
 
-    // left always
     renderLeft(tasks);
 
-    // right: details if selected else overview
     if(!tasks || tasks.length === 0){
       renderEmpty();
       return;
@@ -464,9 +468,14 @@ Views.Planner = (() => {
     if(selectedId){
       const t = tasks.find(x => String(x.id) === String(selectedId));
       if(t) renderDetails(t);
-      else viewerEl.innerHTML = `<div class="empty"><span class="muted">Задача не найдена.</span></div>`;
+      else {
+        renderRightHeader();
+        const board = document.getElementById("plBoard");
+        if(board) board.innerHTML = `<div class="empty"><span class="muted">Задача не найдена.</span></div>`;
+      }
     }else{
-      renderOverview(tasks);
+      renderRightHeader();
+      renderBoard(tasks);
     }
 
     try{ console.log("[Planner] tasks", tasks.length, "leftFilter", state.leftFilter); }catch(e){}
@@ -474,4 +483,5 @@ Views.Planner = (() => {
 
   return { show };
 })();
+
 

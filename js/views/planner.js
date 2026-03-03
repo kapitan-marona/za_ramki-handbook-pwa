@@ -217,41 +217,261 @@ Views.Planner = (() => {
     const viewerEl = document.getElementById("viewer");
     const titleEl = document.getElementById("panelTitle");
     if(!listEl || !viewerEl) return;
-
     if(titleEl) titleEl.textContent = "PLANNER";
 
-    // persist tab
-    window.__plannerState = window.__plannerState || { tab: "new" };
+    const role = window.App?.session?.role || null;
+    const uid  = window.App?.session?.user?.id || null;
+
+    window.__plannerState = window.__plannerState || { leftFilter: "mine" }; // mine | all
     const state = window.__plannerState;
 
-    const role = getRole();
+    const esc = (s) => (s==null?"":String(s))
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
-    // render shell first
-    renderHeader(listEl, role, state.tab, 0);
+    const todayISO = () => {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
+    };
 
-    // bind header actions
-    listEl.querySelectorAll(".pl-tab").forEach(btn => {
-      btn.onclick = () => { state.tab = btn.dataset.tab; show(); };
-    });
-    const rf = document.getElementById("plRefresh");
-    if(rf) rf.onclick = () => show();
+    const today = todayISO();
 
-    // fetch + render
-    const tasks = await fetchTasksForTab(state.tab, role);
-    renderHeader(listEl, role, state.tab, tasks.length);
+    const selectedId = (() => {
+      try{
+        const p = (window.Router && Router.parse) ? Router.parse() : null;
+        return p && p.param ? String(p.param) : null;
+      }catch(e){ return null; }
+    })();
 
-    // rebind after rerender
-    listEl.querySelectorAll(".pl-tab").forEach(btn => {
-      btn.onclick = () => { state.tab = btn.dataset.tab; show(); };
-    });
-    const rf2 = document.getElementById("plRefresh");
-    if(rf2) rf2.onclick = () => show();
+    const goTask = (id) => {
+      location.hash = id ? ("#/planner/" + encodeURIComponent(id)) : "#/planner";
+    };
 
-    renderTasksList(tasks);
-    renderViewer(viewerEl, tasks);
+    const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status !== "done");
 
-    try{ console.log("[Planner] tab", state.tab, "tasks", tasks.length); }catch(e){}
+    // --------- DATA (SELECT-only) ----------
+    async function fetchAllActiveTasks(){
+      if(!window.SB) return [];
+      const res = await SB
+        .from("tasks")
+        .select("id,title,body,status,urgency,role,assignee_id,start_date,due_date,archived_at,created_at,updated_at")
+        .is("archived_at", null)
+        .order("due_date", { ascending:true, nullsFirst:false })
+        .order("updated_at", { ascending:false });
+
+      if(res.error){
+        console.warn("[Planner] fetch tasks error", res.error);
+        return [];
+      }
+
+      let tasks = res.data || [];
+
+      // publish rule on UI for non-admin (предсказуемость)
+      if(role !== "admin"){
+        tasks = tasks.filter(t => !t.start_date || String(t.start_date) <= today);
+      }
+
+      return tasks;
+    }
+
+    // --------- LEFT PANEL ----------
+    function renderLeft(tasks){
+      const mineBtn = `<button class="btn btn-sm pl-left" data-f="mine" type="button">Мои</button>`;
+      const allBtn  = `<button class="btn btn-sm pl-left" data-f="all" type="button">Все</button>`;
+
+      const pills = (role === "admin")
+        ? `${mineBtn}${allBtn}`
+        : ``; // для staff позже, как ты сказала
+
+      // header
+      listEl.innerHTML = `
+        <div class="item" style="cursor:default;">
+          <div class="item-title">PLANNER</div>
+          <div class="item-meta">
+            today: <span class="muted">${esc(today)}</span>
+            ${role ? ` · роль: <b>${esc(role)}</b>` : ""}
+            ${uid ? ` · user: <span class="muted">${esc(uid.slice(0,8))}…</span>` : ""}
+          </div>
+          <div class="actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            ${pills}
+            <button class="btn btn-sm" id="plRefresh" type="button">Обновить</button>
+          </div>
+        </div>
+
+        <div class="item" style="cursor:default;">
+          <div class="item-title">Мои + общие</div>
+          <div class="item-meta"><span class="muted">${role === "admin" ? "Фильтр: Мои / Все" : "Список: назначенные вам + общие"}</span></div>
+        </div>
+
+        <div id="plLeftList"></div>
+      `;
+
+      const rf = document.getElementById("plRefresh");
+      if(rf) rf.onclick = () => show();
+
+      listEl.querySelectorAll(".pl-left").forEach(b => {
+        b.classList.toggle("is-active", b.dataset.f === state.leftFilter);
+        b.onclick = () => { state.leftFilter = b.dataset.f; show(); };
+      });
+
+      const host = document.getElementById("plLeftList");
+      if(!host) return;
+
+      // left list logic
+      const leftTasks = tasks.filter(t => {
+        const isMine = uid && t.assignee_id && String(t.assignee_id) === String(uid);
+        const isCommon = !t.assignee_id;
+        if(state.leftFilter === "all" && role === "admin") return true;
+        // default: mine + common
+        return isMine || isCommon;
+      });
+
+      if(leftTasks.length === 0){
+        host.innerHTML = `
+          <div class="item" style="cursor:default;">
+            <div class="item-meta"><span class="muted">В списке слева пока пусто.</span></div>
+          </div>
+        `;
+        return;
+      }
+
+      host.innerHTML = leftTasks.map(t => {
+        const due = t.due_date ? `до ${esc(t.due_date)}` : "";
+        const st  = t.status ? `· ${esc(t.status)}` : "";
+        const badge = isOverdue(t) ? `<span class="tag" style="margin-left:6px;">overdue</span>` : ``;
+        const isSel = selectedId && String(selectedId) === String(t.id);
+        return `
+          <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18);' : ''}">
+            <div class="item-title">${esc(t.title || "(без названия)")}${badge}</div>
+            <div class="item-meta">${due} ${st}</div>
+          </div>
+        `;
+      }).join("");
+
+      host.querySelectorAll(".item[data-id]").forEach(row => {
+        row.onclick = () => goTask(row.dataset.id);
+      });
+    }
+
+    // --------- RIGHT PANEL: OVERVIEW / DETAILS ----------
+    function renderOverview(tasks){
+      const cols = [
+        { key:"new", label:"Новые", match: (t) => t.status === "new" },
+        { key:"work", label:"В работе", match: (t) => ["taken","in_progress","problem"].includes(t.status) },
+        { key:"overdue", label:"Просрочено", match: (t) => isOverdue(t) },
+        { key:"done", label:"Завершено", match: (t) => t.status === "done" },
+      ];
+
+      const colHtml = cols.map(c => {
+        const items = tasks.filter(c.match);
+        const cards = items.length
+          ? items.map(t => {
+              const due = t.due_date ? `до ${esc(t.due_date)}` : "без дедлайна";
+              const isSel = selectedId && String(selectedId) === String(t.id);
+              return `
+                <div class="item" data-id="${esc(t.id)}" style="margin:10px 0; ${isSel ? 'outline:1px solid rgba(255,255,255,.18);' : ''}">
+                  <div class="item-title">${esc(t.title || "(без названия)")}</div>
+                  <div class="item-meta">${esc(due)} · ${esc(t.status || "")}</div>
+                </div>
+              `;
+            }).join("")
+          : `<div class="item" style="cursor:default;"><div class="item-meta"><span class="muted">Пусто</span></div></div>`;
+
+        return `
+          <div style="min-width:240px; flex:1;">
+            <div class="item" style="cursor:default;">
+              <div class="item-title">${esc(c.label)}</div>
+              <div class="item-meta"><span class="muted">${items.length} шт.</span></div>
+            </div>
+            ${cards}
+          </div>
+        `;
+      }).join("");
+
+      viewerEl.innerHTML = `
+        <div class="item" style="cursor:default;">
+          <div class="item-title">Обзор</div>
+          <div class="item-meta"><span class="muted">Клик по карточке открывает детали</span></div>
+        </div>
+
+        <div style="display:flex; gap:12px; overflow:auto; padding-bottom:8px;">
+          ${colHtml}
+        </div>
+      `;
+
+      viewerEl.querySelectorAll(".item[data-id]").forEach(card => {
+        card.style.cursor = "pointer";
+        card.onclick = () => goTask(card.dataset.id);
+      });
+    }
+
+    function renderDetails(task){
+      const due = task.due_date ? `<span class="pill">due: ${esc(task.due_date)}</span>` : "";
+      const st  = task.status ? `<span class="pill">status: ${esc(task.status)}</span>` : "";
+      const urg = task.urgency ? `<span class="pill">urgency: ${esc(task.urgency)}</span>` : "";
+      const start = task.start_date ? `<span class="pill">start: ${esc(task.start_date)}</span>` : "";
+
+      viewerEl.innerHTML = `
+        <div class="item" style="cursor:default;">
+          <div class="item-title">${esc(task.title || "(без названия)")}</div>
+          <div class="item-meta" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+            ${start}${due}${urg}${st}
+          </div>
+        </div>
+
+        <div class="item" style="cursor:default;">
+          <div class="item-meta">${task.body ? esc(task.body) : '<span class="muted">Описание пустое.</span>'}</div>
+        </div>
+
+        <div class="actions" style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-sm" id="plBack" type="button">Назад к обзору</button>
+        </div>
+      `;
+
+      const back = document.getElementById("plBack");
+      if(back) back.onclick = () => goTask(null);
+    }
+
+    function renderEmpty(){
+      // если задач нет вообще
+      if(role === "admin"){
+        viewerEl.innerHTML = `<div class="empty"><h2>PLANNER пуст.</h2><p>Создайте первую задачу.</p></div>`;
+      }else{
+        viewerEl.innerHTML = `
+          <div class="empty" style="text-align:center;">
+            <div style="font-size:72px;">😎</div>
+            <div style="margin-top:12px;">Новых задач нет. Всё разобрали.</div>
+          </div>
+        `;
+      }
+    }
+
+    // --------- FLOW ----------
+    const tasks = await fetchAllActiveTasks();
+
+    // left always
+    renderLeft(tasks);
+
+    // right: details if selected else overview
+    if(!tasks || tasks.length === 0){
+      renderEmpty();
+      return;
+    }
+
+    if(selectedId){
+      const t = tasks.find(x => String(x.id) === String(selectedId));
+      if(t) renderDetails(t);
+      else viewerEl.innerHTML = `<div class="empty"><span class="muted">Задача не найдена.</span></div>`;
+    }else{
+      renderOverview(tasks);
+    }
+
+    try{ console.log("[Planner] tasks", tasks.length, "leftFilter", state.leftFilter); }catch(e){}
   }
 
   return { show };
 })();
+

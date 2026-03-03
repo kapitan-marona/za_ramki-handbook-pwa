@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    ZA RAMKI — LAYER MAP
 
    LAYER 0  Page background     → var(--bg)
@@ -270,13 +270,30 @@ body{
   border-color: var(--border);
 }
 
-/* НЕДАВНЕЕ — видно постоянному читателю, но не кричит */
-.markdown blockquote.kb-callout.kb-recent{
-  background: rgba(255,243,234,.04);
-  border-color: rgba(255,243,234,.18);
+/* KB: Updated badge on article cards (appears if updatedAt is within NEW window) */
+.kb-updated-badge{
+  display:inline-flex;
+  align-items:center;
+  margin-left:10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent-95);
+  background: var(--accent-08);
+  border: 1px solid var(--accent-35);
+}/* KB: inline NEW highlight
+   Markers supported:
+   - >text<
+   - [[new]]text[[/new]]
+*/
+.markdown mark.kb-newmark{
+  background: linear-gradient(180deg, transparent 60%, var(--accent-25) 60%);
+  color: inherit;
+  padding: 0 .06em;
+  border-radius: 2px;
 }
 
-.markdown blockquote.kb-callout.kb-recent .kb-callout-title{
-  color: rgba(255,243,234,.82);
-}
 

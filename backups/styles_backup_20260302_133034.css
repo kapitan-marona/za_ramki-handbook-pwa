@@ -1,0 +1,298 @@
+/* =========================================================
+   ZA RAMKI — LAYER MAP
+
+   LAYER 0  Page background     → var(--bg)
+   LAYER 1  Header / top bar    → var(--panel)
+   LAYER 2  Panels / viewer     → var(--card)
+   LAYER 3  Items / rows        → var(--item)
+   SOFT     Soft fills / code   → var(--surface-soft)
+   OVERLAY  Modal / dim         → var(--overlay)
+   ACCENT   Hover / active      → var(--accent)
+   HERO     Gradient surfaces   → var(--hero-gradient)
+
+   Все оттенки меняем в colors.css.
+   В styles.css цвета не хардкодим.
+   ========================================================= */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color:var(--text);
+}
+
+.header{
+  position:sticky; top:0; z-index:10;
+  backdrop-filter: blur(10px);
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.header-inner{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 16px;
+  display:flex;
+  gap:14px;
+  align-items:center;
+  justify-content:space-between;
+}
+.brand{
+  display:flex; align-items:center; gap:10px;
+}
+.logo{
+  width:34px;height:34px;border-radius:10px;
+  background: var(--hero-gradient);
+  box-shadow: 0 12px 30px var(--accent-12);
+}
+.brand h1{
+  font-size:14px; margin:0; letter-spacing:.4px;
+}
+.brand small{display:block; color:var(--muted); margin-top:2px}
+
+.search{
+  flex: 1;
+  max-width: 520px;
+  display:flex; gap:10px; align-items:center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.search input{
+  width:100%;
+  border:0; outline:0;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+}
+.pill{
+  font-size:12px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border-radius: 999px;
+  user-select:none;
+}
+
+.main{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+}
+
+.panel, .viewer{
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow:hidden;
+}
+
+.panel-head{
+  padding: 14px 14px 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.panel-head h2{
+  margin:0;
+  font-size: 13px;
+  letter-spacing:.3px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.list{
+  padding: 10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-height: calc(100vh - 140px);
+  overflow:auto;
+}
+.item{
+  display:block;
+  text-decoration:none;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  transition: transform .08s ease, border-color .08s ease;
+}
+.item:hover{ transform: translateY(-1px); border-color: var(--accent-35); }
+.item-title{ font-weight:600; font-size:14px; margin:0 0 6px 0; }
+.item-meta{ display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:12px; }
+.tag{
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: var(--muted);
+}
+.tag.accent{ border-color: var(--accent-35); color: var(--accent-95); }
+
+.viewer{
+  padding: 18px 18px 22px 18px;
+}
+.viewer .empty{
+  color: var(--muted);
+  line-height:1.6;
+  padding: 20px;
+  background: var(--item);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+}
+.article-title{ margin:0 0 6px 0; font-size: 22px; }
+.article-sub{ color: var(--muted); margin:0 0 14px 0; font-size: 13px; }
+.hr{ height:1px; background: var(--border); margin: 14px 0; }
+
+.markdown{
+  line-height: 1.65;
+}
+.markdown h2{ margin-top: 18px; }
+.markdown h3{ margin-top: 14px; color: var(--headings); }
+.markdown a{ color: var(--accent); }
+.markdown code{ background: var(--item); padding: 2px 6px; border-radius: 8px; border:1px solid var(--border);}
+.markdown blockquote{
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent-60);
+  background: var(--item);
+  border-radius: 12px;
+  color: var(--headings);
+}
+.markdown ul{ padding-left: 18px; }
+.footer{
+  max-width:1200px;
+  margin: 0 auto;
+  padding: 0 16px 18px 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 960px){
+  .main{ grid-template-columns: 1fr; }
+  .list{ max-height: 42vh; }
+}
+
+/* Tabs */
+.tabs{
+  display:flex;
+  gap:8px;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--item);
+}
+.tab{
+  appearance:none;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor:pointer;
+  font-size: 13px;
+}
+.tab:hover{ border-color: var(--accent-35); }
+.tab.is-active{
+  border-color: var(--accent-55);
+  box-shadow: 0 10px 22px var(--accent-08);
+}
+
+/* Action buttons inside viewer */
+.actions{ display:flex; gap:10px; flex-wrap:wrap; margin: 10px 0 6px 0; }
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  text-decoration:none;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 9px 12px;
+  border-radius: 12px;
+  cursor:pointer;
+}
+.btn:hover{ border-color: var(--accent-35); transform: translateY(-1px); }
+.btn .dot{
+  width:8px;height:8px;border-radius:999px;
+  background: var(--accent-95);
+}
+
+/* Simple cards in contacts/templates lists */
+.kv{ color:var(--muted); font-size:12px; margin-top:6px; line-height:1.5; }
+.kv b{ color: var(--text); font-weight:600; }
+
+/* Callouts (blockquote variants) */
+.markdown blockquote.kb-callout{
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--item);
+}
+
+.markdown blockquote.kb-callout p{ margin: 0; }
+
+.markdown blockquote.kb-callout .kb-callout-title{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--headings);
+}
+
+/* ВАЖНО — терракотовый прозрачный фон + яркая обводка */
+.markdown blockquote.kb-callout.kb-important{
+  background: var(--accent-08);
+  border-color: var(--accent-55);
+}
+
+/* ОСТОРОЖНО — светлая вертикальная полоса слева */
+.markdown blockquote.kb-callout.kb-caution{
+  background: var(--item);
+  border-color: var(--border);
+  border-left: 4px solid rgba(255,243,234,.22);
+  padding-left: 12px;
+}
+
+/* НЕ ЗАБУДЬ — фон чуть темнее (как карточки) */
+.markdown blockquote.kb-callout.kb-remember{
+  background: var(--card);
+  border-color: var(--border);
+}
+
+/* KB: Updated badge on article cards (appears if updatedAt is within NEW window) */
+.kb-updated-badge{
+  display:inline-flex;
+  align-items:center;
+  margin-left:10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent-95);
+  background: var(--accent-08);
+  border: 1px solid var(--accent-35);
+}/* KB: inline NEW highlight
+   Markers supported:
+   - >text<
+   - [[new]]text[[/new]]
+*/
+.markdown mark.kb-newmark{
+  background: linear-gradient(180deg, transparent 58%, var(--accent-35) 58%);
+  color: inherit;
+  padding: 0 .06em;
+  border-radius: 2px;
+}
+

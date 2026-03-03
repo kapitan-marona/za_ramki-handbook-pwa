@@ -50,7 +50,7 @@ Views.Login = (() => {
         if(window.App && App.session && App.session.user){
           // роль обязательна, иначе initAuth уже вылогинил
           if(App.session.role === "admin" || App.session.role === "staff"){
-            if(window.Router) Router.go("articles");
+            if(window.Router) Router.go("planner");
             return;
           }
         }
@@ -71,3 +71,4 @@ Views.Login = (() => {
 
   return { show };
 })();
+

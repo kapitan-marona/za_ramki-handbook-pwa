@@ -45,6 +45,7 @@ window.renderAuthArea = function(){
   if(btn){
     btn.onclick = async function(){
       try{ if(window.SB && SB.auth) await SB.auth.signOut(); }catch(e){}
+      try{ delete window.__plannerState; }catch(e){}
       App.session.user = null;
       App.session.role = null;
       App.session.ready = true;
@@ -69,6 +70,7 @@ window.applySession = async function(user){
     // нет роли -> нет доступа
     if(!role){
       try{ await SB.auth.signOut(); }catch(e){}
+      try{ delete window.__plannerState; }catch(e){}
       App.session.user = null;
       App.session.role = null;
       window.renderAuthArea();
@@ -93,6 +95,7 @@ window.initAuth = async function(){
     App.session.ready = false;
 
     if(!window.SB || !SB.auth){
+      try{ delete window.__plannerState; }catch(e){}
       App.session.user = null;
       App.session.role = null;
       App.session.ready = true;
@@ -134,7 +137,8 @@ window.initAuth = async function(){
     }
   }catch(e){
     console.warn("[Auth] init failed", e);
-    App.session.user = null;
+    try{ delete window.__plannerState; }catch(e){}
+      App.session.user = null;
     App.session.role = null;
     App.session.ready = true;
     window.renderAuthArea();
@@ -218,12 +222,14 @@ if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q
 
     await window.initAuth();
 
-    if(!location.hash) Router.go(App.session && App.session.user ? "articles" : "login");
+    if(!location.hash) Router.go(App.session && App.session.user ? "planner" : "login");
     render();
   }
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
 
 
 

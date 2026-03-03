@@ -7,7 +7,7 @@ window.Router = {
     // #/templates/<templateId>
     const h = location.hash || "";
     const m = h.match(/^#\/([^\/]+)(?:\/(.+))?$/);
-    const section = m ? decodeURIComponent(m[1]) : "articles";
+    const section = m ? decodeURIComponent(m[1]) : "planner";
     const param = m && m[2] ? decodeURIComponent(m[2]) : "";
     return { section, param };
   },
@@ -15,3 +15,4 @@ window.Router = {
     location.hash = `#/${encodeURIComponent(section)}${param ? "/" + encodeURIComponent(param) : ""}`;
   }
 };
+

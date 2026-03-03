@@ -36,3 +36,7 @@ git_log_last30.txt
 git_diff.txt
 RESTORE_README.txt
 
+
+backups/
+
+*.bak_*

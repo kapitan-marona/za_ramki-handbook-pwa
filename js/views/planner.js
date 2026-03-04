@@ -45,7 +45,21 @@ function fmtDM(iso){
   }
 
   function dueLabel(iso){
-    return iso ? `До ${fmtDM(iso)}` : "";
+    return iso ? `до ${fmtDM(iso)}` : "";
+  }
+
+  function startLabel(iso){
+    return iso ? `с ${fmtDM(iso)}` : "";
+  }
+
+  function urgencyLabel(u){
+    if(u == null) return "";
+    const s = String(u).trim().toLowerCase();
+    if(!s) return "";
+    if(s === "normal" || s === "low") return "";
+    // show as "Срочно" for high/urgent/anything non-normal
+    if(s === "high" || s === "urgent") return "Срочно";
+    return "Срочно";
   }
 function statusLabel(code){
     if(code === "new") return "Новая задача";
@@ -146,7 +160,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         return `
           <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
             <div class="item-title">${esc(t.title || "(без названия)")}${roleBadge}${badge}</div>
-            <div class="item-meta">${[due, st].filter(Boolean).join(" ")}</div>
+            <div class="item-meta">${[startLabel(t.start_date), dueLabel(t.due_date), urgencyLabel(t.urgency), (t.status ? statusLabel(t.status) : "")].filter(Boolean).join(" · ")}</div>
           </div>
         `;
       }).join("");
@@ -191,7 +205,6 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       const cols = [
         { key:"new", label:"Новые задачи", match: (t) => t.status === "new" },
         { key:"work", label:"В работе", match: (t) => ["taken","in_progress","problem"].includes(t.status) },
-        { key:"overdue", label:"Срок истёк", match: (t) => isOverdue(t) },
         { key:"done", label:"Завершено", match: (t) => t.status === "done" },
       ];
 
@@ -205,7 +218,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
               return `
                 <div class="item" data-id="${esc(t.id)}" style="margin-top:10px; ${isProblem ? 'outline:1px solid rgba(255,80,80,.45); box-shadow:0 0 0 1px rgba(255,80,80,.18), 0 12px 30px rgba(0,0,0,.35);' : ''} ${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
                   <div class="item-title">${esc(t.title || "(без названия)")}</div>
-                  <div class="item-meta">${[due ? esc(due) : "", esc(statusLabel(t.status || ""))].filter(Boolean).join(" · ")}</div>
+                  <div class="item-meta">${[startLabel(t.start_date), dueLabel(t.due_date), (isOverdue(t) ? "Срок истёк" : ""), urgencyLabel(t.urgency), statusLabel(t.status || "")].filter(Boolean).map(esc).join(" · ")}</div>
                 </div>
               `;
             }).join("")
@@ -472,6 +485,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       const st  = task.status ? `<span class="pill">${esc(statusLabel(task.status))}</span>` : "";
 
       const cur = String(task.status || "new");
+      const overduePill = isOverdue(task) ? `<span class="pill">Срок истёк</span>` : "";
       const isAdmin = (role === "admin");
 
       const next = [];
@@ -488,8 +502,8 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         </div>
         <div class="muted pl-status-msg" style="margin-top:8px; font-size:12px;"></div>
       `;
-      const urg = task.urgency ? `<span class="pill">urgency: ${esc(task.urgency)}</span>` : "";
-      const start = task.start_date ? `<span class="pill">start: ${esc(task.start_date)}</span>` : "";
+      const urg = urgencyLabel(task.urgency) ? `<span class="pill">${esc(urgencyLabel(task.urgency))}</span>` : "";
+      const start = task.start_date ? `<span class="pill">${esc(startLabel(task.start_date))}</span>` : "";
       const detailsProblemStyle = (cur === "problem")
         ? "outline:1px solid rgba(255,80,80,.45); box-shadow:0 0 0 1px rgba(255,80,80,.18), 0 10px 26px rgba(0,0,0,.35);"
         : "";
@@ -503,7 +517,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         <div class="item" style="cursor:default;">
           <div class="item-title">${esc(task.title || "(без названия)")}</div>
           <div class="item-meta" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-            ${start}${due}${urg}${st}
+            ${start}${due}${overduePill}${urg}${st}
           </div>
         </div>
 
@@ -633,6 +647,15 @@ loadChecklist(task);
 
   return { show };
 })();
+
+
+
+
+
+
+
+
+
 
 
 

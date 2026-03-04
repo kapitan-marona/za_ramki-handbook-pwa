@@ -16,10 +16,9 @@ Views.Planner = (() => {
     const day = String(d.getDate()).padStart(2,"0");
     return `${y}-${m}-${day}`;
   }
-
   function getSelectedTaskId(){
     try{
-      const p = (window.Router && Router.parse) ? Router.parse() : null;
+      const p = (window.Router && typeof Router.parse === "function") ? Router.parse() : null;
       return p && p.param ? String(p.param) : null;
     }catch(e){
       return null;
@@ -27,8 +26,37 @@ Views.Planner = (() => {
   }
 
   function goTask(id){
-    location.hash = id ? ("#/planner/" + encodeURIComponent(id)) : "#/planner";
+    // Single source of truth: Router.go()
+    try{
+      if(window.Router && typeof Router.go === "function"){
+        if(id) Router.go("planner", String(id));
+        else Router.go("planner");
+        return;
+      }
+    }catch(e){}
+    // Fallback
+    location.hash = id ? ("#/planner/" + encodeURIComponent(String(id))) : "#/planner";
   }
+function fmtDM(iso){
+    if(!iso) return "";
+    const s = String(iso);
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? `${m[3]}.${m[2]}` : s;
+  }
+
+  function dueLabel(iso){
+    return iso ? `До ${fmtDM(iso)}` : "";
+  }
+function statusLabel(code){
+    if(code === "new") return "Новая задача";
+    if(code === "taken") return "Принята в работу";
+    if(code === "in_progress") return "В работе";
+    if(code === "problem") return "Есть проблема";
+    if(code === "done") return "Завершена";
+    if(code === "canceled") return "Отменена";
+    return code;
+  }
+
   async function show(){
     const listEl = document.getElementById("list");
     const viewerEl = document.getElementById("viewer");
@@ -82,8 +110,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         `;
 
       listEl.innerHTML = head + pills + `<div id="plLeftList"></div>`;
-
-      // bind pills
+// bind pills
       listEl.querySelectorAll(".pl-left").forEach(b => {
         b.onclick = () => { state.leftFilter = b.dataset.f; show(); };
       });
@@ -162,9 +189,9 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       if(!board) return;
 
       const cols = [
-        { key:"new", label:"Новые", match: (t) => t.status === "new" },
+        { key:"new", label:"Новые задачи", match: (t) => t.status === "new" },
         { key:"work", label:"В работе", match: (t) => ["taken","in_progress","problem"].includes(t.status) },
-        { key:"overdue", label:"Просрочено", match: (t) => isOverdue(t) },
+        { key:"overdue", label:"Срок истек", match: (t) => isOverdue(t) },
         { key:"done", label:"Завершено", match: (t) => t.status === "done" },
       ];
 
@@ -392,7 +419,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       host.innerHTML = `
         ${list}
         <div style="margin-top:12px;">
-          <textarea id="plCommentInput" rows="3" style="width:100%; resize:vertical;"></textarea>
+          <textarea id="plCommentInput" rows="3" class="pl-control pl-textarea" placeholder="Напишите комментарий…"></textarea>
           <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
             <button class="btn btn-sm" id="plCommentSend" type="button">Отправить</button>
             <span class="muted" id="plCommentMsg" style="font-size:12px;"></span>
@@ -518,9 +545,15 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       `;
 
       const back = document.getElementById("plBack");
-      if(back) back.onclick = () => goTask(null);
-
-      // bind status buttons (RPC)
+      if(back) back.onclick = (e) => {
+        try{ if(e) e.preventDefault(); }catch(_){}
+        if(window.Router && Router.go){
+          Router.go("planner");
+        }else{
+          location.hash = "#/planner";
+        }
+      };
+// bind status buttons (RPC)
       viewerEl.querySelectorAll(".pl-status").forEach(btn => {
         btn.onclick = async () => {
           const s = btn.dataset.s;
@@ -600,6 +633,21 @@ loadChecklist(task);
 
   return { show };
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

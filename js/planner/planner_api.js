@@ -29,6 +29,18 @@
 
     let tasks = res.data || [];
 
+    // UI role visibility (non-admin): hide admin-only tasks
+    // role NULL/empty -> treat as "all"
+    if(role !== "admin"){
+      tasks = tasks.filter(t => {
+        const r = (t && t.role != null) ? String(t.role).trim() : "all";
+        if(!r || r === "all") return true;
+        if(r === "staff") return true;
+        // r === "admin" (or anything else) -> hide from staff
+        return false;
+      });
+    }
+
     // UI publish rule (non-admin)
     if(role !== "admin" && today){
       tasks = tasks.filter(t => !t.start_date || String(t.start_date) <= today);
@@ -123,5 +135,6 @@
       createTask
   };
 })();
+
 
 

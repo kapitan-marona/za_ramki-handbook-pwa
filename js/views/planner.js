@@ -135,9 +135,9 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       }
 
       host.innerHTML = leftTasks.map(t => {
-        const due = t.due_date ? `до ${esc(t.due_date)}` : "";
-        const st  = t.status ? `· ${esc(t.status)}` : "";
-        const badge = isOverdue(t) ? `<span class="tag" style="margin-left:6px;">overdue</span>` : ``;
+        const due = dueLabel(t.due_date);
+        const st  = t.status ? `· ${esc(statusLabel(t.status))}` : "";
+        const badge = isOverdue(t) ? `<span class="tag" style="margin-left:6px;">Срок истёк</span>` : ``;
 
         const r = (t.role ? String(t.role) : "all");
         const rLabel = (r === "staff") ? "S" : (r === "admin") ? "A" : "ALL";
@@ -146,7 +146,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         return `
           <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
             <div class="item-title">${esc(t.title || "(без названия)")}${roleBadge}${badge}</div>
-            <div class="item-meta">${due} ${st}</div>
+            <div class="item-meta">${[due, st].filter(Boolean).join(" ")}</div>
           </div>
         `;
       }).join("");
@@ -191,7 +191,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       const cols = [
         { key:"new", label:"Новые задачи", match: (t) => t.status === "new" },
         { key:"work", label:"В работе", match: (t) => ["taken","in_progress","problem"].includes(t.status) },
-        { key:"overdue", label:"Срок истек", match: (t) => isOverdue(t) },
+        { key:"overdue", label:"Срок истёк", match: (t) => isOverdue(t) },
         { key:"done", label:"Завершено", match: (t) => t.status === "done" },
       ];
 
@@ -199,13 +199,13 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         const items = tasks.filter(c.match);
         const cards = items.length
           ? items.map(t => {
-              const due = t.due_date ? `до ${esc(t.due_date)}` : "без дедлайна";
+              const due = dueLabel(t.due_date);
               const isProblem = (String(t.status || "") === "problem");
               const isSel = selectedId && String(selectedId) === String(t.id);
               return `
                 <div class="item" data-id="${esc(t.id)}" style="margin-top:10px; ${isProblem ? 'outline:1px solid rgba(255,80,80,.45); box-shadow:0 0 0 1px rgba(255,80,80,.18), 0 12px 30px rgba(0,0,0,.35);' : ''} ${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
                   <div class="item-title">${esc(t.title || "(без названия)")}</div>
-                  <div class="item-meta">${esc(due)} · ${esc(t.status || "")}</div>
+                  <div class="item-meta">${[due ? esc(due) : "", esc(statusLabel(t.status || ""))].filter(Boolean).join(" · ")}</div>
                 </div>
               `;
             }).join("")
@@ -468,8 +468,8 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       }
     }
     function renderDetails(task){
-      const due = task.due_date ? `<span class="pill">due: ${esc(task.due_date)}</span>` : "";
-      const st  = task.status ? `<span class="pill">status: ${esc(task.status)}</span>` : "";
+      const due = task.due_date ? `<span class="pill">${esc(dueLabel(task.due_date))}</span>` : "";
+      const st  = task.status ? `<span class="pill">${esc(statusLabel(task.status))}</span>` : "";
 
       const cur = String(task.status || "new");
       const isAdmin = (role === "admin");
@@ -621,7 +621,7 @@ loadChecklist(task);
       else {
         renderRightHeader(tasks);
         const board = document.getElementById("plBoard");
-        if(board) board.innerHTML = `<div class="empty"><span class="muted">Задача не найдена.</span></div>`;
+        if(board) board.innerHTML = `<div class="empty"><span class="muted">Задача не найдена или нет доступа.</span></div>`;
       }
     }else{
       renderRightHeader(tasks);
@@ -633,6 +633,14 @@ loadChecklist(task);
 
   return { show };
 })();
+
+
+
+
+
+
+
+
 
 
 

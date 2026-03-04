@@ -380,3 +380,272 @@ body{
 #plComments:empty{
   opacity: .65;
 }
+
+/* ================================
+   PLANNER — A1 UI-3b (document mode)
+   Lines + light fill only for controls
+   ================================ */
+
+.pl-eyebrow{
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.pl-eyebrow-link{
+  cursor: pointer;
+  user-select: none;
+}
+.pl-help{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pl-board-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 14px;
+  padding: 10px 12px 12px 12px;
+}
+.pl-board-head-left{ min-width: 240px; }
+.pl-board-head-right{
+  display:flex;
+  align-items:flex-end;
+  gap: 10px;
+}
+
+.pl-progress{
+  margin-top: 10px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  overflow: hidden;
+}
+.pl-progress-bar{
+  height: 100%;
+  background: var(--accent);
+}
+
+.pl-quickadd{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap: 6px;
+  min-width: 260px;
+}
+.pl-quickadd-row{
+  display:flex;
+  gap: 8px;
+  align-items:center;
+}
+.pl-quickadd-input{ height: 34px; }
+
+.pl-doc{
+  padding: 8px 12px 14px 12px;
+}
+.pl-title{
+  font-size: 20px;
+  font-weight: 650;
+  margin-top: 10px;
+}
+.pl-meta{
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  gap: 8px;
+}
+.pl-divider{
+  border:0;
+  border-top: 1px solid var(--border);
+  margin: 14px 0;
+}
+.pl-section-title{
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent-95);
+}
+.pl-body{
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.pl-actions{
+  margin-top: 10px;
+  display:flex;
+  gap: 8px;
+  flex-wrap:wrap;
+}
+.pl-status-msg{ margin-top: 8px; }
+
+.pl-control{
+  width:100%;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 10px 12px;
+  outline: none;
+}
+.pl-control:focus{
+  border-color: var(--accent-35);
+  box-shadow: 0 0 0 2px var(--accent-12);
+}
+.pl-textarea{
+  resize: vertical;
+  min-height: 72px;
+}
+
+.pl-comment-actions{
+  margin-top: 8px;
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.pl-comment{
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: var(--item);
+}
+.pl-comment + .pl-comment{ margin-top: 10px; }
+
+.pl-attach-list{
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.pl-attach{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  width: 100%;
+  text-align:left;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.pl-attach:hover{
+  border-color: var(--accent-35);
+  background: var(--accent-08);
+}
+.pl-attach-ico{ opacity: .85; }
+.pl-attach-label{ flex: 1; }
+
+.pl-chip{
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: var(--muted);
+  background: transparent;
+  user-select:none;
+  cursor: default;
+}
+.pl-chip--warn{
+  border-color: var(--accent-35);
+  color: var(--accent-95);
+  background: var(--accent-08);
+}
+
+/* Soft highlight for freshly created task */
+.pl-flash{
+  box-shadow: 0 0 0 1px var(--accent-35), 0 0 0 6px var(--accent-12);
+}
+/* ================================
+   PLANNER — Document mode UI-3b
+   ================================ */
+
+.pl-doc { padding: 8px 12px 14px 12px; }
+
+.pl-title {
+  font-size: 20px;
+  font-weight: 650;
+  margin-top: 10px;
+}
+
+.pl-meta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.pl-divider {
+  border:0;
+  border-top:1px solid var(--border);
+  margin:14px 0;
+}
+
+.pl-section-title {
+  font-size:12px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--accent-95);
+}
+
+.pl-body {
+  margin-top:8px;
+  font-size:14px;
+  line-height:1.45;
+}
+
+.pl-control {
+  width:100%;
+  border:1px solid var(--border);
+  background:var(--surface-soft);
+  color:var(--text);
+  border-radius:14px;
+  padding:10px 12px;
+}
+
+.pl-control:focus {
+  border-color:var(--accent-35);
+  box-shadow:0 0 0 2px var(--accent-12);
+}
+
+.pl-textarea {
+  resize:vertical;
+  min-height:72px;
+}
+
+.pl-attach {
+  display:flex;
+  gap:10px;
+  align-items:center;
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:8px 10px;
+  background:transparent;
+  cursor:pointer;
+}
+
+.pl-attach:hover {
+  border-color:var(--accent-35);
+  background:var(--accent-08);
+}
+
+.pl-chip {
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:3px 8px;
+  font-size:12px;
+  color:var(--muted);
+}
+
+.pl-chip--warn {
+  border-color:var(--accent-35);
+  background:var(--accent-08);
+  color:var(--accent-95);
+}
+

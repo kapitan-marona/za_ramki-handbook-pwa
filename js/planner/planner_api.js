@@ -91,14 +91,37 @@
     if(r && r.error) throw r.error;
     return true;
   }
+  async function createTask(payload){
+    const SB = SBx();
+    const title = payload && payload.title ? String(payload.title).trim() : "";
+    if(!title) throw new Error("Введите название задачи.");
+
+    const row = {
+      title,
+      body: payload && payload.body ? String(payload.body) : null,
+      status: "new",
+      start_date: payload && payload.start_date ? String(payload.start_date) : null,
+      due_date: payload && payload.due_date ? String(payload.due_date) : null,
+      assignee_id: payload && payload.assignee_id ? payload.assignee_id : null,
+      role: payload && payload.role ? String(payload.role) : null,
+      urgency: payload && payload.urgency ? String(payload.urgency) : null
+    };
+
+    const r = await SB.from("tasks").insert(row).select("id").single();
+    if(r && r.error) throw r.error;
+    return r.data || null;
+  }
 
   window.PlannerAPI = {
-    fetchAllActiveTasks,
-    setTaskStatus,
-    fetchChecklistItems,
-    setChecklistDone,
-    fetchTaskFiles,
-    fetchComments,
-    addTaskComment
+      fetchAllActiveTasks,
+      setTaskStatus,
+      fetchChecklistItems,
+      setChecklistDone,
+      fetchTaskFiles,
+      fetchComments,
+      addTaskComment,
+      createTask
   };
 })();
+
+

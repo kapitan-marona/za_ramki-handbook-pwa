@@ -124,6 +124,52 @@
     return r.data || null;
   }
 
+  // ============================
+  // Archive (admin only via RPC)
+  // ============================
+
+  async function archiveTask(taskId){
+    const SB = SBx();
+    const r = await SB.rpc("archive_task", { p_task_id: taskId });
+    if(r && r.error) throw r.error;
+    return r.data;
+  }
+
+  async function archiveDoneTasks(){
+    const SB = SBx();
+    const r = await SB.rpc("archive_done_tasks");
+    if(r && r.error) throw r.error;
+    return r.data; // count
+  }
+
+  // ============================
+  // Fetch single task (including archived)
+  // ============================
+
+    async function fetchTaskById(taskId, ctx){
+    const SB = SBx();
+    const r = await SB.from("tasks").select("*").eq("id", taskId).maybeSingle();
+    if(r && r.error) throw r.error;
+
+    const row = r.data || null;
+    if(!row) return null;
+
+    const role = ctx && ctx.role ? String(ctx.role) : null;
+    const today = ctx && ctx.today ? String(ctx.today) : null;
+
+    // admin sees all
+    if(role === "admin") return row;
+
+    // staff visibility rules (same spirit as active list)
+    const vis = row.role ? String(row.role) : "all";
+    if(vis === "admin") return null;
+
+    if(today && row.start_date && String(row.start_date) > today) return null;
+
+    // allow all/staff/null
+    return row;
+  }
+
   window.PlannerAPI = {
       fetchAllActiveTasks,
       setTaskStatus,
@@ -132,9 +178,15 @@
       fetchTaskFiles,
       fetchComments,
       addTaskComment,
-      createTask
+      createTask,
+      fetchTaskById,
+      archiveTask,
+      archiveDoneTasks
   };
 })();
+
+
+
 
 
 

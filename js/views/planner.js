@@ -188,6 +188,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
             <div class="muted" style="margin-top:6px; font-size:12px;">Прогресс дня: ${done}/${total} (${pct}%)</div>
           </div>
 
+          ${(role === "admin" && done > 0) ? `<button class="btn btn-sm" id="plArchiveDone" type="button">В архив: завершённые</button>` : ``}
           <button class="btn btn-sm" id="plRefresh" type="button">Обновить</button>
         </div>
 
@@ -196,7 +197,27 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
 
       const rf = document.getElementById("plRefresh");
       if(rf) rf.onclick = () => show();
-    }
+    
+
+      const ad = document.getElementById("plArchiveDone");
+      if(ad) ad.onclick = async () => {
+        if(!confirm("Перенести все завершённые задачи в архив?")) return;
+        ad.disabled = true;
+        try{
+          if(!window.PlannerAPI || typeof PlannerAPI.archiveDoneTasks !== "function"){
+            throw new Error("archiveDoneTasks RPC not wired");
+          }
+          const n = await PlannerAPI.archiveDoneTasks();
+          alert("Готово. В архив перенесено: " + String(n || 0));
+          show();
+        }catch(err){
+          console.warn("[Planner] archive done error", err);
+          const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+          alert("Ошибка: " + t);
+          ad.disabled = false;
+        }
+      };
+}
 
     function renderBoard(tasks){
       const board = document.getElementById("plBoard");
@@ -301,6 +322,14 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
           host.querySelectorAll(".pl-ci").forEach(x => x.disabled = true);
 
           try{
+            // auto-progress: taken -> in_progress on first action
+            try{
+              if(task && String(task.status || "") === "taken"){
+                await rpcSetStatus(task.id, "in_progress");
+              }
+            }catch(e){
+              console.warn("[Planner] auto-progress error", e);
+            }
             const rpc = await (PlannerAPI.setChecklistDone(id, newDone).then(() => ({ error: null })).catch(error => ({ error })));
             if(rpc && rpc.error) throw rpc.error;
 
@@ -453,6 +482,22 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
           if(msg) msg.textContent = "Сохраняю…";
 
           try{
+            // auto-progress: taken -> in_progress on first comment
+            try{
+              if(task && String(task.status || "") === "taken"){
+                await rpcSetStatus(task.id, "in_progress");
+              }
+            }catch(e){
+              console.warn("[Planner] auto-progress error", e);
+            }
+            // auto-progress: taken -> in_progress on first comment
+            try{
+              if(task && String(task.status || "") === "taken"){
+                await rpcSetStatus(task.id, "in_progress");
+              }
+            }catch(e){
+              console.warn("[Planner] auto-progress error", e);
+            }
             const r = await (PlannerAPI.addTaskComment(task.id, text).then(() => ({ error: null })).catch(error => ({ error })));
             if(r && r.error) throw r.error;
             if(inp) inp.value = "";
@@ -487,6 +532,8 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       const cur = String(task.status || "new");
       const overduePill = isOverdue(task) ? `<span class="pill">Срок истёк</span>` : "";
       const isAdmin = (role === "admin");
+      const isArchived = !!task.archived_at;
+      const archivedPill = isArchived ? `<span class="pill">В архиве</span>` : "";
 
       const next = [];
       if(cur === "new") next.push(["taken","Взять в работу"]);
@@ -495,12 +542,16 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       if(cur === "problem") next.push(["in_progress","Проблема решена"], ["done","Успешно завершена"]);
       if(isAdmin && cur !== "canceled" && cur !== "done") next.push(["canceled","Отменить задачу"]);
 
-      const actionsHtml = (next.length === 0) ? "" : `
+      const archiveBtnHtml = (!isArchived && isAdmin)
+        ? `<button class="btn btn-sm" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
+        : ``;
+
+      const actionsHtml = (next.length === 0 && !archiveBtnHtml) ? "" : `
         <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
           ${next.map(([s,label]) => `<button class="btn btn-sm pl-status" data-s="${esc(s)}" type="button">${esc(label)}</button>`).join("")}
-          ${isAdmin ? `<button class="btn btn-sm" type="button" disabled title="Скоро">Архив (скоро)</button>` : ``}
+          ${archiveBtnHtml}
         </div>
-        <div class="muted pl-status-msg" style="margin-top:8px; font-size:12px;"></div>
+        ${next.length > 0 ? `<div class="muted pl-status-msg" style="margin-top:8px; font-size:12px;"></div>` : ``}
       `;
       const urg = urgencyLabel(task.urgency) ? `<span class="pill">${esc(urgencyLabel(task.urgency))}</span>` : "";
       const start = task.start_date ? `<span class="pill">${esc(startLabel(task.start_date))}</span>` : "";
@@ -517,7 +568,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         <div class="item" style="cursor:default;">
           <div class="item-title">${esc(task.title || "(без названия)")}</div>
           <div class="item-meta" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-            ${start}${due}${overduePill}${urg}${st}
+            ${start}${due}${overduePill}${archivedPill}${urg}${st}
           </div>
         </div>
 
@@ -597,6 +648,38 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         };
       });
 
+      // archive button (admin)
+      var _plArchiveBtn = document.getElementById("plArchiveTask");
+      if(_plArchiveBtn){
+        _plArchiveBtn.onclick = async () => {
+          if(!confirm("Перенести задачу в архив?")) return;
+          _plArchiveBtn.disabled = true;
+          try{
+            if(!window.PlannerAPI || typeof PlannerAPI.archiveTask !== "function"){
+              throw new Error("archiveTask RPC not wired");
+            }
+            await PlannerAPI.archiveTask(task.id);
+            goTask(null);
+          }catch(err){
+            console.warn("[Planner] archive task error", err);
+            const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+            alert("Ошибка: " + t);
+            _plArchiveBtn.disabled = false;
+          }
+        };
+      }
+
+      // archived task = read-only
+      if(isArchived){
+        viewerEl.classList.add("pl-archived");
+        viewerEl.querySelectorAll("button, input, textarea, select").forEach(x => { try{ x.disabled = true; }catch(e){} });
+
+        // still render blocks (but no interactions)
+        loadChecklist(task);
+        loadDocs(task);
+        loadComments(task);
+        return;
+      }
 loadChecklist(task);
       loadDocs(task);
       loadComments(task);
@@ -633,6 +716,19 @@ loadChecklist(task);
       const t = tasks.find(x => String(x.id) === String(selectedId));
       if(t) renderDetails(t);
       else {
+        // fetchTaskById fallback (archived by direct link, read-only)
+        try{
+          if(window.PlannerAPI && typeof PlannerAPI.fetchTaskById === "function"){
+            const one = await PlannerAPI.fetchTaskById(selectedId, { role, today });
+            if(one && one.archived_at){
+              renderDetails(one);
+              return;
+            }
+          }
+        }catch(err){
+          console.warn("[Planner] fetchTaskById fallback error", err);
+        }
+
         renderRightHeader(tasks);
         const board = document.getElementById("plBoard");
         if(board) board.innerHTML = `<div class="empty"><span class="muted">Задача не найдена или нет доступа.</span></div>`;
@@ -647,6 +743,12 @@ loadChecklist(task);
 
   return { show };
 })();
+
+
+
+
+
+
 
 
 

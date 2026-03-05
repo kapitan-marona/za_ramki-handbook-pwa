@@ -560,3 +560,19 @@ body{
   box-shadow: 0 0 0 1px var(--accent-35), 0 0 0 6px var(--accent-12);
 }
 
+
+/* Planner: archived task read-only */
+.pl-archived{
+  opacity: .82;
+  filter: saturate(.92);
+}
+.pl-archived .item{
+  opacity: .92;
+}
+.pl-archived .btn,
+.pl-archived input,
+.pl-archived textarea,
+.pl-archived select{
+  pointer-events: none;
+}
+

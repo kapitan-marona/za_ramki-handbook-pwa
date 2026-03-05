@@ -272,7 +272,20 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       ];
 
       const colHtml = cols.map(c => {
-        const items = tasks.filter(c.match);
+        let items = tasks.filter(c.match);
+
+        // soft sort inside column: due_date asc (nulls last), then updated_at desc
+        items = [...items].sort((a,b) => {
+          const da = a && a.due_date ? String(a.due_date) : "9999-99-99";
+          const db = b && b.due_date ? String(b.due_date) : "9999-99-99";
+          if(da !== db) return da < db ? -1 : 1;
+
+          const ua = a && a.updated_at ? String(a.updated_at) : "";
+          const ub = b && b.updated_at ? String(b.updated_at) : "";
+          if(ua !== ub) return ua > ub ? -1 : 1;
+
+          return 0;
+        });
         const cards = items.length
           ? items.map(t => {
               const due = dueLabel(t.due_date);

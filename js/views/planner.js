@@ -161,7 +161,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         }
       }catch(e){ console.warn("[Planner] left sortMineFirst error", e); }
       host.innerHTML = leftTasks.map(t => {
-        const due = dueLabel(t.due_date);
+        const due = t.due_date ? `<span class="pl-due ${isOverdue(t) ? "is-overdue" : ""}">${esc(dueLabel(t.due_date))}</span>` : "";
         const st  = t.status ? `· ${esc(statusLabel(t.status))}` : "";
         const badge = isOverdue(t) ? `<span class="tag" style="margin-left:6px;">Срок истёк</span>` : ``;
 
@@ -172,7 +172,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         return `
           <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
             <div class="item-title">${esc(t.title || "(без названия)")}${roleBadge}${badge}</div>
-            <div class="item-meta">${[startLabel(t.start_date), dueLabel(t.due_date), urgencyLabel(t.urgency), (t.status ? statusLabel(t.status) : "")].filter(Boolean).join(" · ")}</div>
+            <div class="item-meta">${[startLabel(t.start_date), due, urgencyLabel(t.urgency), (t.status ? statusLabel(t.status) : "")].filter(Boolean).join(" · ")}</div>
           </div>
         `;
       }).join("");
@@ -288,7 +288,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         });
         const cards = items.length
           ? items.map(t => {
-              const due = dueLabel(t.due_date);
+              const due = t.due_date ? `<span class="pl-due ${isOverdue(t) ? "is-overdue" : ""}">${esc(dueLabel(t.due_date))}</span>` : "";
               const isProblem = (String(t.status || "") === "problem");
               const isSel = selectedId && String(selectedId) === String(t.id);
               return `

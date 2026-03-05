@@ -576,3 +576,9 @@ body{
   pointer-events: none;
 }
 
+
+/* Planner — overdue due-date */
+.pl-due.is-overdue{
+  color: var(--accent-95);
+  font-weight: 600;
+}

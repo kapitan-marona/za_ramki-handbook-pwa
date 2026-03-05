@@ -103,6 +103,7 @@
     if(r && r.error) throw r.error;
     return true;
   }
+
   async function archiveTask(taskId){
     const SB = SBx();
     const r = await SB.rpc("archive_task", { p_task_id: taskId });
@@ -114,9 +115,9 @@
     const SB = SBx();
     const r = await SB.rpc("archive_done_tasks");
     if(r && r.error) throw r.error;
-    // r.data should be integer count
     return (r && r.data != null) ? r.data : 0;
   }
+
   async function createTask(payload){
     const SB = SBx();
     const title = payload && payload.title ? String(payload.title).trim() : "";
@@ -137,17 +138,9 @@
     if(r && r.error) throw r.error;
     return r.data || null;
   }
-    const SB = SBx();
-    const r = await SB.rpc("archive_done_tasks");
-    if(r && r.error) throw r.error;
-    return r.data; // count
-  }
 
-  // ============================
   // Fetch single task (including archived)
-  // ============================
-
-    async function fetchTaskById(taskId, ctx){
+  async function fetchTaskById(taskId, ctx){
     const SB = SBx();
     const r = await SB.from("tasks").select("*").eq("id", taskId).maybeSingle();
     if(r && r.error) throw r.error;
@@ -161,7 +154,7 @@
     // admin sees all
     if(role === "admin") return row;
 
-    // staff visibility rules (same spirit as active list)
+    // staff visibility rules
     const vis = row.role ? String(row.role) : "all";
     if(vis === "admin") return null;
 
@@ -170,28 +163,18 @@
     // allow all/staff/null
     return row;
   }
+
   window.PlannerAPI = {
-      fetchAllActiveTasks,
-      setTaskStatus,
-      fetchChecklistItems,
-      setChecklistDone,
-      fetchTaskFiles,
-      fetchComments,
-      addTaskComment,
-      createTask,
-      archiveTask,
-      archiveDoneTasks,
-      fetchTaskById
+    fetchAllActiveTasks,
+    setTaskStatus,
+    fetchChecklistItems,
+    setChecklistDone,
+    fetchTaskFiles,
+    fetchComments,
+    addTaskComment,
+    createTask,
+    archiveTask,
+    archiveDoneTasks,
+    fetchTaskById
   };
 })();
-
-
-
-
-
-
-
-
-
-
-

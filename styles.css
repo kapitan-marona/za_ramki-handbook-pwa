@@ -134,6 +134,7 @@ body{
   color: var(--muted);
 }
 .tag.accent{ border-color: var(--accent-35); color: var(--accent-95); }
+.tag.warn{ border-color: rgba(255,140,0,.35); color: rgba(255,200,120,.95); }
 
 .viewer{
   padding: 18px 18px 22px 18px;
@@ -550,9 +551,14 @@ body{
   cursor: default;
 }
 .pl-chip--warn{
-  border-color: var(--accent-35);
-  color: var(--accent-95);
-  background: var(--accent-08);
+  /* same size as .tag */
+  padding:0;
+  font-size:inherit;
+  border-radius:inherit;
+
+  background:transparent;
+  border-color:rgba(255,140,0,.35);
+  color:rgba(255,200,120,.95);
 }
 
 /* Soft highlight for freshly created task */
@@ -581,4 +587,26 @@ body{
 .pl-due.is-overdue{
   color: var(--accent-95);
   font-weight: 600;
+}
+/* Planner — normalize tag size in left list meta (ALL / overdue etc.) */
+#list .item-meta .tag{
+  font-size: 12px;
+  padding: 3px 8px;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+}
+/* Planner — compact tags in left list (ALL / overdue) */
+#list .item-title .tag,
+#list .item-meta .tag{
+  font-size:10px;
+  padding:2px 6px;
+  line-height: 1.2;
+}
+/* Planner — warn tag uses accent palette (no yellow) */
+#list .tag.warn{
+  border-color: var(--accent-55);
+  color: var(--accent-95);
+  background: var(--accent-08);
+  opacity: 1;
 }

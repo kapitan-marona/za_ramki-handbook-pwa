@@ -532,14 +532,6 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
             }catch(e){
               console.warn("[Planner] auto-progress error", e);
             }
-            // auto-progress: taken -> in_progress on first comment
-            try{
-              if(task && String(task.status || "") === "taken"){
-                await rpcSetStatus(task.id, "in_progress");
-              }
-            }catch(e){
-              console.warn("[Planner] auto-progress error", e);
-            }
             const r = await (PlannerAPI.addTaskComment(task.id, text).then(() => ({ error: null })).catch(error => ({ error })));
             if(r && r.error) throw r.error;
             if(inp) inp.value = "";

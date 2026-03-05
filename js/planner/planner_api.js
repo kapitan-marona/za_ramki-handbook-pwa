@@ -137,19 +137,6 @@
     if(r && r.error) throw r.error;
     return r.data || null;
   }
-
-  // ============================
-  // Archive (admin only via RPC)
-  // ============================
-
-  async function archiveTask(taskId){
-    const SB = SBx();
-    const r = await SB.rpc("archive_task", { p_task_id: taskId });
-    if(r && r.error) throw r.error;
-    return r.data;
-  }
-
-  async function archiveDoneTasks(){
     const SB = SBx();
     const r = await SB.rpc("archive_done_tasks");
     if(r && r.error) throw r.error;
@@ -183,7 +170,6 @@
     // allow all/staff/null
     return row;
   }
-
   window.PlannerAPI = {
       fetchAllActiveTasks,
       setTaskStatus,
@@ -195,9 +181,7 @@
       createTask,
       archiveTask,
       archiveDoneTasks,
-      fetchTaskById,
-      archiveTask,
-      archiveDoneTasks
+      fetchTaskById
   };
 })();
 

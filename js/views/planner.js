@@ -258,27 +258,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
           ad.disabled = false;
         }
       };
-      if(rf) rf.onclick = () => show();
-    
-
-      var ad = document.getElementById("plArchiveDone");
-      if(ad) ad.onclick = async () => {
-        if(!confirm("Перенести все завершённые задачи в архив?")) return;
-        ad.disabled = true;
-        try{
-          if(!window.PlannerAPI || typeof PlannerAPI.archiveDoneTasks !== "function"){
-            throw new Error("archiveDoneTasks RPC not wired");
-          }
-          const n = await PlannerAPI.archiveDoneTasks();
-          alert("Готово. В архив перенесено: " + String(n || 0));
-          show();
-        }catch(err){
-          console.warn("[Planner] archive done error", err);
-          const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
-          alert("Ошибка: " + t);
-          ad.disabled = false;
-        }
-      };
+      if(rf) rf.onclick = () => show();
 }
 
     function renderBoard(tasks){
@@ -752,7 +732,7 @@ loadChecklist(task);
     }
 
     function renderEmpty(){
-      renderRightHeader(tasks);
+      renderRightHeader([]);
       const board = document.getElementById("plBoard");
       if(!board) return;
 
@@ -828,12 +808,12 @@ loadChecklist(task);
           console.warn("[Planner] fetchTaskById fallback error", err);
         }
 
-        renderRightHeader(tasks);
+        renderRightHeader([]);
         const board = document.getElementById("plBoard");
         if(board) board.innerHTML = `<div class="empty"><span class="muted">Задача не найдена или нет доступа.</span></div>`;
       }
     }else{
-      renderRightHeader(tasks);
+      renderRightHeader([]);
       renderBoard(tasks);
     }
 

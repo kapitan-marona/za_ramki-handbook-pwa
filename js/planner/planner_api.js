@@ -103,6 +103,20 @@
     if(r && r.error) throw r.error;
     return true;
   }
+  async function archiveTask(taskId){
+    const SB = SBx();
+    const r = await SB.rpc("archive_task", { p_task_id: taskId });
+    if(r && r.error) throw r.error;
+    return true;
+  }
+
+  async function archiveDoneTasks(){
+    const SB = SBx();
+    const r = await SB.rpc("archive_done_tasks");
+    if(r && r.error) throw r.error;
+    // r.data should be integer count
+    return (r && r.data != null) ? r.data : 0;
+  }
   async function createTask(payload){
     const SB = SBx();
     const title = payload && payload.title ? String(payload.title).trim() : "";
@@ -110,13 +124,13 @@
 
     const row = {
       title,
-      body: payload && payload.body ? String(payload.body) : null,
+      body: payload && payload.body != null ? String(payload.body) : "",
       status: "new",
-      start_date: payload && payload.start_date ? String(payload.start_date) : null,
-      due_date: payload && payload.due_date ? String(payload.due_date) : null,
+      start_date: payload && payload.start_date ? String(payload.start_date) : (new Date().toISOString().slice(0,10)),
+      due_date: payload && payload.due_date ? String(payload.due_date) : (new Date(Date.now()+86400000).toISOString().slice(0,10)),
       assignee_id: payload && payload.assignee_id ? payload.assignee_id : null,
-      role: payload && payload.role ? String(payload.role) : null,
-      urgency: payload && payload.urgency ? String(payload.urgency) : null
+      role: payload && payload.role ? String(payload.role) : "all",
+      urgency: payload && payload.urgency ? String(payload.urgency) : "normal"
     };
 
     const r = await SB.from("tasks").insert(row).select("id").single();
@@ -179,11 +193,18 @@
       fetchComments,
       addTaskComment,
       createTask,
+      archiveTask,
+      archiveDoneTasks,
       fetchTaskById,
       archiveTask,
       archiveDoneTasks
   };
 })();
+
+
+
+
+
 
 
 

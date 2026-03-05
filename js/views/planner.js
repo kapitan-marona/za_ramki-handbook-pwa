@@ -132,7 +132,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       const host = document.getElementById("plLeftList");
       if(!host) return;
 
-      const leftTasks = tasks.filter(t => {
+      let leftTasks = tasks.filter(t => {
         const isMine = uid && t.assignee_id && String(t.assignee_id) === String(uid);
         const isCommon = !t.assignee_id;
         if(state.leftFilter === "all" && role === "admin") return true;
@@ -148,6 +148,18 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
         return;
       }
 
+      // [PlannerUX] sortMineFirst: my tasks first in left list
+      try{
+        if(window.PlannerUX && typeof PlannerUX.sortMineFirst === "function"){
+          leftTasks = PlannerUX.sortMineFirst(leftTasks, uid);
+        }else if(uid){
+          leftTasks = [...leftTasks].sort((a,b) => {
+            const am = (a.assignee_id && String(a.assignee_id) === String(uid)) ? 1 : 0;
+            const bm = (b.assignee_id && String(b.assignee_id) === String(uid)) ? 1 : 0;
+            return bm - am;
+          });
+        }
+      }catch(e){ console.warn("[Planner] left sortMineFirst error", e); }
       host.innerHTML = leftTasks.map(t => {
         const due = dueLabel(t.due_date);
         const st  = t.status ? `· ${esc(statusLabel(t.status))}` : "";
@@ -189,6 +201,7 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
           </div>
 
           ${(role === "admin" && done > 0) ? `<button class="btn btn-sm" id="plArchiveDone" type="button">В архив: завершённые</button>` : ``}
+          ${role === "admin" ? `<button class="btn btn-sm" id="plQuickCreate" type="button">+ Задача</button>` : ``}
           <button class="btn btn-sm" id="plRefresh" type="button">Обновить</button>
         </div>
 
@@ -196,10 +209,59 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
       `;
 
       const rf = document.getElementById("plRefresh");
+      const qc = document.getElementById("plQuickCreate");
+      if(qc) qc.onclick = () => {
+        try{
+          if(!window.PlannerActions || typeof PlannerActions.openCreateDialog !== "function"){
+            alert("Create UI missing");
+            return;
+          }
+          PlannerActions.openCreateDialog({
+            onCreate: async (payload) => {
+              qc.disabled = true;
+              try{
+                const created = await PlannerAPI.createTask(payload);
+                if(created && created.id){
+                  location.hash = "#/planner/" + encodeURIComponent(String(created.id));
+                }else{
+                  show();
+                }
+                return created;
+              }finally{
+                qc.disabled = false;
+              }
+            }
+          });
+        }catch(err){
+          console.warn("[Planner] openCreateDialog error", err);
+          const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+          alert("Ошибка: " + t);
+        }
+      };
+
+      var ad = document.getElementById("plArchiveDone");
+      if(ad) ad.onclick = async () => {
+        if(!confirm("Перенести все завершённые задачи в архив?")) return;
+
+        ad.disabled = true;
+        try{
+          if(!window.PlannerAPI || typeof PlannerAPI.archiveDoneTasks !== "function"){
+            throw new Error("archiveDoneTasks RPC not wired");
+          }
+          const n = await PlannerAPI.archiveDoneTasks();
+          alert("Готово. В архив перенесено: " + String(n || 0));
+          show();
+        }catch(err){
+          console.warn("[Planner] archive done error", err);
+          const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+          alert("Ошибка: " + t);
+          ad.disabled = false;
+        }
+      };
       if(rf) rf.onclick = () => show();
     
 
-      const ad = document.getElementById("plArchiveDone");
+      var ad = document.getElementById("plArchiveDone");
       if(ad) ad.onclick = async () => {
         if(!confirm("Перенести все завершённые задачи в архив?")) return;
         ad.disabled = true;
@@ -671,8 +733,12 @@ const isOverdue = (t) => !!(t.due_date && String(t.due_date) < today && t.status
 
       // archived task = read-only
       if(isArchived){
-        viewerEl.classList.add("pl-archived");
+        if(window.PlannerRO && typeof PlannerRO.applyReadOnly === "function"){
+          PlannerRO.applyReadOnly(viewerEl);
+        }else{
+          viewerEl.classList.add("pl-archived");
         viewerEl.querySelectorAll("button, input, textarea, select").forEach(x => { try{ x.disabled = true; }catch(e){} });
+        }
 
         // still render blocks (but no interactions)
         loadChecklist(task);
@@ -691,7 +757,15 @@ loadChecklist(task);
       if(!board) return;
 
       if(role === "admin"){
-        board.innerHTML = `<div class="empty"><h2>PLANNER пуст.</h2><p>Создайте первую задачу.</p></div>`;
+        board.innerHTML = `
+          <div class="empty" style="text-align:center;">
+            <h2>PLANNER пуст.</h2>
+            <p>Создайте первую задачу.</p>
+            <div style="margin-top:16px;">
+              <button class="btn" id="plCreateTask" type="button">Создать задачу</button>
+            </div>
+          </div>
+        `;
       }else{
         board.innerHTML = `
           <div class="empty" style="text-align:center;">
@@ -709,6 +783,31 @@ loadChecklist(task);
 
     if(!tasks || tasks.length === 0){
       renderEmpty();
+      // [PlannerActions] wireCreateButton: minimal create flow (admin only)
+      try{
+        if(role === "admin" && window.PlannerActions && typeof PlannerActions.wireCreateButton === "function"){
+          PlannerActions.wireCreateButton(() => {
+            if(!window.PlannerActions || typeof PlannerActions.openCreateDialog !== "function"){
+              alert("Create UI missing");
+              return;
+            }
+            PlannerActions.openCreateDialog({
+              onCreate: async (payload) => {
+                const created = await PlannerAPI.createTask(payload);
+                if(created && created.id){
+                  location.hash = "#/planner/" + encodeURIComponent(String(created.id));
+                }else{
+                  show();
+                }
+                return created;
+              }
+            });
+          });
+        }
+      }catch(e){
+        console.warn("[Planner] wireCreateButton error", e);
+      }
+
       return;
     }
 
@@ -743,6 +842,22 @@ loadChecklist(task);
 
   return { show };
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

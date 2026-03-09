@@ -15,11 +15,23 @@
   }
 
   function isMine(t, uid){
-    return !!(uid && t && t.assignee_id && asStr(t.assignee_id) === uid);
+    if(!uid || !t) return false;
+
+    if(Array.isArray(t.assignees) && t.assignees.map(asStr).includes(asStr(uid))){
+      return true;
+    }
+
+    return false;
   }
 
   function isCommon(t){
-    return !(t && t.assignee_id);
+    if(!t) return true;
+
+    if(Array.isArray(t.assignees)){
+      return t.assignees.length === 0;
+    }
+
+    return true;
   }
 
   function groupRank(t, uid){

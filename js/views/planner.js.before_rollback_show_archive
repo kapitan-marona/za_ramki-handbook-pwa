@@ -81,12 +81,12 @@ function statusLabel(code){
     const role = window.App?.session?.role || null;
     const uid  = window.App?.session?.user?.id || null;
 
-    window.__plannerState = window.__plannerState || { leftFilter: "mine", refreshBusy: false, ownerKey: null }; // mine | all
+    window.__plannerState = window.__plannerState || { leftFilter: "mine", ownerKey: null }; // mine | all
     let state = window.__plannerState;
     // Reset planner UI state when user/role changes (prevents state leaking between accounts)
     const ownerKey = ((window.App && App.session && App.session.user) ? App.session.user.id : "anon") + "|" + ((window.App && App.session) ? (App.session.role || "none") : "none");
     if(state.ownerKey !== ownerKey){
-      window.__plannerState = { leftFilter: "mine", refreshBusy: false, ownerKey };
+      window.__plannerState = { leftFilter: "mine", ownerKey };
     }else{
       state.ownerKey = ownerKey;
     }
@@ -215,7 +215,7 @@ viewerEl.innerHTML = `
     <div class="pl-head-actions">
       ${(role === "admin" && done > 0) ? `<button class="btn btn-sm pl-btn-ghost" id="plArchiveDone" type="button">В архив: завершённые</button>` : ``}
       ${role === "admin" ? `<button class="btn btn-sm pl-btn-primary" id="plQuickCreate" type="button">+ Задача</button>` : ``}
-      <button class="btn btn-sm pl-btn-ghost ${state.refreshBusy ? "is-loading" : ""}" id="plRefresh" type="button" ${state.refreshBusy ? "disabled" : ""}>${state.refreshBusy ? "Обновляю…" : "Обновить"}</button>
+      <button class="btn btn-sm pl-btn-ghost" id="plRefresh" type="button">Обновить</button>
     </div>
   </div>
 
@@ -272,31 +272,7 @@ viewerEl.innerHTML = `
           ad.disabled = false;
         }
       };
-      if(rf) rf.onclick = async () => {
-        if(state.refreshBusy) return;
-
-        state.refreshBusy = true;
-        renderRightHeader(tasks);
-
-        try{
-          const freshTasks = await fetchAllActiveTasks();
-          renderLeft(freshTasks);
-          renderRightHeader(freshTasks);
-          renderBoard(freshTasks);
-        }catch(err){
-          console.warn("[Planner] refresh error", err);
-        }finally{
-          state.refreshBusy = false;
-          try{
-            const freshTasks = await fetchAllActiveTasks();
-            renderLeft(freshTasks);
-            renderRightHeader(freshTasks);
-            renderBoard(freshTasks);
-          }catch(err){
-            console.warn("[Planner] refresh finalize error", err);
-          }
-        }
-      };
+      if(rf) rf.onclick = () => show();
 
 }
 
@@ -1225,9 +1201,6 @@ loadDocs(task);
 
   return { show };
 })();
-
-
-
 
 
 

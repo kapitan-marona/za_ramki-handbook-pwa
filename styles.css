@@ -408,21 +408,28 @@ body{
   gap: 14px;
   padding: 10px 12px 12px 12px;
 }
-.pl-board-head-left{ min-width: 240px; }
-.pl-board-head-right{
+.pl-board-head-left{
+  min-width:240px;
   display:flex;
-  align-items:flex-end;
-  gap: 10px;
+  flex-direction:column;
+  gap:6px;
 }
 
-.pl-progress{
-  margin-top: 10px;
+.pl-board-head-right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:18px;
+}
+
+.pl-head .pl-progress{
+  margin-top: 14px;
   height: 6px;
   border-radius: 999px;
   background: rgba(255,255,255,.10);
   overflow: hidden;
 }
-.pl-progress-bar{
+.pl-head .pl-progress-bar{
   height: 100%;
   background: var(--accent);
 }
@@ -610,3 +617,164 @@ body{
   background: var(--accent-08);
   opacity: 1;
 }
+
+/* ================================
+   PLANNER — header progress + actions
+   ================================ */
+
+.pl-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 12px;
+  padding:10px 12px;
+}
+
+.pl-head-left{ flex:1; min-width:260px; }
+.pl-head-actions{
+  display:flex;
+  align-items:flex-start;
+  gap: 8px;
+  flex-wrap:wrap;
+}
+
+/* progress: strict bracket bar (no rounding) */
+.pl-progress-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:10px;
+}
+
+.pl-bracket{
+  opacity:.75;
+  font-weight:700;
+  letter-spacing:.06em;
+}
+
+.pl-progress{
+  flex: 1 1 auto; width: 100%; min-width: 0;
+  height: 8px;
+  border-radius: 0;
+  background: rgba(255,255,255,.10);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.pl-progress-bar{
+  height: 100%;
+  border-radius: 0;
+  /* green with safe fallback */
+  background: var(--ok, #3ad37a);
+}
+
+/* buttons: make primary look like action (not pill) */
+.pl-btn-primary{
+  border-color: transparent;
+  background: var(--accent);
+  color: #111;
+  font-weight: 650;
+}
+.pl-btn-primary:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.pl-btn-ghost{
+  background: transparent;
+}
+/* Planner header progress — final scoped override */
+.pl-head{
+  display:grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap:12px;
+  align-items:start;
+}
+
+.pl-head-left{
+  min-width:0;
+}
+
+.pl-progress-row{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  margin-top:10px;
+}
+
+.pl-head .pl-progress{
+  width:100%;
+  min-width:0;
+  height:8px;
+  border-radius:0;
+  overflow:hidden;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.10);
+}
+
+.pl-head .pl-progress-bar{
+  height:100%;
+  width:var(--pl-progress, 0%);
+  border-radius:0;
+  background:#3aa76d;
+}
+
+.pl-bracket{
+  color:var(--muted);
+  opacity:.85;
+  font-weight:600;
+}
+/* STEP 8.5 layout stabilize */
+.pl-details-col .item{
+  width:100%;
+}
+
+/* Planner — refresh button feedback */
+#plRefresh{
+  position: relative;
+  min-width: 132px;
+  justify-content: center;
+}
+
+#plRefresh.is-loading{
+  opacity: .88;
+}
+
+#plRefresh.is-loading::after{
+  content: "";
+  width: 12px;
+  height: 12px;
+  margin-left: 8px;
+  display: inline-block;
+  vertical-align: -2px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  animation: pl-refresh-spin .7s linear infinite;
+}
+
+#plRefresh:disabled{
+  cursor: default;
+  opacity: .72;
+}
+
+@keyframes pl-refresh-spin{
+  to{ transform: rotate(360deg); }
+}
+/* --- FIX: refresh button should not jump on click --- */
+#plRefresh,
+#plRefresh:hover,
+#plRefresh:active,
+#plRefresh:focus,
+#plRefresh:focus-visible{
+  transform:none !important;
+}
+
+#plRefresh{
+  transition:border-color .08s ease, background-color .08s ease, color .08s ease !important;
+}
+
+
+

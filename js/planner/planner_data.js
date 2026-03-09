@@ -1,0 +1,116 @@
+/* ZA RAMKI — PlannerData (thin data layer over PlannerAPI) */
+(function(){
+  if(window.PlannerData) return;
+
+  function APIx(){
+    if(!window.PlannerAPI) throw new Error("PlannerAPI missing");
+    return window.PlannerAPI;
+  }
+
+  function normalizeTask(task){
+    if(!task) return task;
+
+    const assignees = Array.isArray(task.assignees)
+      ? task.assignees.map(x => String(x))
+      : (task.assignee_id ? [String(task.assignee_id)] : []);
+
+    const project_title = task && task.projects && task.projects.title
+      ? String(task.projects.title)
+      : "";
+
+    return {
+      ...task,
+      assignees,
+      project_title
+    };
+  }
+
+  function normalizeTasks(tasks){
+    return Array.isArray(tasks) ? tasks.map(normalizeTask) : [];
+  }
+
+  async function fetchTasksAssigneesBatch(taskIds){
+    return await APIx().fetchTasksAssigneesBatch(taskIds);
+  }
+
+  async function enrichTasksWithAssignees(tasks){
+    const items = normalizeTasks(tasks);
+    const ids = items.map(t => t && t.id).filter(Boolean);
+
+    if(ids.length === 0) return items;
+
+    const map = await fetchTasksAssigneesBatch(ids);
+
+    return items.map(task => {
+      const tid = String(task.id);
+      const assignees = Array.isArray(map[tid]) && map[tid].length
+        ? map[tid].map(x => String(x))
+        : task.assignees;
+
+      return {
+        ...task,
+        assignees
+      };
+    });
+  }
+
+  async function fetchAllActiveTasks(ctx){
+    const tasks = await APIx().fetchAllActiveTasks(ctx);
+
+    try{
+      return await enrichTasksWithAssignees(tasks);
+    }catch(err){
+      console.warn("[PlannerData] enrichTasksWithAssignees fallback", err);
+      return normalizeTasks(tasks);
+    }
+  }
+
+  async function fetchChecklistItems(taskId){
+    return await APIx().fetchChecklistItems(taskId);
+  }
+
+  async function fetchTaskFiles(taskId){
+    return await APIx().fetchTaskFiles(taskId);
+  }
+
+  async function fetchComments(taskId){
+    return await APIx().fetchComments(taskId);
+  }
+
+  async function fetchActivity(taskId){
+    return await APIx().fetchTaskActivity(taskId);
+  }
+
+  async function fetchTaskAssignees(taskId){
+    return await APIx().fetchTaskAssignees(taskId);
+  }
+
+  async function fetchTaskLinks(taskId){
+    return await APIx().fetchTaskLinks(taskId);
+  }
+
+  async function fetchTaskById(taskId, ctx){
+    const task = await APIx().fetchTaskById(taskId, ctx);
+
+    try{
+      const enriched = await enrichTasksWithAssignees([task]);
+      return enriched[0] || normalizeTask(task);
+    }catch(err){
+      console.warn("[PlannerData] fetchTaskById enrich fallback", err);
+      return normalizeTask(task);
+    }
+  }
+
+  window.PlannerData = {
+    fetchAllActiveTasks,
+    fetchChecklistItems,
+    fetchTaskFiles,
+    fetchComments,
+    fetchActivity,
+    fetchTaskAssignees,
+    fetchTasksAssigneesBatch,
+    enrichTasksWithAssignees,
+    fetchTaskLinks,
+    fetchTaskById
+  };
+})();

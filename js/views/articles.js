@@ -1,11 +1,88 @@
 window.Views = window.Views || {};
 Views.Articles = (() => {
+  console.log("[ARTICLES_BUILD] 2026-03-10 STEP1-2");
   const $ = (s) => document.querySelector(s);
 
   let INDEX = [];
   let FILTER = "";
   let CATMAP = {};
+  const INS_LAST_HASH_KEY = "zr_ins_last_hash";
+  const INS_RETURN_HASH_KEY = "zr_ins_return_hash";
 
+  function getCurrentHash(){
+    return String(location.hash || "");
+  }
+
+  function isArticleHash(hash){
+    return /^#\/articles(?:\/|$)/.test(String(hash || ""));
+  }
+
+  function isPlannerTaskHash(hash){
+    return /^#\/planner\/[^\/]+/.test(String(hash || ""));
+  }
+
+  function rememberInstructionContext(){
+    try{
+      const current = getCurrentHash();
+      const prev = sessionStorage.getItem(INS_LAST_HASH_KEY) || "";
+
+      if(isArticleHash(current) && isPlannerTaskHash(prev)){
+        sessionStorage.setItem(INS_RETURN_HASH_KEY, prev);
+      }
+
+      sessionStorage.setItem(INS_LAST_HASH_KEY, current);
+    }catch(e){}
+  }
+
+  function installInstructionContextTracker(){
+    try{
+      if(window.__zrInstructionContextTrackerInstalled) return;
+      window.__zrInstructionContextTrackerInstalled = true;
+
+      rememberInstructionContext();
+
+      window.addEventListener("hashchange", () => {
+        try{
+          rememberInstructionContext();
+        }catch(e){}
+      });
+    }catch(e){}
+  }
+
+  function getInstructionReturnHash(){
+    try{
+      const saved = sessionStorage.getItem(INS_RETURN_HASH_KEY) || "";
+      if(isPlannerTaskHash(saved)) return saved;
+    }catch(e){}
+    return "#/articles";
+  }
+
+  function getInstructionCloseLabel(){
+    return isPlannerTaskHash(getInstructionReturnHash()) ? "К задаче" : "Закрыть";
+  }
+
+  function goInstructionClose(){
+    const target = getInstructionReturnHash();
+
+    try{
+      if(isPlannerTaskHash(target) && window.Router && typeof Router.go === "function"){
+        const m = target.match(/^#\/planner\/(.+)$/);
+        if(m && m[1]){
+          Router.go("planner", decodeURIComponent(m[1]));
+          return;
+        }
+      }
+
+      if(window.Router && typeof Router.go === "function"){
+        Router.go("articles");
+        return;
+      }
+    }catch(e){}
+
+    location.hash = isPlannerTaskHash(target) ? target : "#/articles";
+  }
+
+  installInstructionContextTracker();
   function esc(str){
     return (str ?? "").replace(/[&<>"']/g, c => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
@@ -258,7 +335,106 @@ function renderActions(actions){
     }).join("");
     return `<div class="actions">${btns}</div>`;
   }
+  function renderMetaRow(meta){
+    const author =
+      meta?.author ||
+      meta?.author_name ||
+      meta?.created_by_name ||
+      meta?.created_by ||
+      "";
 
+    const created =
+      meta?.createdAt ||
+      meta?.created_at ||
+      "";
+
+    const updated =
+      meta?.updatedAt ||
+      meta?.updated_at ||
+      "";
+
+    const linked =
+      meta?.linkedFrom ||
+      meta?.linked_from ||
+      "";
+
+    const parts = [];
+
+    if(author)  parts.push(`<span class="tag">Автор: ${esc(String(author))}</span>`);
+    if(created) parts.push(`<span class="tag">Создано: ${esc(String(created))}</span>`);
+    if(updated) parts.push(`<span class="tag">Обновлено: ${esc(String(updated))}</span>`);
+    if(linked)  parts.push(`<span class="tag">Связано с: ${esc(String(linked))}</span>`);
+
+    return parts.join("");
+  }
+
+  function goArticlesList(){
+    try{
+      if(window.Router && typeof Router.go === "function"){
+        Router.go("articles");
+        return;
+      }
+    }catch(e){}
+    location.hash = "#/articles";
+  }
+  function setupArticleBodyCollapse(viewer){
+    if(!viewer) return;
+
+    const section = viewer.querySelector('[data-ins-section="body"]');
+    if(!section) return;
+
+    const markdown = section.querySelector(".markdown");
+    if(!markdown) return;
+
+    const oldControls = section.querySelector('[data-ins-collapse="controls"]');
+    if(oldControls) oldControls.remove();
+
+    markdown.style.maxHeight = "";
+    markdown.style.overflow = "";
+    markdown.style.position = "";
+
+    const limit = 520;
+    const fullHeight = markdown.scrollHeight || 0;
+    if(fullHeight <= limit) return;
+
+    let expanded = false;
+
+    markdown.style.maxHeight = limit + "px";
+    markdown.style.overflow = "hidden";
+    markdown.style.position = "relative";
+
+    const controls = document.createElement("div");
+    controls.setAttribute("data-ins-collapse","controls");
+    controls.style.marginTop = "12px";
+    controls.style.display = "flex";
+    controls.style.alignItems = "center";
+    controls.style.gap = "8px";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-sm";
+    btn.textContent = "Показать полностью";
+
+    btn.onclick = () => {
+      expanded = !expanded;
+
+      if(expanded){
+        markdown.style.maxHeight = "";
+        markdown.style.overflow = "";
+        btn.textContent = "Свернуть";
+      }else{
+        markdown.style.maxHeight = limit + "px";
+        markdown.style.overflow = "hidden";
+        btn.textContent = "Показать полностью";
+        try{
+          section.scrollIntoView({ block:"start", behavior:"smooth" });
+        }catch(e){}
+      }
+    };
+
+    controls.appendChild(btn);
+    section.appendChild(controls);
+  }
   async function openArticle(id){
     const viewer = $("#viewer");
 
@@ -336,16 +512,39 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
 
     const html0 = window.marked ? window.marked.parse(md) : `<pre>${esc(md)}</pre>`;
     const html = decorateCallouts(html0);
-
     viewer.innerHTML = `
-      <h1 class="article-title">${esc(meta.title)}</h1>
-      <p class="article-sub">${esc(updated)}</p>
-      <div class="item-meta" style="margin-bottom:10px">${cat}${tags}${roles}</div>
-      ${renderActions(meta.actions)}
-      <div class="hr"></div>
-      <div class="markdown">${html}</div>
+      <div class="item" data-ins-section="header" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">${esc(meta.title)}</h1>
+            <p class="article-sub">${esc(updated)}</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn btn-sm" id="insBackBtn" type="button">Закрыть</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" data-ins-section="meta" style="cursor:default; margin-bottom:12px;">
+        <div class="item-meta">${renderMetaRow(meta)}${cat}${tags}${roles}</div>
+      </div>
+
+      <div class="item" data-ins-section="body" style="cursor:default; margin-bottom:12px;">
+        <div class="markdown">${html}</div>
+      </div>
+
+      <div class="item" data-ins-section="resources" style="cursor:default;">
+        <div class="item-title">Ресурсы</div>
+        <div class="item-meta" style="margin-top:10px;">${renderActions(meta.actions)}</div>
+      </div>
     `;
+    const backBtn = document.getElementById("insBackBtn");
+    if(backBtn){
+      backBtn.textContent = getInstructionCloseLabel();
+      backBtn.onclick = () => goInstructionClose();
+    }
     // TOC: build right-side table of contents (H2 only)
+    setupArticleBodyCollapse(viewer);
     enhanceArticleWithToc(viewer);
     setStatus("готово");
   }
@@ -378,7 +577,6 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
       source: "file"
     }));
   }
-
   async function loadSbIndex(){
     if(!window.SB) throw new Error("Supabase not ready");
 
@@ -461,6 +659,13 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
     }
   };
 })();
+
+
+
+
+
+
+
 
 
 

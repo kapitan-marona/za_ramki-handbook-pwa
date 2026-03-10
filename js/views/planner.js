@@ -61,15 +61,145 @@ function fmtDMY(iso){
     if(s === "high" || s === "urgent") return "Срочно";
     return "Срочно";
   }
+
+
 function statusLabel(code){
-    if(code === "new") return "Новая задача";
-    if(code === "taken") return "Принята в работу";
-    if(code === "in_progress") return "В работе";
-    if(code === "problem") return "Есть проблема";
-    if(code === "done") return "Завершена";
-    if(code === "canceled") return "Отменена";
-    return code;
+  if(code === "new") return "Новая задача";
+  if(code === "taken") return "Принята в работу";
+  if(code === "in_progress") return "В работе";
+  if(code === "problem") return "Есть проблема";
+  if(code === "done") return "Завершена";
+  if(code === "canceled") return "Отменена";
+  return code;
+}
+function shortId(value){
+  const s = value == null ? "" : String(value).trim();
+  if(!s) return "";
+  return s.length > 8 ? s.slice(0,8) : s;
+}
+
+function prettifyPersonName(value){
+  const s = value == null ? "" : String(value).trim();
+  if(!s) return "";
+
+  if(s.includes("@")){
+    return s.split("@")[0].replace(/[._-]+/g, " ").trim();
   }
+
+  if(/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(s)) return "";
+  if(/^[0-9a-f]{32}$/i.test(s)) return "";
+
+  return s;
+}
+
+function resolvePersonLabel(input, opts){
+  const o = opts || {};
+  const uid = o.uid ? String(o.uid) : "";
+  const fallback = o.fallback || "Сотрудник";
+  if(input == null || input === "") return fallback;
+
+  if(typeof input === "object"){
+    const id = input.id != null ? String(input.id) : "";
+    if(uid && id && id === uid) return "Вы";
+
+    const direct = [
+      input.display_name,
+      input.full_name,
+      input.name,
+      input.email,
+      input.label,
+      input.title,
+      input.username
+    ];
+
+    for(const candidate of direct){
+      const pretty = prettifyPersonName(candidate);
+      if(pretty) return pretty;
+    }
+
+    if(id) return `${fallback} ${shortId(id)}`;
+    return fallback;
+  }
+
+  const raw = String(input).trim();
+  if(!raw) return fallback;
+  if(uid && raw === uid) return "Вы";
+
+  const pretty = prettifyPersonName(raw);
+  if(pretty) return pretty;
+
+  return `${fallback} ${shortId(raw)}`;
+}
+
+function getTaskAssigneeLabel(task, uid){
+  const assignees = Array.isArray(task && task.assignees) ? task.assignees : [];
+  if(assignees.length === 0) return "";
+  if(assignees.length === 1) return resolvePersonLabel(assignees[0], { uid, fallback: "Сотрудник" });
+  return `${assignees.length} исполнителя`;
+}
+
+function getTaskAssigneeDetails(task, peopleMap, uid){
+  const ids = Array.isArray(task && task.assignees) ? task.assignees.map(x => String(x)).filter(Boolean) : [];
+  if(ids.length === 0){
+    return {
+      ids: [],
+      text: '<span class="muted">Не назначен</span>'
+    };
+  }
+
+  const labels = ids.map(id => {
+    const person = peopleMap && peopleMap[id] ? peopleMap[id] : { id };
+    return esc(resolvePersonLabel(person, { uid, fallback: "Сотрудник" }));
+  });
+
+  return {
+    ids,
+    text: labels.join(", ")
+  };
+}
+
+function getTaskAssigneeIds(task){
+  return Array.isArray(task && task.assignees)
+    ? task.assignees.map(x => String(x)).filter(Boolean)
+    : [];
+}
+
+function getTaskRoleScope(task){
+  const s = String((task && task.role) || "all").trim().toLowerCase();
+  return s || "all";
+}
+
+function canRoleSeeTask(task, role){
+  const scope = getTaskRoleScope(task);
+  if(role === "admin") return true;
+  return scope === "all" || scope === "staff";
+}
+
+function isTaskMine(task, uid){
+  if(!uid) return false;
+  const assignees = getTaskAssigneeIds(task);
+  return assignees.includes(String(uid));
+}
+
+function shouldShowInLeft(task, role, uid, leftFilter){
+  if(!task) return false;
+  if(!canRoleSeeTask(task, role)) return false;
+
+  if(role === "admin" && leftFilter === "all") return true;
+
+  const assignees = getTaskAssigneeIds(task);
+  const mine = isTaskMine(task, uid);
+  const unassigned = assignees.length === 0;
+
+  if(role === "admin"){
+    if(mine) return true;
+    if(unassigned) return true;
+    return false;
+  }
+
+  return mine || unassigned;
+}
+
 
   async function show(){
     const listEl = document.getElementById("list");
@@ -124,35 +254,26 @@ const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) 
       listEl.innerHTML = head + pills + `<div id="plLeftList"></div>`;
 // bind pills
       listEl.querySelectorAll(".pl-left").forEach(b => {
-        b.onclick = () => { state.leftFilter = b.dataset.f; show(); };
+        b.onclick = () => { state.leftFilter = b.dataset.f; renderLeft(tasks); };
       });
 
       const host = document.getElementById("plLeftList");
       if(!host) return;
 
-      let leftTasks = tasks.filter(t => {
-        const assignees = Array.isArray(t && t.assignees) ? t.assignees.map(x => String(x)) : [];
-        const isMine = !!(
-          uid && (
-            assignees && assignees.includes(String(uid))
-          )
-        );
-        const isCommon = assignees.length === 0;
-        if(role === "admin"){
-          if(state.leftFilter === "all") return true;
-          return isMine || (isCommon && String(t.role || "all") === "admin");
-        }
-        return isMine || (isCommon && ["all","staff",""].includes(String(t.role || "all")));
-      });
+      let leftTasks = tasks.filter(t => shouldShowInLeft(t, role, uid, state.leftFilter));
 
       if(leftTasks.length === 0){
-        host.innerHTML = `
-          <div class="item" style="cursor:default;">
-            <div class="item-meta"><span class="muted">В списке слева пока пусто.</span></div>
-          </div>
-        `;
-        return;
-      }
+  const emptyText = (role === "admin" && state.leftFilter === "mine")
+    ? "Для фильтра «Мои» задач пока нет."
+    : "В списке слева пока пусто.";
+
+  host.innerHTML = `
+    <div class="item" style="cursor:default;">
+      <div class="item-meta"><span class="muted">${esc(emptyText)}</span></div>
+    </div>
+  `;
+  return;
+}
 
       // [PlannerUX] sortMineFirst: my tasks first in left list
         try{
@@ -165,15 +286,7 @@ const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) 
         const st  = t.status ? `· ${esc(statusLabel(t.status))}` : "";
         const badge = isOverdue(t) ? `<span class="tag warn">Срок истёк</span>` : ``;
 
-        let assigneeLabel = "";
-        if(Array.isArray(t.assignees) && t.assignees.length){
-          if(t.assignees.length === 1){
-            const a = String(t.assignees[0]);
-            assigneeLabel = a.length > 16 ? (a.slice(0,16) + "…") : a;
-          }else{
-            assigneeLabel = `${t.assignees.length} исполнителя`;
-          }
-        }
+        const assigneeLabel = getTaskAssigneeLabel(t, uid);
 const isSel = selectedId && String(selectedId) === String(t.id);
         return `
           <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
@@ -690,8 +803,13 @@ async function loadDocs(task){
     ? `<div class="muted" style="font-size:12px;">Комментариев пока нет.</div>`
     : `<div style="display:flex; flex-direction:column; gap:0;">
         ${items.map((c, idx) => {
-          const rawAuthor = c.author_id ? String(c.author_id) : "Автор";
-          const author = rawAuthor.length > 18 ? (rawAuthor.slice(0,18) + "…") : rawAuthor;
+          const author = resolvePersonLabel({
+            id: c.author_id,
+            display_name: c.author_display_name,
+            full_name: c.author_name,
+            name: c.author_label,
+            email: c.author_email
+          }, { uid, fallback: "Автор" });
           const ts = fmtCommentTs(c.created_at);
           const isLast = idx === items.length - 1;
 
@@ -796,11 +914,29 @@ async function loadDocs(task){
       }
 
       if(type === "assignment_change"){
-        const hasFrom = !!(p.from_assignee_id);
-        const hasTo = !!(p.to_assignee_id);
-        if(!hasFrom && hasTo) return "Назначен сотрудник";
-        if(hasFrom && !hasTo) return "Сотрудник снят";
-        return "Назначен другой сотрудник";
+        const hasFrom = !!(p.from_assignee_id || p.from_assignee_name || p.from_assignee_display_name);
+        const hasTo = !!(p.to_assignee_id || p.to_assignee_name || p.to_assignee_display_name);
+
+        const fromLabel = resolvePersonLabel({
+          id: p.from_assignee_id,
+          display_name: p.from_assignee_display_name,
+          full_name: p.from_assignee_name,
+          name: p.from_assignee_label,
+          email: p.from_assignee_email
+        }, { uid, fallback: "Сотрудник" });
+
+        const toLabel = resolvePersonLabel({
+          id: p.to_assignee_id,
+          display_name: p.to_assignee_display_name,
+          full_name: p.to_assignee_name,
+          name: p.to_assignee_label,
+          email: p.to_assignee_email
+        }, { uid, fallback: "Сотрудник" });
+
+        if(!hasFrom && hasTo) return `Назначен сотрудник: ${toLabel}`;
+        if(hasFrom && !hasTo) return `Исполнитель снят: ${fromLabel}`;
+        if(hasFrom && hasTo) return `Исполнитель изменён: ${fromLabel} → ${toLabel}`;
+        return "Исполнитель изменён";
       }
 
       if(type === "comment"){
@@ -952,6 +1088,11 @@ async function loadDocs(task){
             ` : ""}
 
             <div class="item" style="cursor:default;">
+  <div class="item-title">Исполнитель</div>
+  <div class="item-meta" id="plAssigneeView" style="margin-top:8px;"></div>
+</div>
+
+<div class="item" style="cursor:default;">
               <div class="item-title">Описание</div>
               <div class="item-meta" style="margin-top:8px;">${task.body ? esc(task.body) : '<span class="muted">Описание пустое.</span>'}</div>
             </div>
@@ -1018,6 +1159,39 @@ async function loadDocs(task){
         };
       }
 
+      const assigneeView = document.getElementById("plAssigneeView");
+
+      (async () => {
+        try{
+          let people = [];
+          try{
+            if(window.PlannerAPI && typeof PlannerAPI.fetchAssignablePeople === "function"){
+              people = await PlannerAPI.fetchAssignablePeople();
+            }
+          }catch(e){
+            console.warn("[Planner] fetchAssignablePeople error", e);
+          }
+
+          const peopleMap = {};
+          (people || []).forEach(p => {
+            if(!p || !p.id) return;
+            peopleMap[String(p.id)] = {
+              id: p.id,
+              name: p.name,
+              email: p.email,
+              role: p.role
+            };
+          });
+
+          if(assigneeView){
+            const details = getTaskAssigneeDetails(task, peopleMap, uid);
+            assigneeView.innerHTML = details.text;
+          }
+        }catch(err){
+          console.warn("[Planner] assignment block init error", err);
+        }
+      })();
+
       const back = document.getElementById("plBack");
       if(back) back.onclick = (e) => {
         try{ if(e) e.preventDefault(); }catch(_){}
@@ -1069,11 +1243,20 @@ async function loadDocs(task){
                 if(!window.PlannerAPI || typeof PlannerAPI.updateTask !== "function"){
                   throw new Error("updateTask missing");
                 }
-                const saved = await PlannerAPI.updateTask(task.id, payload);
-                const fresh = await PlannerData.fetchTaskById(task.id, { role, today });
-                if(fresh) renderDetails(fresh);
-                renderLeft(await fetchAllActiveTasks());
-                return saved;
+                return await PlannerAPI.updateTask(task.id, payload);
+              },
+              onAfterSubmit: async (taskIdAfterSave) => {
+                const targetId = taskIdAfterSave || task.id;
+                const tasks2 = await fetchAllActiveTasks();
+                const fresh = await PlannerData.fetchTaskById(targetId, { role, today });
+
+                renderLeft(tasks2);
+
+                if(fresh){
+                  renderDetails(fresh);
+                }else{
+                  show();
+                }
               }
             });
           }catch(err){
@@ -1225,6 +1408,30 @@ loadDocs(task);
 
   return { show };
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

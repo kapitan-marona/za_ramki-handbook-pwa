@@ -36,6 +36,27 @@
       }
     }
 
+    async function loadAssignablePeople(){
+      try{
+        if(!window.PlannerAPI || typeof PlannerAPI.fetchAssignablePeople !== "function") return [];
+        return await PlannerAPI.fetchAssignablePeople();
+      }catch(e){
+        console.warn("[Planner] loadAssignablePeople error", e);
+        return [];
+      }
+    }
+
+    function personLabel(p){
+      if(!p) return "Сотрудник";
+      const name = p.name ? String(p.name).trim() : "";
+      if(name) return name;
+      const email = p.email ? String(p.email).trim() : "";
+      if(email){
+        return email.split("@")[0].replace(/[._-]+/g, " ").trim();
+      }
+      return "Сотрудник";
+    }
+
     const titleValue = isEdit ? esc(task.title || "") : "";
     const bodyValue = isEdit ? esc(task.body || "") : "";
     const startValue = isEdit ? esc(task.start_date || "") : esc(nowIso);
@@ -109,6 +130,13 @@
             </select>
           </div>
 
+          <div>
+            <div class="muted" style="font-size:12px; margin-bottom:6px;">Исполнитель</div>
+            <select class="pl-control" id="plCreateAssignee">
+              <option value="">— Не назначен —</option>
+            </select>
+          </div>
+
           <div style="display:flex; gap:10px; align-items:center; justify-content:flex-end; margin-top:4px;">
             <span class="muted" id="plCreateMsg" style="font-size:12px; flex:1;"></span>
             <button class="btn" id="plCreateDo" type="button">${submitLabel}</button>
@@ -131,18 +159,35 @@
 
     (async () => {
       const sel = document.getElementById("plCreateProject");
-      if(!sel) return;
+      const assigneeSel = document.getElementById("plCreateAssignee");
 
       const items = await loadProjects();
       const selectedProjectId = isEdit && task && task.project_id ? String(task.project_id) : "";
 
-      sel.innerHTML =
-        `<option value="">— Без проекта —</option>` +
-        items.map(p => {
-          const pid = String(p.id);
-          const isSel = selectedProjectId && selectedProjectId === pid ? " selected" : "";
-          return `<option value="${esc(pid)}"${isSel}>${esc(p.title)}</option>`;
-        }).join("");
+      if(sel){
+        sel.innerHTML =
+          `<option value="">— Без проекта —</option>` +
+          items.map(p => {
+            const pid = String(p.id);
+            const isSel = selectedProjectId && selectedProjectId === pid ? " selected" : "";
+            return `<option value="${esc(pid)}"${isSel}>${esc(p.title)}</option>`;
+          }).join("");
+      }
+
+      if(assigneeSel){
+        const people = await loadAssignablePeople();
+        const currentAssigneeId = (isEdit && task && Array.isArray(task.assignees) && task.assignees.length)
+          ? String(task.assignees[0])
+          : "";
+
+        assigneeSel.innerHTML =
+          `<option value="">— Не назначен —</option>` +
+          (people || []).map(p => {
+            const pid = String(p.id);
+            const isSel = currentAssigneeId && currentAssigneeId === pid ? " selected" : "";
+            return `<option value="${esc(pid)}"${isSel}>${esc(personLabel(p))}</option>`;
+          }).join("");
+      }
     })();
 
     const closeBtn = document.getElementById("plCreateClose");
@@ -160,6 +205,7 @@
         const roleEl = document.getElementById("plCreateRole");
         const urgEl  = document.getElementById("plCreateUrgency");
         const projectEl = document.getElementById("plCreateProject");
+        const assigneeEl = document.getElementById("plCreateAssignee");
 
         const title = titleEl && titleEl.value ? titleEl.value.trim() : "";
         if(!title){ if(msg) msg.textContent = "Название обязательно."; return; }
@@ -178,11 +224,27 @@
             project_id: (projectEl && projectEl.value) ? projectEl.value : null
           };
 
+          const selectedAssigneeId = (assigneeEl && assigneeEl.value) ? String(assigneeEl.value) : "";
+          const nextAssignees = selectedAssigneeId ? [selectedAssigneeId] : [];
+
           if(typeof onSubmit !== "function"){
             throw new Error(isEdit ? "onSave handler missing" : "onCreate handler missing");
           }
 
           const result = await onSubmit(payload);
+
+          const taskIdForAssignee = isEdit
+            ? (task && task.id ? String(task.id) : "")
+            : (result && result.id ? String(result.id) : "");
+
+          if(taskIdForAssignee && window.PlannerAPI && typeof PlannerAPI.setTaskAssignees === "function"){
+            await PlannerAPI.setTaskAssignees(taskIdForAssignee, nextAssignees);
+          }
+
+          if(typeof opts.onAfterSubmit === "function"){
+            await opts.onAfterSubmit(taskIdForAssignee, result);
+          }
+
           close();
           return result;
         }catch(err){
@@ -606,6 +668,10 @@ window.PlannerActions = {
     ensureInProgress
   };
 })();
+
+
+
+
 
 
 

@@ -13,6 +13,179 @@ Views.Templates = (() => {
 
   function norm(s){ return (s ?? "").toString().toLowerCase(); }
 
+  const TPL_LAST_HASH_KEY = "zr_tpl_last_hash";
+  const TPL_RETURN_HASH_KEY = "zr_tpl_return_hash";
+
+  function getCurrentHash(){
+    return String(location.hash || "");
+  }
+
+  function isTemplateHash(hash){
+    return /^#\/templates(?:\/|$)/.test(String(hash || ""));
+  }
+
+  function isPlannerTaskHash(hash){
+    return /^#\/planner\/[^\/]+/.test(String(hash || ""));
+  }
+
+  function rememberTemplateContext(){
+    try{
+      const current = getCurrentHash();
+      const prev = sessionStorage.getItem(TPL_LAST_HASH_KEY) || "";
+
+      if(isTemplateHash(current) && isPlannerTaskHash(prev)){
+        sessionStorage.setItem(TPL_RETURN_HASH_KEY, prev);
+      }
+
+      sessionStorage.setItem(TPL_LAST_HASH_KEY, current);
+    }catch(e){}
+  }
+
+  function installTemplateContextTracker(){
+    try{
+      if(window.__zrTemplateContextTrackerInstalled) return;
+      window.__zrTemplateContextTrackerInstalled = true;
+
+      rememberTemplateContext();
+
+      window.addEventListener("hashchange", () => {
+        try{
+          rememberTemplateContext();
+        }catch(e){}
+      });
+    }catch(e){}
+  }
+
+  function getTemplateReturnHash(){
+    try{
+      const saved = sessionStorage.getItem(TPL_RETURN_HASH_KEY) || "";
+      if(isPlannerTaskHash(saved)) return saved;
+    }catch(e){}
+    return "#/templates";
+  }
+
+  function getTemplateCloseLabel(){
+    return isPlannerTaskHash(getTemplateReturnHash()) ? "К задаче" : "Закрыть";
+  }
+
+  function goTemplateClose(){
+    const target = getTemplateReturnHash();
+
+    try{
+      if(isPlannerTaskHash(target) && window.Router && typeof Router.go === "function"){
+        const m = target.match(/^#\/planner\/(.+)$/);
+        if(m && m[1]){
+          Router.go("planner", decodeURIComponent(m[1]));
+          return;
+        }
+      }
+
+      if(window.Router && typeof Router.go === "function"){
+        Router.go("templates");
+        return;
+      }
+    }catch(e){}
+
+    location.hash = isPlannerTaskHash(target) ? target : "#/templates";
+  }
+
+  function fmtDMY(value){
+    const s = String(value || "").trim();
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? `${m[3]}.${m[2]}.${m[1]}` : s;
+  }
+
+  function fmtMetaDate(value){
+    return fmtDMY(value);
+  }
+
+  function renderMetaRow(meta){
+    const author =
+      meta?.author ||
+      meta?.author_name ||
+      meta?.created_by_name ||
+      meta?.created_by ||
+      "";
+
+    const created =
+      meta?.createdAt ||
+      meta?.created_at ||
+      "";
+
+    const updated =
+      meta?.updatedAt ||
+      meta?.updated_at ||
+      "";
+
+    const linked =
+      meta?.linkedFrom ||
+      meta?.linked_from ||
+      "";
+
+    const parts = [];
+
+    if(author)  parts.push(`<span class="tag">Автор: ${esc(String(author))}</span>`);
+    if(created) parts.push(`<span class="tag">Создано: ${esc(fmtMetaDate(created))}</span>`);
+    if(updated) parts.push(`<span class="tag">Обновлено: ${esc(fmtMetaDate(updated))}</span>`);
+    if(linked)  parts.push(`<span class="tag">Связано с: ${esc(String(linked))}</span>`);
+
+    return parts.join("");
+  }
+
+  function renderResourcesBlock(items){
+    const list = Array.isArray(items) ? items.filter(Boolean) : [];
+    if(!list.length){
+      return `<span class="muted">Связанные ресурсы пока не добавлены.</span>`;
+    }
+
+    return `
+      <div class="actions">
+        ${list.map((r) => {
+          const label = esc(r.label || "Открыть");
+          const href = esc(r.href || "#");
+          const target = r.external ? `target="_blank" rel="noopener"` : "";
+          return `<a class="btn" href="${href}" ${target}><span class="dot"></span>${label}</a>`;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  function renderViewerShell(template, options){
+    const o = options || {};
+    const metaHtml = renderMetaRow(template);
+    const resourcesHtml = renderResourcesBlock(o.resources || []);
+    const sub = o.sub ? `<p class="article-sub">${esc(o.sub)}</p>` : "";
+
+    return `
+      <div class="item" data-tpl-section="header" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">${esc(template.title || "Шаблон")}</h1>
+            ${sub}
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn btn-sm" id="tplBackBtn" type="button">${getTemplateCloseLabel()}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" data-tpl-section="meta" style="cursor:default; margin-bottom:12px; ${metaHtml ? "" : "display:none;"}">
+        <div class="item-meta">${metaHtml}</div>
+      </div>
+
+      <div class="item" data-tpl-section="body" style="cursor:default; margin-bottom:12px;">
+        ${o.body || ""}
+      </div>
+
+      <div class="item" data-tpl-section="resources" style="cursor:default;">
+        <div class="item-title">Ресурсы</div>
+        <div class="item-meta" style="margin-top:10px;">${resourcesHtml}</div>
+      </div>
+    `;
+  }
+
+  installTemplateContextTracker();
+
   function downloadText(filename, text){
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -64,13 +237,13 @@ Views.Templates = (() => {
       const a = document.createElement("a");
       a.className = "item";
       a.href = `#/${encodeURIComponent("templates")}/${encodeURIComponent(t.id)}`;
+      const metaParts = [];
+      if(t.format) metaParts.push(`<span class="tag">${esc(t.format)}</span>`);
+
       a.innerHTML = `
         <div class="item-title">${esc(t.title || "Шаблон")}</div>
-        <div class="item-meta">
-          ${t.format ? `<span class="tag">${esc(t.format)}</span>` : ""}
-          ${t.link ? `<span class="tag">link</span>` : ""}
-          <span class="tag accent">заполнить</span>
-        </div>`;
+        ${metaParts.length ? `<div class="item-meta">${metaParts.join("")}</div>` : ""}
+      `;
       list.appendChild(a);
     });
   }
@@ -84,7 +257,7 @@ Views.Templates = (() => {
     renderList();
   }
 
-  async function open(templateId){
+    async function open(templateId){
     const viewer = $("#viewer");
     const data = Array.isArray(_data) && _data.length ? _data : await API.json("./content/data/templates.json");
     const t = data.find(x => x.id === templateId);
@@ -99,11 +272,7 @@ Views.Templates = (() => {
       const key = "tpl:project_links_excel:v1";
       const saved = JSON.parse(localStorage.getItem(key) || "{}");
 
-      viewer.innerHTML = `
-        <h1 class="article-title">${esc(t.title)}</h1>
-        <p class="article-sub">Вставь ссылки → скачай Excel.</p>
-        <div class="hr"></div>
-
+      const body = `
         <div class="markdown">
           <div class="zr-form-grid">
 
@@ -151,6 +320,17 @@ Views.Templates = (() => {
           </div>
         </div>
       `;
+
+      const resources = t.link ? [{ label: "Открыть исходный файл", href: t.link, external: true }] : [];
+
+      viewer.innerHTML = renderViewerShell(t, {
+        sub: "Вставь ссылки → скачай Excel.",
+        body,
+        resources
+      });
+
+      const backBtn = document.getElementById("tplBackBtn");
+      if(backBtn) backBtn.onclick = () => goTemplateClose();
 
       const fields = {
         address: $("#f_address"),
@@ -209,12 +389,21 @@ Views.Templates = (() => {
 
     // ===== Default "link-only" templates =====
     if(templateId !== "brief_visualizer"){
-      viewer.innerHTML = `
-        <h1 class="article-title">${esc(t.title)}</h1>
-        <p class="article-sub">Пока без формы. Можно открыть файл по ссылке.</p>
-        <div class="actions">
-          ${t.link ? `<a class="btn" href="${esc(t.link)}" target="_blank" rel="noopener"><span class="dot"></span>Открыть</a>` : ""}
-        </div>`;
+      const body = `
+        <div class="markdown">
+          <p class="article-sub" style="margin:0;">Пока без формы. Можно открыть файл по ссылке.</p>
+        </div>
+      `;
+
+      const resources = t.link ? [{ label: "Открыть", href: t.link, external: true }] : [];
+
+      viewer.innerHTML = renderViewerShell(t, {
+        body,
+        resources
+      });
+
+      const backBtn = document.getElementById("tplBackBtn");
+      if(backBtn) backBtn.onclick = () => goTemplateClose();
       return;
     }
 
@@ -223,11 +412,7 @@ Views.Templates = (() => {
       const key = "tpl:brief_visualizer:v1";
       const saved = JSON.parse(localStorage.getItem(key) || "{}");
 
-      viewer.innerHTML = `
-        <h1 class="article-title">${esc(t.title)}</h1>
-        <p class="article-sub">Заполни быстро → скачай .txt или скопируй.</p>
-        <div class="hr"></div>
-
+      const body = `
         <div class="markdown">
           <div class="zr-form-grid">
             <div class="zr-field" style="grid-column:1 / -1;">
@@ -279,6 +464,17 @@ Views.Templates = (() => {
         </div>
       `;
 
+      const resources = t.link ? [{ label: "Открыть исходный файл", href: t.link, external: true }] : [];
+
+      viewer.innerHTML = renderViewerShell(t, {
+        sub: "Заполни быстро → скачай .txt или скопируй.",
+        body,
+        resources
+      });
+
+      const backBtn = document.getElementById("tplBackBtn");
+      if(backBtn) backBtn.onclick = () => goTemplateClose();
+
       const fields = {
         project: $("#f_project"),
         zone: $("#f_zone"),
@@ -323,3 +519,6 @@ Views.Templates = (() => {
 
   return { show, open, setFilter };
 })();
+
+
+

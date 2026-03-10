@@ -26,6 +26,12 @@ _bak_*/
 *.bak*
 *.RECOVER_*.js
 articles.RECOVER_TODAY.js
+*.bak
+*.bak.*
+*.before_*
+*.step-cache-bak
+*_bak/
+* bak/
 
 # Local unpack/test
 __test_unpack/

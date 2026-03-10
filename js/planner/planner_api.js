@@ -85,7 +85,19 @@
     const SB = SBx();
     const r = await SB
       .from("task_comments")
-      .select("id,task_id,author_id,body,created_at,deleted_at")
+      .select(`
+        id,
+        task_id,
+        author_id,
+        body,
+        created_at,
+        deleted_at,
+        author:profiles!task_comments_author_id_fkey(
+          id,
+          name,
+          email
+        )
+      `)
       .eq("task_id", taskId)
       .is("deleted_at", null)
       .order("created_at", { ascending:true });
@@ -308,6 +320,93 @@
     return r.data || [];
   }
 
+  async function fetchAssignablePeople(){
+    const SB = SBx();
+    const r = await SB
+      .from("profiles")
+      .select("id,email,name,role,is_admin")
+      .order("name", { ascending:true })
+      .order("email", { ascending:true });
+
+    if(r && r.error) throw r.error;
+    return r.data || [];
+  }
+
+  async function setTaskAssignees(taskId, userIds){
+    const SB = SBx();
+    if(!taskId) throw new Error("taskId required");
+
+    const ids = Array.isArray(userIds)
+      ? Array.from(new Set(userIds.map(x => String(x).trim()).filter(Boolean)))
+      : [];
+
+    const beforeRes = await SB
+      .from("task_assignees")
+      .select("user_id")
+      .eq("task_id", taskId);
+
+    if(beforeRes && beforeRes.error) throw beforeRes.error;
+
+    const beforeIds = Array.isArray(beforeRes.data)
+      ? beforeRes.data.map(x => String(x.user_id)).filter(Boolean)
+      : [];
+
+    const del = await SB
+      .from("task_assignees")
+      .delete()
+      .eq("task_id", taskId);
+
+    if(del && del.error) throw del.error;
+
+    if(ids.length > 0){
+      const rows = ids.map(uid => ({
+        task_id: taskId,
+        user_id: uid
+      }));
+
+      const ins = await SB
+        .from("task_assignees")
+        .insert(rows);
+
+      if(ins && ins.error) throw ins.error;
+    }
+
+    const beforeOne = beforeIds.length ? String(beforeIds[0]) : null;
+    const afterOne = ids.length ? String(ids[0]) : null;
+
+    if(beforeOne !== afterOne){
+      const allIds = [beforeOne, afterOne].filter(Boolean);
+
+      let profilesMap = {};
+      if(allIds.length > 0){
+        const profRes = await SB
+          .from("profiles")
+          .select("id,name,email")
+          .in("id", allIds);
+
+        if(profRes && profRes.error) throw profRes.error;
+
+        (profRes.data || []).forEach(p => {
+          profilesMap[String(p.id)] = p;
+        });
+      }
+
+      const fromProfile = beforeOne ? profilesMap[String(beforeOne)] : null;
+      const toProfile = afterOne ? profilesMap[String(afterOne)] : null;
+
+      await logTaskActivity(taskId, "assignment_change", null, {
+        from_assignee_id: beforeOne,
+        to_assignee_id: afterOne,
+        from_assignee_name: fromProfile && fromProfile.name ? String(fromProfile.name) : null,
+        to_assignee_name: toProfile && toProfile.name ? String(toProfile.name) : null,
+        from_assignee_email: fromProfile && fromProfile.email ? String(fromProfile.email) : null,
+        to_assignee_email: toProfile && toProfile.email ? String(toProfile.email) : null
+      });
+    }
+
+    return true;
+  }
+
   async function fetchTaskLinks(taskId){
     const SB = SBx();
     const r = await SB
@@ -409,9 +508,17 @@
     fetchTaskActivity,
     fetchTaskAssignees,
     fetchTasksAssigneesBatch,
+    fetchAssignablePeople,
+    setTaskAssignees,
     fetchTaskLinks,
     addTaskLink,
     removeTaskLink,
     searchArticlesForLink
   };
 })();
+
+
+
+
+
+

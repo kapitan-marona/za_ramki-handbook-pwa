@@ -5,17 +5,168 @@ Views.Checklists = (() => {
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[c]));
 
+  const CL_LAST_HASH_KEY = "zr_checklists_last_hash";
+  const CL_RETURN_HASH_KEY = "zr_checklists_return_hash";
+  const CL_GROUPS_STATE_KEY = "zr_checklists_groups_state";
+
   let _data = [];
   let _q = "";
 
-  function setStatus(t){ $("#status").textContent = t; }
-  function setPanelTitle(t){ $("#panelTitle").textContent = t; }
+  function setStatus(t){
+    const el = $("#status");
+    if(el) el.textContent = t;
+  }
 
-  function norm(s){ return (s ?? "").toString().toLowerCase(); }
+  function setPanelTitle(t){
+    const el = $("#panelTitle");
+    if(el) el.textContent = t;
+  }
+
+  function norm(s){
+    return (s ?? "").toString().toLowerCase();
+  }
+
+  function getCurrentHash(){
+    return String(location.hash || "");
+  }
+
+  function isChecklistHash(hash){
+    return /^#\/checklists(?:\/|$)/.test(String(hash || ""));
+  }
+
+  function isPlannerTaskHash(hash){
+    return /^#\/planner\/[^\/]+/.test(String(hash || ""));
+  }
+
+  function rememberChecklistContext(){
+    try{
+      const current = getCurrentHash();
+      const prev = sessionStorage.getItem(CL_LAST_HASH_KEY) || "";
+
+      if(isChecklistHash(current) && isPlannerTaskHash(prev)){
+        sessionStorage.setItem(CL_RETURN_HASH_KEY, prev);
+      }
+
+      if(isChecklistHash(current) && /^#\/checklists$/.test(prev)){
+        sessionStorage.setItem(CL_RETURN_HASH_KEY, "#/checklists");
+      }
+
+      sessionStorage.setItem(CL_LAST_HASH_KEY, current);
+    }catch(e){}
+  }
+
+  function installChecklistContextTracker(){
+    try{
+      if(window.__zrChecklistContextTrackerInstalled) return;
+      window.__zrChecklistContextTrackerInstalled = true;
+
+      rememberChecklistContext();
+
+      window.addEventListener("hashchange", () => {
+        try{
+          rememberChecklistContext();
+        }catch(e){}
+      });
+    }catch(e){}
+  }
+
+  function getChecklistReturnHash(){
+    try{
+      const saved = sessionStorage.getItem(CL_RETURN_HASH_KEY) || "";
+      if(isPlannerTaskHash(saved)) return saved;
+      if(saved === "#/checklists") return saved;
+    }catch(e){}
+    return "#/checklists";
+  }
+
+  function getChecklistCloseLabel(){
+    return isPlannerTaskHash(getChecklistReturnHash()) ? "К задаче" : "Закрыть";
+  }
+
+  function goChecklistClose(){
+    const target = getChecklistReturnHash();
+
+    try{
+      if(isPlannerTaskHash(target) && window.Router && typeof Router.go === "function"){
+        const m = target.match(/^#\/planner\/(.+)$/);
+        if(m && m[1]){
+          Router.go("planner", decodeURIComponent(m[1]));
+          return;
+        }
+      }
+
+      if(window.Router && typeof Router.go === "function"){
+        Router.go("checklists");
+        return;
+      }
+    }catch(e){}
+
+    location.hash = isPlannerTaskHash(target) ? target : "#/checklists";
+  }
+
+  function getLinkedFromMeta(){
+    const target = getChecklistReturnHash();
+    if(isPlannerTaskHash(target)){
+      return `<span class="tag">Связано с: задача</span>`;
+    }
+    return "";
+  }
+
+  
+  function formatDate(d){
+    if(!d) return "";
+    try{
+      const dt = new Date(d);
+      if(isNaN(dt)) return d;
+
+      const day = String(dt.getDate()).padStart(2,"0");
+      const mon = String(dt.getMonth()+1).padStart(2,"0");
+      const yr  = dt.getFullYear();
+
+      return `${day}.${mon}.${yr}`;
+    }catch(e){
+      return d;
+    }
+  }
+function renderMetaRow(item){
+    let created =
+      item?.createdAt ||
+      item?.created_at ||
+      "";
+
+    let updated =
+      item?.updatedAt ||
+      item?.updated_at ||
+      "";
+
+    const author =
+      item?.author ||
+      item?.author_name ||
+      "";
+
+    const tags = Array.isArray(item?.tags) ? item.tags : [];
+
+    const parts = [];
+
+    if(author)  parts.push(`<span class="tag">Автор: ${esc(String(author))}</span>`);
+    if(created){ created = formatDate(created); parts.push(`<span class="tag">Создано: ${esc(String(created))}</span>`); }
+    if(updated && updated !== created){ updated = formatDate(updated); parts.push(`<span class="tag">Обновлено: ${esc(String(updated))}</span>`); }
+
+    const linked = getLinkedFromMeta();
+    if(linked) parts.push(linked);
+
+    tags.forEach(tag => {
+      parts.push(`<span class="tag">${esc(String(tag))}</span>`);
+    });
+
+    return parts.join("");
+  }
 
   function renderList(){
     const list = $("#list");
     const viewer = $("#viewer");
+    if(!list || !viewer) return;
+
     list.innerHTML = "";
     viewer.innerHTML = `<div class="empty">Выберите чек-лист слева.</div>`;
 
@@ -29,19 +180,255 @@ Views.Checklists = (() => {
       return (t.includes(q) || d.includes(q) || u.includes(q) || tags.includes(q));
     });
 
-    setStatus(`${filtered.length}`);
+    setStatus(`${filtered.length} / ${items.length}`);
+
+    if(filtered.length === 0){
+      list.innerHTML = `<div class="empty" style="padding:12px;">Ничего не найдено.</div>`;
+      return;
+    }
 
     filtered.forEach((c) => {
       const a = document.createElement("a");
+      const cid = String(c.id || "");
       a.className = "item";
-      a.href = `#/${encodeURIComponent("checklists")}/${encodeURIComponent(c.id || "")}`;
+      a.href = "#/checklists/" + encodeURIComponent(cid);
       a.innerHTML = `
         <div class="item-title">${esc(c.title || "Чек-лист")}</div>
         <div class="item-meta">
           ${c.tags && c.tags.length ? `<span class="tag">${esc(c.tags.join(", "))}</span>` : ""}
-          <span class="tag accent">открыть</span>
         </div>`;
+
+      a.onclick = (e) => {
+        e.preventDefault();
+        if(window.Router && typeof Router.go === "function"){
+          Router.go("checklists", cid);
+          return;
+        }
+        location.hash = "#/checklists/" + encodeURIComponent(cid);
+      };
+
       list.appendChild(a);
+    });
+  }
+
+  function getGroupStateMap(){
+    try{
+      return JSON.parse(sessionStorage.getItem(CL_GROUPS_STATE_KEY) || "{}") || {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  function setGroupStateMap(next){
+    try{
+      sessionStorage.setItem(CL_GROUPS_STATE_KEY, JSON.stringify(next || {}));
+    }catch(e){}
+  }
+
+  function getChecklistGroupState(checklistId){
+    const all = getGroupStateMap();
+    return all[checklistId] || {};
+  }
+
+  function setChecklistGroupState(checklistId, groupKey, expanded){
+    const all = getGroupStateMap();
+    all[checklistId] = all[checklistId] || {};
+    all[checklistId][groupKey] = !!expanded;
+    setGroupStateMap(all);
+  }
+
+  function renderPlainItems(items){
+    if(!Array.isArray(items) || !items.length) return "";
+    return `
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        ${items.map((text, idx) => `
+          <div class="item" style="cursor:default; padding:10px 12px;">
+            <div class="item-meta">
+              <input type="checkbox" class="cl-checkbox">
+              <span>${esc(String(text || ""))}</span>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function renderGroups(item){
+    const groups = Array.isArray(item?.groups) ? item.groups : [];
+    if(!groups.length) return "";
+
+    const state = getChecklistGroupState(String(item.id || ""));
+    return `
+      <div data-cl-groups-root="1" style="display:flex; flex-direction:column; gap:10px;">
+        ${groups.map((group, idx) => {
+          const title = group?.title || `Группа ${idx + 1}`;
+          const rows = Array.isArray(group?.items) ? group.items : (Array.isArray(group?.steps) ? group.steps : []);
+          const key = `g${idx}`;
+          const expanded = state[key] !== false;
+
+          return `
+            <div class="item" data-cl-group="${esc(key)}" style="cursor:default; padding:12px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <div class="item-title" style="margin:0;">${esc(title)}</div>
+                <button
+                  class="btn btn-sm"
+                  type="button"
+                  data-cl-group-toggle="${esc(key)}"
+                  aria-expanded="${expanded ? "true" : "false"}"
+                >${expanded ? "Свернуть" : "Показать"}</button>
+              </div>
+
+              <div
+                data-cl-group-body="${esc(key)}"
+                style="margin-top:10px; display:${expanded ? "block" : "none"};"
+              >
+                ${rows.length ? `
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    ${rows.map((row, rowIdx) => `
+                      <div class="item" style="cursor:default; padding:10px 12px;">
+                        <div class="item-meta">
+                          <span class="tag">${rowIdx + 1}</span>
+                          <span>${esc(String(row || ""))}</span>
+                        </div>
+                      </div>
+                    `).join("")}
+                  </div>
+                ` : `<div class="muted" style="font-size:12px;">Пустая группа.</div>`}
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  function renderBody(item){
+    const groupsHtml = renderGroups(item);
+    if(groupsHtml) return groupsHtml;
+
+    const items = Array.isArray(item?.items) ? item.items : (Array.isArray(item?.steps) ? item.steps : []);
+    if(items.length) return renderPlainItems(items);
+
+    const desc = (item?.desc || "").toString().trim();
+    if(desc){
+      return `<div style="line-height:1.6;">${esc(desc)}</div>`;
+    }
+
+    return `<div class="muted">Описание отсутствует. Используйте кнопку открытия чек-листа ниже.</div>`;
+  }
+
+  function renderResources(item){
+    const resources = [];
+    const url = (item?.url || "").toString().trim();
+
+    if(url){
+      resources.push(`
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <a class="btn" href="${esc(url)}" target="_blank" rel="noopener">
+            <span class="dot"></span>Открыть чек-лист
+          </a>
+          <div class="muted" style="font-size:12px; line-height:1.5;">
+            Ссылка: <span class="mono">${esc(url)}</span>
+          </div>
+        </div>
+      `);
+    }
+
+    if(Array.isArray(item?.resources) && item.resources.length){
+      resources.push(`
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:${url ? "12px" : "0"};">
+          ${item.resources.map((r) => {
+            const label = esc(r?.label || r?.title || "Ресурс");
+            const href = esc(r?.url || "#");
+            return `<a class="btn" href="${href}" target="_blank" rel="noopener"><span class="dot"></span>${label}</a>`;
+          }).join("")}
+        </div>
+      `);
+    }
+
+    return resources.length
+      ? resources.join("")
+      : `<div class="muted">Дополнительные ресурсы отсутствуют.</div>`;
+  }
+
+  function setupBodyCollapse(viewer){
+    if(!viewer) return;
+
+    const section = viewer.querySelector('[data-cl-section="body"]');
+    if(!section) return;
+
+    const body = section.querySelector('[data-cl-body-root="1"]');
+    if(!body) return;
+
+    const oldControls = section.querySelector('[data-cl-collapse="controls"]');
+    if(oldControls) oldControls.remove();
+
+    body.style.maxHeight = "";
+    body.style.overflow = "";
+    body.style.position = "";
+
+    const limit = 520;
+    const fullHeight = body.scrollHeight || 0;
+    if(fullHeight <= limit) return;
+
+    let expanded = false;
+
+    body.style.maxHeight = limit + "px";
+    body.style.overflow = "hidden";
+    body.style.position = "relative";
+
+    const controls = document.createElement("div");
+    controls.setAttribute("data-cl-collapse","controls");
+    controls.style.marginTop = "12px";
+    controls.style.display = "flex";
+    controls.style.alignItems = "center";
+    controls.style.gap = "8px";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-sm";
+    btn.textContent = "Показать полностью";
+
+    btn.onclick = () => {
+      expanded = !expanded;
+
+      if(expanded){
+        body.style.maxHeight = "";
+        body.style.overflow = "";
+        btn.textContent = "Свернуть";
+      }else{
+        body.style.maxHeight = limit + "px";
+        body.style.overflow = "hidden";
+        btn.textContent = "Показать полностью";
+        try{
+          section.scrollIntoView({ block:"start", behavior:"smooth" });
+        }catch(e){}
+      }
+    };
+
+    controls.appendChild(btn);
+    section.appendChild(controls);
+  }
+
+  function bindGroupToggles(item){
+    const viewer = $("#viewer");
+    if(!viewer) return;
+
+    viewer.querySelectorAll("[data-cl-group-toggle]").forEach(btn => {
+      btn.onclick = () => {
+        const key = btn.getAttribute("data-cl-group-toggle") || "";
+        const body = viewer.querySelector(`[data-cl-group-body="${CSS.escape(key)}"]`);
+        if(!body) return;
+
+        const expanded = body.style.display !== "none";
+        const nextExpanded = !expanded;
+
+        body.style.display = nextExpanded ? "block" : "none";
+        btn.textContent = nextExpanded ? "Свернуть" : "Показать";
+        btn.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+
+        setChecklistGroupState(String(item.id || ""), key, nextExpanded);
+      };
     });
   }
 
@@ -53,21 +440,52 @@ Views.Checklists = (() => {
 
   async function open(id){
     const viewer = $("#viewer");
+    if(!viewer) return;
+
     const item = (Array.isArray(_data) ? _data : []).find(x => (x.id || "") === (id || ""));
     if(!item){
       viewer.innerHTML = `<div class="empty">Чек-лист не найден.</div>`;
       return;
     }
 
-    const url = (item.url || "").toString().trim();
+    const desc = (item.desc || "").toString().trim();
+    const subtitle = desc || "Проверьте содержимое и при необходимости откройте внешний чек-лист.";
+    const metaRow = renderMetaRow(item);
+
     viewer.innerHTML = `
-      <h1 class="article-title">${esc(item.title || "Чек-лист")}</h1>
-      ${item.desc ? `<p class="article-sub">${esc(item.desc)}</p>` : `<p class="article-sub">Откроется в новой вкладке.</p>`}
-      <div class="actions">
-        ${url ? `<a class="btn" href="${esc(url)}" target="_blank" rel="noopener"><span class="dot"></span>Открыть чек-лист</a>` : ""}
+      <div class="item" data-cl-section="header" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">${esc(item.title || "Чек-лист")}</h1>
+            <p class="article-sub">${esc(subtitle)}</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn btn-sm" id="clBackBtn" type="button">${getChecklistCloseLabel()}</button>
+          </div>
+        </div>
       </div>
-      ${url ? `<div class="hr"></div><div class="muted">Ссылка: <span class="mono">${esc(url)}</span></div>` : ""}
+
+      <div class="item" data-cl-section="meta" style="cursor:default; margin-bottom:12px;">
+        <div class="item-meta">${metaRow || `<span class="muted">Метаданные отсутствуют.</span>`}</div>
+      </div>
+
+      <div class="item" data-cl-section="body" style="cursor:default; margin-bottom:12px;">
+        <div data-cl-body-root="1">${renderBody(item)}</div>
+      </div>
+
+      <div class="item" data-cl-section="resources" style="cursor:default;">
+        <div class="item-title">Ресурсы</div>
+        <div class="item-meta" style="margin-top:10px;">${renderResources(item)}</div>
+      </div>
     `;
+
+    const backBtn = document.getElementById("clBackBtn");
+    if(backBtn){
+      backBtn.onclick = () => goChecklistClose();
+    }
+
+    bindGroupToggles(item);
+    setupBodyCollapse(viewer);
   }
 
   function setFilter(q){
@@ -75,5 +493,12 @@ Views.Checklists = (() => {
     renderList();
   }
 
+  installChecklistContextTracker();
+
   return { show, open, setFilter };
 })();
+
+
+
+
+

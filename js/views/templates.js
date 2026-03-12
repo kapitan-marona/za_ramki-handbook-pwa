@@ -24,21 +24,16 @@ Views.Templates = (() => {
     return /^#\/templates(?:\/|$)/.test(String(hash || ""));
   }
 
-  function isPlannerTaskHash(hash){
-    return /^#\/planner\/[^\/]+/.test(String(hash || ""));
+  function isTemplateDetailHash(hash){
+    return /^#\/templates\/[^\/]+/.test(String(hash || ""));
   }
 
-  function rememberTemplateContext(){
-    try{
-      const current = getCurrentHash();
-      const prev = sessionStorage.getItem(TPL_LAST_HASH_KEY) || "";
+  function isTemplateListHash(hash){
+    return String(hash || "") === "#/templates";
+  }
 
-      if(isTemplateHash(current) && isPlannerTaskHash(prev)){
-        sessionStorage.setItem(TPL_RETURN_HASH_KEY, prev);
-      }
-
-      sessionStorage.setItem(TPL_LAST_HASH_KEY, current);
-    }catch(e){}
+  function isPlannerTaskHash(hash){
+    return /^#\/planner\/[^\/]+/.test(String(hash || ""));
   }
 
   function installTemplateContextTracker(){
@@ -46,25 +41,32 @@ Views.Templates = (() => {
       if(window.__zrTemplateContextTrackerInstalled) return;
       window.__zrTemplateContextTrackerInstalled = true;
 
-      rememberTemplateContext();
-
-      window.addEventListener("hashchange", () => {
-        try{
-          rememberTemplateContext();
-        }catch(e){}
-      });
+      if(window.ViewerNav && typeof ViewerNav.installTracker === "function"){
+        ViewerNav.installTracker({
+          lastKey: TPL_LAST_HASH_KEY,
+          returnKey: TPL_RETURN_HASH_KEY,
+          isDetailHash: isTemplateDetailHash,
+          isListHash: isTemplateListHash
+        });
+      }
     }catch(e){}
   }
 
   function getTemplateReturnHash(){
     try{
-      const saved = sessionStorage.getItem(TPL_RETURN_HASH_KEY) || "";
-      if(isPlannerTaskHash(saved)) return saved;
+      if(window.ViewerNav && typeof ViewerNav.getReturnHash === "function"){
+        return ViewerNav.getReturnHash(TPL_RETURN_HASH_KEY) || "#/templates";
+      }
     }catch(e){}
     return "#/templates";
   }
 
   function getTemplateCloseLabel(){
+    try{
+      if(window.ViewerNav && typeof ViewerNav.getCloseLabel === "function"){
+        return ViewerNav.getCloseLabel(getTemplateReturnHash());
+      }
+    }catch(e){}
     return isPlannerTaskHash(getTemplateReturnHash()) ? "К задаче" : "Закрыть";
   }
 
@@ -72,16 +74,8 @@ Views.Templates = (() => {
     const target = getTemplateReturnHash();
 
     try{
-      if(isPlannerTaskHash(target) && window.Router && typeof Router.go === "function"){
-        const m = target.match(/^#\/planner\/(.+)$/);
-        if(m && m[1]){
-          Router.go("planner", decodeURIComponent(m[1]));
-          return;
-        }
-      }
-
-      if(window.Router && typeof Router.go === "function"){
-        Router.go("templates");
+      if(window.ViewerNav && typeof ViewerNav.goClose === "function"){
+        ViewerNav.goClose(target, "templates");
         return;
       }
     }catch(e){}
@@ -90,9 +84,12 @@ Views.Templates = (() => {
   }
 
   function fmtDMY(value){
-    const s = String(value || "").trim();
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    return m ? `${m[3]}.${m[2]}.${m[1]}` : s;
+    try{
+      if(window.ViewerNav && typeof ViewerNav.formatDMY === "function"){
+        return ViewerNav.formatDMY(value);
+      }
+    }catch(e){}
+    return String(value || "").trim();
   }
 
   function fmtMetaDate(value){
@@ -150,6 +147,46 @@ Views.Templates = (() => {
     `;
   }
 
+  async function loadTemplatesFromSupabase(){
+    if(!window.SB) return [];
+
+    const { data, error } = await SB
+      .from("kb_templates")
+      .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
+      .eq("published", true)
+      .order("sort", { ascending:true })
+      .order("title", { ascending:true });
+
+    if(error){
+      console.error("[Templates] Supabase load error:", error);
+      return [];
+    }
+
+    return Array.isArray(data) ? data : [];
+  }
+
+  function getTemplateResources(template){
+    const actions = Array.isArray(template?.actions) ? template.actions.filter(Boolean) : [];
+    if(actions.length){
+      return actions.map((a) => ({
+        label: a.label || "Открыть",
+        href: a.url || "#",
+        external: !!a.external
+      }));
+    }
+
+    const link = String(template?.link || "").trim();
+    if(link){
+      return [{
+        label: "Открыть",
+        href: link,
+        external: !link.startsWith("#/")
+      }];
+    }
+
+    return [];
+  }
+
   function renderViewerShell(template, options){
     const o = options || {};
     const metaHtml = renderMetaRow(template);
@@ -185,6 +222,28 @@ Views.Templates = (() => {
   }
 
   installTemplateContextTracker();
+
+  function bindAutosave(fields, key){
+    if(!fields || !key) return;
+
+    const saveDraft = () => {
+      try{
+        const v = {};
+        Object.entries(fields).forEach(([k, el]) => {
+          if(!el) return;
+          v[k] = (el.value || "").trim();
+        });
+        localStorage.setItem(key, JSON.stringify(v));
+      }catch(e){}
+    };
+
+    Object.values(fields).forEach((el) => {
+      if(!el) return;
+      el.addEventListener("input", saveDraft);
+      el.addEventListener("change", saveDraft);
+      el.addEventListener("blur", saveDraft);
+    });
+  }
 
   function downloadText(filename, text){
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
@@ -228,7 +287,8 @@ Views.Templates = (() => {
       const title = norm(t.title);
       const id = norm(t.id);
       const fmt = norm(t.format);
-      return title.includes(q) || id.includes(q) || fmt.includes(q);
+      const tags = Array.isArray(t.tags) ? norm(t.tags.join(" ")) : "";
+      return title.includes(q) || id.includes(q) || fmt.includes(q) || tags.includes(q);
     });
 
     setStatus(`${filtered.length}`);
@@ -239,6 +299,11 @@ Views.Templates = (() => {
       a.href = `#/${encodeURIComponent("templates")}/${encodeURIComponent(t.id)}`;
       const metaParts = [];
       if(t.format) metaParts.push(`<span class="tag">${esc(t.format)}</span>`);
+      if(Array.isArray(t.tags) && t.tags.length){
+        t.tags.forEach(tag => {
+          metaParts.push(`<span class="tag" data-tag-filter="${esc(String(tag))}">${esc(String(tag))}</span>`);
+        });
+      }
 
       a.innerHTML = `
         <div class="item-title">${esc(t.title || "Шаблон")}</div>
@@ -253,13 +318,13 @@ Views.Templates = (() => {
     const viewer = $("#viewer");
     viewer.innerHTML = `<div class="empty">Выберите шаблон слева.</div>`;
 
-    _data = await API.json("./content/data/templates.json");
+    _data = await loadTemplatesFromSupabase();
     renderList();
   }
 
-    async function open(templateId){
+  async function open(templateId){
     const viewer = $("#viewer");
-    const data = Array.isArray(_data) && _data.length ? _data : await API.json("./content/data/templates.json");
+    const data = Array.isArray(_data) && _data.length ? _data : await loadTemplatesFromSupabase();
     const t = data.find(x => x.id === templateId);
 
     if(!t){
@@ -267,7 +332,6 @@ Views.Templates = (() => {
       return;
     }
 
-    // ===== Template: Project links + Excel =====
     if(templateId === "project_links_excel"){
       const key = "tpl:project_links_excel:v1";
       const saved = JSON.parse(localStorage.getItem(key) || "{}");
@@ -321,7 +385,7 @@ Views.Templates = (() => {
         </div>
       `;
 
-      const resources = t.link ? [{ label: "Открыть исходный файл", href: t.link, external: true }] : [];
+      const resources = getTemplateResources(t);
 
       viewer.innerHTML = renderViewerShell(t, {
         sub: "Вставь ссылки → скачай Excel.",
@@ -343,7 +407,10 @@ Views.Templates = (() => {
         materials: $("#f_materials"),
       };
 
-      Object.entries(fields).forEach(([k, el]) => el.value = saved[k] || "");
+      Object.entries(fields).forEach(([k, el]) => {
+        if(el) el.value = saved[k] || "";
+      });
+      bindAutosave(fields, key);
 
       function readValues(){
         const v = {};
@@ -387,7 +454,6 @@ Views.Templates = (() => {
       return;
     }
 
-    // ===== Default "link-only" templates =====
     if(templateId !== "brief_visualizer"){
       const body = `
         <div class="markdown">
@@ -395,7 +461,7 @@ Views.Templates = (() => {
         </div>
       `;
 
-      const resources = t.link ? [{ label: "Открыть", href: t.link, external: true }] : [];
+      const resources = getTemplateResources(t);
 
       viewer.innerHTML = renderViewerShell(t, {
         body,
@@ -407,7 +473,6 @@ Views.Templates = (() => {
       return;
     }
 
-    // ===== Template: Visualizer brief (text) =====
     {
       const key = "tpl:brief_visualizer:v1";
       const saved = JSON.parse(localStorage.getItem(key) || "{}");
@@ -464,7 +529,7 @@ Views.Templates = (() => {
         </div>
       `;
 
-      const resources = t.link ? [{ label: "Открыть исходный файл", href: t.link, external: true }] : [];
+      const resources = getTemplateResources(t);
 
       viewer.innerHTML = renderViewerShell(t, {
         sub: "Заполни быстро → скачай .txt или скопируй.",
@@ -486,7 +551,10 @@ Views.Templates = (() => {
         deadline: $("#f_deadline"),
       };
 
-      Object.entries(fields).forEach(([k, el]) => el.value = saved[k] || "");
+      Object.entries(fields).forEach(([k, el]) => {
+        if(el) el.value = saved[k] || "";
+      });
+      bindAutosave(fields, key);
 
       function readValues(){
         const v = {};
@@ -519,6 +587,3 @@ Views.Templates = (() => {
 
   return { show, open, setFilter };
 })();
-
-
-

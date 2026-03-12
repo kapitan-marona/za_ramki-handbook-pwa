@@ -17,6 +17,10 @@ Views.Articles = (() => {
     return /^#\/articles(?:\/|$)/.test(String(hash || ""));
   }
 
+  function isArticleDetailHash(hash){
+    return /^#\/articles\/[^\/]+/.test(String(hash || ""));
+  }
+
   function isPlannerTaskHash(hash){
     return /^#\/planner\/[^\/]+/.test(String(hash || ""));
   }
@@ -26,14 +30,17 @@ Views.Articles = (() => {
       const current = getCurrentHash();
       const prev = sessionStorage.getItem(INS_LAST_HASH_KEY) || "";
 
-      if(isArticleHash(current) && isPlannerTaskHash(prev)){
-        sessionStorage.setItem(INS_RETURN_HASH_KEY, prev);
+      if(isArticleDetailHash(current)){
+        if(isPlannerTaskHash(prev)){
+          sessionStorage.setItem(INS_RETURN_HASH_KEY, prev);
+        }else if(String(prev) === "#/articles"){
+          sessionStorage.removeItem(INS_RETURN_HASH_KEY);
+        }
       }
 
       sessionStorage.setItem(INS_LAST_HASH_KEY, current);
     }catch(e){}
   }
-
   function installInstructionContextTracker(){
     try{
       if(window.__zrInstructionContextTrackerInstalled) return;
@@ -51,12 +58,18 @@ Views.Articles = (() => {
 
   function getInstructionReturnHash(){
     try{
+      const current = getCurrentHash();
       const saved = sessionStorage.getItem(INS_RETURN_HASH_KEY) || "";
-      if(isPlannerTaskHash(saved)) return saved;
-    }catch(e){}
-    return "#/articles";
-  }
 
+      if(isArticleHash(current) && isPlannerTaskHash(saved)){
+        return saved;
+      }
+
+      return "#/articles";
+    }catch(e){
+      return "#/articles";
+    }
+  }
   function getInstructionCloseLabel(){
     return isPlannerTaskHash(getInstructionReturnHash()) ? "К задаче" : "Закрыть";
   }
@@ -90,19 +103,16 @@ Views.Articles = (() => {
   }
   function norm(s){ return (s ?? "").toString().toLowerCase().trim(); }
 
-  
   function parseUpdatedAt(meta){
     const v = meta?.updatedAt || meta?.updated_at || "";
     if(!v) return null;
 
-    // YYYY-MM-DD -> local midnight (avoid UTC shift)
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v).trim());
     if(m){
       const y = parseInt(m[1],10), mo = parseInt(m[2],10)-1, d = parseInt(m[3],10);
       return new Date(y, mo, d, 0, 0, 0, 0);
     }
 
-    // ISO or any parseable timestamp
     const t = Date.parse(String(v));
     if(Number.isFinite(t)) return new Date(t);
     return null;
@@ -118,19 +128,18 @@ Views.Articles = (() => {
   function applyInlineNewMarkers(md, active){
     md = (md ?? "").toString();
 
-    // Markers: >text< (single-line only)
     if(active){
       md = md.replace(/>([^<\r\n]+)</g, '<mark class="kb-newmark">$1</mark>');
       md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '<mark class="kb-newmark">$1</mark>');
     }else{
-      // Remove markers after window expires (no visual garbage)
       md = md.replace(/>([^<\r\n]+)</g, '$1');
       md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '$1');
     }
 
     return md;
   }
-function setStatus(t){ $("#status").textContent = t; }
+
+  function setStatus(t){ $("#status").textContent = t; }
   function setPanelTitle(t){ $("#panelTitle").textContent = t; }
 
   function matches(it, q){
@@ -179,7 +188,6 @@ function setStatus(t){ $("#status").textContent = t; }
 
   function normalizeMd(md){
     md = (md ?? "").toString();
-    // Если в базе/файле текст попал как строка с буквальными "\n"
     if(md.includes("\\n") || md.includes("\\r\\n")){
       md = md.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
     }
@@ -190,13 +198,11 @@ function setStatus(t){ $("#status").textContent = t; }
     if(!html) return html;
 
     const rules = [
-      // > **Важно:** ...  или  > Важно: ...
       { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*Важно:\s*(?:<\/strong>)?\s*/gi,
         cls: "kb-important", title: "☝️ ВАЖНО" },
 
       { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*(Нельзя|Осторожно):\s*(?:<\/strong>)?\s*/gi,
         cls: "kb-caution", title: "❌ ОСТОРОЖНО" },
-
 
       { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*Не забудь:\s*(?:<\/strong>)?\s*/gi,
         cls: "kb-remember", title: "✨ НЕ ЗАБУДЬ" },
@@ -212,8 +218,6 @@ function setStatus(t){ $("#status").textContent = t; }
     return html;
   }
 
-  
-  // ===== KB: TOC (H2 only) =====
   function slugify(s){
     return (s ?? "")
       .toString()
@@ -234,7 +238,6 @@ function setStatus(t){ $("#status").textContent = t; }
     const h2s = Array.from(mdRoot.querySelectorAll("h2"));
     if(!h2s.length) return;
 
-    // Ensure stable ids
     const used = new Set();
     h2s.forEach((h, idx) => {
       let id = h.getAttribute("id");
@@ -247,7 +250,6 @@ function setStatus(t){ $("#status").textContent = t; }
       h.setAttribute("id", id);
     });
 
-    // Build toc
     const toc = document.createElement("aside");
     toc.className = "article-toc";
     toc.innerHTML = `
@@ -257,21 +259,18 @@ function setStatus(t){ $("#status").textContent = t; }
       </nav>
     `;
 
-    // Wrap main + toc in layout
     const layout = document.createElement("div");
     layout.className = "article-layout";
 
     const main = document.createElement("div");
     main.className = "article-main";
 
-    // Move everything except the toc (currently none) into main
     Array.from(viewer.childNodes).forEach(n => main.appendChild(n));
     layout.appendChild(main);
     layout.appendChild(toc);
 
     viewer.appendChild(layout);
 
-    // Click: scroll within viewer (not window)
     toc.querySelectorAll("[data-toc]").forEach(a => {
       a.addEventListener("click", (e) => {
         e.preventDefault();
@@ -282,7 +281,6 @@ function setStatus(t){ $("#status").textContent = t; }
       });
     });
 
-    // Scrollspy using IntersectionObserver (root = viewer)
     const links = new Map();
     toc.querySelectorAll("[data-toc]").forEach(a => links.set(a.getAttribute("data-toc"), a));
 
@@ -311,10 +309,8 @@ function setStatus(t){ $("#status").textContent = t; }
   }
 
   function enhanceArticleWithToc(viewer){
-    // Remove previous layout if any (safety on rerender)
     const old = viewer.querySelector(".article-layout");
     if(old){
-      // Move main content back out then remove
       const main = old.querySelector(".article-main");
       if(main){
         viewer.innerHTML = "";
@@ -325,7 +321,8 @@ function setStatus(t){ $("#status").textContent = t; }
     }
     setupArticleToc(viewer);
   }
-function renderActions(actions){
+
+  function renderActions(actions){
     if(!actions || !actions.length) return "";
     const btns = actions.map(a => {
       const label = esc(a.label || "Открыть");
@@ -335,6 +332,16 @@ function renderActions(actions){
     }).join("");
     return `<div class="actions">${btns}</div>`;
   }
+
+  function formatMetaDate(value){
+    try{
+      if(window.ViewerNav && typeof ViewerNav.formatDMY === "function"){
+        return ViewerNav.formatDMY(value);
+      }
+    }catch(e){}
+    return String(value || "").trim();
+  }
+
   function renderMetaRow(meta){
     const author =
       meta?.author ||
@@ -361,8 +368,8 @@ function renderActions(actions){
     const parts = [];
 
     if(author)  parts.push(`<span class="tag">Автор: ${esc(String(author))}</span>`);
-    if(created) parts.push(`<span class="tag">Создано: ${esc(String(created))}</span>`);
-    if(updated) parts.push(`<span class="tag">Обновлено: ${esc(String(updated))}</span>`);
+    if(created) parts.push(`<span class="tag">Создано: ${esc(formatMetaDate(created))}</span>`);
+    if(updated) parts.push(`<span class="tag">Обновлено: ${esc(formatMetaDate(updated))}</span>`);
     if(linked)  parts.push(`<span class="tag">Связано с: ${esc(String(linked))}</span>`);
 
     return parts.join("");
@@ -377,6 +384,7 @@ function renderActions(actions){
     }catch(e){}
     location.hash = "#/articles";
   }
+
   function setupArticleBodyCollapse(viewer){
     if(!viewer) return;
 
@@ -435,6 +443,7 @@ function renderActions(actions){
     controls.appendChild(btn);
     section.appendChild(controls);
   }
+
   async function openArticle(id){
     const viewer = $("#viewer");
 
@@ -444,16 +453,14 @@ function renderActions(actions){
           Выбери статью слева или используй поиск сверху.<br/><br/>
           Подсказка: позже добавим роли, избранное и «что нового».
         </div>`;
-    // TOC: build right-side table of contents (H2 only)
-    enhanceArticleWithToc(viewer);
+      enhanceArticleWithToc(viewer);
       return;
     }
 
     const meta = INDEX.find(x => x.id === id);
     if(!meta){
       viewer.innerHTML = `<div class="empty">Статья не найдена: <b>${esc(id)}</b></div>`;
-    // TOC: build right-side table of contents (H2 only)
-    enhanceArticleWithToc(viewer);
+      enhanceArticleWithToc(viewer);
       return;
     }
 
@@ -461,7 +468,6 @@ function renderActions(actions){
 
     let md = "";
 
-    // 1) Supabase приоритет
     if(meta.source === "sb"){
       if(window.SB){
         const { data, error } = await SB
@@ -484,7 +490,6 @@ function renderActions(actions){
       }
     }
 
-    // 2) fallback на файлы
     if(!md && meta.path){
       try{
         md = await API.text(meta.path);
@@ -495,20 +500,19 @@ function renderActions(actions){
 
     if(!md){
       viewer.innerHTML = `<div class="empty">Не удалось загрузить статью</div>`;
-    // TOC: build right-side table of contents (H2 only)
-    enhanceArticleWithToc(viewer);
+      enhanceArticleWithToc(viewer);
       setStatus("ошибка");
       return;
     }
 
     md = normalizeMd(md);
-md = md.replace(/>([^<\r\n]+)</g, '<mark class="kb-newmark">$1</mark>');
-md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '<mark class="kb-newmark">$1</mark>');
-const catTitle = CATMAP[meta.category] || meta.category || "";
+    md = md.replace(/>([^<\r\n]+)</g, '<mark class="kb-newmark">$1</mark>');
+    md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '<mark class="kb-newmark">$1</mark>');
+    const catTitle = CATMAP[meta.category] || meta.category || "";
     const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
     const tags = (meta.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join("");
     const roles = (meta.roles||[]).map(r => `<span class="tag">${esc(r)}</span>`).join("");
-    const updated = meta.updatedAt ? `Обновлено: ${esc(meta.updatedAt)}` : "";
+    const updated = meta.updatedAt ? `Обновлено: ${esc(formatMetaDate(meta.updatedAt))}` : "";
 
     const html0 = window.marked ? window.marked.parse(md) : `<pre>${esc(md)}</pre>`;
     const html = decorateCallouts(html0);
@@ -543,7 +547,6 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
       backBtn.textContent = getInstructionCloseLabel();
       backBtn.onclick = () => goInstructionClose();
     }
-    // TOC: build right-side table of contents (H2 only)
     setupArticleBodyCollapse(viewer);
     enhanceArticleWithToc(viewer);
     setStatus("готово");
@@ -577,6 +580,7 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
       source: "file"
     }));
   }
+
   async function loadSbIndex(){
     if(!window.SB) throw new Error("Supabase not ready");
 
@@ -604,13 +608,11 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
   }
 
   async function init(){
-    // categories labels (optional)
     try{
       const cats = await API.json("./content/ui/categories.json");
       CATMAP = Object.fromEntries(cats.map(c => [c.id, c.title]));
     }catch(e){ CATMAP = {}; }
 
-    // 1) файловый индекс (надёжный fallback)
     let fileItems = [];
     try{
       fileItems = await loadFileIndex();
@@ -619,7 +621,6 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
       fileItems = [];
     }
 
-    // 2) Supabase; если не получилось или пусто — остаёмся на файлах
     let sbItems = [];
     try{
       sbItems = await loadSbIndex();
@@ -633,14 +634,13 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
       return;
     }
 
-    // 3) merge без дублей: Supabase приоритет по id
     const map = new Map();
     for(const it of fileItems){
       map.set(it.id, it);
     }
     for(const it of sbItems){
       const prev = map.get(it.id);
-      if(prev && prev.path && !it.path) it.path = prev.path; // запасной fallback
+      if(prev && prev.path && !it.path) it.path = prev.path;
       map.set(it.id, it);
     }
 
@@ -659,20 +659,3 @@ const catTitle = CATMAP[meta.category] || meta.category || "";
     }
   };
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

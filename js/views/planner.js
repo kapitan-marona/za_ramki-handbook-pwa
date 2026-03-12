@@ -610,7 +610,7 @@ async function fetchTaskLinks(taskId){
         const section = m[1];
         const id = m[2];
         if(!["articles","checklists","templates"].includes(section)) return null;
-        return { section, id, label };
+        return { section, id, label, removable: false, source: "file" };
       }
 
       // fallback: "section/id"
@@ -619,7 +619,7 @@ async function fetchTaskLinks(taskId){
         const section = m[1];
         const id = m[2];
         if(!["articles","checklists","templates"].includes(section)) return null;
-        return { section, id, label };
+        return { section, id, label, removable: false, source: "file" };
       }
 
       return null;
@@ -635,20 +635,40 @@ async function fetchTaskLinks(taskId){
   const linkId = link.id ? String(link.id) : null;
 
   if(type === "article" && refId){
-    return { section: "articles", id: refId, label, link_id: linkId, removable: true };
+    return { section: "articles", id: refId, label, link_id: linkId, removable: true, source: "link" };
   }
   if(type === "checklist" && refId){
-    return { section: "checklists", id: refId, label, link_id: linkId, removable: true };
+    return { section: "checklists", id: refId, label, link_id: linkId, removable: true, source: "link" };
   }
   if(type === "template" && refId){
-    return { section: "templates", id: refId, label, link_id: linkId, removable: true };
+    return { section: "templates", id: refId, label, link_id: linkId, removable: true, source: "link" };
   }
   if(type === "external" && url){
-    return { section: "external", url, label, link_id: linkId, removable: true };
+    return { section: "external", url, label, link_id: linkId, removable: true, source: "link" };
   }
 
   return null;
 }
+
+function openPlannerDoc(section, id){
+  const sec = String(section || "").trim();
+  const refId = String(id || "").trim();
+  if(!sec || !refId) return;
+
+  if(!["articles","checklists","templates"].includes(sec)) return;
+
+  try{
+    if(window.Router && typeof Router.go === "function"){
+      Router.go(sec, refId);
+      return;
+    }
+  }catch(e){
+    console.warn("[Planner] openPlannerDoc Router.go error", e);
+  }
+
+  location.hash = "#/" + encodeURIComponent(sec) + "/" + encodeURIComponent(refId);
+}
+
 async function loadDocs(task){
 
   const role = (window.App && App.session) ? String(App.session.role || "") : "";
@@ -744,7 +764,7 @@ async function loadDocs(task){
     `;
 
     host.querySelectorAll(".pl-doc").forEach(b => {
-      b.onclick = () => Router.go(b.dataset.sec, b.dataset.id);
+      b.onclick = () => openPlannerDoc(b.dataset.sec, b.dataset.id);
     });
 
     host.querySelectorAll(".pl-doc-remove").forEach(b => {
@@ -1408,6 +1428,11 @@ loadDocs(task);
 
   return { show };
 })();
+
+
+
+
+
 
 
 

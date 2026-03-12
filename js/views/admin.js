@@ -9,6 +9,79 @@ Views.Admin = (() => {
     reference: "Референс",
     policy:    "Документация"
   };
+
+  // ===== PHASE 5A — Article Presets (creation only)
+  const ARTICLE_TYPE_PRESETS = {
+    standard: `## Цель
+Кратко опиши, зачем нужна эта инструкция.
+
+## Когда применять
+Опиши ситуации, в которых используется.
+
+## Описание
+Основная часть инструкции.
+
+## Важно
+> Важно: укажи ключевые моменты.`,
+
+    procedure: `## Шаги
+
+### 1. Подготовка
+Что нужно сделать перед началом.
+
+### 2. Основные действия
+Опиши пошагово процесс.
+
+### 3. Проверка результата
+Как понять, что всё сделано правильно.`,
+
+    check: `## Чек-лист
+
+- [ ] Пункт проверки 1
+- [ ] Пункт проверки 2
+- [ ] Пункт проверки 3
+
+## Примечания
+Дополнительные пояснения.`,
+
+    reference: `## Описание
+Кратко опиши, что это.
+
+## Параметры / значения
+•  
+
+## Примеры
+Приведи примеры использования.`,
+
+    policy: `## Общие положения
+Опиши правило или регламент.
+
+## Обязательные требования
+•  
+
+## Ответственность
+Кто отвечает за соблюдение.`
+  };
+
+  function maybeInsertPreset(isNew){
+    try{
+      if(!isNew) return "";
+
+      const typeEl = document.getElementById("a_type");
+      const mdEl = document.getElementById("a_md");
+      if(!typeEl || !mdEl) return "";
+
+      const type = String(typeEl.value || "").trim();
+      if(!type) return "";
+
+      const preset = ARTICLE_TYPE_PRESETS[type];
+      if(!preset) return "";
+
+      mdEl.value = preset;
+      return preset;
+    }catch(e){}
+    return "";
+  }
   const TYPE_IDS = ["standard","procedure","check","reference","policy"];
   const ROLE_IDS = ["admin","staff"];
 
@@ -42,7 +115,13 @@ Views.Admin = (() => {
 
   function showViewer(html){
     const v = $("#viewer");
-    if(v) v.innerHTML = html || "";
+    if(!v) return;
+
+    v.innerHTML = `
+      <div class="adm-viewer-root">
+        ${html || ""}
+      </div>
+    `;
   }
   function showLoading(msg="Загрузка…"){
     showViewer(`<div class="empty">${esc(msg)}</div>`);
@@ -161,6 +240,7 @@ Views.Admin = (() => {
     const parts = p.split(":");
     if(parts[0] === "employees") return { mode:"employees" };
     if(parts[0] === "tasks") return { mode:"tasks" };
+    if(parts[0] === "projects") return { mode:"projects" };
     if(parts[0] === "content"){
       return { mode:"content", contentMode: parts[1] || "articles", id: parts[2] || "" };
     }
@@ -182,7 +262,7 @@ Views.Admin = (() => {
     list.innerHTML =
       `<div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">` +
         tabBtn("employees","Сотрудники") +
-        tabBtn("tasks","Задачи") +
+        tabBtn("projects","Проекты") +
         tabBtn("content","Контент") +
       `</div>`;
 
@@ -260,38 +340,59 @@ Views.Admin = (() => {
     `).join("");
 
     return `
-      <h1 class="article-title">Админка → Сотрудники</h1>
-      <p class="article-sub">Управление доступами (allowlist). Только admin.</p>
-      <div class="hr"></div>
-
-      <div class="markdown" style="padding:0; margin:0;">
-        <div style="display:grid; grid-template-columns: 1fr 140px; gap:10px; align-items:end;">
-          <div>
-            <div class="muted" style="margin:0 0 6px 2px;">Email</div>
-            <input id="al_email" style="${inpStyle}" placeholder="email@example.com" />
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">Админка → Сотрудники</h1>
+            <p class="article-sub">Управление доступами (allowlist). Только admin.</p>
           </div>
-          <div>
-            <div class="muted" style="margin:0 0 6px 2px;">Роль</div>
-            <select id="al_role" style="${inpStyle}">
-              <option value="staff">staff</option>
-              <option value="admin">admin</option>
-            </select>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Добавить / обновить доступ</div>
+        <div class="item-meta" style="margin-top:10px;">
+          <span class="tag">allowlist</span>
+          <span class="tag">admin only</span>
+        </div>
+
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div style="display:grid; grid-template-columns: 1fr 140px; gap:10px; align-items:end;">
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Email</div>
+              <input id="al_email" style="${inpStyle}" placeholder="email@example.com" />
+            </div>
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Роль</div>
+              <select id="al_role" style="${inpStyle}">
+                <option value="staff">staff</option>
+                <option value="admin">admin</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+            <label style="display:flex; gap:8px; align-items:center; user-select:none;">
+              <input id="al_enabled" type="checkbox" checked />
+              <span>enabled</span>
+            </label>
+            <button class="btn btn-sm" id="al_add"><span class="dot"></span>Добавить / обновить</button>
+            <button class="btn btn-sm" id="al_reload"><span class="dot"></span>Обновить список</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div class="item-title">Список сотрудников</div>
+          <div class="item-meta">
+            <span class="tag">Всего: ${(items||[]).length}</span>
           </div>
         </div>
 
-        <div style="display:flex; gap:12px; align-items:center; margin-top:10px;">
-          <label style="display:flex; gap:8px; align-items:center; user-select:none;">
-            <input id="al_enabled" type="checkbox" checked />
-            <span>enabled</span>
-          </label>
-          <button class="btn btn-sm" id="al_add"><span class="dot"></span>Добавить / обновить</button>
-          <button class="btn btn-sm" id="al_reload"><span class="dot"></span>Обновить список</button>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          ${rows || `<div class="empty" style="padding:12px;color:var(--muted)">Список пуст.</div>`}
         </div>
-
-        <div class="hr"></div>
-        <div class="muted" style="margin:0 0 8px 0;">Сотрудников: ${(items||[]).length}</div>
-
-        ${rows || `<div class="empty" style="padding:12px;color:var(--muted)">Список пуст.</div>`}
       </div>
     `;
   }
@@ -376,6 +477,278 @@ Views.Admin = (() => {
   }
 
   // =============================
+  // PROJECTS (minimal)
+  // =============================
+
+  async function sbProjectsList(){
+    const p = SB.from("projects")
+      .select("id,title,notes,created_at")
+      .order("created_at", { ascending:false });
+    const { data, error } = await withTimeout(p, 12000, "projects list");
+    if(error) throw error;
+    return data || [];
+  }
+
+  async function sbProjectsInsert(row){
+    await ensureSession();
+    const p = SB.from("projects").insert(row);
+    const { error } = await withTimeout(p, 20000, "projects insert");
+    if(error) throw error;
+  }
+
+  async function sbProjectTaskCount(projectId){
+    const p = SB.from("tasks")
+      .select("id", { count:"exact", head:true })
+      .eq("project_id", projectId);
+
+    const { count, error } = await withTimeout(p, 12000, "project task count");
+    if(error) throw error;
+    return Number(count || 0);
+  }
+
+  async function sbProjectsUpdate(id, row){
+    await ensureSession();
+    const p = SB.from("projects").update(row).eq("id", id);
+    const { error } = await withTimeout(p, 20000, "projects update");
+    if(error) throw error;
+  }
+
+  async function sbProjectsDelete(id){
+    await ensureSession();
+    const p = SB.from("projects").delete().eq("id", id);
+    const { error } = await withTimeout(p, 20000, "projects delete");
+    if(error) throw error;
+  }
+
+  function projectsHtml(items){
+    const rows = (items || []).map(it => `
+      <div class="item">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:220px;">
+              <div class="item-title">${esc(it.title || "(без названия)")}</div>
+              <div class="muted" style="margin-top:4px;">ID: <span class="mono">${esc(it.id || "")}</span></div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-sm" data-pr-edit-toggle="${esc(it.id)}"><span class="dot"></span>Редактировать</button>
+              <button class="btn btn-sm" data-pr-del="${esc(it.id)}"><span class="dot"></span>Удалить</button>
+            </div>
+          </div>
+
+          <div data-pr-view="${esc(it.id)}">
+            ${it.notes ? `<div class="muted" style="margin-top:2px;">${esc(it.notes)}</div>` : `<div class="muted" style="margin-top:2px;">Заметки пусты.</div>`}
+          </div>
+
+          <div data-pr-edit-box="${esc(it.id)}" style="display:none;">
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Название</div>
+              <input data-pr-title="${esc(it.id)}" style="${inpStyle}" value="${esc(it.title || "")}" />
+            </div>
+
+            <div style="margin-top:10px;">
+              <div class="muted" style="margin:0 0 6px 2px;">Заметки</div>
+              <textarea data-pr-notes="${esc(it.id)}" style="${taStyle}; min-height:90px;" rows="4">${esc(it.notes || "")}</textarea>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap;">
+              <button class="btn btn-sm" data-pr-save="${esc(it.id)}"><span class="dot"></span>Сохранить</button>
+              <button class="btn btn-sm" data-pr-cancel="${esc(it.id)}"><span class="dot"></span>Отмена</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join("");
+
+    return `
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">Админка → Проекты</h1>
+            <p class="article-sub">Минимальное создание проектов.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Создать проект</div>
+        <div class="item-meta" style="margin-top:10px;">
+          <span class="tag">projects</span>
+          <span class="tag">minimal</span>
+        </div>
+
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div>
+            <div class="muted" style="margin:0 0 6px 2px;">Название</div>
+            <input id="pr_title" style="${inpStyle}" />
+          </div>
+
+          <div style="margin-top:10px;">
+            <div class="muted" style="margin:0 0 6px 2px;">Заметки (опционально)</div>
+            <textarea id="pr_notes" style="${taStyle}; min-height:90px;" rows="4"></textarea>
+          </div>
+
+          <div style="display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap;">
+            <button class="btn btn-sm" id="pr_add"><span class="dot"></span>Создать проект</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div class="item-title">Список проектов</div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-sm" id="pr_reload"><span class="dot"></span>Обновить список</button>
+            <div class="item-meta">
+              <span class="tag">Всего: ${(items||[]).length}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          ${rows || `<div class="empty" style="padding:12px;color:var(--muted)">Список пуст.</div>`}
+        </div>
+      </div>
+    `;
+  }
+
+  function bindProjects(){
+    const root = $("#viewer");
+    if(!root) return;
+
+    $("#pr_add").onclick = async () => {
+      setBusy(true, "Создаю…");
+      try{
+        const title = norm($("#pr_title").value);
+        const notes = norm($("#pr_notes").value);
+
+        if(!title){
+          setBusy(false);
+          return alert("Название обязательно.");
+        }
+
+        await sbProjectsInsert({
+          title,
+          notes: notes || null
+        });
+
+        $("#pr_title").value = "";
+        $("#pr_notes").value = "";
+
+        setBusy(false);
+        await loadProjects();
+      }catch(e){
+        console.error(e);
+        setBusy(false);
+        alert(e.message || String(e));
+      }
+    };
+
+    $("#pr_reload").onclick = () => loadProjects();
+
+    root.querySelectorAll("[data-pr-edit-toggle]").forEach(btn => {
+      btn.onclick = () => {
+        const id = btn.getAttribute("data-pr-edit-toggle");
+        if(!id) return;
+
+        const box = root.querySelector(`[data-pr-edit-box="${CSS.escape(id)}"]`);
+        if(box) box.style.display = "";
+      };
+    });
+
+    root.querySelectorAll("[data-pr-cancel]").forEach(btn => {
+      btn.onclick = () => {
+        const id = btn.getAttribute("data-pr-cancel");
+        if(!id) return;
+
+        const box = root.querySelector(`[data-pr-edit-box="${CSS.escape(id)}"]`);
+        if(box) box.style.display = "none";
+      };
+    });
+
+    root.querySelectorAll("[data-pr-save]").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.getAttribute("data-pr-save");
+        if(!id) return;
+
+        const titleEl = root.querySelector(`[data-pr-title="${CSS.escape(id)}"]`);
+        const notesEl = root.querySelector(`[data-pr-notes="${CSS.escape(id)}"]`);
+
+        const title = norm(titleEl ? titleEl.value : "");
+        const notes = norm(notesEl ? notesEl.value : "");
+
+        if(!title){
+          alert("Название обязательно.");
+          return;
+        }
+
+        setBusy(true, "Сохраняю…");
+        try{
+          await sbProjectsUpdate(id, {
+            title,
+            notes: notes || null
+          });
+
+          setBusy(false);
+          await loadProjects();
+        }catch(e){
+          console.error(e);
+          setBusy(false);
+          alert(e.message || String(e));
+        }
+      };
+    });
+
+    root.querySelectorAll("[data-pr-del]").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.getAttribute("data-pr-del");
+        if(!id) return;
+        if(!confirm("Удалить проект?")) return;
+
+        setBusy(true, "Проверяю…");
+        try{
+          const taskCount = await sbProjectTaskCount(id);
+          if(taskCount > 0){
+            setBusy(false);
+            alert("Проект нельзя удалить: к нему привязаны задачи.");
+            return;
+          }
+
+          setBusy(true, "Удаляю…");
+          await sbProjectsDelete(id);
+          setBusy(false);
+          await loadProjects();
+        }catch(e){
+          console.error(e);
+          setBusy(false);
+
+          const msg = String((e && (e.message || e.details || e.hint)) || e || "");
+          alert(msg || "Не удалось удалить проект.");
+        }
+      };
+    });
+  }
+
+  async function loadProjects(){
+    setPanelTitle("Админка");
+    setStatus("…");
+    MODE = "projects";
+    renderAdminTabs();
+    showLoading("Загрузка проектов…");
+
+    try{
+      const items = await sbProjectsList();
+      showViewer(projectsHtml(items));
+      bindProjects();
+      setStatus(String(items.length));
+    }catch(e){
+      console.error(e);
+      showViewer(`<div class="empty">Ошибка проектов: ${esc(e.message || String(e))}</div>`);
+      setStatus("ошибка");
+    }
+  }
+
+  // =============================
   // TASKS (placeholder)
   // =============================
   async function loadTasks(){
@@ -384,11 +757,25 @@ Views.Admin = (() => {
     MODE = "tasks";
     renderAdminTabs();
     showViewer(`
-      <h1 class="article-title">Админка → Задачи</h1>
-      <p class="article-sub">Скоро: шаблоны задач, статусы, назначение, комментарии.</p>
-      <div class="hr"></div>
-      <div class="hr"></div>
-      <div class="empty">Пока раздел в разработке.</div>
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">Админка → Задачи</h1>
+            <p class="article-sub">Скоро: шаблоны задач, статусы, назначение, комментарии.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default;">
+        <div class="item-title">Раздел в разработке</div>
+        <div class="item-meta" style="margin-top:10px;">
+          <span class="tag">tasks</span>
+          <span class="tag">placeholder</span>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="empty">Пока раздел в разработке.</div>
+        </div>
+      </div>
     `);
   }
 
@@ -518,35 +905,86 @@ Views.Admin = (() => {
 
   function renderActionsBuilder(actions){
     const arr = Array.isArray(actions) ? actions : [];
-    const rows = arr.map((a, i) => `
-      <div class="item" style="padding:10px; display:grid; grid-template-columns: 1fr 1.2fr 160px 110px; gap:10px; align-items:end;">
-        <div>
-          <div class="muted" style="margin:0 0 6px 2px;">Label</div>
-          <input data-act-label="${i}" style="${inpStyle}" value="${esc(a.label || "")}" />
+    const rows = arr.map((a, i) => {
+      const rawUrl = String(a.url || "").trim();
+      const articleMatch = rawUrl.match(/^#\/articles\/(.+)$/);
+      const checklistMatch = rawUrl.match(/^#\/checklists\/(.+)$/);
+      const templateMatch = rawUrl.match(/^#\/templates\/(.+)$/);
+
+      let linkMode = String(a.kind || "").trim().toLowerCase() || (a.external ? "external" : "article");
+      let extValue = "";
+      let idValue = String(a.value || "").trim();
+
+      if(a.external){
+        linkMode = "external";
+        extValue = rawUrl || idValue;
+        idValue = "";
+      }else if(articleMatch){
+        linkMode = "article";
+        idValue = articleMatch[1] || "";
+      }else if(checklistMatch){
+        linkMode = "checklist";
+        idValue = checklistMatch[1] || "";
+      }else if(templateMatch){
+        linkMode = "template";
+        idValue = templateMatch[1] || "";
+      }else if(rawUrl){
+        if(String(rawUrl).startsWith("#/checklists/")){
+          linkMode = "checklist";
+          idValue = rawUrl.replace(/^#\/checklists\//, "");
+        }else if(String(rawUrl).startsWith("#/templates/")){
+          linkMode = "template";
+          idValue = rawUrl.replace(/^#\/templates\//, "");
+        }else if(String(rawUrl).startsWith("#/articles/")){
+          linkMode = "article";
+          idValue = rawUrl.replace(/^#\/articles\//, "");
+        }else{
+          linkMode = a.external ? "external" : (linkMode || "article");
+          extValue = a.external ? rawUrl : "";
+          if(!a.external) idValue = rawUrl;
+        }
+      }
+
+      return `
+        <div class="item" style="padding:10px; display:grid; grid-template-columns: 1fr 1.4fr 110px; gap:10px; align-items:end;">
+          <div>
+            <div class="muted" style="margin:0 0 6px 2px;">Label</div>
+            <input data-act-label="${i}" style="${inpStyle}" value="${esc(a.label || "")}" />
+          </div>
+
+          <div>
+            <div class="muted" style="margin:0 0 6px 2px;">Ссылка</div>
+            <div style="display:grid; grid-template-columns: 170px 1fr; gap:8px; align-items:end;">
+              <select data-act-kind="${i}" style="${inpStyle}">
+                <option value="article" ${linkMode==="article" ? "selected" : ""}>инструкция</option>
+                <option value="checklist" ${linkMode==="checklist" ? "selected" : ""}>чек-лист</option>
+                <option value="template" ${linkMode==="template" ? "selected" : ""}>шаблон</option>
+                <option value="external" ${linkMode==="external" ? "selected" : ""}>внешняя</option>
+              </select>
+
+              <input
+                data-act-value="${i}"
+                style="${inpStyle}"
+                value="${esc(linkMode==="external" ? extValue : idValue)}"
+                placeholder="${esc(linkMode==="external" ? "https://..." : "ID записи")}"
+              />
+            </div>
+
+          </div>
+
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="btn btn-sm" data-act-del="${i}"><span class="dot"></span>Удалить</button>
+          </div>
         </div>
-        <div>
-          <div class="muted" style="margin:0 0 6px 2px;">URL</div>
-          <input data-act-url="${i}" style="${inpStyle}" value="${esc(a.url || "")}" />
-        </div>
-        <div>
-          <div class="muted" style="margin:0 0 6px 2px;">Ссылка</div>
-          <select data-act-external="${i}" style="${inpStyle}">
-            <option value="0" ${a.external ? "" : "selected"}>внутренняя</option>
-            <option value="1" ${a.external ? "selected" : ""}>внешняя</option>
-          </select>
-        </div>
-        <div style="display:flex; justify-content:flex-end;">
-          <button class="btn btn-sm" data-act-del="${i}"><span class="dot"></span>Удалить</button>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
 
     return `
       <div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 10px 0;">
         <div class="muted">Кнопки действий (Actions)</div>
         <button class="btn btn-sm" id="act_add"><span class="dot"></span>+ Добавить</button>
       </div>
-      <div class="muted" style="margin:-6px 0 10px 2px;">Внутренняя = #/… (внутри PWA). Внешняя = откроется в новой вкладке.</div>
+      <div class="muted" style="margin:-6px 0 10px 2px;">Можно добавить внешнюю ссылку или внутреннюю ссылку по ID.</div>
       ${rows || `<div class="empty" style="padding:12px;color:var(--muted)">Нет кнопок.</div>`}
     `;
   }
@@ -557,11 +995,31 @@ Views.Admin = (() => {
     labels.forEach(inp => {
       const i = inp.getAttribute("data-act-label");
       const label = norm(inp.value);
-      const urlEl = root.querySelector(`[data-act-url="${CSS.escape(i)}"]`);
-      const extEl = root.querySelector(`[data-act-external="${CSS.escape(i)}"]`);
-      const url = norm(urlEl ? urlEl.value : "");
-      const external = (extEl ? extEl.value : "0") === "1";
-      if(label && url) out.push({ label, url, external });
+      const kindEl = root.querySelector(`[data-act-kind="${CSS.escape(i)}"]`);
+      const valueEl = root.querySelector(`[data-act-value="${CSS.escape(i)}"]`);
+
+      const kind = normLower(kindEl ? kindEl.value : "article");
+      const rawValue = norm(valueEl ? valueEl.value : "");
+      if(!label || !rawValue) return;
+
+      let url = "";
+      let external = false;
+
+      if(kind === "external"){
+        url = rawValue;
+        external = true;
+      }else if(kind === "checklist"){
+        url = "#/checklists/" + rawValue;
+        external = false;
+      }else if(kind === "template"){
+        url = "#/templates/" + rawValue;
+        external = false;
+      }else{
+        url = "#/articles/" + rawValue;
+        external = false;
+      }
+
+      out.push({ label, url, external, kind, value: rawValue });
     });
     return out;
   }
@@ -581,77 +1039,96 @@ Views.Admin = (() => {
     const tags = Array.isArray(row.tags) ? row.tags : [];
 
     return `
-      <h1 class="article-title">Контент → Инструкции</h1>
-      <p class="article-sub">${isNew ? "Создание новой инструкции" : ("Редактирование: " + esc(id))}</p>
-      <div class="hr"></div>
-
-      <div class="markdown" style="padding:0; margin:0;">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
-
-          <div style="grid-column:1 / -1;">
-            <div class="muted" style="margin:0 0 6px 2px;">ID (уникальный ключ, латиница, без пробелов)</div>
-            <div style="display:grid; grid-template-columns: 1fr 190px; gap:10px; align-items:end;">
-              <input id="a_id" style="${inpStyle}" value="${esc(id)}" ${isNew ? "" : "disabled"} placeholder="a_..." />
-              <button class="btn btn-sm" id="gen_id" ${isNew ? "" : "disabled"}><span class="dot"></span>Сгенерировать ID</button>
-            </div>
-            <div class="muted" style="margin-top:6px;">ID используется в URL и в базе как ключ. Лучше не менять после публикации.</div>
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">Контент → Инструкции</h1>
+            <p class="article-sub">${isNew ? "Создание новой инструкции (служебный режим)" : ("Редактирование: " + esc(id))}</p>
           </div>
-
-          <div style="grid-column:1 / -1;">
-            <div class="muted" style="margin:0 0 6px 2px;">Заголовок</div>
-            <input id="a_title" style="${inpStyle}" value="${esc(title)}" />
-          </div>
-
-          <div>
-            <div class="muted" style="margin:0 0 6px 2px;">Раздел (category)</div>
-            <input id="a_category" list="cat_list" style="${inpStyle}" value="${esc(category)}" placeholder="например: process" />
-            ${renderCategoryDatalist()}
-          </div>
-
-          <div>
-            <div class="muted" style="margin:0 0 6px 2px;">Тип (только для админа)</div>
-            <select id="a_type" style="${inpStyle}">${typeOptions(type)}</select>
-          </div>
-
-          <div>
-            <div class="muted" style="margin:0 0 6px 2px;">Статус</div>
-            <select id="a_status" style="${inpStyle}">
-              ${["draft","published","archived"].map(s => `<option value="${s}" ${s===status?"selected":""}>${s}</option>`).join("")}
-            </select>
-          </div>
-
-          <div>
-            <div class="muted" style="margin:0 0 6px 2px;">Для кого (roles)</div>
-            <div style="display:flex; gap:12px; flex-wrap:wrap; padding:10px 0 0 2px;">
-              ${renderRolesPicker(roles)}
-            </div>
-          </div>
-
-          <div style="grid-column:1 / -1;">
-            <div class="muted" style="margin:0 0 6px 2px;">Краткое описание</div>
-            <textarea id="a_excerpt" style="${taStyle}; min-height:70px;" rows="3">${esc(excerpt)}</textarea>
-          </div>
-
-          <div style="grid-column:1 / -1;">
-            <div class="muted" style="margin:0 0 8px 2px;">Теги</div>
-            <div id="tagsPalette">${renderTagsPalette(tags)}</div>
-            <div class="muted" style="margin-top:8px;">Выбрано: <span id="tagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
-          </div>
-
-          <div style="grid-column:1 / -1;">
-            <div class="hr"></div>
-            <div id="actionsBox">${renderActionsBuilder(actions)}</div>
-          </div>
-
-          <div style="grid-column:1 / -1;">
-            <div class="hr"></div>
-            <div class="muted" style="margin:0 0 6px 2px;">Контент (Markdown)</div>
-            <textarea id="a_md" style="${taStyle}; min-height:220px;" rows="14">${esc(md)}</textarea>
-          </div>
-
         </div>
+      </div>
 
-        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Основные поля</div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
+
+            <div style="grid-column:1 / -1;">
+              <div class="muted" style="margin:0 0 6px 2px;">ID (уникальный ключ, латиница, без пробелов)</div>
+              <div style="display:grid; grid-template-columns: 1fr 190px; gap:10px; align-items:end;">
+                <input id="a_id" style="${inpStyle}" value="${esc(id)}" ${isNew ? "" : "disabled"} placeholder="a_..." />
+                <button class="btn btn-sm" id="gen_id" ${isNew ? "" : "disabled"}><span class="dot"></span>Сгенерировать ID</button>
+              </div>
+              <div class="muted" style="margin-top:6px;">ID используется в URL и в базе как ключ. Лучше не менять после публикации.</div>
+            </div>
+
+            <div style="grid-column:1 / -1;">
+              <div class="muted" style="margin:0 0 6px 2px;">Заголовок</div>
+              <input id="a_title" style="${inpStyle}" value="${esc(title)}" />
+            </div>
+
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Раздел (category)</div>
+              <input id="a_category" list="cat_list" style="${inpStyle}" value="${esc(category)}" placeholder="например: process" />
+              ${renderCategoryDatalist()}
+            </div>
+
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Тип (только для админа)</div>
+              <select id="a_type" style="${inpStyle}">${typeOptions(type)}</select>
+            </div>
+
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Статус</div>
+              <select id="a_status" style="${inpStyle}">
+                ${["draft","published","archived"].map(s => `<option value="${s}" ${s===status?"selected":""}>${s}</option>`).join("")}
+              </select>
+            </div>
+
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Для кого (roles)</div>
+              <div style="display:flex; gap:12px; flex-wrap:wrap; padding:10px 0 0 2px;">
+                ${renderRolesPicker(roles)}
+              </div>
+            </div>
+
+            <div style="grid-column:1 / -1;">
+              <div class="muted" style="margin:0 0 6px 2px;">Краткое описание</div>
+              <textarea id="a_excerpt" style="${taStyle}; min-height:70px;" rows="3">${esc(excerpt)}</textarea>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Теги</div>
+        <div class="item-meta" style="margin-top:10px;">
+          <span class="tag">dictionary</span>
+          <span class="tag">multi-select</span>
+        </div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div id="tagsPalette">${renderTagsPalette(tags)}</div>
+          <div class="muted" style="margin-top:8px;">Выбрано: <span id="tagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Кнопки действий</div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div id="actionsBox">${renderActionsBuilder(actions)}</div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Контент (Markdown)</div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <textarea id="a_md" style="${taStyle}; min-height:220px;" rows="14">${esc(md)}</textarea>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default;">
+        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
           <button class="btn" id="a_save"><span class="dot"></span>Сохранить</button>
           ${isNew ? "" : `<button class="btn" id="a_del"><span class="dot"></span>Удалить</button>`}
         </div>
@@ -667,13 +1144,11 @@ Views.Admin = (() => {
     list.insertAdjacentHTML("beforeend", `
       <div class="hr"></div>
       <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="art_new"><span class="dot"></span>Новая инструкция</button>
         <button class="btn btn-sm" id="art_reload"><span class="dot"></span>Обновить</button>
       </div>
-      <div class="muted" style="margin:0 0 8px 0;">Инструкций: ${items.length}</div>
+      <div class="muted" style="margin:0 0 8px 0;">Инструкций: ${items.length}. Создание новых записей вне админки; здесь — редактирование существующих.</div>
     `);
 
-    $("#art_new").onclick = () => goAdmin("content:articles:new");
     $("#art_reload").onclick = () => loadArticles("");
 
     if(!items.length){
@@ -713,20 +1188,51 @@ Views.Admin = (() => {
     });
   }
 
-  function bindActionsUI(actionsArr){
+  function bindActionsUI(actionsArr, boxId){
     const root = $("#viewer");
     if(!root) return;
 
+    const targetBoxId = boxId || "actionsBox";
+
+    const snapshotActionsFromUi = () => {
+      const rows = Array.from(root.querySelectorAll("[data-act-label]"));
+      return rows.map(inp => {
+        const i = inp.getAttribute("data-act-label");
+        const label = root.querySelector(`[data-act-label="${CSS.escape(i)}"]`)?.value || "";
+        const kind = root.querySelector(`[data-act-kind="${CSS.escape(i)}"]`)?.value || "article";
+        const value = root.querySelector(`[data-act-value="${CSS.escape(i)}"]`)?.value || "";
+
+        let url = "";
+        let external = false;
+
+        if(kind === "external"){
+          url = value;
+          external = true;
+        }else if(kind === "checklist"){
+          url = value ? ("#/checklists/" + value) : "";
+          external = false;
+        }else if(kind === "template"){
+          url = value ? ("#/templates/" + value) : "";
+          external = false;
+        }else{
+          url = value ? ("#/articles/" + value) : "";
+          external = false;
+        }
+
+        return { label, url, external, kind, value };
+      });
+    };
+
     const rebuild = (arr) => {
-      const box = $("#actionsBox");
+      const box = document.getElementById(targetBoxId);
       if(box) box.innerHTML = renderActionsBuilder(arr);
-      bindActionsUI(arr);
+      bindActionsUI(arr, targetBoxId);
     };
 
     const addBtn = $("#act_add");
     if(addBtn){
       addBtn.onclick = () => {
-        const arr = Array.isArray(actionsArr) ? actionsArr.slice() : [];
+        const arr = snapshotActionsFromUi();
         arr.push({ label:"", url:"", external:false });
         rebuild(arr);
       };
@@ -735,16 +1241,29 @@ Views.Admin = (() => {
     root.querySelectorAll("[data-act-del]").forEach(b => {
       b.onclick = () => {
         const i = parseInt(b.getAttribute("data-act-del"), 10);
-        const arr = Array.isArray(actionsArr) ? actionsArr.slice() : [];
+        const arr = snapshotActionsFromUi();
         if(!isNaN(i)) arr.splice(i, 1);
         rebuild(arr);
       };
+    });
+
+    root.querySelectorAll("[data-act-kind]").forEach(sel => {
+      sel.addEventListener("change", () => {
+        const i = sel.getAttribute("data-act-kind");
+        const valueEl = root.querySelector(`[data-act-value="${CSS.escape(i)}"]`);
+        if(!valueEl) return;
+        valueEl.placeholder = sel.value === "external" ? "https://..." : "ID записи";
+      });
     });
   }
 
   function bindEditor(isNew, initialActions){
     const root = $("#viewer");
     if(!root) return;
+
+    let presetTouchedByUser = false;
+    let lastAutoPresetType = "";
+    let lastAutoPresetValue = "";
 
     bindTagsPalette();
     bindActionsUI(initialActions || []);
@@ -755,6 +1274,56 @@ Views.Admin = (() => {
         const idEl = $("#a_id");
         if(idEl && !idEl.value.trim()) idEl.value = genId();
       };
+    }
+
+    const mdEl = $("#a_md");
+    const typeEl = $("#a_type");
+
+    if(mdEl){
+      mdEl.addEventListener("input", () => {
+        if(!isNew) return;
+        const currentType = typeEl ? String(typeEl.value || "").trim() : "";
+        const expectedPreset = currentType ? String(ARTICLE_TYPE_PRESETS[currentType] || "") : "";
+        const currentValue = String(mdEl.value || "");
+
+        if(!currentValue.trim()){
+          presetTouchedByUser = false;
+          lastAutoPresetType = "";
+          lastAutoPresetValue = "";
+          return;
+        }
+
+        if(
+          lastAutoPresetType &&
+          currentType === lastAutoPresetType &&
+          currentValue === lastAutoPresetValue &&
+          expectedPreset === lastAutoPresetValue
+        ){
+          return;
+        }
+
+        if(expectedPreset && currentValue === expectedPreset){
+          lastAutoPresetType = currentType;
+          lastAutoPresetValue = expectedPreset;
+          return;
+        }
+
+        presetTouchedByUser = true;
+      });
+    }
+
+    if(typeEl){
+      typeEl.addEventListener("change", () => {
+        if(!isNew) return;
+        if(!mdEl) return;
+        if(presetTouchedByUser) return;
+
+        const applied = maybeInsertPreset(isNew);
+        if(applied){
+          lastAutoPresetType = String(typeEl.value || "").trim();
+          lastAutoPresetValue = applied;
+        }
+      });
     }
 
     const saveBtn = $("#a_save");
@@ -833,25 +1402,34 @@ Views.Admin = (() => {
       setStatus(String(items.length));
 
       if(!openId){
-        showViewer(`<div class="empty">Выбери инструкцию слева или создай новую.</div>`);
+        showViewer(`<div class="empty">Выбери существующую инструкцию слева для редактирования.</div>`);
         return;
       }
 
       if(openId === "new"){
-        const row = {
-          id: "",
-          title: "",
-          category: "",
-          type: "standard",
-          status: "draft",
-          excerpt: "",
-          roles: ["staff"],
-          tags: [],
-          actions: [],
-          content_md: ""
-        };
-        showViewer(editorHtml(row, true));
-        bindEditor(true, row.actions);
+        showViewer(`
+          <div class="item" style="cursor:default; margin-bottom:12px;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:240px;">
+                <h1 class="article-title">Контент → Инструкции</h1>
+                <p class="article-sub">Создание новых инструкций через админку отключено.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="item" style="cursor:default;">
+            <div class="item-title">Edit-only mode</div>
+            <div class="item-meta" style="margin-top:10px;">
+              <span class="tag">articles</span>
+              <span class="tag">edit_only</span>
+              <span class="tag">no_create_in_admin</span>
+            </div>
+            <div style="margin-top:12px;">
+              <div class="empty">Новые инструкции создаются вне админки. Здесь можно редактировать только существующие записи.</div>
+            </div>
+          </div>
+        `);
+        setStatus(String(items.length));
         return;
       }
 
@@ -862,6 +1440,635 @@ Views.Admin = (() => {
     }catch(e){
       console.error(e);
       showViewer(`<div class="empty">Ошибка загрузки инструкций: ${esc(e.message || String(e))}</div>`);
+      setStatus("ошибка");
+    }
+  }
+
+  // =============================
+  // CONTENT → TEMPLATES (kb_templates)
+  // =============================
+  async function sbTemplatesListAll(){
+    const p = SB.from("kb_templates")
+      .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
+      .order("sort", { ascending:true })
+      .order("title", { ascending:true });
+    const { data, error } = await withTimeout(p, 12000, "kb_templates list");
+    if(error) throw error;
+    return data || [];
+  }
+
+  async function sbTemplatesGet(id){
+    const p = SB.from("kb_templates")
+      .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
+      .eq("id", id).single();
+    const { data, error } = await withTimeout(p, 12000, "kb_templates get");
+    if(error) throw error;
+    return data;
+  }
+
+  async function sbTemplatesUpsert(row){
+    await ensureSession();
+
+    try{
+      const p = SB.from("kb_templates").upsert(row, { onConflict:"id" }).select("id");
+      const { error } = await withTimeout(p, 45000, "kb_templates upsert");
+      if(error) throw error;
+      return;
+    }catch(e){
+      const msg = (e && e.message) ? String(e.message) : String(e);
+      const status = (e && typeof e.status === "number") ? e.status : null;
+      const transient =
+        msg.includes("Timeout") ||
+        msg.toLowerCase().includes("network") ||
+        msg.toLowerCase().includes("fetch") ||
+        status === 0 || status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+
+      if(!transient) throw e;
+
+      console.warn("[Admin] kb_templates upsert transient, retrying once…", e);
+      try{
+        await new Promise(res => setTimeout(res, 600));
+        await ensureSession();
+      }catch(_e){}
+
+      const p2 = SB.from("kb_templates").upsert(row, { onConflict:"id" }).select("id");
+      const { error: error2 } = await withTimeout(p2, 45000, "kb_templates upsert retry");
+      if(error2) throw error2;
+    }
+  }
+
+  async function sbTemplatesDelete(id){
+    await ensureSession();
+    const p = SB.from("kb_templates").delete().eq("id", id);
+    const { error } = await withTimeout(p, 20000, "kb_templates delete");
+    if(error) throw error;
+  }
+
+  function genTemplateId(){ return "tpl_" + Date.now().toString(36); }
+
+  function templateEditorHtml(row, isNew){
+    const id = row.id || "";
+    const title = row.title || "";
+    const format = row.format || "";
+    const actions = Array.isArray(row.actions) ? row.actions : [];
+    const tags = Array.isArray(row.tags) ? row.tags : [];
+    const published = row.published !== false;
+    const sort = row.sort != null ? String(row.sort) : "1000";
+
+    return `
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">Контент → Шаблоны</h1>
+            <p class="article-sub">${isNew ? "Создание нового шаблона" : ("Редактирование: " + esc(id))}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Основные поля</div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
+
+            <div style="grid-column:1 / -1;">
+              <div class="muted" style="margin:0 0 6px 2px;">ID (уникальный ключ, латиница, без пробелов)</div>
+              <div style="display:grid; grid-template-columns: 1fr 190px; gap:10px; align-items:end;">
+                <input id="t_id" style="${inpStyle}" value="${esc(id)}" ${isNew ? "" : "disabled"} placeholder="tpl_..." />
+                <button class="btn btn-sm" id="gen_tpl_id" ${isNew ? "" : "disabled"}><span class="dot"></span>Сгенерировать ID</button>
+              </div>
+              <div class="muted" style="margin-top:6px;">ID используется как ключ шаблона. Лучше не менять после сохранения.</div>
+            </div>
+
+            <div style="grid-column:1 / -1;">
+              <div class="muted" style="margin:0 0 6px 2px;">Заголовок</div>
+              <input id="t_title" style="${inpStyle}" value="${esc(title)}" />
+            </div>
+
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Формат</div>
+              <input id="t_format" style="${inpStyle}" value="${esc(format)}" placeholder="например: brief / excel / text" />
+            </div>
+
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Published</div>
+              <select id="t_published" style="${inpStyle}">
+                <option value="1" ${published ? "selected" : ""}>да</option>
+                <option value="0" ${published ? "" : "selected"}>нет</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Sort</div>
+              <input id="t_sort" type="number" style="${inpStyle}" value="${esc(sort)}" />
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Теги</div>
+        <div class="item-meta" style="margin-top:10px;">
+          <span class="tag">dictionary</span>
+          <span class="tag">multi-select</span>
+        </div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div id="tplTagsPalette">${renderTagsPalette(tags)}</div>
+          <div class="muted" style="margin-top:8px;">Выбрано: <span id="tplTagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Кнопки действий</div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div id="tplActionsBox">${renderActionsBuilder(actions)}</div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default;">
+        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+          <button class="btn" id="t_save"><span class="dot"></span>Сохранить</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderTemplatesList(items){
+    const list = $("#list");
+    renderAdminTabs();
+    renderContentSubTabs();
+
+    list.insertAdjacentHTML("beforeend", `
+      <div class="hr"></div>
+      <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
+        <button class="btn btn-sm" id="tpl_reload"><span class="dot"></span>Обновить</button>
+      </div>
+      <div class="muted" style="margin:0 0 8px 0;">Шаблонов: ${items.length}. В админке доступно только редактирование существующих записей.</div>
+    `);
+
+    $("#tpl_reload").onclick = () => loadTemplates("");
+
+    if(!items.length){
+      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">Пока нет записей в kb_templates.</div>`);
+      return;
+    }
+
+    items.forEach(it => {
+      const fm = it.format ? `<span class="tag">${esc(it.format)}</span>` : "";
+      const tagHtml = Array.isArray(it.tags) && it.tags.length
+        ? it.tags.map(tag => `<span class="tag" data-tag-filter="${esc(String(tag))}">${esc(String(tag))}</span>`).join("")
+        : "";
+      const meta = [fm, tagHtml].filter(Boolean).join("");
+
+      const a = document.createElement("a");
+      a.className = "item";
+      a.href = `#/admin/${encodeURIComponent("content:templates:" + it.id)}`;
+      a.innerHTML = `
+        <div class="item-title">${esc(it.title || it.id || "Шаблон")}</div>
+        <div class="item-meta">${meta}</div>
+      `;
+      list.appendChild(a);
+    });
+  }
+
+  function bindTemplateEditor(isNew, rowData){
+    const root = $("#viewer");
+    if(!root) return;
+
+    bindTagsPalette();
+    bindActionsUI(Array.isArray(rowData?.actions) ? rowData.actions : [], "tplActionsBox");
+
+    const syncTplTags = () => {
+      const el = $("#tplTagsChosen");
+      if(el) el.textContent = parseSelectedTags(root).join(", ");
+    };
+
+    root.querySelectorAll("[data-tag]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        setTimeout(syncTplTags, 0);
+      });
+    });
+
+    syncTplTags();
+
+    const genBtn = $("#gen_tpl_id");
+    if(genBtn){
+      genBtn.onclick = () => {
+        const idEl = $("#t_id");
+        if(idEl && !idEl.value.trim()) idEl.value = genTemplateId();
+      };
+    }
+
+    const saveBtn = $("#t_save");
+    if(saveBtn){
+      saveBtn.onclick = async () => {
+        setBusy(true, "Сохраняю…");
+        try{
+          const id = normLower($("#t_id").value);
+          if(!id){ setBusy(false); return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную."); }
+
+          const currentId = id;
+          const existing = await sbTemplatesGet(currentId);
+
+          const sortRaw = norm($("#t_sort").value);
+          const actionsVal = readActionsFromUI(root);
+
+          const row = {
+            id: currentId,
+            title: norm($("#t_title").value),
+            format: normLower($("#t_format").value),
+            link: existing && Object.prototype.hasOwnProperty.call(existing, "link")
+              ? (existing.link || null)
+              : null,
+            actions: actionsVal,
+            tags: parseSelectedTags(root),
+            published: ($("#t_published").value || "1") === "1",
+            sort: sortRaw ? Number(sortRaw) : 1000
+          };
+
+          if(!row.title){
+            setBusy(false);
+            return alert("Заголовок обязателен.");
+          }
+
+          await sbTemplatesUpsert(row);
+          setBusy(false);
+          alert("Сохранено ✅");
+          goAdmin("content:templates:" + id);
+          await loadTemplates(id);
+        }catch(e){
+          console.error(e);
+          setBusy(false);
+          alert(e.message || String(e));
+        }
+      };
+    }
+
+
+  }
+
+  async function loadTemplates(openId){
+    setPanelTitle("Админка");
+    setStatus("…");
+    MODE = "content";
+    CONTENT_MODE = "templates";
+
+    try{ if(window.App) App._navLock = !!(openId && String(openId).length); }catch(e){}
+
+    showLoading("Загрузка шаблонов…");
+
+    try{
+      const items = await sbTemplatesListAll();
+
+      renderTemplatesList(items);
+      setStatus(String(items.length));
+
+      if(!openId){
+        showViewer(`<div class="empty">Выбери существующий шаблон слева для редактирования.</div>`);
+        return;
+      }
+
+      if(openId === "new"){
+        showViewer(`
+          <div class="item" style="cursor:default; margin-bottom:12px;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:240px;">
+                <h1 class="article-title">Контент → Шаблоны</h1>
+                <p class="article-sub">Создание новых шаблонов через админку отключено.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="item" style="cursor:default;">
+            <div class="item-title">Edit-only mode</div>
+            <div class="item-meta" style="margin-top:10px;">
+              <span class="tag">templates</span>
+              <span class="tag">edit_only</span>
+              <span class="tag">no_create_in_admin</span>
+            </div>
+            <div style="margin-top:12px;">
+              <div class="empty">Новые шаблоны создаются вне админки. Здесь можно редактировать только существующие записи.</div>
+            </div>
+          </div>
+        `);
+        setStatus(String(items.length));
+        return;
+      }
+
+      const row = await sbTemplatesGet(openId);
+      showViewer(templateEditorHtml(row, false));
+      bindTemplateEditor(false, row);
+
+    }catch(e){
+      console.error(e);
+      showViewer(`<div class="empty">Ошибка загрузки шаблонов: ${esc(e.message || String(e))}</div>`);
+      setStatus("ошибка");
+    }
+  }
+
+  // =============================
+  // CONTENT → CHECKLISTS (open-only, Supabase metadata source)
+  // =============================
+  async function loadChecklistsSource(){
+    const p = SB.from("kb_checklists")
+      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at")
+      .order("sort", { ascending:true })
+      .order("title", { ascending:true });
+
+    const { data, error } = await withTimeout(p, 12000, "kb_checklists list");
+    if(error) throw error;
+    return Array.isArray(data) ? data : [];
+  }
+
+  async function sbChecklistsGet(id){
+    const p = SB.from("kb_checklists")
+      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at")
+      .eq("id", id).single();
+    const { data, error } = await withTimeout(p, 12000, "kb_checklists get");
+    if(error) throw error;
+    return data;
+  }
+
+  async function sbChecklistsUpsert(row){
+    await ensureSession();
+
+    try{
+      const p = SB.from("kb_checklists").upsert(row, { onConflict:"id" }).select("id");
+      const { error } = await withTimeout(p, 45000, "kb_checklists upsert");
+      if(error) throw error;
+      return;
+    }catch(e){
+      const msg = (e && e.message) ? String(e.message) : String(e);
+      const status = (e && typeof e.status === "number") ? e.status : null;
+      const transient =
+        msg.includes("Timeout") ||
+        msg.toLowerCase().includes("network") ||
+        msg.toLowerCase().includes("fetch") ||
+        status === 0 || status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+
+      if(!transient) throw e;
+
+      console.warn("[Admin] kb_checklists upsert transient, retrying once…", e);
+      try{
+        await new Promise(res => setTimeout(res, 600));
+        await ensureSession();
+      }catch(_e){}
+
+      const p2 = SB.from("kb_checklists").upsert(row, { onConflict:"id" }).select("id");
+      const { error: error2 } = await withTimeout(p2, 45000, "kb_checklists upsert retry");
+      if(error2) throw error2;
+    }
+  }
+
+  function checklistAdminEditorHtml(row){
+    const id = row.id || "";
+    const title = row.title || "";
+    const desc = row.desc || "";
+    const actions = Array.isArray(row.actions) ? row.actions : [];
+    const tags = Array.isArray(row.tags) ? row.tags : [];
+    const published = !!row.published;
+    const sort = row.sort != null ? String(row.sort) : "1000";
+
+    return `
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">Контент → Чек-листы</h1>
+            <p class="article-sub">Редактирование существующей записи</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Метаданные</div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
+
+            <div style="grid-column:1 / -1;">
+              <div class="muted" style="margin:0 0 6px 2px;">ID</div>
+              <input id="cl_id" style="${inpStyle}" value="${esc(id)}" disabled />
+            </div>
+
+            <div style="grid-column:1 / -1;">
+              <div class="muted" style="margin:0 0 6px 2px;">Название</div>
+              <input id="cl_title" style="${inpStyle}" value="${esc(title)}" />
+            </div>
+
+            <div style="grid-column:1 / -1;">
+              <div class="muted" style="margin:0 0 6px 2px;">Описание</div>
+              <textarea id="cl_desc" style="${taStyle}; min-height:90px;" rows="4">${esc(desc)}</textarea>
+            </div>
+
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Published</div>
+              <select id="cl_published" style="${inpStyle}">
+                <option value="1" ${published ? "selected" : ""}>да</option>
+                <option value="0" ${published ? "" : "selected"}>нет</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Sort</div>
+              <input id="cl_sort" type="number" style="${inpStyle}" value="${esc(sort)}" />
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Теги</div>
+        <div class="item-meta" style="margin-top:10px;">
+          <span class="tag">dictionary</span>
+          <span class="tag">multi-select</span>
+        </div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div id="clTagsPalette">${renderTagsPalette(tags)}</div>
+          <div class="muted" style="margin-top:8px;">Выбрано: <span id="clTagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Кнопки действий</div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div id="clActionsBox">${renderActionsBuilder(actions)}</div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Структура</div>
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div class="empty" style="padding:12px;color:var(--muted)">Структура пунктов чек-листа пока не хранится в этой таблице. На этом этапе редактируются только метаданные и ресурсы.</div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default;">
+        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+          <button class="btn" id="cl_save"><span class="dot"></span>Сохранить</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderChecklistsList(items){
+    const list = $("#list");
+    renderAdminTabs();
+    renderContentSubTabs();
+
+    list.insertAdjacentHTML("beforeend", `
+      <div class="hr"></div>
+      <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
+        <button class="btn btn-sm" id="cl_reload_admin"><span class="dot"></span>Обновить</button>
+      </div>
+      <div class="muted" style="margin:0 0 8px 0;">Чек-листов: ${items.length}. Пока из Supabase доступны только метаданные существующих записей.</div>
+    `);
+
+    $("#cl_reload_admin").onclick = () => loadAdminChecklists("");
+
+    if(!items.length){
+      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">Пока нет записей в kb_checklists.</div>`);
+      return;
+    }
+
+    items.forEach(it => {
+      const tags = Array.isArray(it.tags) && it.tags.length
+        ? it.tags.map(tag => `<span class="tag" data-tag-filter="${esc(String(tag))}">${esc(String(tag))}</span>`).join("")
+        : "";
+      const desc = it.desc ? `<div class="muted" style="margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(it.desc)}</div>` : "";
+
+      const a = document.createElement("a");
+      a.className = "item";
+      a.href = `#/admin/${encodeURIComponent("content:checklists:" + it.id)}`;
+      a.innerHTML = `
+        <div class="item-title">${esc(it.title || it.id || "Чек-лист")}</div>
+        <div class="item-meta">${tags}</div>
+        ${desc}
+      `;
+      list.appendChild(a);
+    });
+  }
+
+  function bindChecklistEditor(rowData){
+    const root = $("#viewer");
+    if(!root) return;
+
+    bindTagsPalette();
+    bindActionsUI(Array.isArray(rowData?.actions) ? rowData.actions : [], "clActionsBox");
+
+    const syncClTags = () => {
+      const el = $("#clTagsChosen");
+      if(el) el.textContent = parseSelectedTags(root).join(", ");
+    };
+
+    root.querySelectorAll("[data-tag]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        setTimeout(syncClTags, 0);
+      });
+    });
+
+    syncClTags();
+
+    const saveBtn = $("#cl_save");
+    if(saveBtn){
+      saveBtn.onclick = async () => {
+        setBusy(true, "Сохраняю…");
+        try{
+          const id = normLower($("#cl_id").value);
+          if(!id){
+            setBusy(false);
+            return alert("ID обязателен.");
+          }
+
+          const existing = await sbChecklistsGet(id);
+          const sortRaw = norm($("#cl_sort").value);
+
+          const row = {
+            id,
+            title: norm($("#cl_title").value),
+            desc: norm($("#cl_desc").value) || null,
+            url: existing && Object.prototype.hasOwnProperty.call(existing, "url")
+              ? (existing.url || null)
+              : null,
+            actions: readActionsFromUI(root),
+            tags: parseSelectedTags(root),
+            published: ($("#cl_published").value || "1") === "1",
+            sort: sortRaw ? Number(sortRaw) : 1000
+          };
+
+          if(!row.title){
+            setBusy(false);
+            return alert("Название обязательно.");
+          }
+
+          await sbChecklistsUpsert(row);
+          setBusy(false);
+          alert("Сохранено ✅");
+          goAdmin("content:checklists:" + id);
+          await loadAdminChecklists(id);
+        }catch(e){
+          console.error(e);
+          setBusy(false);
+          alert(e.message || String(e));
+        }
+      };
+    }
+  }
+
+  async function loadAdminChecklists(openId){
+    setPanelTitle("Админка");
+    setStatus("…");
+    MODE = "content";
+    CONTENT_MODE = "checklists";
+
+    try{ if(window.App) App._navLock = !!(openId && String(openId).length); }catch(e){}
+
+    showLoading("Загрузка чек-листов…");
+
+    try{
+      const items = await loadChecklistsSource();
+
+      renderChecklistsList(items);
+      setStatus(String(items.length));
+
+      if(!openId){
+        showViewer(`<div class="empty">Выбери существующий чек-лист слева для редактирования.</div>`);
+        return;
+      }
+
+      if(openId === "new"){
+        showViewer(`
+          <div class="item" style="cursor:default; margin-bottom:12px;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:240px;">
+                <h1 class="article-title">Контент → Чек-листы</h1>
+                <p class="article-sub">Создание новых чек-листов через админку отключено.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="item" style="cursor:default;">
+            <div class="item-title">Edit-only mode</div>
+            <div class="item-meta" style="margin-top:10px;">
+              <span class="tag">checklists</span>
+              <span class="tag">edit_only</span>
+              <span class="tag">no_create_in_admin</span>
+            </div>
+            <div style="margin-top:12px;">
+              <div class="empty">Новые чек-листы создаются вне админки. Здесь можно редактировать только существующие записи.</div>
+            </div>
+          </div>
+        `);
+        setStatus(String(items.length));
+        return;
+      }
+
+      const row = await sbChecklistsGet(openId);
+      showViewer(checklistAdminEditorHtml(row));
+      bindChecklistEditor(row);
+
+    }catch(e){
+      console.error(e);
+      showViewer(`<div class="empty">Ошибка загрузки чек-листов: ${esc(e.message || String(e))}</div>`);
       setStatus("ошибка");
     }
   }
@@ -878,13 +2085,15 @@ Views.Admin = (() => {
       return;
     }
 
-    setStatus("—");
-    showViewer(`
-      <h1 class="article-title">Контент → ${esc(CONTENT_MODE==="templates" ? "Шаблоны" : "Чек-листы")}</h1>
-      <p class="article-sub">Скоро: редактор по варианту B.</p>
-      <div class="hr"></div>
-      <div class="empty">Пока раздел в разработке.</div>
-    `);
+    if(CONTENT_MODE === "templates"){
+      await loadTemplates(openId || "");
+      return;
+    }
+
+    if(CONTENT_MODE === "checklists"){
+      await loadAdminChecklists(openId || "");
+      return;
+    }
   }
 
   return {
@@ -904,6 +2113,7 @@ Views.Admin = (() => {
         const p = parseParam(param);
         if(p.mode === "employees"){ await loadEmployees(); return; }
         if(p.mode === "tasks"){ await loadTasks(); return; }
+        if(p.mode === "projects"){ await loadProjects(); return; }
         if(p.mode === "content"){ await loadContent(p.contentMode, p.id); return; }
         await loadEmployees();
       }catch(e){
@@ -916,4 +2126,60 @@ Views.Admin = (() => {
     }
   };
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

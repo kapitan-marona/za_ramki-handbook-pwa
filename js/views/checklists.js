@@ -38,48 +38,39 @@ Views.Checklists = (() => {
     return /^#\/planner\/[^\/]+/.test(String(hash || ""));
   }
 
-  function rememberChecklistContext(){
-    try{
-      const current = getCurrentHash();
-      const prev = sessionStorage.getItem(CL_LAST_HASH_KEY) || "";
-
-      if(isChecklistHash(current) && isPlannerTaskHash(prev)){
-        sessionStorage.setItem(CL_RETURN_HASH_KEY, prev);
-      }
-
-      if(isChecklistHash(current) && /^#\/checklists$/.test(prev)){
-        sessionStorage.setItem(CL_RETURN_HASH_KEY, "#/checklists");
-      }
-
-      sessionStorage.setItem(CL_LAST_HASH_KEY, current);
-    }catch(e){}
-  }
-
   function installChecklistContextTracker(){
     try{
       if(window.__zrChecklistContextTrackerInstalled) return;
       window.__zrChecklistContextTrackerInstalled = true;
 
-      rememberChecklistContext();
-
-      window.addEventListener("hashchange", () => {
-        try{
-          rememberChecklistContext();
-        }catch(e){}
-      });
+      if(window.ViewerNav && typeof ViewerNav.installTracker === "function"){
+        ViewerNav.installTracker({
+          lastKey: CL_LAST_HASH_KEY,
+          returnKey: CL_RETURN_HASH_KEY,
+          isDetailHash: isChecklistHash,
+          isListHash: function(hash){
+            return String(hash || "") === "#/checklists";
+          }
+        });
+      }
     }catch(e){}
   }
 
   function getChecklistReturnHash(){
     try{
-      const saved = sessionStorage.getItem(CL_RETURN_HASH_KEY) || "";
-      if(isPlannerTaskHash(saved)) return saved;
-      if(saved === "#/checklists") return saved;
+      if(window.ViewerNav && typeof ViewerNav.getReturnHash === "function"){
+        return ViewerNav.getReturnHash(CL_RETURN_HASH_KEY) || "#/checklists";
+      }
     }catch(e){}
     return "#/checklists";
   }
 
   function getChecklistCloseLabel(){
+    try{
+      if(window.ViewerNav && typeof ViewerNav.getCloseLabel === "function"){
+        return ViewerNav.getCloseLabel(getChecklistReturnHash());
+      }
+    }catch(e){}
     return isPlannerTaskHash(getChecklistReturnHash()) ? "К задаче" : "Закрыть";
   }
 
@@ -87,16 +78,8 @@ Views.Checklists = (() => {
     const target = getChecklistReturnHash();
 
     try{
-      if(isPlannerTaskHash(target) && window.Router && typeof Router.go === "function"){
-        const m = target.match(/^#\/planner\/(.+)$/);
-        if(m && m[1]){
-          Router.go("planner", decodeURIComponent(m[1]));
-          return;
-        }
-      }
-
-      if(window.Router && typeof Router.go === "function"){
-        Router.go("checklists");
+      if(window.ViewerNav && typeof ViewerNav.goClose === "function"){
+        ViewerNav.goClose(target, "checklists");
         return;
       }
     }catch(e){}
@@ -112,23 +95,16 @@ Views.Checklists = (() => {
     return "";
   }
 
-  
   function formatDate(d){
-    if(!d) return "";
     try{
-      const dt = new Date(d);
-      if(isNaN(dt)) return d;
-
-      const day = String(dt.getDate()).padStart(2,"0");
-      const mon = String(dt.getMonth()+1).padStart(2,"0");
-      const yr  = dt.getFullYear();
-
-      return `${day}.${mon}.${yr}`;
-    }catch(e){
-      return d;
-    }
+      if(window.ViewerNav && typeof ViewerNav.formatDMY === "function"){
+        return ViewerNav.formatDMY(d);
+      }
+    }catch(e){}
+    return String(d || "");
   }
-function renderMetaRow(item){
+
+  function renderMetaRow(item){
     let created =
       item?.createdAt ||
       item?.created_at ||
@@ -192,11 +168,13 @@ function renderMetaRow(item){
       const cid = String(c.id || "");
       a.className = "item";
       a.href = "#/checklists/" + encodeURIComponent(cid);
+      const tagsHtml = Array.isArray(c.tags) && c.tags.length
+        ? c.tags.map(tag => `<span class="tag">${esc(String(tag))}</span>`).join("")
+        : "";
+
       a.innerHTML = `
         <div class="item-title">${esc(c.title || "Чек-лист")}</div>
-        <div class="item-meta">
-          ${c.tags && c.tags.length ? `<span class="tag">${esc(c.tags.join(", "))}</span>` : ""}
-        </div>`;
+        <div class="item-meta">${tagsHtml}</div>`;
 
       a.onclick = (e) => {
         e.preventDefault();
@@ -319,31 +297,46 @@ function renderMetaRow(item){
 
   function renderResources(item){
     const resources = [];
+    const actions = Array.isArray(item?.actions) ? item.actions : [];
     const url = (item?.url || "").toString().trim();
 
-    if(url){
+    if(actions.length){
       resources.push(`
         <div style="display:flex; flex-direction:column; gap:8px;">
-          <a class="btn" href="${esc(url)}" target="_blank" rel="noopener">
-            <span class="dot"></span>Открыть чек-лист
-          </a>
-          <div class="muted" style="font-size:12px; line-height:1.5;">
-            Ссылка: <span class="mono">${esc(url)}</span>
-          </div>
-        </div>
-      `);
-    }
-
-    if(Array.isArray(item?.resources) && item.resources.length){
-      resources.push(`
-        <div style="display:flex; flex-direction:column; gap:8px; margin-top:${url ? "12px" : "0"};">
-          ${item.resources.map((r) => {
-            const label = esc(r?.label || r?.title || "Ресурс");
-            const href = esc(r?.url || "#");
-            return `<a class="btn" href="${href}" target="_blank" rel="noopener"><span class="dot"></span>${label}</a>`;
+          ${actions.map((a) => {
+            const label = esc(a?.label || "Открыть");
+            const href = esc(a?.url || "#");
+            const external = !!a?.external;
+            const target = external ? `target="_blank" rel="noopener"` : "";
+            return `<a class="btn" href="${href}" ${target}><span class="dot"></span>${label}</a>`;
           }).join("")}
         </div>
       `);
+    }else{
+      if(url){
+        resources.push(`
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <a class="btn" href="${esc(url)}" target="_blank" rel="noopener">
+              <span class="dot"></span>Открыть чек-лист
+            </a>
+            <div class="muted" style="font-size:12px; line-height:1.5;">
+              Ссылка: <span class="mono">${esc(url)}</span>
+            </div>
+          </div>
+        `);
+      }
+
+      if(Array.isArray(item?.resources) && item.resources.length){
+        resources.push(`
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:${url ? "12px" : "0"};">
+            ${item.resources.map((r) => {
+              const label = esc(r?.label || r?.title || "Ресурс");
+              const href = esc(r?.url || "#");
+              return `<a class="btn" href="${href}" target="_blank" rel="noopener"><span class="dot"></span>${label}</a>`;
+            }).join("")}
+          </div>
+        `);
+      }
     }
 
     return resources.length
@@ -432,9 +425,27 @@ function renderMetaRow(item){
     });
   }
 
+  async function loadChecklistsFromSupabase(){
+    if(!window.SB) return [];
+
+    const { data, error } = await SB
+      .from("kb_checklists")
+      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at,items")
+      .eq("published", true)
+      .order("sort", { ascending:true })
+      .order("title", { ascending:true });
+
+    if(error){
+      console.error("[Checklists] Supabase load error:", error);
+      return [];
+    }
+
+    return Array.isArray(data) ? data : [];
+  }
+
   async function show(){
     setPanelTitle("Чек-листы");
-    _data = await API.json("./content/data/checklists.json");
+    _data = await loadChecklistsFromSupabase();
     renderList();
   }
 
@@ -497,8 +508,4 @@ function renderMetaRow(item){
 
   return { show, open, setFilter };
 })();
-
-
-
-
 

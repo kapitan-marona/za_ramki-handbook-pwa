@@ -87,14 +87,41 @@ Views.Checklists = (() => {
     location.hash = isPlannerTaskHash(target) ? target : "#/checklists";
   }
 
+  function getMainPanel(){
+    return document.querySelector(".panel");
+  }
+
+  function getMainViewer(){
+    return document.querySelector(".viewer");
+  }
+
   function enableMobileReadingMode(){
-    if(window.innerWidth <= 960){
-      document.body.classList.add("zr-mobile-reading");
+    document.body.classList.add("zr-mobile-reading");
+    if(window.innerWidth > 960) return;
+
+    const panel = getMainPanel();
+    const viewer = getMainViewer();
+
+    if(panel) panel.style.display = "none";
+    if(viewer){
+      viewer.style.display = "";
+      viewer.style.width = "100%";
+      viewer.style.maxWidth = "100%";
     }
   }
 
   function disableMobileReadingMode(){
     document.body.classList.remove("zr-mobile-reading");
+
+    const panel = getMainPanel();
+    const viewer = getMainViewer();
+
+    if(panel) panel.style.display = "";
+    if(viewer){
+      viewer.style.display = "";
+      viewer.style.width = "";
+      viewer.style.maxWidth = "";
+    }
   }
 
   function bindMobileListToggle(btn){
@@ -105,15 +132,28 @@ Views.Checklists = (() => {
         btn.style.display = "none";
         return;
       }
+
       btn.style.display = "inline-flex";
-      const reading = document.body.classList.contains("zr-mobile-reading");
+
+      const panel = getMainPanel();
+      const reading = !!(panel && panel.style.display === "none");
+
       btn.textContent = reading ? "Показать список" : "Скрыть список";
       btn.setAttribute("aria-expanded", reading ? "false" : "true");
     };
 
     btn.onclick = () => {
       if(window.innerWidth > 960) return;
-      document.body.classList.toggle("zr-mobile-reading");
+
+      const panel = getMainPanel();
+      const hiddenNow = !!(panel && panel.style.display === "none");
+
+      if(hiddenNow){
+        disableMobileReadingMode();
+      }else{
+        enableMobileReadingMode();
+      }
+
       sync();
     };
 
@@ -554,3 +594,4 @@ Views.Checklists = (() => {
 
   return { show, open, setFilter };
 })();
+

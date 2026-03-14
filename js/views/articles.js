@@ -137,7 +137,7 @@ Views.Articles = (() => {
       const panel = getMainPanel();
       const reading = !!(panel && panel.style.display === "none");
 
-      btn.textContent = reading ? "Показать список" : "Скрыть список";
+      btn.textContent = reading ? "Раскрыть список" : "Скрыть список";
       btn.setAttribute("aria-expanded", reading ? "false" : "true");
     };
 
@@ -309,7 +309,6 @@ Views.Articles = (() => {
     const toc = document.createElement("aside");
     toc.className = "article-toc";
     toc.innerHTML = `
-      <button class="btn zr-toc-toggle" type="button" aria-expanded="false">Показать оглавление</button>
       <div class="article-toc-title">Оглавление</div>
       <nav class="article-toc-list">
         ${h2s.map(h => `<a href="#${h.id}" data-toc="${h.id}">${esc(h.textContent || "")}</a>`).join("")}
@@ -323,11 +322,17 @@ Views.Articles = (() => {
     main.className = "article-main";
 
     Array.from(viewer.childNodes).forEach(n => main.appendChild(n));
-    layout.appendChild(toc);
     layout.appendChild(main);
     viewer.appendChild(layout);
 
-    const toggleBtn = toc.querySelector(".zr-toc-toggle");
+    const headerSection = main.querySelector('[data-ins-section="header"]');
+    if(window.innerWidth <= 960 && headerSection && headerSection.parentNode){
+      headerSection.insertAdjacentElement("afterend", toc);
+    }else{
+      layout.appendChild(toc);
+    }
+
+    const toggleBtn = main.querySelector("#insTocBtn");
     if(toggleBtn){
       const tocTitle = toc.querySelector(".article-toc-title");
       const tocList = toc.querySelector(".article-toc-list");
@@ -338,13 +343,9 @@ Views.Articles = (() => {
         toggleBtn.textContent = collapsed ? "Показать оглавление" : "Скрыть оглавление";
         toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
 
-        if(window.innerWidth <= 960){
-          if(tocTitle) tocTitle.style.display = collapsed ? "none" : "";
-          if(tocList) tocList.style.display = collapsed ? "none" : "";
-        }else{
-          if(tocTitle) tocTitle.style.display = "";
-          if(tocList) tocList.style.display = "";
-        }
+        toc.style.display = collapsed ? "none" : "";
+        if(tocTitle) tocTitle.style.display = collapsed ? "none" : "";
+        if(tocList) tocList.style.display = collapsed ? "none" : "";
       };
 
       toggleBtn.addEventListener("click", () => {
@@ -352,10 +353,7 @@ Views.Articles = (() => {
         syncToggleState();
       });
 
-      if(window.innerWidth <= 960){
-        layout.classList.add("zr-toc-collapsed");
-      }
-
+      layout.classList.add("zr-toc-collapsed");
       syncToggleState();
     }
 
@@ -608,6 +606,10 @@ Views.Articles = (() => {
     const html0 = window.marked ? window.marked.parse(md) : `<pre>${esc(md)}</pre>`;
     const html = decorateCallouts(html0);
     viewer.innerHTML = `
+      <div style="margin-bottom:12px;">
+        <button class="btn btn-sm zr-mobile-only" id="insListBtn" type="button">Раскрыть список</button>
+      </div>
+
       <div class="item" data-ins-section="header" style="cursor:default; margin-bottom:12px;">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
           <div style="flex:1; min-width:240px;">
@@ -615,7 +617,7 @@ Views.Articles = (() => {
             <p class="article-sub">${esc(updated)}</p>
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-sm zr-mobile-only" id="insListBtn" type="button">Показать список</button>
+            <button class="btn btn-sm" id="insTocBtn" type="button">Показать оглавление</button>
             <button class="btn btn-sm" id="insBackBtn" type="button">Закрыть</button>
           </div>
         </div>
@@ -757,5 +759,8 @@ Views.Articles = (() => {
     }
   };
 })();
+
+
+
 
 

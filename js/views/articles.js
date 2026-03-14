@@ -346,6 +346,12 @@ Views.Articles = (() => {
         toc.style.display = collapsed ? "none" : "";
         if(tocTitle) tocTitle.style.display = collapsed ? "none" : "";
         if(tocList) tocList.style.display = collapsed ? "none" : "";
+
+        if(window.innerWidth > 960){
+          layout.style.gridTemplateColumns = collapsed ? "minmax(0, 1fr)" : "minmax(0, 1fr) 260px";
+        }else{
+          layout.style.gridTemplateColumns = "1fr";
+        }
       };
 
       toggleBtn.addEventListener("click", () => {
@@ -353,7 +359,10 @@ Views.Articles = (() => {
         syncToggleState();
       });
 
-      layout.classList.add("zr-toc-collapsed");
+      if(window.innerWidth <= 960){
+        layout.classList.add("zr-toc-collapsed");
+      }
+
       syncToggleState();
     }
 
@@ -643,12 +652,13 @@ Views.Articles = (() => {
       backBtn.onclick = () => goInstructionClose();
     }
 
-    const listBtn = document.getElementById("insListBtn");
-    bindMobileListToggle(listBtn);
-
     setupArticleBodyCollapse(viewer);
     enhanceArticleWithToc(viewer);
     enableMobileReadingMode();
+
+    const listBtn = document.getElementById("insListBtn");
+    bindMobileListToggle(listBtn);
+
     setStatus("готово");
   }
 
@@ -759,6 +769,7 @@ Views.Articles = (() => {
     }
   };
 })();
+
 
 
 

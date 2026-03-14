@@ -309,7 +309,10 @@ Views.Articles = (() => {
     const toc = document.createElement("aside");
     toc.className = "article-toc";
     toc.innerHTML = `
-      <div class="article-toc-title">Оглавление</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+        <div class="article-toc-title" style="margin:0;">Оглавление</div>
+        <button class="btn btn-sm" id="insTocBtnDesktop" type="button">Скрыть оглавление</button>
+      </div>
       <nav class="article-toc-list">
         ${h2s.map(h => `<a href="#${h.id}" data-toc="${h.id}">${esc(h.textContent || "")}</a>`).join("")}
       </nav>
@@ -332,32 +335,61 @@ Views.Articles = (() => {
       layout.appendChild(toc);
     }
 
-    const toggleBtn = main.querySelector("#insTocBtn");
-    if(toggleBtn){
+    const toggleBtnMobile = main.querySelector("#insTocBtn");
+    const toggleBtnDesktop = toc.querySelector("#insTocBtnDesktop");
+
+    if(toggleBtnMobile || toggleBtnDesktop){
       const tocTitle = toc.querySelector(".article-toc-title");
       const tocList = toc.querySelector(".article-toc-list");
 
       const syncToggleState = () => {
         const collapsed = layout.classList.contains("zr-toc-collapsed");
 
-        toggleBtn.textContent = collapsed ? "Показать оглавление" : "Скрыть оглавление";
-        toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        if(toggleBtnMobile){
+          toggleBtnMobile.textContent = collapsed ? "Показать оглавление" : "Скрыть оглавление";
+          toggleBtnMobile.setAttribute("aria-expanded", collapsed ? "false" : "true");
+          toggleBtnMobile.style.display = window.innerWidth <= 960 ? "inline-flex" : "none";
+        }
 
-        toc.style.display = collapsed ? "none" : "";
-        if(tocTitle) tocTitle.style.display = collapsed ? "none" : "";
-        if(tocList) tocList.style.display = collapsed ? "none" : "";
+        if(toggleBtnDesktop){
+          toggleBtnDesktop.textContent = collapsed ? "Показать оглавление" : "Скрыть оглавление";
+          toggleBtnDesktop.setAttribute("aria-expanded", collapsed ? "false" : "true");
+          toggleBtnDesktop.style.display = window.innerWidth > 960 ? "inline-flex" : "none";
+        }
 
         if(window.innerWidth > 960){
-          layout.style.gridTemplateColumns = collapsed ? "minmax(0, 1fr)" : "minmax(0, 1fr) 260px";
+          toc.style.display = collapsed ? "none" : "";
+
+          if(collapsed){
+            layout.style.display = "block";
+            main.style.maxWidth = "900px";
+            main.style.margin = "0 auto";
+          }else{
+            layout.style.display = "grid";
+            layout.style.gridTemplateColumns = "minmax(0,1fr) 260px";
+            main.style.maxWidth = "";
+            main.style.margin = "";
+          }
+
+          if(tocTitle) tocTitle.style.display = "";
+          if(tocList) tocList.style.display = "";
         }else{
-          layout.style.gridTemplateColumns = "1fr";
+          toc.style.display = collapsed ? "none" : "";
+          if(tocTitle) tocTitle.style.display = collapsed ? "none" : "";
+          if(tocList) tocList.style.display = collapsed ? "none" : "";
+          layout.style.display = "block";
+          main.style.maxWidth = "";
+          main.style.margin = "";
         }
       };
 
-      toggleBtn.addEventListener("click", () => {
+      const onToggle = () => {
         layout.classList.toggle("zr-toc-collapsed");
         syncToggleState();
-      });
+      };
+
+      if(toggleBtnMobile) toggleBtnMobile.addEventListener("click", onToggle);
+      if(toggleBtnDesktop) toggleBtnDesktop.addEventListener("click", onToggle);
 
       if(window.innerWidth <= 960){
         layout.classList.add("zr-toc-collapsed");
@@ -769,6 +801,8 @@ Views.Articles = (() => {
     }
   };
 })();
+
+
 
 
 

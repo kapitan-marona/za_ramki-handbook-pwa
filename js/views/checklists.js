@@ -87,6 +87,39 @@ Views.Checklists = (() => {
     location.hash = isPlannerTaskHash(target) ? target : "#/checklists";
   }
 
+  function enableMobileReadingMode(){
+    if(window.innerWidth <= 960){
+      document.body.classList.add("zr-mobile-reading");
+    }
+  }
+
+  function disableMobileReadingMode(){
+    document.body.classList.remove("zr-mobile-reading");
+  }
+
+  function bindMobileListToggle(btn){
+    if(!btn) return;
+
+    const sync = () => {
+      if(window.innerWidth > 960){
+        btn.style.display = "none";
+        return;
+      }
+      btn.style.display = "inline-flex";
+      const reading = document.body.classList.contains("zr-mobile-reading");
+      btn.textContent = reading ? "Показать список" : "Скрыть список";
+      btn.setAttribute("aria-expanded", reading ? "false" : "true");
+    };
+
+    btn.onclick = () => {
+      if(window.innerWidth > 960) return;
+      document.body.classList.toggle("zr-mobile-reading");
+      sync();
+    };
+
+    sync();
+  }
+
   function getLinkedFromMeta(){
     return "";
   }
@@ -450,7 +483,10 @@ Views.Checklists = (() => {
 
     if(param){
       await open(param);
+      return;
     }
+
+    disableMobileReadingMode();
   }
 
   async function open(id){
@@ -459,6 +495,7 @@ Views.Checklists = (() => {
 
     const item = (Array.isArray(_data) ? _data : []).find(x => String(x.id) === String(id));
     if(!item){
+      disableMobileReadingMode();
       viewer.innerHTML = `<div class="empty">Чек-лист не найден.</div>`;
       return;
     }
@@ -474,7 +511,8 @@ Views.Checklists = (() => {
             <h1 class="article-title">${esc(item.title || "Чек-лист")}</h1>
             <p class="article-sub">${esc(subtitle)}</p>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-sm zr-mobile-only" id="clListBtn" type="button">Показать список</button>
             <button class="btn btn-sm" id="clBackBtn" type="button">${getChecklistCloseLabel()}</button>
           </div>
         </div>
@@ -499,8 +537,12 @@ Views.Checklists = (() => {
       backBtn.onclick = () => goChecklistClose();
     }
 
+    const listBtn = document.getElementById("clListBtn");
+    bindMobileListToggle(listBtn);
+
     bindGroupToggles(item);
     setupBodyCollapse(viewer);
+    enableMobileReadingMode();
   }
 
   function setFilter(q){
@@ -512,13 +554,3 @@ Views.Checklists = (() => {
 
   return { show, open, setFilter };
 })();
-
-
-
-
-
-
-
-
-
-

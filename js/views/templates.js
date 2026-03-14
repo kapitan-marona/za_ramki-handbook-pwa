@@ -83,6 +83,39 @@ Views.Templates = (() => {
     location.hash = isPlannerTaskHash(target) ? target : "#/templates";
   }
 
+  function enableMobileReadingMode(){
+    if(window.innerWidth <= 960){
+      document.body.classList.add("zr-mobile-reading");
+    }
+  }
+
+  function disableMobileReadingMode(){
+    document.body.classList.remove("zr-mobile-reading");
+  }
+
+  function bindMobileListToggle(btn){
+    if(!btn) return;
+
+    const sync = () => {
+      if(window.innerWidth > 960){
+        btn.style.display = "none";
+        return;
+      }
+      btn.style.display = "inline-flex";
+      const reading = document.body.classList.contains("zr-mobile-reading");
+      btn.textContent = reading ? "Показать список" : "Скрыть список";
+      btn.setAttribute("aria-expanded", reading ? "false" : "true");
+    };
+
+    btn.onclick = () => {
+      if(window.innerWidth > 960) return;
+      document.body.classList.toggle("zr-mobile-reading");
+      sync();
+    };
+
+    sync();
+  }
+
   function fmtDMY(value){
     try{
       if(window.ViewerNav && typeof ViewerNav.formatDMY === "function"){
@@ -200,7 +233,8 @@ Views.Templates = (() => {
             <h1 class="article-title">${esc(template.title || "Шаблон")}</h1>
             ${sub}
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-sm zr-mobile-only" id="tplListBtn" type="button">Показать список</button>
             <button class="btn btn-sm" id="tplBackBtn" type="button">${getTemplateCloseLabel()}</button>
           </div>
         </div>
@@ -325,6 +359,7 @@ Views.Templates = (() => {
       return;
     }
 
+    disableMobileReadingMode();
     viewer.innerHTML = `<div class="empty">Выберите шаблон слева.</div>`;
   }
 
@@ -334,6 +369,7 @@ Views.Templates = (() => {
     const t = data.find(x => x.id === templateId);
 
     if(!t){
+      disableMobileReadingMode();
       viewer.innerHTML = `<div class="empty">Шаблон не найден.</div>`;
       return;
     }
@@ -401,7 +437,12 @@ Views.Templates = (() => {
 
       const backBtn = document.getElementById("tplBackBtn");
       if(backBtn) backBtn.onclick = () => goTemplateClose();
+
+      const listBtn = document.getElementById("tplListBtn");
+      bindMobileListToggle(listBtn);
+
       setupTemplateBodyCollapse(viewer);
+      enableMobileReadingMode();
 
       const fields = {
         address: $("#f_address"),
@@ -477,7 +518,12 @@ Views.Templates = (() => {
 
       const backBtn = document.getElementById("tplBackBtn");
       if(backBtn) backBtn.onclick = () => goTemplateClose();
+
+      const listBtn = document.getElementById("tplListBtn");
+      bindMobileListToggle(listBtn);
+
       setupTemplateBodyCollapse(viewer);
+      enableMobileReadingMode();
       return;
     }
 
@@ -547,7 +593,12 @@ Views.Templates = (() => {
 
       const backBtn = document.getElementById("tplBackBtn");
       if(backBtn) backBtn.onclick = () => goTemplateClose();
+
+      const listBtn = document.getElementById("tplListBtn");
+      bindMobileListToggle(listBtn);
+
       setupTemplateBodyCollapse(viewer);
+      enableMobileReadingMode();
 
       const fields = {
         project: $("#f_project"),
@@ -596,7 +647,6 @@ Views.Templates = (() => {
 
   return { show, open, setFilter };
 })();
-
 
 function setupTemplateBodyCollapse(viewer){
   if(!viewer) return;
@@ -650,11 +700,3 @@ function setupTemplateBodyCollapse(viewer){
   controls.appendChild(btn);
   section.appendChild(controls);
 }
-
-
-
-
-
-
-
-

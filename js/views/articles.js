@@ -75,12 +75,49 @@ Views.Articles = (() => {
   }
 
   installInstructionContextTracker();
+
   function esc(str){
     return (str ?? "").replace(/[&<>"']/g, c => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
     }[c]));
   }
-  function norm(s){ return (s ?? "").toString().toLowerCase().trim(); }
+
+  function norm(s){
+    return (s ?? "").toString().toLowerCase().trim();
+  }
+
+  function enableMobileReadingMode(){
+    if(window.innerWidth <= 960){
+      document.body.classList.add("zr-mobile-reading");
+    }
+  }
+
+  function disableMobileReadingMode(){
+    document.body.classList.remove("zr-mobile-reading");
+  }
+
+  function bindMobileListToggle(btn){
+    if(!btn) return;
+
+    const sync = () => {
+      if(window.innerWidth > 960){
+        btn.style.display = "none";
+        return;
+      }
+      btn.style.display = "inline-flex";
+      const reading = document.body.classList.contains("zr-mobile-reading");
+      btn.textContent = reading ? "Показать список" : "Скрыть список";
+      btn.setAttribute("aria-expanded", reading ? "false" : "true");
+    };
+
+    btn.onclick = () => {
+      if(window.innerWidth > 960) return;
+      document.body.classList.toggle("zr-mobile-reading");
+      sync();
+    };
+
+    sync();
+  }
 
   function parseUpdatedAt(meta){
     const v = meta?.updatedAt || meta?.updated_at || "";
@@ -232,8 +269,8 @@ Views.Articles = (() => {
     const toc = document.createElement("aside");
     toc.className = "article-toc";
     toc.innerHTML = `
-      <button class="btn zr-toc-toggle" type="button" aria-expanded="true" title="Свернуть оглавление">→</button>
-      <div class="article-toc-title">В этой инструкции</div>
+      <button class="btn zr-toc-toggle" type="button" aria-expanded="false">Показать оглавление</button>
+      <div class="article-toc-title">Оглавление</div>
       <nav class="article-toc-list">
         ${h2s.map(h => `<a href="#${h.id}" data-toc="${h.id}">${esc(h.textContent || "")}</a>`).join("")}
       </nav>
@@ -246,17 +283,16 @@ Views.Articles = (() => {
     main.className = "article-main";
 
     Array.from(viewer.childNodes).forEach(n => main.appendChild(n));
-    layout.appendChild(main);
     layout.appendChild(toc);
+    layout.appendChild(main);
     viewer.appendChild(layout);
 
     const toggleBtn = toc.querySelector(".zr-toc-toggle");
     if(toggleBtn){
       const syncToggleState = () => {
         const collapsed = layout.classList.contains("zr-toc-collapsed");
-        toggleBtn.textContent = collapsed ? "←" : "→";
+        toggleBtn.textContent = collapsed ? "Показать оглавление" : "Скрыть оглавление";
         toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
-        toggleBtn.setAttribute("title", collapsed ? "Развернуть оглавление" : "Свернуть оглавление");
       };
 
       toggleBtn.addEventListener("click", () => {
@@ -448,6 +484,7 @@ Views.Articles = (() => {
     const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
 
     if(!id){
+      disableMobileReadingMode();
       viewer.innerHTML = `
         <div class="empty">
           Выбери статью слева или используй поиск сверху.<br/><br/>
@@ -459,6 +496,7 @@ Views.Articles = (() => {
 
     const meta = INDEX.find(x => x.id === id);
     if(!meta){
+      disableMobileReadingMode();
       viewer.innerHTML = `<div class="empty">Статья не найдена: <b>${esc(id)}</b></div>`;
       enhanceArticleWithToc(viewer);
       return;
@@ -499,6 +537,7 @@ Views.Articles = (() => {
     }
 
     if(!md){
+      disableMobileReadingMode();
       viewer.innerHTML = `<div class="empty">Не удалось загрузить статью</div>`;
       enhanceArticleWithToc(viewer);
       setStatus("ошибка");
@@ -523,7 +562,8 @@ Views.Articles = (() => {
             <h1 class="article-title">${esc(meta.title)}</h1>
             <p class="article-sub">${esc(updated)}</p>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-sm zr-mobile-only" id="insListBtn" type="button">Показать список</button>
             <button class="btn btn-sm" id="insBackBtn" type="button">Закрыть</button>
           </div>
         </div>
@@ -542,13 +582,19 @@ Views.Articles = (() => {
         <div class="item-meta" style="margin-top:10px;">${renderActions(meta.actions)}</div>
       </div>
     `;
+
     const backBtn = document.getElementById("insBackBtn");
     if(backBtn){
       backBtn.textContent = getInstructionCloseLabel();
       backBtn.onclick = () => goInstructionClose();
     }
+
+    const listBtn = document.getElementById("insListBtn");
+    bindMobileListToggle(listBtn);
+
     setupArticleBodyCollapse(viewer);
     enhanceArticleWithToc(viewer);
+    enableMobileReadingMode();
     setStatus("готово");
   }
 

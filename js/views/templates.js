@@ -313,17 +313,23 @@ Views.Templates = (() => {
     });
   }
 
-  async function show(){
+  async function show(param){
     setPanelTitle("Шаблоны");
-    const viewer = $("#viewer");
-    viewer.innerHTML = `<div class="empty">Выберите шаблон слева.</div>`;
+    const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
 
     _data = await loadTemplatesFromSupabase();
     renderList();
+
+    if(param){
+      await open(param);
+      return;
+    }
+
+    viewer.innerHTML = `<div class="empty">Выберите шаблон слева.</div>`;
   }
 
   async function open(templateId){
-    const viewer = $("#viewer");
+    const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
     const data = Array.isArray(_data) && _data.length ? _data : await loadTemplatesFromSupabase();
     const t = data.find(x => x.id === templateId);
 
@@ -395,6 +401,7 @@ Views.Templates = (() => {
 
       const backBtn = document.getElementById("tplBackBtn");
       if(backBtn) backBtn.onclick = () => goTemplateClose();
+      setupTemplateBodyCollapse(viewer);
 
       const fields = {
         address: $("#f_address"),
@@ -470,6 +477,7 @@ Views.Templates = (() => {
 
       const backBtn = document.getElementById("tplBackBtn");
       if(backBtn) backBtn.onclick = () => goTemplateClose();
+      setupTemplateBodyCollapse(viewer);
       return;
     }
 
@@ -539,6 +547,7 @@ Views.Templates = (() => {
 
       const backBtn = document.getElementById("tplBackBtn");
       if(backBtn) backBtn.onclick = () => goTemplateClose();
+      setupTemplateBodyCollapse(viewer);
 
       const fields = {
         project: $("#f_project"),
@@ -587,3 +596,65 @@ Views.Templates = (() => {
 
   return { show, open, setFilter };
 })();
+
+
+function setupTemplateBodyCollapse(viewer){
+  if(!viewer) return;
+
+  const section = viewer.querySelector('[data-tpl-section="body"]');
+  if(!section) return;
+
+  const body = section.querySelector(".markdown");
+  if(!body) return;
+
+  const oldControls = section.querySelector('[data-tpl-collapse="controls"]');
+  if(oldControls) oldControls.remove();
+
+  body.style.maxHeight = "";
+  body.style.overflow = "";
+  body.style.position = "";
+
+  const limit = 520;
+  const fullHeight = body.scrollHeight || 0;
+  if(fullHeight <= limit) return;
+
+  let expanded = false;
+
+  body.style.maxHeight = limit + "px";
+  body.style.overflow = "hidden";
+  body.style.position = "relative";
+
+  const controls = document.createElement("div");
+  controls.setAttribute("data-tpl-collapse","controls");
+  controls.style.marginTop = "12px";
+
+  const btn = document.createElement("button");
+  btn.className = "btn btn-sm";
+  btn.textContent = "Показать полностью";
+
+  btn.onclick = () => {
+    expanded = !expanded;
+
+    if(expanded){
+      body.style.maxHeight = "";
+      body.style.overflow = "";
+      btn.textContent = "Свернуть";
+    }else{
+      body.style.maxHeight = limit + "px";
+      body.style.overflow = "hidden";
+      btn.textContent = "Показать полностью";
+      section.scrollIntoView({ block:"start", behavior:"smooth" });
+    }
+  };
+
+  controls.appendChild(btn);
+  section.appendChild(controls);
+}
+
+
+
+
+
+
+
+

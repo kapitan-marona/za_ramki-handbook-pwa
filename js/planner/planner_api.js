@@ -478,6 +478,7 @@
     let req = SB
       .from("kb_articles")
       .select("id,title,category,updated_at")
+      .eq("status", "published")
       .order("updated_at", { ascending:false })
       .limit(12);
 
@@ -487,7 +488,59 @@
 
     const r = await req;
     if(r && r.error) throw r.error;
-    return r.data || [];
+    return (r.data || []).map(x => ({
+      id: x.id,
+      title: x.title,
+      kind: "article"
+    }));
+  }
+
+  async function searchTemplatesForLink(query){
+    const SB = SBx();
+    const q = query ? String(query).trim() : "";
+
+    let req = SB
+      .from("kb_templates")
+      .select("id,title,updated_at")
+      .eq("published", true)
+      .order("updated_at", { ascending:false })
+      .limit(12);
+
+    if(q){
+      req = req.ilike("title", "%" + q + "%");
+    }
+
+    const r = await req;
+    if(r && r.error) throw r.error;
+    return (r.data || []).map(x => ({
+      id: x.id,
+      title: x.title,
+      kind: "template"
+    }));
+  }
+
+  async function searchChecklistsForLink(query){
+    const SB = SBx();
+    const q = query ? String(query).trim() : "";
+
+    let req = SB
+      .from("kb_checklists")
+      .select("id,title,updated_at")
+      .eq("published", true)
+      .order("updated_at", { ascending:false })
+      .limit(12);
+
+    if(q){
+      req = req.ilike("title", "%" + q + "%");
+    }
+
+    const r = await req;
+    if(r && r.error) throw r.error;
+    return (r.data || []).map(x => ({
+      id: x.id,
+      title: x.title,
+      kind: "checklist"
+    }));
   }
 
   window.PlannerAPI = {
@@ -513,9 +566,12 @@
     fetchTaskLinks,
     addTaskLink,
     removeTaskLink,
-    searchArticlesForLink
+    searchArticlesForLink,
+    searchTemplatesForLink,
+    searchChecklistsForLink
   };
 })();
+
 
 
 

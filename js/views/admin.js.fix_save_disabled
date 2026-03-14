@@ -1,20 +1,5 @@
 window.Views = window.Views || {};
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
 Views.Admin = (() => {
   const $ = (s) => document.querySelector(s);
 
@@ -423,63 +408,18 @@ if(saveBtn) saveBtn.disabled = true;
       try{
         const email = normLower($("#al_email").value);
         if(!email || !email.includes("@")) { setBusy(false);
-window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
- return alert("Введи корректный email."); }
+window.__adminSaveLock = false; return alert("Введи корректный email."); }
         const role = normLower($("#al_role").value) || "staff";
         const enabled = !!$("#al_enabled").checked;
         await sbAllowlistUpsert({ email, role, enabled });
         $("#al_email").value = "";
         setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
         await loadEmployees();
       }catch(e){
         console.error(e);
         setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
         alert(e.message || String(e));
       }
     };
@@ -497,41 +437,13 @@ if(saveBtn) saveBtn.disabled = true;
           await sbAllowlistUpsert({ email, role, enabled });
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           await loadEmployees();
         }catch(e){
           console.error(e);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           alert(e.message || String(e));
         }
       };
@@ -546,41 +458,13 @@ window.__adminClickGuard = function(key, delay){
           await sbAllowlistDelete(email);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           await loadEmployees();
         }catch(e){
           console.error(e);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           alert(e.message || String(e));
         }
       };
@@ -755,21 +639,7 @@ window.__adminClickGuard = function(key, delay){
         if(!title){
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           return alert("Название обязательно.");
         }
 
@@ -783,41 +653,11 @@ window.__adminClickGuard = function(key, delay){
 
         setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
         await loadProjects();
       }catch(e){
         console.error(e);
         setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
         alert(e.message || String(e));
       }
     };
@@ -870,41 +710,13 @@ if(saveBtn) saveBtn.disabled = true;
 
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           await loadProjects();
         }catch(e){
           console.error(e);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           alert(e.message || String(e));
         }
       };
@@ -922,21 +734,7 @@ window.__adminClickGuard = function(key, delay){
           if(taskCount > 0){
             setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
             alert("Проект нельзя удалить: к нему привязаны задачи.");
             return;
           }
@@ -945,41 +743,13 @@ window.__adminClickGuard = function(key, delay){
           await sbProjectsDelete(id);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           await loadProjects();
         }catch(e){
           console.error(e);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
 
           const msg = String((e && (e.message || e.details || e.hint)) || e || "");
           alert(msg || "Не удалось удалить проект.");
@@ -1589,30 +1359,14 @@ window.__adminClickGuard = function(key, delay){
     if(saveBtn){
       saveBtn.onclick = async () => {
 
-  if(window.__adminSaveLock) return; if(!window.__adminClickGuard("admin_save")) return;
-if(!window.__adminClickGuard("tpl_save")) return;
+  if(window.__adminSaveLock) return;
   window.__adminSaveLock = true;
         setBusy(true, "Сохраняю…");
 if(saveBtn) saveBtn.disabled = true;
         try{
           const id = normLower($("#a_id").value);
           if(!id){ setBusy(false);
-window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
- return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную."); }
+window.__adminSaveLock = false; return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную."); }
 
           const row = {
             id,
@@ -1634,65 +1388,21 @@ window.__adminClickGuard = function(key, delay){
 try{
   const targetHash = "#/admin/articles/" + encodeURIComponent(row.id);
   if(location.hash !== targetHash){
-    window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
     location.hash = targetHash;
     return;
   }
 }catch(e){}
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
-          alert("Сохранено ✅");
+if(saveBtn) saveBtn.disabled = false;
+          setStatus("сохранено");
           goAdmin("content:articles:" + id);
           await loadArticles(id);
         }catch(e){
           console.error(e);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           alert(e.message || String(e));
         }
       };
@@ -1709,21 +1419,7 @@ window.__adminClickGuard = function(key, delay){
           await sbArticlesDelete(id);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           alert("Удалено ✅");
           goAdmin("content:articles");
           await loadArticles("");
@@ -1731,21 +1427,7 @@ window.__adminClickGuard = function(key, delay){
           console.error(e);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           alert(e.message || String(e));
         }
       };
@@ -2041,30 +1723,14 @@ function openTemplate(id, opts){
     if(saveBtn){
       saveBtn.onclick = async () => {
 
-  if(window.__adminSaveLock) return; if(!window.__adminClickGuard("admin_save")) return;
-if(!window.__adminClickGuard("tpl_save")) return;
+  if(window.__adminSaveLock) return;
   window.__adminSaveLock = true;
         setBusy(true, "Сохраняю…");
 if(saveBtn) saveBtn.disabled = true;
         try{
           const id = normLower($("#t_id").value);
           if(!id){ setBusy(false);
-window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
- return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную."); }
+window.__adminSaveLock = false; return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную."); }
 
           const currentId = id;
           const existing = await sbTemplatesGet(currentId);
@@ -2088,21 +1754,7 @@ window.__adminClickGuard = function(key, delay){
           if(!row.title){
             setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
             return alert("Заголовок обязателен.");
           }
 
@@ -2112,43 +1764,13 @@ window.__adminClickGuard = function(key, delay){
 try{
   const targetHash = "#/admin/templates/" + encodeURIComponent(row.id);
   if(location.hash !== targetHash){
-    window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
     location.hash = targetHash;
     return;
   }
 }catch(e){}
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
 
           // SAFE REFRESH (no rerender / no list reload)
           try{
@@ -2162,21 +1784,7 @@ window.__adminClickGuard = function(key, delay){
           console.error(e);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           alert(e.message || String(e));
         }
       };
@@ -2452,8 +2060,7 @@ window.__adminClickGuard = function(key, delay){
     if(saveBtn){
       saveBtn.onclick = async () => {
 
-  if(window.__adminSaveLock) return; if(!window.__adminClickGuard("admin_save")) return;
-if(!window.__adminClickGuard("tpl_save")) return;
+  if(window.__adminSaveLock) return;
   window.__adminSaveLock = true;
         setBusy(true, "Сохраняю…");
 if(saveBtn) saveBtn.disabled = true;
@@ -2462,21 +2069,7 @@ if(saveBtn) saveBtn.disabled = true;
           if(!id){
             setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
             return alert("ID обязателен.");
           }
 
@@ -2499,21 +2092,7 @@ window.__adminClickGuard = function(key, delay){
           if(!row.title){
             setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
             return alert("Название обязательно.");
           }
 
@@ -2523,65 +2102,21 @@ window.__adminClickGuard = function(key, delay){
 try{
   const targetHash = "#/admin/checklists/" + encodeURIComponent(row.id);
   if(location.hash !== targetHash){
-    window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
     location.hash = targetHash;
     return;
   }
 }catch(e){}
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
-          alert("Сохранено ✅");
+if(saveBtn) saveBtn.disabled = false;
+          setStatus("сохранено");
           goAdmin("content:checklists:" + id);
           await loadAdminChecklists(id);
         }catch(e){
           console.error(e);
           setBusy(false);
 window.__adminSaveLock = false;
-window.__adminClickGuard = function(key, delay){
-  try{
-    const now = Date.now();
-    window.__adminClickGuardMap = window.__adminClickGuardMap || {};
-    const last = window.__adminClickGuardMap[key] || 0;
-
-    if(now - last < (delay || 350)) return false;
-
-    window.__adminClickGuardMap[key] = now;
-    return true;
-  }catch(e){
-    return true;
-  }
-};
-
+if(saveBtn) saveBtn.disabled = false;
           alert(e.message || String(e));
         }
       };
@@ -2700,16 +2235,6 @@ window.__adminClickGuard = function(key, delay){
     }
   };
 })();
-
-
-
-
-
-
-
-
-
-
 
 
 

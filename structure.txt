@@ -1,0 +1,1867 @@
+—ÚÛÍÚÛ‡ Ô‡ÔÓÍ ÚÓÏ‡ OS
+—ÂËÈÌ˚È ÌÓÏÂ ÚÓÏ‡: 1CCF-D4C8
+C:.
+¶   .gitignore
+¶   colors.css
+¶   favicon.ico
+¶   index.html
+¶   index.html.bak_cache_bust_after_recovery
+¶   index.html.bak_step2_viewer_nav
+¶   Planner 2.0 ƒ‡ÎÂÍÓÂ ¡Û‰Û˘ÂÂ
+¶   PS_TOOLKIT_ZA_RAMKI.md
+¶   structure.txt
+¶   styles.css
+¶   theme.css
+¶   Œ¯Ë·ÍË, ·‡„Ë Ë ÍÓÒÏÂÚËÍ‡.txt
+¶   
++---.git
+¶   ¶   COMMIT_EDITMSG
+¶   ¶   config
+¶   ¶   description
+¶   ¶   FETCH_HEAD
+¶   ¶   HEAD
+¶   ¶   index
+¶   ¶   ORIG_HEAD
+¶   ¶   
+¶   +---hooks
+¶   ¶       applypatch-msg.sample
+¶   ¶       commit-msg.sample
+¶   ¶       fsmonitor-watchman.sample
+¶   ¶       post-update.sample
+¶   ¶       pre-applypatch.sample
+¶   ¶       pre-commit.sample
+¶   ¶       pre-merge-commit.sample
+¶   ¶       pre-push.sample
+¶   ¶       pre-rebase.sample
+¶   ¶       pre-receive.sample
+¶   ¶       prepare-commit-msg.sample
+¶   ¶       push-to-checkout.sample
+¶   ¶       sendemail-validate.sample
+¶   ¶       update.sample
+¶   ¶       
+¶   +---info
+¶   ¶       exclude
+¶   ¶       
+¶   +---logs
+¶   ¶   ¶   HEAD
+¶   ¶   ¶   
+¶   ¶   L---refs
+¶   ¶       +---heads
+¶   ¶       ¶       main
+¶   ¶       ¶       
+¶   ¶       L---remotes
+¶   ¶           L---origin
+¶   ¶                   HEAD
+¶   ¶                   main
+¶   ¶                   
+¶   +---objects
+¶   ¶   +---00
+¶   ¶   ¶       927413bb5c79c66c7eaf8fbc7faa885b319806
+¶   ¶   ¶       af1d3631433aea7de9b90a782a4e29d7773472
+¶   ¶   ¶       
+¶   ¶   +---01
+¶   ¶   ¶       01237e97862da3d94e8f4ca0aac7b4a7dcdf1d
+¶   ¶   ¶       3296596382709f8f9d3eee56449d62203aef41
+¶   ¶   ¶       c46c106f27a30a5866bc0b84e4fa4b4fe0c0be
+¶   ¶   ¶       e4ef9c81f518cf7d773bcee07bd4534ff4f012
+¶   ¶   ¶       
+¶   ¶   +---02
+¶   ¶   ¶       11903a55ebd05612cd88762c98c6942fb92f36
+¶   ¶   ¶       742583f73af3286ff78aef5e143dcc8dee23d8
+¶   ¶   ¶       c2d7d7fae518de0aea5b36e65c3201890e350b
+¶   ¶   ¶       
+¶   ¶   +---03
+¶   ¶   ¶       129d1f90d1575b48ca85fefef38dbc89445099
+¶   ¶   ¶       1e525cc36fb75a2d80418c1e85ec6c8814052a
+¶   ¶   ¶       70e02dfcb1e9ff2455262e21d97a673117df9d
+¶   ¶   ¶       829eb2fcd9fd8eef147fa320c59a91b444d3e5
+¶   ¶   ¶       90b921aa1ee489afe685cfca2ffb92a70ddd77
+¶   ¶   ¶       9687c198dbcd27e63314cb26fca5425cf1035a
+¶   ¶   ¶       
+¶   ¶   +---04
+¶   ¶   ¶       600cad28b5162672132683f249b91966515024
+¶   ¶   ¶       740450723a0067876a74f147eefdbfc4233ff0
+¶   ¶   ¶       b6ddde01ab4365675fe9c7d1aab9be11afcf8d
+¶   ¶   ¶       
+¶   ¶   +---05
+¶   ¶   ¶       0c35d3e377c8f3f62f70fd3327b2f03fee8cf0
+¶   ¶   ¶       968b8723e1c6549f435f0bedb1b8959298f3bd
+¶   ¶   ¶       96f734f67d43192ce376b4c4ba8f378b871725
+¶   ¶   ¶       98eee590a435f20061ae7b16b0ceb183185aa0
+¶   ¶   ¶       a15c7971b150541fc81f03a87dbaa2d2f438e5
+¶   ¶   ¶       e7934646faca1ff1faf00bdb57b312ef1d89ea
+¶   ¶   ¶       
+¶   ¶   +---06
+¶   ¶   ¶       398524ab3f9295ed93095c5a32bcc777c210a1
+¶   ¶   ¶       48573aca60bb067c7b575ea11ec719aa0b97c2
+¶   ¶   ¶       5312eb7c93c25aa3fb42057dd62c7c4c4042c6
+¶   ¶   ¶       c27df5597b59869a2e1ddd72e13b53557d58b4
+¶   ¶   ¶       
+¶   ¶   +---08
+¶   ¶   ¶       49bfa39c886b7b7fabaa422a0e3cf8d587eb5e
+¶   ¶   ¶       d420267f2860e39e87ddecf2eaf8422131833c
+¶   ¶   ¶       f1b07732032dd5a570ce99c44ddad82b275668
+¶   ¶   ¶       
+¶   ¶   +---09
+¶   ¶   ¶       636628757d7c69d7ac3337ecae748761ea9cc7
+¶   ¶   ¶       6bdd9908870d415343a05e29177ccf0fdd5771
+¶   ¶   ¶       b7fc3fadf1594bb6744de6bed74d06120c8c81
+¶   ¶   ¶       b9e0d647210634a569bab797e0e1e9ca11bade
+¶   ¶   ¶       ba2079776263aa9c3a79752938a0d2a8fea495
+¶   ¶   ¶       f474cd5c364a4cae01045f3a8a8d0718cc2221
+¶   ¶   ¶       f81629d6239eb10f543fca49d7dc3bf2dca0f1
+¶   ¶   ¶       
+¶   ¶   +---0a
+¶   ¶   ¶       aba119a04ba51d8608005a1e64c40bdba8de11
+¶   ¶   ¶       
+¶   ¶   +---0b
+¶   ¶   ¶       80039fc542413b3578fd6e76d216cd2e3e8c7c
+¶   ¶   ¶       97430cb3bf4865a4dc82ee1a1ab0e64537a328
+¶   ¶   ¶       dd77aece654dbe2c6d32d89226b54968ab00fe
+¶   ¶   ¶       f7c4cb34b35225eccca507aec62192eac086f4
+¶   ¶   ¶       
+¶   ¶   +---0c
+¶   ¶   ¶       7bda27421b161c42bf711f0e769ef9b01d01b6
+¶   ¶   ¶       88ba3b833e96c06f7ce0cdd68fb1609cfd7a36
+¶   ¶   ¶       aef817ea5f7f73bfdc9afc74ef2c5c2cf665cb
+¶   ¶   ¶       bf633dca6dc74974bab08ed195c4e0eaa3ae08
+¶   ¶   ¶       e785e7221768f3f6354c53751f345638759d29
+¶   ¶   ¶       f86ad3a86b4fe353f5a42cce2f82f56222240c
+¶   ¶   ¶       
+¶   ¶   +---0d
+¶   ¶   ¶       b63e5525e7db3d89f239b52849ce6066e84b60
+¶   ¶   ¶       b77bdb1894aa2994e976750952a5265807aaa8
+¶   ¶   ¶       d50b1ec77a1395ea33049091fdb64ccc0bdda9
+¶   ¶   ¶       d9756a6b0c9ae3147bbb97e36527fb3c9f823d
+¶   ¶   ¶       
+¶   ¶   +---0e
+¶   ¶   ¶       4a308677f7577700d58a3bbd7d846e745b829d
+¶   ¶   ¶       675d12d61f7fa4aa7e024ece8391ca5d4493b1
+¶   ¶   ¶       67d3a886e6a3a2372b6fc8ec4bbd6f6c3e2b71
+¶   ¶   ¶       6e113647f568d30c5fd6a8c658488988b3c432
+¶   ¶   ¶       73179afae82a0bc4064c6c8489e11694626223
+¶   ¶   ¶       7e6f17fa003c099c3d8957255e906e988ef8a2
+¶   ¶   ¶       b98dbb06ddd86f36da2bf7e01602008d9429b7
+¶   ¶   ¶       
+¶   ¶   +---0f
+¶   ¶   ¶       51d8c5c6b430f00ca3d8a0eb2621189f5448d9
+¶   ¶   ¶       c3760553481e687544badba4e9eccf4e683990
+¶   ¶   ¶       
+¶   ¶   +---10
+¶   ¶   ¶       3efe138544c58ab8ec5e07cbe1c5cb74e6fa04
+¶   ¶   ¶       4e7440034af15498121c90d5bdd79367afa01a
+¶   ¶   ¶       5db70baa47f49c12c5b6b8a97a19e867231ea8
+¶   ¶   ¶       6ce3bf34140d3302fe24e89a4cde1dc5091362
+¶   ¶   ¶       73b5ba0ebf84f62db49666ebbbcace84003625
+¶   ¶   ¶       876edcd6044f6b436724ed65a0881855b0b019
+¶   ¶   ¶       9f5db82c055420119d1e4c61511fa1e1ef4e34
+¶   ¶   ¶       b6e51070ae1569b6362809c4109fbe2ab06b09
+¶   ¶   ¶       e7d26bdcdb225eadf9fd37a1eba04907a83b59
+¶   ¶   ¶       
+¶   ¶   +---11
+¶   ¶   ¶       065ac7b79842799066e8d89349cd139b4ef29c
+¶   ¶   ¶       16dfed2fdef2bb383ae516b4132338c5e3cdb0
+¶   ¶   ¶       40bd26804fa2bf1136cb346bab5a5cc38f9fc2
+¶   ¶   ¶       dd1b54f8f388631c2a413dd10231d382a9c7a1
+¶   ¶   ¶       e9feccd2bdec7dbcba14a88d79c5d03d8a3965
+¶   ¶   ¶       
+¶   ¶   +---12
+¶   ¶   ¶       09e35a069e7c648ded2b8e077b9ad421541e43
+¶   ¶   ¶       a5d25a8deb1ff6f770ea2677d3cc66cdd6ee67
+¶   ¶   ¶       e6c1d64f76aa52950387a7091ab01b57a213a0
+¶   ¶   ¶       
+¶   ¶   +---13
+¶   ¶   ¶       0a2e245a24c7cb5a940998f984f7c2dc815d3b
+¶   ¶   ¶       1ba8683d814490c0acdff9a9d1d12953d0b49c
+¶   ¶   ¶       2520f0ad2ad09aac8d81208b736d0ea4d86831
+¶   ¶   ¶       4dfa6f4705ccb6a36fc7ae7a21c9361b1ee646
+¶   ¶   ¶       69e8aa08acc1b61bdc8d596bcd6e8e07f05769
+¶   ¶   ¶       9b91fbb67c1d7919580163e0261d1a3d74ad3d
+¶   ¶   ¶       aec75b65443e1b6b686b5f05c1c669d917b3ee
+¶   ¶   ¶       b3d17ee5f99831858ab566a5d56ef2242f7f71
+¶   ¶   ¶       d03d0521c6a4427046e2a27fdf2ac834b6f241
+¶   ¶   ¶       
+¶   ¶   +---14
+¶   ¶   ¶       2774e1566f5d94d460f2442f0f0945d7cbfce5
+¶   ¶   ¶       3963cc356056ffa03585feb6afc8491bfeac5d
+¶   ¶   ¶       5bdd356efb95e9f4c003e2422afa3fefbb640f
+¶   ¶   ¶       5cf7d2dbf40a08e884fd0bd3b03f09b6cd1615
+¶   ¶   ¶       689faec3b9a8de075508259c94c407d8aa5e6c
+¶   ¶   ¶       7abf6242d48cee1b7c50f66d0f3fee346a3179
+¶   ¶   ¶       a8e80c3e260f60aa52f3fcf9ccd43e890dfb62
+¶   ¶   ¶       b3a511d85665c2904e3119112a165fa1c3f509
+¶   ¶   ¶       e5255403c4b6202727972ae4b085fa253282b2
+¶   ¶   ¶       fbb3efecb0980dc78801f138ed9dff8221f4d8
+¶   ¶   ¶       
+¶   ¶   +---15
+¶   ¶   ¶       1096711968c25e0c81875ba77837f532ba1f52
+¶   ¶   ¶       350b7d763bf4b5aabe3d3360b60bec114c0339
+¶   ¶   ¶       60087e1b7d2a30cbb80b7f40f75cff6a3b4921
+¶   ¶   ¶       
+¶   ¶   +---16
+¶   ¶   ¶       5de2aa0bc0824666ecdc16a4aa639e769b2bf8
+¶   ¶   ¶       64fe8149d48375ad105d0e342a46f2ebdea4b6
+¶   ¶   ¶       812875c3cd8b64fbbd7e982e52d6a24902e550
+¶   ¶   ¶       8554ec38a1aefb3578d6c516894a959dc44418
+¶   ¶   ¶       
+¶   ¶   +---17
+¶   ¶   ¶       613e7657d442f049467a7f2cb1f3cdcb8345e1
+¶   ¶   ¶       7e4e6dd6921d4c1daa5f872b5c5282cec4d11d
+¶   ¶   ¶       b34f88561d3ddfccafa844188078bb3be48d99
+¶   ¶   ¶       
+¶   ¶   +---18
+¶   ¶   ¶       1ade9ca223ee2a5dc34110d36a69d16d6d4698
+¶   ¶   ¶       40699d1b82aa0703f8391a5cf12601b6dc1bfa
+¶   ¶   ¶       8fed4870ebb6b59ae0c4898bd0e86bf1f56091
+¶   ¶   ¶       ac8802a027a1fbf8ee19d94d626d8918d646f1
+¶   ¶   ¶       
+¶   ¶   +---1a
+¶   ¶   ¶       17b397d57d9425bf2f4d4fd29b8906e8140829
+¶   ¶   ¶       81497041feb4b0fd2f630582e69e394611d627
+¶   ¶   ¶       a994cab79d5ccc4ee1e0eecfb328d2db104ec2
+¶   ¶   ¶       cfd8303b1d9a9c4cf1b438ce8fa80ae0770c18
+¶   ¶   ¶       e8002f1cc540c6e6b32c3843a4ddebfcc072ad
+¶   ¶   ¶       f06ade0ca010001e636585ff3ca39aa1ba04a4
+¶   ¶   ¶       
+¶   ¶   +---1b
+¶   ¶   ¶       39359846c7ebed4443cadeafa02cb351d66114
+¶   ¶   ¶       588511275bf487fdb31ff0ae4fcb8eed8d1175
+¶   ¶   ¶       c6d205f4e2a1ffb0740319972ad6fabddbf0e1
+¶   ¶   ¶       f1765366ae460d0392ecec2322f85ccf0dc243
+¶   ¶   ¶       
+¶   ¶   +---1c
+¶   ¶   ¶       73d3f68d3c6d2fd1db5ddb1db4af3ab2b142b5
+¶   ¶   ¶       d10b89cdc9d5b8409431b32aabaaef2e691f7e
+¶   ¶   ¶       d3b8c67365b6f77699592730ebd932451cb873
+¶   ¶   ¶       
+¶   ¶   +---1d
+¶   ¶   ¶       02e4d375f68d3aab329e0b51fdc354ffeb26f2
+¶   ¶   ¶       5cd4c073ffc49711e08f9c26c1ac2996898cd4
+¶   ¶   ¶       82b9e18eabc46ae479a405c1c9bd7057ddb078
+¶   ¶   ¶       9b58c6907ba629918e323e669659dfd8f38a1f
+¶   ¶   ¶       a5d12694ddcb69de57a47c2775ed8bfbcd2050
+¶   ¶   ¶       e1b92cf6b09cef4187e63a462db490d05634b7
+¶   ¶   ¶       
+¶   ¶   +---1e
+¶   ¶   ¶       4ce4db3918509e3705595d4852a666254b7b70
+¶   ¶   ¶       7b6af83313144db8ecf03d47c75a8b624bac10
+¶   ¶   ¶       bbbe0fa131831cb5d628979d371a943de19e7d
+¶   ¶   ¶       
+¶   ¶   +---1f
+¶   ¶   ¶       59bc974f9906420a6803887b5c9a0c27d8b695
+¶   ¶   ¶       bbfc7744b2851dc932688349722e2ba735da1f
+¶   ¶   ¶       eb16228e5457dc35446a2a303c2c38fe871fe2
+¶   ¶   ¶       
+¶   ¶   +---20
+¶   ¶   ¶       00183b9ae1b35fd2567c2436744bf5acaec765
+¶   ¶   ¶       03d613b8525763ab324cf8724c000c903b98cc
+¶   ¶   ¶       09518162c1913c28eb86d27add170b171ca107
+¶   ¶   ¶       3a11fe13ad354450d2b9c7fa6602c9486982a2
+¶   ¶   ¶       5306147fd0e52558337eca39c65e3f906a282b
+¶   ¶   ¶       7e2897d9f5fa4a833149cf7715449b9c124b3e
+¶   ¶   ¶       9b96a965cde08548a3ddbe3caa9a34446f475f
+¶   ¶   ¶       c7679b545bef43f39312ff1a45964c863742c1
+¶   ¶   ¶       eb70393846175ca542c9fdb84a81cbcc546f47
+¶   ¶   ¶       fd926759742394954943015c36a751172b534e
+¶   ¶   ¶       
+¶   ¶   +---21
+¶   ¶   ¶       0c7ac7333cae74be05fd3136dfb69da7713873
+¶   ¶   ¶       8be5b2e02da41efbd817cb0b331f9e486cbda4
+¶   ¶   ¶       e10ffa0a8ecd9097707ef7563509184c3e2a72
+¶   ¶   ¶       fed13234e40c7e5ad8a059b900ac92ed0b862e
+¶   ¶   ¶       
+¶   ¶   +---22
+¶   ¶   ¶       052c854a6eb984a1f027a2eaa4b55442ede266
+¶   ¶   ¶       5892bf11b4d30df0b4ea1c2b28c021abdd3fad
+¶   ¶   ¶       a30ce25654515ee0a2d65ab4a20af6c5c08013
+¶   ¶   ¶       
+¶   ¶   +---23
+¶   ¶   ¶       12a66208faf5aab06f073a045cd4751ccc5707
+¶   ¶   ¶       3070f59b0777516cb0daa28577949a09477d5d
+¶   ¶   ¶       6a81d1c2be4eb1ad3a59ae842a6d2054f6ca6b
+¶   ¶   ¶       917cfd091f975d5907cce5901078c874424b8f
+¶   ¶   ¶       e785a87159e0236b8390f60d85cf5213319942
+¶   ¶   ¶       fb0c12f6f700a3561efef433275b382d75f253
+¶   ¶   ¶       
+¶   ¶   +---24
+¶   ¶   ¶       4aca830da130842671fc9deff97b47e1011daa
+¶   ¶   ¶       59635b01fd4cc1c806544dca2d7f22aa1dec93
+¶   ¶   ¶       694c7bef4cc52333bbcd21ef9d82ef34a5f314
+¶   ¶   ¶       7de67e6d3a85a8e6a66af2f703259a9dd8aafa
+¶   ¶   ¶       d41b7bbabadc08cffbb9a74ee006b5733a1bce
+¶   ¶   ¶       
+¶   ¶   +---25
+¶   ¶   ¶       03cbdfca9cce525dc70fa21c3dc395c5c2e0af
+¶   ¶   ¶       adfbff352d04de211d7499ec7ae28f0f8464de
+¶   ¶   ¶       
+¶   ¶   +---26
+¶   ¶   ¶       5828f68dae82d5f94277737ac836e71e3b4255
+¶   ¶   ¶       ccee8a3e80df86e16cb33172ae3fa479aedc8c
+¶   ¶   ¶       d18af20768f396783a8bc9a2c23bdfe157aaf6
+¶   ¶   ¶       
+¶   ¶   +---27
+¶   ¶   ¶       2b9ee39e65c83f9bab6624e5fa64a870c7bdca
+¶   ¶   ¶       3dec1800477b5adac719dc2d466e44b5baaad1
+¶   ¶   ¶       44ed9812db9252f72cfc7f079277a3064095ee
+¶   ¶   ¶       5376634da07445a8e120c99eaf354df6208cfc
+¶   ¶   ¶       5c67dfdc879cf69344d3551a040638a391467e
+¶   ¶   ¶       da485249109469cf85ca74bd1664efa2fe5de8
+¶   ¶   ¶       dca568d7da07dc0553417f6bf02d732aad8eb2
+¶   ¶   ¶       e95b29c03976799278e56bace791d66c169db2
+¶   ¶   ¶       
+¶   ¶   +---28
+¶   ¶   ¶       2fb7fe666c75a4894d9be7f3c6250542f99267
+¶   ¶   ¶       4f3ec94ca7644c5a8fd0ffec26c8654d166995
+¶   ¶   ¶       63ef1746eed6e57be0b4169051b98946a17843
+¶   ¶   ¶       6a447b8edd95c735325a10cffb3d3ae0c232ed
+¶   ¶   ¶       88570158d63afab32f24a05a6214d61fe32887
+¶   ¶   ¶       9e2b59f6558277e3ac5a54a15b7dd9d6ed94c4
+¶   ¶   ¶       9f361fd7848c34f24e11edabeba387b9d0ce4e
+¶   ¶   ¶       e9bd415d22f56da835069ce34ae4f048314866
+¶   ¶   ¶       
+¶   ¶   +---29
+¶   ¶   ¶       21369b73adee9144f3bbb33edaaca88254a73a
+¶   ¶   ¶       8781a2c2ae1e0258da8fda5e6dd3dec12cf5dd
+¶   ¶   ¶       
+¶   ¶   +---2a
+¶   ¶   ¶       45675884f3f67fb22abf2713524e58db81f866
+¶   ¶   ¶       80bc596cefb82366d4be766287f262e37ef4f6
+¶   ¶   ¶       
+¶   ¶   +---2b
+¶   ¶   ¶       43212fe64c48997dae0efa75197c49012f15d7
+¶   ¶   ¶       
+¶   ¶   +---2c
+¶   ¶   ¶       244374005399d511843a48d9a33e321ada5d31
+¶   ¶   ¶       31f600f99c0e9c00c5d78075ecee16bac4c5b3
+¶   ¶   ¶       3d787eb4f9a7daed1a7c9788562f273c76341b
+¶   ¶   ¶       5241009b21e5b7c87a0fccad761d4f5699b4b9
+¶   ¶   ¶       5d6de194385acf5c0a0aeed201f31917695390
+¶   ¶   ¶       958f74983ea263d7062e7fe87fcc0f2ff30e47
+¶   ¶   ¶       a8ad7e16ebbb8446e8271f14e98a53d7d2b104
+¶   ¶   ¶       
+¶   ¶   +---2d
+¶   ¶   ¶       04b336d81a90c2c65d3d6023348eefaf57916b
+¶   ¶   ¶       0db439d018609103df063a2cbc530fefa882fe
+¶   ¶   ¶       2f04926bffcc6ca7b9bc6be2ebd3f742ed153c
+¶   ¶   ¶       3ced8ac91dddd8d6346e5fe0ea4624245b708c
+¶   ¶   ¶       a3bfd7a9a81a33c78170c12760c2ce280df72b
+¶   ¶   ¶       b1ccb10a9ac766564bbb51f3584f4ce5c69b6d
+¶   ¶   ¶       e0dbe0355cf6fc099c1d53abfbb1aeb7c3ecfe
+¶   ¶   ¶       
+¶   ¶   +---2e
+¶   ¶   ¶       0eebde6363840c04963eb6bc7654c41690f56e
+¶   ¶   ¶       93af39c9202bb8a3b5e178fc12b024c061e26d
+¶   ¶   ¶       b8980b7a176272a0bf60bad58d91c10ccd2c2d
+¶   ¶   ¶       d3a4937a7a0aa550a679de55a49f10de748dd9
+¶   ¶   ¶       
+¶   ¶   +---2f
+¶   ¶   ¶       1c86b7767891a9778c0862b96e1ac012074357
+¶   ¶   ¶       2650eb75e06954ed0970ca65c7456ea900a463
+¶   ¶   ¶       3e47c472031b27c4c406c90e50d46cb07fb382
+¶   ¶   ¶       
+¶   ¶   +---30
+¶   ¶   ¶       1457746810e8d359513f831db7faa9b5cb886d
+¶   ¶   ¶       1aecee995634c2f869cd630a47b7332b5db110
+¶   ¶   ¶       d5e36a3df1f86a6a640bbc1d1ce8fef95e445d
+¶   ¶   ¶       e7010efe5dab614c32e127274b3f56554b8f3d
+¶   ¶   ¶       f5a834ce523de8517355659b1d6b29eeb94620
+¶   ¶   ¶       
+¶   ¶   +---31
+¶   ¶   ¶       5638abd198045182a45bbe04d422fed00a6973
+¶   ¶   ¶       643ee09e0f6fc64a2172b16b306083b97fed43
+¶   ¶   ¶       77e0e9413af496a888e5b0d5d65a675cec90ed
+¶   ¶   ¶       d95eebbf119f07b9727a7d7f028c76ea8de4d5
+¶   ¶   ¶       de158690384d0aab483004df57e5d1643bb00c
+¶   ¶   ¶       
+¶   ¶   +---32
+¶   ¶   ¶       7cae72887bb2abfe2f4fbcb2ba2cee1676ebe0
+¶   ¶   ¶       807a66933dfca1c7723640dbd2f7198618575d
+¶   ¶   ¶       83dc4b36d29712eefe04598ff40d48b705dd71
+¶   ¶   ¶       
+¶   ¶   +---33
+¶   ¶   ¶       3f573d0b3187cf5e2fcafa8cbb13e48f10e6e2
+¶   ¶   ¶       c0a19185d580e818fdee8ce4472df5207cafd1
+¶   ¶   ¶       
+¶   ¶   +---34
+¶   ¶   ¶       52d70e1dc35dc3319e6d819d4995c16550d99f
+¶   ¶   ¶       5866add9c79a604d3e7f7f1646028e5984583e
+¶   ¶   ¶       bfd390e2f50661c0d7cbfcef57afde3a2b25bc
+¶   ¶   ¶       ccdeb832a73b359786135d1b0f7dc8f4b17137
+¶   ¶   ¶       e75c0f9b519fc4db546f8ef7b8702b5c91ded6
+¶   ¶   ¶       
+¶   ¶   +---35
+¶   ¶   ¶       0a05cb7da19327c8f2b49b69f60219fbceedb8
+¶   ¶   ¶       40984cafd0a84259738b813ce31fa547b271a4
+¶   ¶   ¶       4bd81f701dd1f9340474c43210b6a52950becc
+¶   ¶   ¶       5fd4091b97b91dfe143df821c6108b22377508
+¶   ¶   ¶       d08635f53560b8b0fc83bad89fff731cbb1dfe
+¶   ¶   ¶       d12a5f400b8627107a263038329e1939c2e5e5
+¶   ¶   ¶       
+¶   ¶   +---36
+¶   ¶   ¶       4923dc9880736250446ba414f7189f0160d101
+¶   ¶   ¶       7b4feb04b82d16559bb4bd383572d316af528e
+¶   ¶   ¶       cc68a8aabf50445e103f5bcf70e72252f4445d
+¶   ¶   ¶       f1b7164b0998822fbb9e5745a927ca77693b0b
+¶   ¶   ¶       
+¶   ¶   +---37
+¶   ¶   ¶       81befe4c87c416e0269d752676ed4048d6443d
+¶   ¶   ¶       a29a47a1667599cdf2366202fbaa630a24c335
+¶   ¶   ¶       fc5635c2956cbd2457937373813771ef57318b
+¶   ¶   ¶       
+¶   ¶   +---38
+¶   ¶   ¶       16030fe24b57fbfc4241c8b1824454b4378d5c
+¶   ¶   ¶       16cb3c378b9762964b70e5900885c2518c1940
+¶   ¶   ¶       20412909f1d4e7006ab0ee685d482e6f9b86df
+¶   ¶   ¶       2b79187752e74e6bb9d3ad3ed8115fde57af4b
+¶   ¶   ¶       55b527f29be99deba706cb2cc78d6a79ed9a84
+¶   ¶   ¶       dbf4b318ab510d10b5e9023cec5542388104aa
+¶   ¶   ¶       ffbc88e60cc414f139aceddfb3e8f7eebfe31d
+¶   ¶   ¶       
+¶   ¶   +---39
+¶   ¶   ¶       2aba996a9e4bffc8c4ec35d1302d3011e3eae6
+¶   ¶   ¶       3b77f983d68114d8935a7fb7e66a7ab4b78624
+¶   ¶   ¶       68da512c43843ace10e856a560af71eb9e4364
+¶   ¶   ¶       770d73daa163527adc9869436d61e34245e9f7
+¶   ¶   ¶       ae69b525b5b8db4010d5a2021cc7e0fdede112
+¶   ¶   ¶       c9154a9ef1282ec13fb0a138bbd62380617d0e
+¶   ¶   ¶       
+¶   ¶   +---3a
+¶   ¶   ¶       48ea393c6c0538368f75a4f8a84854fe4e8d03
+¶   ¶   ¶       701bb4985d81e89f0709bb016cc43b193ca14e
+¶   ¶   ¶       7a8a829af4eb749e3819ebfb0ac24ebfbb09ed
+¶   ¶   ¶       82f384a6ee80857551493cd8276c03f34dac2f
+¶   ¶   ¶       
+¶   ¶   +---3b
+¶   ¶   ¶       0c5e082fc4b4f1d61c92afd0806ccdd82dcee2
+¶   ¶   ¶       3d2e7e5e4ecc202557c28b8348caf4c078d20b
+¶   ¶   ¶       44ed1e24b020e5b8d3c5acc719e35b90db24dc
+¶   ¶   ¶       48bb2731708b6e9ebd6f49ddb62790e4dbf29b
+¶   ¶   ¶       77a66395d9ff96189f74f9b0fd62436770a400
+¶   ¶   ¶       85921de6284ce824856477cd8d17ab4048a7fe
+¶   ¶   ¶       961ec9ff4b24407ad614d1664c47034ccc81c5
+¶   ¶   ¶       9b143ef4181aa518b935fa29b81d9d9a939fca
+¶   ¶   ¶       da0881967967a1b27286c3224507c67d250b38
+¶   ¶   ¶       
+¶   ¶   +---3c
+¶   ¶   ¶       497cb7575854be477ba8272a09162cfa95c19e
+¶   ¶   ¶       5cf59c5c25b285b68154f05c1b0d9e1d73d8b6
+¶   ¶   ¶       6613ce7a9b3290fabfaddc7c8eedae9bd952ef
+¶   ¶   ¶       6e070e293550f3a74be020e45c89d4ea407da1
+¶   ¶   ¶       773f1cc6b3a4d337e56be1b9afc5fda71cec0a
+¶   ¶   ¶       a739364f67c8f74690e833e0bfa99093f1e8b1
+¶   ¶   ¶       
+¶   ¶   +---3d
+¶   ¶   ¶       8c8336d5bd05388d1572766ea36eba382ef82f
+¶   ¶   ¶       
+¶   ¶   +---3e
+¶   ¶   ¶       097bd75e52dd32666b034707c10f79068bcacc
+¶   ¶   ¶       8361343c5152a1d9dc9fb9ff4caf98f4682aa2
+¶   ¶   ¶       af51192564ca7472009b6ff5f68d51a546c54d
+¶   ¶   ¶       
+¶   ¶   +---3f
+¶   ¶   ¶       627b971c839cc176ce491df99f44acbefc2f21
+¶   ¶   ¶       
+¶   ¶   +---40
+¶   ¶   ¶       037225bac3fd59edaf7c3b6380fbdb4e9a495d
+¶   ¶   ¶       4c565d47e14bdae116e6da2bc35f667c692b3c
+¶   ¶   ¶       814fae1bb00b6e6c9ee572918e578f04aa9e72
+¶   ¶   ¶       
+¶   ¶   +---41
+¶   ¶   ¶       2c9f9427123b1ac072e033b3a4579ef4c38662
+¶   ¶   ¶       5c9d91c52200cff9f7b1dc46163f6b3ccb1a4f
+¶   ¶   ¶       c09b95391cfc30bd4253ed0711f5674f540aef
+¶   ¶   ¶       
+¶   ¶   +---42
+¶   ¶   ¶       12a92f82bf2b2452e8dffff21aed260792f536
+¶   ¶   ¶       5670b86eec2a3f56f64437a6bfdae4e81dcc2d
+¶   ¶   ¶       e055155051fac4e24a044673525275d2a26de6
+¶   ¶   ¶       ee1146148560f215f8dc0bca69afd29bb28ff6
+¶   ¶   ¶       
+¶   ¶   +---43
+¶   ¶   ¶       7e2a90178ec8ac671c90bd5dd2c4678f3dea90
+¶   ¶   ¶       
+¶   ¶   +---44
+¶   ¶   ¶       04122d811619b987d356279a0a41e6d9909936
+¶   ¶   ¶       0b4b2cb5c419531835fa0c1bb2f11aed960fad
+¶   ¶   ¶       2928b07756c60649bff275e2e6e6226f8fa995
+¶   ¶   ¶       808992f90a4481a178fc6af5025e0274e8e3de
+¶   ¶   ¶       9e9555f82517b6c59c8922f3888fe25d606af6
+¶   ¶   ¶       
+¶   ¶   +---45
+¶   ¶   ¶       0f6bc2a67e07ebfda8e827baffe1182260062d
+¶   ¶   ¶       2df0d763509ae20be79ab9a5f4d72cf12e8ea5
+¶   ¶   ¶       57307e26403da61c2ee780623f486ed438f57f
+¶   ¶   ¶       86fa30864e52fad98729ae685ff4815a4a2654
+¶   ¶   ¶       ada4f346bd516aa290f40aa0bbd43a6902acc4
+¶   ¶   ¶       fa3955901fc6ee3d921bbda73dc2d78e66aa0c
+¶   ¶   ¶       
+¶   ¶   +---46
+¶   ¶   ¶       0474d03983d9b022c60adf0c829bd808b8cb97
+¶   ¶   ¶       05535a72d6beed4fec01bf5676105e7cd33ee3
+¶   ¶   ¶       3a09c0c3b94c9472bbf29950acc36d5660edc8
+¶   ¶   ¶       96e1117e37484bdadff68170b28ff4fb63731a
+¶   ¶   ¶       bfa005f606a7748292547570a9794e745f836e
+¶   ¶   ¶       c9bb45e5ad2807062638730ce79b28866f2c34
+¶   ¶   ¶       
+¶   ¶   +---47
+¶   ¶   ¶       0ffb5d23386020011cf769ce7b10afda97ca09
+¶   ¶   ¶       27bc7ed64cc384ed82c20005c67f8a2b51ee5c
+¶   ¶   ¶       af8e170684b7f2917ca872c303825bd68a4ed2
+¶   ¶   ¶       ca529222c13a3eba710457461fd6c9bc455333
+¶   ¶   ¶       
+¶   ¶   +---48
+¶   ¶   ¶       353f0bee95e38ec277f46eee90125c91237fa8
+¶   ¶   ¶       7ccf604dbc7d366e4db261d6b5b68de3a007c4
+¶   ¶   ¶       7f3a533f315e9ec64ef7fbfda123c9f8202473
+¶   ¶   ¶       a5ebf5f57babe8b6b0a4de920e552baff48b05
+¶   ¶   ¶       a6c10d561e5becba9a0bfc223c7dcb05e786e1
+¶   ¶   ¶       cb8b65d660b0b35b6d354cb1d93c8428a15582
+¶   ¶   ¶       ec2f2db22439331d9ddc6a9310add8d6ccf839
+¶   ¶   ¶       fcbc1950f861660ea752fd21ac376db5cb3364
+¶   ¶   ¶       
+¶   ¶   +---49
+¶   ¶   ¶       1caef3a82f4398a007d87541af05d71ff7b8d5
+¶   ¶   ¶       3ae14dcf888f6b48d54081a073644d3d23ee98
+¶   ¶   ¶       9e77fb1acbfd9d405d65ed17cda0c7e8f64bd2
+¶   ¶   ¶       
+¶   ¶   +---4a
+¶   ¶   ¶       13845dac2d80e4c2d462be3fe722fe0c268e3a
+¶   ¶   ¶       
+¶   ¶   +---4b
+¶   ¶   ¶       6412736f1f99b36033df3b38a013115ce66512
+¶   ¶   ¶       b9fd5937731a11afd22673a53634fb5bcc8192
+¶   ¶   ¶       
+¶   ¶   +---4c
+¶   ¶   ¶       2a9d5d6dbf7419fcfeb63371cf2b8ea0c666ba
+¶   ¶   ¶       6c15853291325e18c9aee3c2380108b0e6484c
+¶   ¶   ¶       c58cb88f0f11f980a9931f9b973052bb1a78e9
+¶   ¶   ¶       cf0372a41313a4b312c44a271e4fcf6d36dd39
+¶   ¶   ¶       
+¶   ¶   +---4d
+¶   ¶   ¶       7d89b9105e4da9fe94f402c88528ddbffdd6b5
+¶   ¶   ¶       dc6c4357149e3616c42aa745ddb9427e42657b
+¶   ¶   ¶       
+¶   ¶   +---4e
+¶   ¶   ¶       5ad82841b54e4fc95d338c96126d7462706ac4
+¶   ¶   ¶       7ed51164dbd371231253b662293d49c11f33f9
+¶   ¶   ¶       
+¶   ¶   +---4f
+¶   ¶   ¶       47856b6a545a1d4b5532860f33884e0d4a8c66
+¶   ¶   ¶       658178579c36d9b6b45db92a0e1c34e41abe42
+¶   ¶   ¶       ac3f7a20c9be1c11e4e1d8c6a77a8fb6996969
+¶   ¶   ¶       becc33ddc9b8e43a3dd4b2621ca4edae75238e
+¶   ¶   ¶       ca2f6464258b61dbb27622cd20f26d69e13e36
+¶   ¶   ¶       fd2fbfdddad651edf192049ac2238ae3aea876
+¶   ¶   ¶       
+¶   ¶   +---50
+¶   ¶   ¶       5b0ea02699d41d215123e6dbf2ac0ade965378
+¶   ¶   ¶       727d3a7e428ed37e32084c992cfcaf14f0413f
+¶   ¶   ¶       88936295a5473abc40cbe5986f82699cdb350c
+¶   ¶   ¶       d7feab2acf1a43164d5cd0b2aa9e2be647362f
+¶   ¶   ¶       e05250bda76a81cc731ad88a14976b3afd3a60
+¶   ¶   ¶       e8d0f0513c89c672e7552400612d138fd75a6e
+¶   ¶   ¶       
+¶   ¶   +---51
+¶   ¶   ¶       8e0b3c4d2c6565c156d99d7b6de11758cf1c7a
+¶   ¶   ¶       a49f3be4208053f321182eb056bd996acb440f
+¶   ¶   ¶       
+¶   ¶   +---52
+¶   ¶   ¶       8916e9231b312aecb86780977c3bab65250ea0
+¶   ¶   ¶       a81ce3938a8149c6a80eb0cf146e83ca94a846
+¶   ¶   ¶       d9113c8c4eaa18331c7e9eb973214b87eb6a59
+¶   ¶   ¶       
+¶   ¶   +---53
+¶   ¶   ¶       0bf4ccc7b1d0850b17699354a642bb9f7ded65
+¶   ¶   ¶       4679d0e95ceb533fbfd8ce4d952c39ef6071db
+¶   ¶   ¶       ee76908d819f0d4574dc8244a134d3ca5c1c98
+¶   ¶   ¶       
+¶   ¶   +---55
+¶   ¶   ¶       1371ca526830a5dfaa9749d666fe63c70305c6
+¶   ¶   ¶       253f3510e2b9d1b6052ae843414647f71b2b81
+¶   ¶   ¶       3c208c90720e3419e7064f3d18cb0b69d3c16e
+¶   ¶   ¶       40d5567ab47d2f1cacec44828cc8542d14a527
+¶   ¶   ¶       894d4d72a512677f02c3267a288572999e7bec
+¶   ¶   ¶       a36cc1faab365f2c2bfb2887ec4783db22195f
+¶   ¶   ¶       e6e8212c3a178907909289bbde424f1ec6d49d
+¶   ¶   ¶       
+¶   ¶   +---56
+¶   ¶   ¶       2aeed9f90a2fddf5bcf89dc022977d2ceb264a
+¶   ¶   ¶       31abe7b3a8c580dc5edefab1c30e3d4963ab78
+¶   ¶   ¶       48be514eedc517df6606d3b17fcbb4c28d6144
+¶   ¶   ¶       49e1ef846a6d41dd497efa94010d201af27465
+¶   ¶   ¶       8c5faa29eb387ff58ee6ea981aee951ba37964
+¶   ¶   ¶       c242474991cc5511f42195259d1d288a059a0e
+¶   ¶   ¶       d5cd63c897fb55b166cf75eb8041efa94ada80
+¶   ¶   ¶       
+¶   ¶   +---57
+¶   ¶   ¶       334a353d67334a292757db6f5a159ca0de96de
+¶   ¶   ¶       358989d1ef9ba76606a267cc03ddab5e2bbf43
+¶   ¶   ¶       7757224e9a63c87b7fa6fb4b08dd4d96253648
+¶   ¶   ¶       
+¶   ¶   +---58
+¶   ¶   ¶       0bc7e1fa8a9a31d5a1e3d4098b1ff152f88f95
+¶   ¶   ¶       19e19f7109fdfe0b3085f47abdf0fb91309b93
+¶   ¶   ¶       4ea67884a695afe85b17ee76b9ca31d1e82cfb
+¶   ¶   ¶       5d2d66efda38c596af61b1e842056688e95847
+¶   ¶   ¶       771b44c652684afe93bafed00d93e28934db5b
+¶   ¶   ¶       
+¶   ¶   +---59
+¶   ¶   ¶       0a399791d7fefe8a76b23a0e232d7384e34f5f
+¶   ¶   ¶       5410cfd51b86b1872341d1d5d9d44968b13590
+¶   ¶   ¶       a6b43331aeea071c4d982df63c7e017594cc5d
+¶   ¶   ¶       f2664f969318e9c36eceb3651c36891c5a5933
+¶   ¶   ¶       fb484446073bb81cdba3a80bfa6813603d6e05
+¶   ¶   ¶       
+¶   ¶   +---5a
+¶   ¶   ¶       6bce1f9ba1ca413c0f1c115b442578940923f3
+¶   ¶   ¶       
+¶   ¶   +---5b
+¶   ¶   ¶       454a9b68125159adb56e44f2a157acf73b033a
+¶   ¶   ¶       c2053cf8f6af1e6fea7012959728c0d135b61a
+¶   ¶   ¶       
+¶   ¶   +---5c
+¶   ¶   ¶       834edd4b09a050d59aa01bc518694ee63e253c
+¶   ¶   ¶       d1551b592303be3cee0b2b33070a3d1c71fbc1
+¶   ¶   ¶       e50480df7c0e2968418db1aebb29a4fb65c50f
+¶   ¶   ¶       e97895de1ca351a18629592a3944b9c35ae776
+¶   ¶   ¶       
+¶   ¶   +---5d
+¶   ¶   ¶       098e49b7de6d21bbbfa948ac2f5f779c5724cc
+¶   ¶   ¶       2cfcf8e8c8f7e20522ca475054ff16b6f896a2
+¶   ¶   ¶       3e3030497a1a39396f546804674d71887b9ef1
+¶   ¶   ¶       4d06ea80afa596dfab4986046d668d6d85bf67
+¶   ¶   ¶       54be1acd8533ec9ecf0d8732f67532d8bbc05e
+¶   ¶   ¶       7d5ec9d1ac8da9017d520f800d8ff88b2e83f5
+¶   ¶   ¶       7f6ea09c43475472df3e10575b8e8099e66fd9
+¶   ¶   ¶       af521443eb106bd8ca0786c8a1e7d529f5a46f
+¶   ¶   ¶       c4957d992a12311744a9f08de83c5effe9c370
+¶   ¶   ¶       d7e2b57a8717a08a93f61bae7420eee4ec4bd8
+¶   ¶   ¶       
+¶   ¶   +---5e
+¶   ¶   ¶       069f7bed327aafd67c895f15f30ffafd34fc9b
+¶   ¶   ¶       8a83db6b4b6cf7fa2db5e4376aa257b4d722a1
+¶   ¶   ¶       aa7eaf1f07113395118c8b4e3cedf633630b73
+¶   ¶   ¶       
+¶   ¶   +---5f
+¶   ¶   ¶       5c669866f6fac6d9b5e81022a0a9309413ed2f
+¶   ¶   ¶       c14a5a12599573e7a4ff919cd3f50cc817928b
+¶   ¶   ¶       f460580125dfb686b68328bccd1f2683a36e3b
+¶   ¶   ¶       
+¶   ¶   +---60
+¶   ¶   ¶       28b045354dab6404d323ca92d0d02f1a4c648f
+¶   ¶   ¶       7285e57510631985a5fdebb06a7c90337241ed
+¶   ¶   ¶       76eb9374c478c1a93ae4cfeff2e56cbabf19b0
+¶   ¶   ¶       885262dd5001cfeb34a56be0d05c637d2354de
+¶   ¶   ¶       8be22dab5be0095f581afccfe7f87306c402bf
+¶   ¶   ¶       b0742537a340e24cd759907e52a344943fb386
+¶   ¶   ¶       cf9e07de4c0f5d3685f3805bbe3746cd01e004
+¶   ¶   ¶       
+¶   ¶   +---61
+¶   ¶   ¶       0bfcae5a03a4bb4d9ed57309f97a273c656991
+¶   ¶   ¶       36ad9119eafaab7084beace6ef497b88ad7752
+¶   ¶   ¶       7b7389442182eb7df7375cc2ba1999f50789a1
+¶   ¶   ¶       85c97d37a70fc5c95200a00b87f7fcb1c65980
+¶   ¶   ¶       8dba8a39cb9301b9fe8ec6b28d3e435e3a04d7
+¶   ¶   ¶       e9ec5a54e71a4ac21250a460a2881786a93e14
+¶   ¶   ¶       f8c7d67727872ad0e3e9363f523ae3fe2ebc28
+¶   ¶   ¶       
+¶   ¶   +---62
+¶   ¶   ¶       07b1d47c0f26b0723b81c3be546d7b9c8872e0
+¶   ¶   ¶       1ecb1f8670bab31b80c15dc6a833e637dbe7d4
+¶   ¶   ¶       9b54a4291bd475ffcd7a076f3427416c9d1b26
+¶   ¶   ¶       afac2d356bf64fe6673fe7032db041506587cf
+¶   ¶   ¶       d9ae8f384b1a438e91c13bd076e162b22911ad
+¶   ¶   ¶       
+¶   ¶   +---64
+¶   ¶   ¶       357f1505e6777cb7e7b332a467bb8d5a75b975
+¶   ¶   ¶       5f3dcb242d470e4618671c11efc43cd294ebb4
+¶   ¶   ¶       f802a5c0561ab31beddfd0ec04380bfbf391d3
+¶   ¶   ¶       
+¶   ¶   +---65
+¶   ¶   ¶       0929c9de0b314269495f4cdb79cf7db8b7d0af
+¶   ¶   ¶       1065fde5f6cb33af1c477fa81d519e9ca9eb86
+¶   ¶   ¶       6042beb696ed04234f39ccaff33b6b64f621e0
+¶   ¶   ¶       
+¶   ¶   +---66
+¶   ¶   ¶       3b5fe44d8b7628e9e93e698d74abd7d37634e5
+¶   ¶   ¶       
+¶   ¶   +---67
+¶   ¶   ¶       200c84f855bb52fada7a69e337d4d92d56d59a
+¶   ¶   ¶       4d5cc600e4c29b10820d20c9d2003a61445165
+¶   ¶   ¶       537730c714da2c4c7cc3f99d2bb59df929ebfc
+¶   ¶   ¶       57bc657b3f4151a0b95b7a1aa4cd71ed5b91a0
+¶   ¶   ¶       8a159b0d62fd2ca33f3f3b84ef68d7c34bfe1d
+¶   ¶   ¶       c0317184a09848274bd00b2a952d8fcd4640c8
+¶   ¶   ¶       dae8f02b69276d3a1cb62926260f6fbeff5f7c
+¶   ¶   ¶       df71e01e7449c5441521b6b212ba56a9fc2377
+¶   ¶   ¶       
+¶   ¶   +---68
+¶   ¶   ¶       6a5a68c2e4f8e2699bcdcf45aed63d5d390e49
+¶   ¶   ¶       7ed1174025f9012fcafa8aa752b66d91c9ea88
+¶   ¶   ¶       d3d3269ff24364135cd6909e245e34d92b694b
+¶   ¶   ¶       
+¶   ¶   +---69
+¶   ¶   ¶       0b4c7b917e356ffbfcf65438ea212d08ba6efd
+¶   ¶   ¶       0d154c9afd5a27a347ef2e197d9a4d7ff3a9bb
+¶   ¶   ¶       2a01d4272debbc6448b40fb0260dff71fda08f
+¶   ¶   ¶       59076e3a1458e8141f9c0855fdf9cc702c59a9
+¶   ¶   ¶       9a1a3ddf4f9b35b02cd0b91eb3d7a588b87dca
+¶   ¶   ¶       
+¶   ¶   +---6a
+¶   ¶   ¶       2337aea2b4275ec426bbf1f7a3682158788639
+¶   ¶   ¶       3a503c9f18a5dc93d1910e11630ac57e5c2706
+¶   ¶   ¶       67a8fec97ee40d387988f4558cf8a3e45158f0
+¶   ¶   ¶       a23ce5952b740aeedeb9b169bfc3588107cf13
+¶   ¶   ¶       fb928c41f70b6360f9ceada4837af264967bb4
+¶   ¶   ¶       
+¶   ¶   +---6b
+¶   ¶   ¶       0fd5655c5eb2a88b4874e46cdcb8c2ab43969a
+¶   ¶   ¶       e30394908e6dce1e50a79bde74d7ef3b239a54
+¶   ¶   ¶       
+¶   ¶   +---6c
+¶   ¶   ¶       02478169108ed4f4c12ed89301bfc070ce3860
+¶   ¶   ¶       d4946c1b1254230b3291e37e82776434933c76
+¶   ¶   ¶       
+¶   ¶   +---6d
+¶   ¶   ¶       1f16ec57864f0395deaad045a4e4dcc471611b
+¶   ¶   ¶       7df4166fd30776b4f37efe36448ce4ce37cb27
+¶   ¶   ¶       8425184c628297836def15784d07cef2512db9
+¶   ¶   ¶       c9190643e1db7554f272b47188a9f48a7666dc
+¶   ¶   ¶       d737822d109a2bef0b83540b269a29e54cbb09
+¶   ¶   ¶       
+¶   ¶   +---6e
+¶   ¶   ¶       1ad8dea89cf21a0060c6b9c015a0bfc9c6c2c9
+¶   ¶   ¶       339cf85674bd490da456cc2e53780c1524d7ee
+¶   ¶   ¶       467bc47ba7b71c7569dc3914959620306862cc
+¶   ¶   ¶       6f679caee52e8d071fa9688a4c457ad354dbcb
+¶   ¶   ¶       8c9c3d30c322513dbfabf3847b9300c3ca0cbc
+¶   ¶   ¶       91ec4443751fb4f6d0fa25afa0405353bcf13a
+¶   ¶   ¶       
+¶   ¶   +---6f
+¶   ¶   ¶       0bf29668b521b243c654d5ae7dee5203bd5537
+¶   ¶   ¶       1e4e3a1acebbc44b2479246c9494fe369fe4f2
+¶   ¶   ¶       2ce82b521f44db1e236a62d8248c8d4954f228
+¶   ¶   ¶       827d4bc83fe303558041f2e978ffe160894cb8
+¶   ¶   ¶       a0df6f6078f48fd5326808ff4aad1e02fdaec1
+¶   ¶   ¶       a65b4e9c7ce4ffa9743248c38f27a63f16a85e
+¶   ¶   ¶       
+¶   ¶   +---70
+¶   ¶   ¶       1a39e51e21469f6a7c68e2422059e82fd6f303
+¶   ¶   ¶       c937a7ad2206eff51ae261531ff10351484db7
+¶   ¶   ¶       
+¶   ¶   +---71
+¶   ¶   ¶       29ef5b4fe4821b0fa549cf1dd9af4bcf3a3ffd
+¶   ¶   ¶       2b70acd7e7740f9c15f4407c9b5afc3b11750d
+¶   ¶   ¶       357650821f2e5271faa39a40a15b2489bbd927
+¶   ¶   ¶       5fd147c6d44f627c4d03a96098850b1b7816fe
+¶   ¶   ¶       93217685f171156506e92db609f85db04a3261
+¶   ¶   ¶       d507e76a78f9bc02d6ff4b9be2312ed8b7037e
+¶   ¶   ¶       ee345708b1e693fa99a9f3315dc8c06d5ba52e
+¶   ¶   ¶       f72b219cee1df31dae3ecf58cbe0bf80f4d190
+¶   ¶   ¶       
+¶   ¶   +---72
+¶   ¶   ¶       0a56b3b5b0da0ec7c117aba0db1c7f2b054595
+¶   ¶   ¶       1166b51b7aff1b88c641edc388a395a3297f9c
+¶   ¶   ¶       20adef6988d8603fa5b3a750fb7fed2d1c120f
+¶   ¶   ¶       27e5baea2378764f04e2a607bb1c69695b122d
+¶   ¶   ¶       444d01ebd28d8de1c930854bd2d1c7f13b8b2f
+¶   ¶   ¶       9e88b5a6cc862ad13964b8192b66a244e509d9
+¶   ¶   ¶       bf207f368085e528f32b7efd09322a7f68ab9f
+¶   ¶   ¶       
+¶   ¶   +---73
+¶   ¶   ¶       35b1f73356c923d4fcfe552955366d51b3e71c
+¶   ¶   ¶       3c5557b90c47d503e7d70e97754ee11f01ea5c
+¶   ¶   ¶       8193e0172d4b1403f06965f72cd241ef6c1e2f
+¶   ¶   ¶       9692db48be269fba9f3a0e998d990edc46f4a8
+¶   ¶   ¶       
+¶   ¶   +---74
+¶   ¶   ¶       3486f5cfe7ac73b1e71372e95aa0dd71f12ee7
+¶   ¶   ¶       405961bae5ca6f642c6d9d72df5ce1c9a82b3f
+¶   ¶   ¶       570f663980576c9d41485f216eab22b70a0cd5
+¶   ¶   ¶       a81b385b1ca686b1dacf679c8b15fe38b856be
+¶   ¶   ¶       bffcfe0071c9456a32c492974912c7ce1f5c34
+¶   ¶   ¶       c205d8e923b4b21aa0971ae3acf266df1d9d09
+¶   ¶   ¶       c7ae2cc62ed07e01f51c2485e737c1817aa1dd
+¶   ¶   ¶       dd2af439902732dae23c814ad9952949b3165d
+¶   ¶   ¶       
+¶   ¶   +---75
+¶   ¶   ¶       7ccde7fa34f455667ed2a0013a0608552e7256
+¶   ¶   ¶       96526ddd9647619e1a386cc13790e5be5ad88f
+¶   ¶   ¶       9ac80b3f7a14f33a881c513c0ea74c4fe324d6
+¶   ¶   ¶       f6a68a4b508765f41251b13fed9ba8a42d2875
+¶   ¶   ¶       
+¶   ¶   +---76
+¶   ¶   ¶       142266239c5f4d0378b55a961c98c3a7ad3f38
+¶   ¶   ¶       4970fd230951548632420e4ed0010d65c03105
+¶   ¶   ¶       81f66dda7075c374c739c3a5b3701c2576bafb
+¶   ¶   ¶       90672172abaf7cde712f9b96c76ba707200c06
+¶   ¶   ¶       a7fce2667376f44ca91dffbdaa18443e625a58
+¶   ¶   ¶       afd4ad6a383658a59a18f7cff40e2c1b7dc4b3
+¶   ¶   ¶       b5b67ecaa71bfa4a77e48b0355ee7d2f3efc27
+¶   ¶   ¶       
+¶   ¶   +---77
+¶   ¶   ¶       071256287c2a16578c431faf53f0644177ee02
+¶   ¶   ¶       1a27d964f19eb4a53f970a8740f118b351e37a
+¶   ¶   ¶       228ca343795eb6649b8be9e4f3c700a485b992
+¶   ¶   ¶       
+¶   ¶   +---78
+¶   ¶   ¶       04d8b4b164e3f27c4d7e5f4e0453a2574af0d7
+¶   ¶   ¶       24430d72b0416b13245cde36c5ca24aba9ffc7
+¶   ¶   ¶       2a921f3af6230871c8097ee8fa869780f89655
+¶   ¶   ¶       4a4cb0a6f394541470f30772e36c22357dcc05
+¶   ¶   ¶       771c2a0c3bb67cc861f4cb40c6fe4007f1d01b
+¶   ¶   ¶       
+¶   ¶   +---79
+¶   ¶   ¶       0a968f83999d63754bc83a36d88282072b3812
+¶   ¶   ¶       1bb7053ad06706473527b9611877406ecc257c
+¶   ¶   ¶       21c1e51051f01f0bff6c48af8d2dc7f01beea9
+¶   ¶   ¶       5c8b63c62686f290f7dea5405cfef3d3f12b21
+¶   ¶   ¶       9eb51278a9cb657a58d697e79cb48ab9998727
+¶   ¶   ¶       af9f4a8b6d273484ba9e2399b41d1bff1f7592
+¶   ¶   ¶       c808e83c44792e8f9fe40757c681bced8213d2
+¶   ¶   ¶       d7fbd00519d2758f1af7575a09c5785e3ca77d
+¶   ¶   ¶       eeb8cfa196b61ee128af83880957d1fa0ba118
+¶   ¶   ¶       
+¶   ¶   +---7a
+¶   ¶   ¶       01f54eb6d84a204b68940915d4e0b312457fb9
+¶   ¶   ¶       4fddc097248cb70b8439723e1b0744cc32ec2e
+¶   ¶   ¶       53a178a7d14bb5ca203fbee236c24c92987835
+¶   ¶   ¶       9665f90a71d868b4c9528f1ad21f3a8e72e9e7
+¶   ¶   ¶       
+¶   ¶   +---7b
+¶   ¶   ¶       1b7692e2c948f06f0fb0754db3fd5b9a5a75f7
+¶   ¶   ¶       1f90b4a47f8ef94c130e4d3205f031e0d5391f
+¶   ¶   ¶       5dca6e5e31be636aa75ac2d400ea7f5d201631
+¶   ¶   ¶       
+¶   ¶   +---7c
+¶   ¶   ¶       499fe8077baca2a9fc422ca67022d35b22a362
+¶   ¶   ¶       f604b375180db9eba458846030276033dcee2d
+¶   ¶   ¶       
+¶   ¶   +---7d
+¶   ¶   ¶       244d3570bd9c8a22330bb288c5c120471578a0
+¶   ¶   ¶       69b6c74ede325c3dfc779342e40a1619a192dc
+¶   ¶   ¶       6aac73ff32d36188b0e5e0467822cf6b445029
+¶   ¶   ¶       88308e46ccb72e16dc9a39d5ee8a1b9ba2167c
+¶   ¶   ¶       f688e3cc340215fd0b7692d33c66496499c81b
+¶   ¶   ¶       
+¶   ¶   +---7e
+¶   ¶   ¶       112d533517a2b45d783090823fbf832832d667
+¶   ¶   ¶       1e635c8db0d2b3dc12318e61ec1597937b5676
+¶   ¶   ¶       
+¶   ¶   +---7f
+¶   ¶   ¶       1def1b2f0232bdde76f07e97057b7aa6f27740
+¶   ¶   ¶       40fc93c671a804f2bbfd3d98a5515875cafd93
+¶   ¶   ¶       443cbde92b4368e6111fd2b113b1256c532c69
+¶   ¶   ¶       60ddcb6c361a6c90cd321667d63350699c254b
+¶   ¶   ¶       79c43effbfcf1de8537c5bfbb5109f5ebc5144
+¶   ¶   ¶       7d623d4ce300c72ac8fa7acd01125412c9fd3b
+¶   ¶   ¶       a504b55a30566917dd8bd92ea282d766b66566
+¶   ¶   ¶       b26dd9347ca33b1b0b8555b462d35102534489
+¶   ¶   ¶       dd4da4d34a09d39fc3d1a3f467bab07133d9d8
+¶   ¶   ¶       
+¶   ¶   +---80
+¶   ¶   ¶       046290fe101647f43980ee6c5f5aa90f3bd154
+¶   ¶   ¶       136072c33cecdf902b546e9e7590349636cb84
+¶   ¶   ¶       8cb4e090165d5329921baeca84e1a23b417ee0
+¶   ¶   ¶       93318d84a6b1de0de9566fe62644b364e93170
+¶   ¶   ¶       a254b9203d1cc14407c9917d5aceec3de9e855
+¶   ¶   ¶       
+¶   ¶   +---81
+¶   ¶   ¶       01f76267190f9a50f940582b2b21625a1e40eb
+¶   ¶   ¶       1766733c0e8754a2c625841204b9e57d3de578
+¶   ¶   ¶       66136d8b1a9b4d78bdfc4f9d0c8c5c35b9ab27
+¶   ¶   ¶       e5bf08d528fee54a11da00f8ddd6b5874dc59c
+¶   ¶   ¶       
+¶   ¶   +---82
+¶   ¶   ¶       15487b7a7b4acc965dcd99f2af977f5e9a4f5d
+¶   ¶   ¶       
+¶   ¶   +---83
+¶   ¶   ¶       c8f1f703772de3606fd686d96a3c9dce07d3d0
+¶   ¶   ¶       
+¶   ¶   +---84
+¶   ¶   ¶       4460838903a479b54ef011d96a0fc7c9cb82ef
+¶   ¶   ¶       62219b84b9da1b829019c0ca17ed25ddd220ce
+¶   ¶   ¶       710b330c15c57b9ed9d80de1276b429778e22d
+¶   ¶   ¶       bb2f7f10d7bafadda984ac5da0743b79d7f096
+¶   ¶   ¶       
+¶   ¶   +---85
+¶   ¶   ¶       0c35f3f3ac74fb27d04be8840f26581ec85146
+¶   ¶   ¶       c7055da7526004139d97b51670c04143e01d9a
+¶   ¶   ¶       d142ac7fc9c388d3b4a7ef232e454bf1f388e7
+¶   ¶   ¶       
+¶   ¶   +---86
+¶   ¶   ¶       18ded6a4c732767830579bc7c0a3867ebbbeaf
+¶   ¶   ¶       29107099dee0e7e0a7d59b3b045d8cc11a02b8
+¶   ¶   ¶       421748ee09f405fcae010c5ed04491fc2539fc
+¶   ¶   ¶       837cb037c917935082c0363ae08de358d868c7
+¶   ¶   ¶       86d7e2ff2595ee5ea7961677f0dc56a5fac784
+¶   ¶   ¶       8ae13eb7da40fe72ca5230a1563470f37ef498
+¶   ¶   ¶       aa7268f0dac14cd9005155aea91308b58cd638
+¶   ¶   ¶       b1a20049916aaf1e8c97d9baa72217fa5e2238
+¶   ¶   ¶       e1d339bdb6c878e1681086f0feb88e1eb2b6f9
+¶   ¶   ¶       
+¶   ¶   +---87
+¶   ¶   ¶       34475a414318b7f2cd462336a62df0f9bcd8f6
+¶   ¶   ¶       e0a4c6fb3181c6434261341faccc0c871c0618
+¶   ¶   ¶       e1ac94752a1682a662c3a401e7b3305eace286
+¶   ¶   ¶       
+¶   ¶   +---88
+¶   ¶   ¶       1fdb3e3d73cdad2bbfabc2abb3a3c7ed9414c5
+¶   ¶   ¶       352d2e670ec97c9166d0733141c5f2d64066d8
+¶   ¶   ¶       37e280cdc389bbab5180fd32d5d3fa7a3c5bba
+¶   ¶   ¶       8beb22e380664f027c8099210158451390c23a
+¶   ¶   ¶       a569b29e041f1e1091e520838fa0057f28c3ac
+¶   ¶   ¶       c97f063a81a6bebb9c7a5ce429a47dd8e92688
+¶   ¶   ¶       
+¶   ¶   +---89
+¶   ¶   ¶       71641d1f7c6dc62aacd61e6a2ef09dd2d41f14
+¶   ¶   ¶       a50bf8291b2df861c522183786c8c31484a1ce
+¶   ¶   ¶       ff63630504a6a4226cf410e5fab8c58a0701ae
+¶   ¶   ¶       
+¶   ¶   +---8a
+¶   ¶   ¶       1d143ec7ceb4073d02b85cdc5b5d3054b3440f
+¶   ¶   ¶       bee9de315725513301f27710298536fc672354
+¶   ¶   ¶       
+¶   ¶   +---8b
+¶   ¶   ¶       1faa49c820807c7a5d62f792d036203eed6756
+¶   ¶   ¶       476e068101339c49da7b3087b45d9d589abafe
+¶   ¶   ¶       73a12ea382ad12744836807f0feed66c963288
+¶   ¶   ¶       b32ea42026f3f986904083a9ad90896c8505f0
+¶   ¶   ¶       cf45ec9d61a1cb09a86184b12cff54d3d69081
+¶   ¶   ¶       d36e071c27bc9a47aaa8ddb9c14dba2d4ceb46
+¶   ¶   ¶       d7a920ed95b712b7e353373132eedd36ccfcb9
+¶   ¶   ¶       e5a6d5c158afc1672be5475154ad5ad6a264ba
+¶   ¶   ¶       eda039a8784de6a2d169b2d225e7beb2f91ef2
+¶   ¶   ¶       
+¶   ¶   +---8c
+¶   ¶   ¶       4330ae05c42cc407138660b8274e898d8707af
+¶   ¶   ¶       66a8b3faa845d3c4c5f757f918e43318314feb
+¶   ¶   ¶       72c785754ae9663745d8ad6ce5a66714068030
+¶   ¶   ¶       8ddba8ccc95ff418febb3eff6ad5cda679c3f6
+¶   ¶   ¶       9700aef4699e0ee306e1f6889da50da95cb305
+¶   ¶   ¶       d39b8ad5370a78dabb90bc7d60d2111fd34be3
+¶   ¶   ¶       
+¶   ¶   +---8d
+¶   ¶   ¶       43b355ba5479ba3f18e7d10c2b6526e886e44b
+¶   ¶   ¶       4ec571db20cb430ac6cb6e96a7bfca8535ee40
+¶   ¶   ¶       dbcd3d09ac168e0f19ef1463ad2047c40aed87
+¶   ¶   ¶       
+¶   ¶   +---8e
+¶   ¶   ¶       25575d81017d055b4aa6f5206ba7fc27b7da0f
+¶   ¶   ¶       5b1d89c6f23c33d67c3eebb34dcc64ad91029c
+¶   ¶   ¶       7a392c03dc415c7b4cc6ae22df08dfece16349
+¶   ¶   ¶       8c6ba79daf89f9ffc9be838d530ed66dbb0967
+¶   ¶   ¶       a5ada55409ee789fb3eeade2329ceca1de3ee7
+¶   ¶   ¶       
+¶   ¶   +---8f
+¶   ¶   ¶       29fbc30ad182458d2374a050b2373372af2183
+¶   ¶   ¶       408c991e777af87d3bc51bfa1db5c02dd0e564
+¶   ¶   ¶       a475222ac073d5da211a23d3a1e964a2a1ef97
+¶   ¶   ¶       f3faa8f198e5b6052f964c470ae58969afc268
+¶   ¶   ¶       
+¶   ¶   +---90
+¶   ¶   ¶       1c894a0881bf42f972496d399adecd784e0951
+¶   ¶   ¶       9ee1faab336ae369e097b2ea6afa0dd2304b5b
+¶   ¶   ¶       ba9b4af12ca8738e076b93482be47f7733c896
+¶   ¶   ¶       c10eb98f88b0c4201ae0d7d443456343f497b0
+¶   ¶   ¶       d2e48eaa0a0986bf4eeacacfff239471f2a378
+¶   ¶   ¶       d69d6bc6ae26f4f94d95382a00bc7e02b6707f
+¶   ¶   ¶       
+¶   ¶   +---91
+¶   ¶   ¶       3e48ba324c5cd531e031bc003b2334e3e2c5ff
+¶   ¶   ¶       79fce211366eb4d354e219fe61936d6bb32a9a
+¶   ¶   ¶       
+¶   ¶   +---92
+¶   ¶   ¶       2d2b43a570fde8a24987cc7fecbde528b40da8
+¶   ¶   ¶       50b8fa9a304393bbd5b53ebede946e22c8504f
+¶   ¶   ¶       f369595972face27ef509a52412a7ea8e606d8
+¶   ¶   ¶       
+¶   ¶   +---93
+¶   ¶   ¶       0ce23412aecb5cf011b9dd0696212d33843c22
+¶   ¶   ¶       7806bc727d8be268028b27041d846924df52d8
+¶   ¶   ¶       a41934a3403a283976244e936afd6250be7d05
+¶   ¶   ¶       e8cb44833a17d4530821b5f9bf0b27eaf58646
+¶   ¶   ¶       
+¶   ¶   +---94
+¶   ¶   ¶       23e590fb592dcb4c71446ac9a545a1ad4afeb3
+¶   ¶   ¶       941256c5985035d28bdac3b24b655f1aee2f35
+¶   ¶   ¶       d0c413ef4e77e8d50f4f4c051c48201394413a
+¶   ¶   ¶       ead11ffdad5852b5a991cddff6a970a96c185d
+¶   ¶   ¶       
+¶   ¶   +---95
+¶   ¶   ¶       0e1bbf986e7e22d61bc112e90b33c988bd9540
+¶   ¶   ¶       5db520e5c93a47fa4c8bb322b99a7aa79af771
+¶   ¶   ¶       654d6078f294214513a2545c769d4ce0a33c68
+¶   ¶   ¶       f5fa1283cafd32107c39ee5cc1f3770cc3d909
+¶   ¶   ¶       
+¶   ¶   +---96
+¶   ¶   ¶       464272781946319c80a154d00fcaaf3021a4bb
+¶   ¶   ¶       614140683bf92c8c17ba841655c3d6e1b92788
+¶   ¶   ¶       6c03f94194cd19f1c5d58c499da2c355623a0e
+¶   ¶   ¶       83c72027a4e48cb8adc676bbe296410a78a8fd
+¶   ¶   ¶       c76277f6b4725bf9b032f9ce33f2a4a34a1c71
+¶   ¶   ¶       
+¶   ¶   +---97
+¶   ¶   ¶       09fd2ee6f47cdf183cf43ef14ba6395417cf70
+¶   ¶   ¶       130276b73a73daa20b3700a8de6ae806484d34
+¶   ¶   ¶       150c3b2d85e45c0721ad33aa032ac6bfcf87f8
+¶   ¶   ¶       16c2151e7c0bd8cdfe8ece509f160dcb0a7756
+¶   ¶   ¶       1bf7b6ec5f2c13043c71c36338ef5e2135a710
+¶   ¶   ¶       4687b106ae53fc352a89d8df20f930fe722658
+¶   ¶   ¶       5fc4d929b4866fb80fad622abc28201e107c40
+¶   ¶   ¶       7add6dd01bc2b13d88a68a90eb640ec3a02336
+¶   ¶   ¶       836dd8d80b04a88a5c9601602c3985d081cedd
+¶   ¶   ¶       da6f7bb6c899bbb71bddee2994431f55e8f8bd
+¶   ¶   ¶       e3eff5a79e8b2c3280672ce982840f2e9dce76
+¶   ¶   ¶       
+¶   ¶   +---98
+¶   ¶   ¶       796d02c6b90ce0f3bd973a1126eb3b659c6920
+¶   ¶   ¶       a592a7fdae9d39540f064332274192264ea99a
+¶   ¶   ¶       
+¶   ¶   +---99
+¶   ¶   ¶       550f3891a4b5bdcb19c757f23d448f7a99a447
+¶   ¶   ¶       d4b1f695369ac4f155d7b4753abea55125e79d
+¶   ¶   ¶       
+¶   ¶   +---9a
+¶   ¶   ¶       376ee873a29b0726a3b2b41c6870f2d1d9b7c0
+¶   ¶   ¶       6cc2bc396912fd667b6ec7addebf0b7c4d8e9d
+¶   ¶   ¶       b3bf46b9039b46593a808d8f5329f88831082e
+¶   ¶   ¶       bad9663c01ebd572d82bc9812b9f461a180123
+¶   ¶   ¶       e27c10707ed39d42af6b491be336f293c8801e
+¶   ¶   ¶       
+¶   ¶   +---9b
+¶   ¶   ¶       5542c133fc7acc8d64c3a02e9b35b5877c8a1f
+¶   ¶   ¶       724e7333023389a35a6b68be1f4311af07184a
+¶   ¶   ¶       958ea92a2e383464f8b11a2d5590671b435cee
+¶   ¶   ¶       a5056ddeb71f113786690788f121f165b9b675
+¶   ¶   ¶       e2ebf2a19ff136b599e6a24ba2ac381852cc20
+¶   ¶   ¶       
+¶   ¶   +---9c
+¶   ¶   ¶       1b2b8c06c1fed2614f4f54c857bde5b930dcdb
+¶   ¶   ¶       6571e2155f80ee3d59b48d4348b28316ff77f7
+¶   ¶   ¶       97c3b589546303dd7594ff471ed81a85063d3d
+¶   ¶   ¶       ab3fc753b1643686776730cee1efa3540098e7
+¶   ¶   ¶       b708ae45cda91f88e69b562b93efae501b432f
+¶   ¶   ¶       c315033ac90df531c154afcebb704037443196
+¶   ¶   ¶       f4c51efa41ad4cd98e0e503619e78e2e4f9420
+¶   ¶   ¶       
+¶   ¶   +---9d
+¶   ¶   ¶       4a1a5929b3e6cb653aaa84fe1e5af14263966e
+¶   ¶   ¶       a872fc022f821bf9505661121dad8e5a32e1eb
+¶   ¶   ¶       
+¶   ¶   +---9e
+¶   ¶   ¶       35f6753851b2df24897cac74da451086907473
+¶   ¶   ¶       dc78ef69d7203b2e83960c634f2122b94bb58e
+¶   ¶   ¶       
+¶   ¶   +---9f
+¶   ¶   ¶       2b3b9e1bd188289b12ab3cd881412bf8b2757b
+¶   ¶   ¶       a54e27cc44973e8e28b6c2a0b08092826032b4
+¶   ¶   ¶       e2d4d27867ce71791f3c415bb9a4d8306fb273
+¶   ¶   ¶       f099ac56028ba9f3490400ba926c2f67cf37cb
+¶   ¶   ¶       f41e84477ca28f057b0b752ccc05cd6e438fee
+¶   ¶   ¶       
+¶   ¶   +---a0
+¶   ¶   ¶       459b7fb0af5f336a481a2142ac8f7b42ae7f3e
+¶   ¶   ¶       5c98e6883ac4134163897804c969e37dcba8ec
+¶   ¶   ¶       e320b0ea7c1a2e7aeb4bcda9bb97788bebe292
+¶   ¶   ¶       
+¶   ¶   +---a1
+¶   ¶   ¶       2e85f87432f8bc36c0309c527a267d810f44ba
+¶   ¶   ¶       346bd5ced5c1108126e5c11019da73d4dc7672
+¶   ¶   ¶       e48f68a4e540bb5268db7962e75a87ce6e8ff4
+¶   ¶   ¶       
+¶   ¶   +---a2
+¶   ¶   ¶       4afbea2a2395e1b47c8776f291ea573e465117
+¶   ¶   ¶       9020f973bb100a33062f82429310501523b9c6
+¶   ¶   ¶       af62e2458bb441eab2b2af8c7de3eecff76109
+¶   ¶   ¶       c13132e9bef8c2a6a35896bea29f6d1fa5043b
+¶   ¶   ¶       c4b5bd116fe6a3fb905e2d5d9014a9c8e28566
+¶   ¶   ¶       cea47181421a3cdcf163fcd1a2289c37f81841
+¶   ¶   ¶       
+¶   ¶   +---a3
+¶   ¶   ¶       2cd50276897d2ca56523e7e81a5aec30cc1452
+¶   ¶   ¶       8b7a0b4d26d7bfd4bd547eb5597a3c93e2f174
+¶   ¶   ¶       ea12822fc864829a0d0f6369bf9019891bfc2b
+¶   ¶   ¶       f4978ed0f4bb192532b4b848aa54e1c4f51546
+¶   ¶   ¶       
+¶   ¶   +---a4
+¶   ¶   ¶       01892efdf27f362bbf5c6a3e3d7fd193490b7e
+¶   ¶   ¶       94a695473e85b9198713cddefb5a801908774c
+¶   ¶   ¶       9d5287624ad6c4245f38941dc913520c8a2f05
+¶   ¶   ¶       cc9a014a6a238972d51ccbcce92640b2249bbe
+¶   ¶   ¶       df61da031b671dfaf0463e871307b5150e1d3b
+¶   ¶   ¶       ebdb2f7e015e136a29f473746623c247baba71
+¶   ¶   ¶       
+¶   ¶   +---a5
+¶   ¶   ¶       2e7cfbbdbc8c78a48f307d9a5075758d718ea5
+¶   ¶   ¶       34f89e9be1925536df8648d215e278ebb302ff
+¶   ¶   ¶       36cdf81a29555f1695a0d9412fb285270ee63a
+¶   ¶   ¶       6632df1b68ecbef0778df8c5e1fd087acdf508
+¶   ¶   ¶       cd3f5119339095b2ba2c0b80e846a8ac4b6149
+¶   ¶   ¶       
+¶   ¶   +---a6
+¶   ¶   ¶       7c94bdba021fe2777518e2ab7e3e5218379be3
+¶   ¶   ¶       8c4fd3b2c0ddf7409c493f7e621b2ec55613a1
+¶   ¶   ¶       8f351d20596305568246060a74c371a0d64e9b
+¶   ¶   ¶       ea8f4c71bfee753dd173ee51e2491471bffb59
+¶   ¶   ¶       
+¶   ¶   +---a7
+¶   ¶   ¶       3f1bce69c2991fd70bd8d3c8f50893293fce08
+¶   ¶   ¶       4194b5d37767bfc43a8fec1d400e890aaed97f
+¶   ¶   ¶       953438a1e9a2e4c56377fd490ef0765b392b3a
+¶   ¶   ¶       c0b67a45745386219c1466c9935a04e615f515
+¶   ¶   ¶       eb4f50d5115131a5c643b25976601660473698
+¶   ¶   ¶       f8feca4d385eb12f693b0873677c8a00dba736
+¶   ¶   ¶       
+¶   ¶   +---a8
+¶   ¶   ¶       3f481bce9a441d3484c928fef1767c8398ccea
+¶   ¶   ¶       8ba9db0e58b7ae032f7ae8b81910f193f7e38a
+¶   ¶   ¶       d3f075fba833a6cc4c63e00d29e6f4d511b750
+¶   ¶   ¶       
+¶   ¶   +---a9
+¶   ¶   ¶       4ec8ba274e340d6ef56f156e6984c600137485
+¶   ¶   ¶       5ecc0ac9568e46136791a80bfa4a980845049f
+¶   ¶   ¶       7b9d8a853f8dde3423c0a437cb9dbe7687ea9a
+¶   ¶   ¶       c5775142015da6faf01a399ddff2fc506c808f
+¶   ¶   ¶       dab00f6bf2b104448c7c64c6615d14e701d201
+¶   ¶   ¶       
+¶   ¶   +---aa
+¶   ¶   ¶       183b0d8def61e8aada5ddb9483a43814c827d2
+¶   ¶   ¶       6d659d53518bc4a5744bfbe0d979cb41d438f0
+¶   ¶   ¶       721935d15eb2af2cbf4bed1f820868c3c10ad5
+¶   ¶   ¶       7f9d12068178b378279335f81c18bceabe0449
+¶   ¶   ¶       805631fbc29ea17b6c917dd22d6e9e9ce93819
+¶   ¶   ¶       834306f8691e2fe42ac3fff0d811d1a9508e85
+¶   ¶   ¶       b5b653be485f69a850a4ac7ac52674a145dd9a
+¶   ¶   ¶       bae86c360f7b56d9efd167c5603461c5d56507
+¶   ¶   ¶       c10e6a542010775a2f8144709c9b903339fc1d
+¶   ¶   ¶       ea3cb5850f80a775415a47221943051a592645
+¶   ¶   ¶       f1b42db1f125810c4bcec3eccd9d0fd16a81f9
+¶   ¶   ¶       
+¶   ¶   +---ab
+¶   ¶   ¶       0e5d8e9de93711c980898d7dddb8a00298458a
+¶   ¶   ¶       1cca7c522b8c22faf138f1f75e7ed78a765479
+¶   ¶   ¶       30dc600a5e3130ba87bef1689dd6e3bd1a9553
+¶   ¶   ¶       51d3eaac28b587b97a1ba13aac0e96fe33998f
+¶   ¶   ¶       89ff123fd272915edcd285e0e69e71441cd5ec
+¶   ¶   ¶       9c68f933d1bd233d4e40b244eb7441342522d1
+¶   ¶   ¶       
+¶   ¶   +---ac
+¶   ¶   ¶       4740122d3b0eeadd8b6937ea795897a5465335
+¶   ¶   ¶       7f8575df1264be3379f15b2987fbdf3afd0b96
+¶   ¶   ¶       d6292d23249217f52b1374c9aca5a44e2e5d54
+¶   ¶   ¶       
+¶   ¶   +---ad
+¶   ¶   ¶       07a66171c79c3ab537884d4b734d96d9447ebb
+¶   ¶   ¶       42fc7e2778cd37bbdaf1163a5bfd6b42fdaa99
+¶   ¶   ¶       56ba3a040740ce675dd998e573a7de5aa94f9a
+¶   ¶   ¶       68556bb9644c90e7886d50d8e0611270e1c0db
+¶   ¶   ¶       92f5ad8b6824decd036645b97458f5aeb93a86
+¶   ¶   ¶       
+¶   ¶   +---ae
+¶   ¶   ¶       0681755144491f8f038b9ec2ccda16092fa6bd
+¶   ¶   ¶       5f1cf5697b3fa7fab53c2d5774c2df0af44722
+¶   ¶   ¶       6ba8575a2ddd7a5f135a4b34a0eff59f14a6c4
+¶   ¶   ¶       
+¶   ¶   +---af
+¶   ¶   ¶       0dd687790ea711d83477c29313da6149ee0989
+¶   ¶   ¶       18caf5a2c2450adea87b159ce136c0e93a0841
+¶   ¶   ¶       1e99933d380b206881ad43d63af14013a4b73c
+¶   ¶   ¶       b9c1731546588902201390a3b82dbea6765ca4
+¶   ¶   ¶       c1325d5b1baf23af6aabf1d9c7a614a4c586fd
+¶   ¶   ¶       d12859cffd4a7aa117275fbe860f2d3ccad37e
+¶   ¶   ¶       d656d0f71af2cc7522b60c9f77091ff5373cc1
+¶   ¶   ¶       
+¶   ¶   +---b0
+¶   ¶   ¶       57d4212777f15b4f4bb151b70a5cdd114ef473
+¶   ¶   ¶       9ff2e844be3335069447a360465920838642f6
+¶   ¶   ¶       a54515da0a6a4fe2cc370d5c524274482d0a31
+¶   ¶   ¶       abda96ae9e0eabde6b9f009ced5f8a6c3962eb
+¶   ¶   ¶       be5522c154975a9b85878926d42fed063fc831
+¶   ¶   ¶       
+¶   ¶   +---b1
+¶   ¶   ¶       5e75731209fc04591ce2e0349b6db8d5c20938
+¶   ¶   ¶       806105fe676e97e46eb76798693609694aaf30
+¶   ¶   ¶       b11b3108698e82daa1f7044c42900367987f63
+¶   ¶   ¶       efa244d539452f46b3ec99c46e1c93c1f9274c
+¶   ¶   ¶       
+¶   ¶   +---b2
+¶   ¶   ¶       8c79b73290f22d22b39f23cdd9c7255dede22b
+¶   ¶   ¶       8d2ee63d899f659cfe5cd3bd23cad7b080b0c7
+¶   ¶   ¶       baa01ab733773189ee465e9bc66c5af096f0c9
+¶   ¶   ¶       ce738e81c844c8327e29492bcb17e83719bbf7
+¶   ¶   ¶       e31d6dfc5ef59fe6427ff593d49425e92eb84f
+¶   ¶   ¶       
+¶   ¶   +---b3
+¶   ¶   ¶       0ac19575fdb36f434f601d62c9598b2559ab40
+¶   ¶   ¶       79cdd0ff9b393899ce445c243679061cab3c13
+¶   ¶   ¶       9febf91d8929ab17901eea5c65143c6d45a494
+¶   ¶   ¶       
+¶   ¶   +---b4
+¶   ¶   ¶       663f71cd183b53c4e9c4f73dc0c4d53b8cade2
+¶   ¶   ¶       932b6a1d489b29c2e776e7db0d150a0248ac77
+¶   ¶   ¶       fe0a960bf3766e5628c67ddb090e1c99f26e86
+¶   ¶   ¶       
+¶   ¶   +---b5
+¶   ¶   ¶       84f743310f44a3994577f72d1953a3be920217
+¶   ¶   ¶       855f948e949cc71f5f5a9d30dae6d33317ac98
+¶   ¶   ¶       99b9933a39d1e9af5af6630cb6bf7d24c1538b
+¶   ¶   ¶       cf8a831ffe7fa3a31a7cbd15a1a293fe974e48
+¶   ¶   ¶       
+¶   ¶   +---b6
+¶   ¶   ¶       1e65e52ea5f4a33e024fe84ba5f080eac5b536
+¶   ¶   ¶       3014fae6c1fa4af0ceef9064841a7f5e07c78d
+¶   ¶   ¶       38f02afc127ac5de2c7ad843d7158273b642c5
+¶   ¶   ¶       61ee55ef6cab2fd8efe917fd68620ec1ee4522
+¶   ¶   ¶       841fded6e704f914a8a70653bbb431ba2c78a5
+¶   ¶   ¶       d8e5638a4ddb6482627ce5a54ca2aa0713e62a
+¶   ¶   ¶       
+¶   ¶   +---b7
+¶   ¶   ¶       1f75cc5fc96d5a0e15dafb5e8f1a3c7c0026aa
+¶   ¶   ¶       3ca8b81e60027a49d50095d67e31cac55dde83
+¶   ¶   ¶       91e53dcf8659c295f1d47bcceeaba40105e4c9
+¶   ¶   ¶       9d1d94b3515a966fc15eedcd0859c1f735b2e2
+¶   ¶   ¶       c85ee5033722009694956f3b1b8344e112afac
+¶   ¶   ¶       c9adfa1fe6801878a3694004a1b57b663d7766
+¶   ¶   ¶       dc49c5fd52fa55cdf08e2daac4a8e6a4c0a038
+¶   ¶   ¶       dd281c0e5cb415565815121cac652d8b644059
+¶   ¶   ¶       
+¶   ¶   +---b8
+¶   ¶   ¶       00c8696e9ba74667d0bd5a364638acd4841c6f
+¶   ¶   ¶       57e88285a75754b219f3b5295bca43b533786e
+¶   ¶   ¶       a4236c3945f2cb35609cc4eedab5386ffd38b7
+¶   ¶   ¶       
+¶   ¶   +---b9
+¶   ¶   ¶       721478ea3ff56485fd1ea7f3f3c45daaa6006c
+¶   ¶   ¶       87ee949732dd5b516f53a865f496331e6af6e9
+¶   ¶   ¶       afa903b1a7f8c89b372508bbf279a888363ffd
+¶   ¶   ¶       b92afdcb20dd366af49638c503920702888a19
+¶   ¶   ¶       c7ca192324190bf8e7288d7d28515b76609163
+¶   ¶   ¶       d32da5e796d135251f9e08e66d552209842061
+¶   ¶   ¶       da744b3927381a85be1ecd657669ecfac19599
+¶   ¶   ¶       
+¶   ¶   +---ba
+¶   ¶   ¶       6d695ceea7852c5824e3ae57be7190b240013d
+¶   ¶   ¶       77aa9461be589aa59bdb8b1602186af13204c6
+¶   ¶   ¶       ce7d3915075f57f87b5277447576ebdb2f3f0c
+¶   ¶   ¶       
+¶   ¶   +---bb
+¶   ¶   ¶       00948d4319ada2784b5d6ff290a3777fd4dc3f
+¶   ¶   ¶       2f7e9914cfe51240769af5a4c0276da5dd6037
+¶   ¶   ¶       5da48058bc894556419628fb419b0c2b0fdda7
+¶   ¶   ¶       61f09a0c1ce8c47ec121184c075566574281ef
+¶   ¶   ¶       f1fec58b738ebfe1dc5879e71c0f1f875e868a
+¶   ¶   ¶       
+¶   ¶   +---bc
+¶   ¶   ¶       241e4d9874aa3bcf4565eb1d907e0acccee29f
+¶   ¶   ¶       288de09a9250b23a4de456af9bc39a499a725f
+¶   ¶   ¶       693fe35aae718e20312817b090a6bd3306f355
+¶   ¶   ¶       aca6697313c8aaec67bbb0f45b16b035296fa3
+¶   ¶   ¶       
+¶   ¶   +---bd
+¶   ¶   ¶       4dffe21f5162cc31b21500092bebeaa67d6445
+¶   ¶   ¶       8576867caae8fc698a2c4162a3c40d6b185799
+¶   ¶   ¶       d50d677dbaac328c8d669d16e27cd97f1e33c7
+¶   ¶   ¶       e8de7250a3b3c233d5611d4a1cf6fd8a95c5bb
+¶   ¶   ¶       
+¶   ¶   +---be
+¶   ¶   ¶       7f44b0c042e9146e3c5318c3fca564d0a34d1e
+¶   ¶   ¶       9f1b081a957f4d002b6555bfb13720879880eb
+¶   ¶   ¶       a46907bddac7f720871c4838fc448fdd84733c
+¶   ¶   ¶       ffd9bf8151f77c7b2edcd627c5f50694f9ee42
+¶   ¶   ¶       
+¶   ¶   +---bf
+¶   ¶   ¶       0b782a74b80af2054a1a7ef907c3d03a1a619a
+¶   ¶   ¶       0e63520b28758e418a87a304776db3bada5ccd
+¶   ¶   ¶       3ea355d4aa1517e224668734a4841df7b91250
+¶   ¶   ¶       bc4b8f3cf642b4260d43b78d0e883a228be6a6
+¶   ¶   ¶       
+¶   ¶   +---c0
+¶   ¶   ¶       2ac78b5e998fbb2e6f5399c11ae0de86bfa3ea
+¶   ¶   ¶       3d0469e3e707045f1ad57e2d0606473156b5ea
+¶   ¶   ¶       5bd4302c507378a085573ea6d336e97f1a738d
+¶   ¶   ¶       e72311f0248bb97ec489732b17d8d9cca8cdcb
+¶   ¶   ¶       f6283c9ad12b1ffd4a15ce6f2cebda4dc2497d
+¶   ¶   ¶       
+¶   ¶   +---c1
+¶   ¶   ¶       7469fc266080fcf29288447f3bfddd753ff7be
+¶   ¶   ¶       79850641e9a07de88880a4b5ef461b0eb84fc7
+¶   ¶   ¶       8c0bd585bfa39abaf524584ee5d5c272a1f34c
+¶   ¶   ¶       9636be79bcba43b6bbf81c42812d22ef8d1739
+¶   ¶   ¶       a0a8d263fb6fe5ffdedd5ca20c130ddff20dd7
+¶   ¶   ¶       f6b35e42f889fc168a4fe79d12129b47a00018
+¶   ¶   ¶       
+¶   ¶   +---c2
+¶   ¶   ¶       437b9251b876006d58dd61198cb1035ac7294f
+¶   ¶   ¶       
+¶   ¶   +---c3
+¶   ¶   ¶       cd02a1f2858fb288eed82c7e153577b3edb69f
+¶   ¶   ¶       ffdc79c02388f75c116e1f7f712e4f6c8c8fd0
+¶   ¶   ¶       
+¶   ¶   +---c4
+¶   ¶   ¶       dd6e773938cd393d83c6dcd447480b2389161b
+¶   ¶   ¶       edbf214ff81c35f2df9be4f4f9983a218079a1
+¶   ¶   ¶       
+¶   ¶   +---c5
+¶   ¶   ¶       e75347376352c7d9eed5a222873b4e93c01c89
+¶   ¶   ¶       ee8dcb087b42dcdafb683fd44894eda21b14f2
+¶   ¶   ¶       
+¶   ¶   +---c6
+¶   ¶   ¶       2fd5ae1373fcacdb42cdbc5c01d3ecd97bcabe
+¶   ¶   ¶       58a4397b2b581709f7bc4fd9bdb252e35f3c2c
+¶   ¶   ¶       71e68e49fabc4cad6302829a835062a0b4ae31
+¶   ¶   ¶       d0364768375fededf40952717e440f2b272679
+¶   ¶   ¶       fc43a17c1b8bfeb94b3362648328f7742d4c6e
+¶   ¶   ¶       
+¶   ¶   +---c7
+¶   ¶   ¶       093689d6505cb0aae6e38d7d24f8b532e19a70
+¶   ¶   ¶       0ee10d69ca55311d5bf6df34d23472b0cf5f74
+¶   ¶   ¶       29e27e8684de854dc0b742a51c58802acc1408
+¶   ¶   ¶       b96389e90c4d3d07b4aa9829e238b267eafcf1
+¶   ¶   ¶       c216522e0842f3267c8297231748c5344259dd
+¶   ¶   ¶       e525a129c0ea36c1c279341c7a6429ad6a5253
+¶   ¶   ¶       
+¶   ¶   +---c8
+¶   ¶   ¶       0ddf9a822729195089de8a227e7db830179681
+¶   ¶   ¶       5e2b549e6a19019b6e8b7976f2481cf245cd79
+¶   ¶   ¶       625accf1a745f35dd0aa7e67edfd5f855a8d0e
+¶   ¶   ¶       
+¶   ¶   +---c9
+¶   ¶   ¶       3e23f91324ac210d9c29d78d7b5ed327ac44af
+¶   ¶   ¶       cee3eb4f33b483adbd6c7384db8e1ff60edae3
+¶   ¶   ¶       e43324b25e85d0c0d501c3e97271d4a7cdc700
+¶   ¶   ¶       e5f605faf0058283f4c53e7c6000f38b5c1f51
+¶   ¶   ¶       
+¶   ¶   +---ca
+¶   ¶   ¶       12b5b2e35c23e7f0e53f9be270f9c887bb0ec3
+¶   ¶   ¶       8460160e530eeaad95a45aec5aeb9104e7b48b
+¶   ¶   ¶       
+¶   ¶   +---cb
+¶   ¶   ¶       21b964c0b8ff7bebf419be289fd00381af685b
+¶   ¶   ¶       a9f84608f67aa418d85b17cf5af88bd37c1ed0
+¶   ¶   ¶       b87ab21a4f65691358e8b98a60945ba45147a9
+¶   ¶   ¶       c464b780a0ffac722ecc17338daad60ee269eb
+¶   ¶   ¶       cb11f9ddb1dd77b2e255164d44cc72676f6be5
+¶   ¶   ¶       
+¶   ¶   +---cc
+¶   ¶   ¶       046b5de84e25e3cd1dfab65ec354297e58e3bd
+¶   ¶   ¶       0d38e664787e05421c666d6e9771b7b0ee4dc6
+¶   ¶   ¶       21ac6e61c28fdf02eb28de1eddf81ce0f8d29a
+¶   ¶   ¶       474692dec2b9c2492b742bd9ddd7e73c6990c4
+¶   ¶   ¶       7de727d884af54e9865dd4cf64fd4344720f4a
+¶   ¶   ¶       ae7d2f68bdbdac0472ce9b6235a46c58a29675
+¶   ¶   ¶       d051fffbb2a91c6f0db92da2cc0aecc3740faf
+¶   ¶   ¶       
+¶   ¶   +---cd
+¶   ¶   ¶       03027c26f180a4a28b2dd6a07b9e6426a4736b
+¶   ¶   ¶       1442065caf19c3b2f8089f519c62c8440e89c2
+¶   ¶   ¶       1e7d651a5d1ee80db07fc6ecd09468ab9036f7
+¶   ¶   ¶       4f87262de48ae421e294c11f29c1097dbdd2a0
+¶   ¶   ¶       c7b9aedb9d024c003a3fa132c5c2e8ead40153
+¶   ¶   ¶       d1d75eb8dc35e3916c6026a5ecf376286d6df4
+¶   ¶   ¶       d2c01b4be92011d50d6bcdfe757f29b7997931
+¶   ¶   ¶       
+¶   ¶   +---ce
+¶   ¶   ¶       06294296f85ef4576bd7dc7f55701b43b9fd7f
+¶   ¶   ¶       0c28be443b6d9f115a1e42a4d308c9d0ed4392
+¶   ¶   ¶       28ab4af7233b850ad8cb503dce9275ff599569
+¶   ¶   ¶       865a6cd27a927a6e14e4110c0b1172163225c1
+¶   ¶   ¶       9c6b3e12c5f22dc1a87a66eb8cb10cb79e4feb
+¶   ¶   ¶       b75d1d548beeb467938b7a8dd47faf1a00eefb
+¶   ¶   ¶       bbcd735d657dde4907cdcf6014fda70be88773
+¶   ¶   ¶       e6796287e02e13085ca59c7c7b66f3902fc1ac
+¶   ¶   ¶       
+¶   ¶   +---cf
+¶   ¶   ¶       63b87cd3b5149ef26e7133051933bc5cc218f5
+¶   ¶   ¶       97f7a4116719c3a479ed1f265a3ca63155f4d1
+¶   ¶   ¶       f5632bcdb45874fb9a8bdf791decfce9aa0ffb
+¶   ¶   ¶       
+¶   ¶   +---d0
+¶   ¶   ¶       5c8c5cec3007ee47b18cb39bbd51dece5262b0
+¶   ¶   ¶       667db7735b9b9dc4b2ad411f91495c15b9a95b
+¶   ¶   ¶       79bc86091eca078fc9795feede2ab4bce7eb7a
+¶   ¶   ¶       9519ccc454fe8a517002793cec29945eca4b4c
+¶   ¶   ¶       9f6ccfea2277f50c629dac844f783d76a4ff8f
+¶   ¶   ¶       c02eb7b12da701d9e54d19ee5496290ebf0ea7
+¶   ¶   ¶       
+¶   ¶   +---d1
+¶   ¶   ¶       51a89391fdb85ffefcff92780f068826bea8c5
+¶   ¶   ¶       ea5de62f0ec6fcfd00a2af616c788c727179ba
+¶   ¶   ¶       fb3789499feca416232fd4d50ad55944c39fd0
+¶   ¶   ¶       
+¶   ¶   +---d2
+¶   ¶   ¶       b2e59f85529414ee7695a0272c051ab718c0a4
+¶   ¶   ¶       cabafaf16d88d8c91d21dd6da9597d09e70bef
+¶   ¶   ¶       f7ec352398d76fb94b403a784841fa1316cfc0
+¶   ¶   ¶       
+¶   ¶   +---d3
+¶   ¶   ¶       6aa8a3458265062da79261c44acf1e7d0508a9
+¶   ¶   ¶       872ad177743be4817cf2925654a9b5b5acc7e8
+¶   ¶   ¶       c82b166940774105cb25e34c49c03d7f0a9587
+¶   ¶   ¶       cb8c1244c24db2e914c586a2d16fce293c9cc3
+¶   ¶   ¶       
+¶   ¶   +---d4
+¶   ¶   ¶       b3900e9fb94a1beaaaada687b8b07511db6b1d
+¶   ¶   ¶       c0f6d43a39160809eff050b3b838de181ed8d9
+¶   ¶   ¶       cd7d0b3fb8f0bea04d024ec2e98b43ba9759e4
+¶   ¶   ¶       e63264226677de06241213412caba5986f8373
+¶   ¶   ¶       f8e95718f681d8dbc6bd2f808bba49d773a9b4
+¶   ¶   ¶       
+¶   ¶   +---d5
+¶   ¶   ¶       001dcf291e4e99d57e6931dc8d52feb161bcde
+¶   ¶   ¶       a0d93c1134b7c295f2361a4d3f0ca4b26a3835
+¶   ¶   ¶       bb7bdd54b807a2639a777acb8d1905faea423b
+¶   ¶   ¶       bf8a823821cc36079f112cfbd7fd6dce0cfe7b
+¶   ¶   ¶       
+¶   ¶   +---d6
+¶   ¶   ¶       15f984a8debe9e6609ca62c9f8b2d1c54241c5
+¶   ¶   ¶       29105113960a97a5bbe8c927952d81248c1947
+¶   ¶   ¶       ca00a3cadc8913d03cadaed29dd7afc6177332
+¶   ¶   ¶       
+¶   ¶   +---d7
+¶   ¶   ¶       28d089c07fb6c21070601fb25939b074789a7d
+¶   ¶   ¶       426ddf0168bde1295f777287b5560a5421685f
+¶   ¶   ¶       50fb8d33b842f59b7ea4bc8e0eddada3422315
+¶   ¶   ¶       eeb09d1f89b151ac7da433bacaab889f4e75d6
+¶   ¶   ¶       f91d038b421a49336b01bef56bc7b3b09db146
+¶   ¶   ¶       
+¶   ¶   +---d8
+¶   ¶   ¶       1adb3b5d9fb0202fa17143c198f563f0664b4b
+¶   ¶   ¶       1c8f03785814121b391a9e1ee4bbb59ae66e1e
+¶   ¶   ¶       2ff90291ddbbe82e6d45ef61f43e9e3ea2a981
+¶   ¶   ¶       3b386976cd322147317874ced07c8620c82f9b
+¶   ¶   ¶       873802b9f51f054c1f6424b8665b751bb406aa
+¶   ¶   ¶       87ce26bc8bddb8182ac7dba9c29ce9b61efc28
+¶   ¶   ¶       998877db558f4e5339dbccbed3d70cb3a7d9db
+¶   ¶   ¶       
+¶   ¶   +---d9
+¶   ¶   ¶       622655245e24bd90c72281d1ae27a29f620626
+¶   ¶   ¶       b0a1d72a73aadb440caf5c3a5b987cedcfd164
+¶   ¶   ¶       f9982fd233629b22dca9bfb5f59a5f1ad8ecc0
+¶   ¶   ¶       
+¶   ¶   +---da
+¶   ¶   ¶       59066c565f698998fa547a051bb179073ff98c
+¶   ¶   ¶       5cf6a42967156669d004b5c09cce19fc41ff41
+¶   ¶   ¶       605ddda6b285ed37ffe7645fe958c5ced1f3c8
+¶   ¶   ¶       980b0b9ee2fe05c72af3d2ef2c86235c364e32
+¶   ¶   ¶       ae8471003d83238a4912f334d43bcb78eaebc7
+¶   ¶   ¶       
+¶   ¶   +---db
+¶   ¶   ¶       08f1fd240fb4b69deaf7af80569670b438c9ae
+¶   ¶   ¶       96f70ff14ea802aa3d6cc66c1b541c526c7ba3
+¶   ¶   ¶       b44660ffbb19dc034b1d99b91af889c8e52671
+¶   ¶   ¶       e17a35bddd51f7a391e471b1498a499dbf3380
+¶   ¶   ¶       ef3933166c34b91fc598c85a09308f52054222
+¶   ¶   ¶       
+¶   ¶   +---dc
+¶   ¶   ¶       f9ca2fc45a4b3030411c6274643c1b45991ce6
+¶   ¶   ¶       
+¶   ¶   +---dd
+¶   ¶   ¶       c6f91e17090d1deb63eeb7c787b0ad81403926
+¶   ¶   ¶       f7481305cf34c519ea6ad31597a2c10a1efadb
+¶   ¶   ¶       
+¶   ¶   +---de
+¶   ¶   ¶       0ead0c743c1aeda691fee6786cd9602c0b1e9f
+¶   ¶   ¶       50d853888e622a441879f3a371969e944abf80
+¶   ¶   ¶       c1be6b500e0f737cd47884648260bed89d3314
+¶   ¶   ¶       
+¶   ¶   +---df
+¶   ¶   ¶       0ae5d2f192d4a57617cf01f058c73532401657
+¶   ¶   ¶       0c9b0ab50114bd8ba8234e5f9d07bdf5dba32e
+¶   ¶   ¶       1852396c998e75165bc22aeec2be7ec082b1a0
+¶   ¶   ¶       27952ce0fd9b900a1817b6e2b3657f001bb5d5
+¶   ¶   ¶       3ef2f3b006aac582747fc430a6282998e867e8
+¶   ¶   ¶       7efbb71b712ebec722ee49617346d39705344a
+¶   ¶   ¶       be3c40672f6fc9f77bf58de4f1a72efd5f270a
+¶   ¶   ¶       
+¶   ¶   +---e0
+¶   ¶   ¶       1bb428765caecc488237ba4e62285de1a8c8b3
+¶   ¶   ¶       44a73af3717338a8b38f476cb35f3c22adb71f
+¶   ¶   ¶       710f2f594f9b1cdb23132530bca1dc1522e23b
+¶   ¶   ¶       c7fad41c2ec2deaa3818d999618962fe3df1db
+¶   ¶   ¶       
+¶   ¶   +---e1
+¶   ¶   ¶       2e0e7469a0876b4a2e36d24dbeb0997bf11379
+¶   ¶   ¶       6b4cf471623a51ccdd7a9b8ae35f6bad2fe6d7
+¶   ¶   ¶       8e6d8ae1cc7096d174695388901d6f4ea0a63d
+¶   ¶   ¶       8edaef516e0324a928551aa9d77385b23570e5
+¶   ¶   ¶       95f189d6f2c06df81cec4605feb41ec054b427
+¶   ¶   ¶       cd14f3cda5e31aa755219794379e147452b1e3
+¶   ¶   ¶       d6fae32ac7a39112235d9da50fa0da7f327901
+¶   ¶   ¶       fe4fa14b4e47de8c3902e3095cc9ad57c5d32e
+¶   ¶   ¶       
+¶   ¶   +---e2
+¶   ¶   ¶       60c369a2745a7196d56e0176695bd64a92ded6
+¶   ¶   ¶       c054db1af042ddae4f80a10d9a4b58e234b139
+¶   ¶   ¶       cc4c1fd116627acb895d48f9580c0d54a8db14
+¶   ¶   ¶       
+¶   ¶   +---e3
+¶   ¶   ¶       0435416adbd2342a8d0e22bf701155d5f680f8
+¶   ¶   ¶       30c607dc8969f26d7e09b21a72fa897d9126b2
+¶   ¶   ¶       84e085644b868f4c012d8d728154c6f1c21cd7
+¶   ¶   ¶       94c267855ae1ec7e44f4d7c17b92987be7cb80
+¶   ¶   ¶       c567f02193d20fbdf722e1c5b0fe8dcba1b8fb
+¶   ¶   ¶       cb7970c0b945eaccee5d5bb3a91a631ab446dd
+¶   ¶   ¶       ef29826e50a7503405e6354eb26e6588babb66
+¶   ¶   ¶       
+¶   ¶   +---e4
+¶   ¶   ¶       5d3fdac8c0c359c793302d587e45ce80d70049
+¶   ¶   ¶       
+¶   ¶   +---e5
+¶   ¶   ¶       52a8208aab9b4fe4d8e9db769c0eeb05c9c614
+¶   ¶   ¶       720465cbde24ae7a57558c0c3001bda7dca87c
+¶   ¶   ¶       88b77e2ac881b7a4679ed00e03f096f4a869f6
+¶   ¶   ¶       d1a39db58f30aea2652430a606db5d572f483e
+¶   ¶   ¶       
+¶   ¶   +---e6
+¶   ¶   ¶       9de29bb2d1d6434b8b29ae775ad8c2e48c5391
+¶   ¶   ¶       
+¶   ¶   +---e7
+¶   ¶   ¶       3aea62aef4c0eb803381c3585700ccfa6860b5
+¶   ¶   ¶       669feb83804b405fbe11ece42b750208ef998a
+¶   ¶   ¶       8edc6cc0644c0a35125aa4c5f7f92fa9582366
+¶   ¶   ¶       92b82ad682b5f6b5f578da3e145bfe43069abf
+¶   ¶   ¶       a2fb940e8ffc49ff5b13ea1aa2ddab7792ce63
+¶   ¶   ¶       c0fb6091a88d6b4e54de12b1452284169a94de
+¶   ¶   ¶       
+¶   ¶   +---e8
+¶   ¶   ¶       58c77f66fc7ac9afa31f1ccb64d91fb3646834
+¶   ¶   ¶       7074c569841c94c3ae7fdecb541e39446c4b4c
+¶   ¶   ¶       8feaef8c8743e0072b710259d7b54c5d046106
+¶   ¶   ¶       
+¶   ¶   +---e9
+¶   ¶   ¶       04757d6bea045eb1ece938edce0ea6c7384467
+¶   ¶   ¶       b22b6f555731623a749da162fd870456c43ecd
+¶   ¶   ¶       b5278d2dd91e798ef3d59880b5a74e1b099f41
+¶   ¶   ¶       ccedf9a51759542092c2be2a6d373d18c38d90
+¶   ¶   ¶       edd70bec47656b11f8dabdec9f3ab2e53eedc9
+¶   ¶   ¶       
+¶   ¶   +---ea
+¶   ¶   ¶       07ffc0a55d8c0ee9050bd33f1d5ae55a5aa33f
+¶   ¶   ¶       
+¶   ¶   +---eb
+¶   ¶   ¶       00ba2ad23d8df4281782f19cb2b79b17e7281a
+¶   ¶   ¶       ec4a86d709b1deca5a72f1192b61be016fdec6
+¶   ¶   ¶       
+¶   ¶   +---ec
+¶   ¶   ¶       4c6b5c529b545c799c32371ebb3c5afe6da4f9
+¶   ¶   ¶       6ef2f71cf0b7e63e29ca7bbad21697cdae566d
+¶   ¶   ¶       a1b0da4e7b82953adbdb173d1e1e2a8a376f0b
+¶   ¶   ¶       b5a9e1fd7e7973ff7857d69d654edc0477125d
+¶   ¶   ¶       bbf5c0d42df93ede6ea6db8a8119ef21445ea5
+¶   ¶   ¶       
+¶   ¶   +---ed
+¶   ¶   ¶       7a891c638db9107dff3f5b1933e30439263da3
+¶   ¶   ¶       913d16f2b69bad9c40d73f2567c5492aff6a95
+¶   ¶   ¶       a592c38f3ce66ef734fc6edd449f938a3b9a98
+¶   ¶   ¶       
+¶   ¶   +---ee
+¶   ¶   ¶       4dbe52dd0b5afe256544893ba58fc9d7f01537
+¶   ¶   ¶       595f0be161bd20485562a5597c662bcef6176b
+¶   ¶   ¶       737616ccdbba39ae5819b96e40375d384d9c22
+¶   ¶   ¶       7d90871604eec79ab63c75c47ec418790a4290
+¶   ¶   ¶       90bec0b926278e789cb0879a7291742663ba25
+¶   ¶   ¶       a53a2bba7e35d26a5cde74a4d55dcd8c541cea
+¶   ¶   ¶       b3a59bb20f8885609eef91457af6e970e717dd
+¶   ¶   ¶       df8ed8cbd181186a9a1844aa6bfd55f39e6b3a
+¶   ¶   ¶       
+¶   ¶   +---ef
+¶   ¶   ¶       391a3da48186c9e64944825082d711ffe68a54
+¶   ¶   ¶       e009dca2add18b9878aa7877c95882207db271
+¶   ¶   ¶       
+¶   ¶   +---f0
+¶   ¶   ¶       0ad873fb580ae33823c99764594f18c0d1bc49
+¶   ¶   ¶       353cef7f83c7c562cd3ef7c0c044b08645ea0a
+¶   ¶   ¶       3af062921305e37568f79b45b7c9f73d900b65
+¶   ¶   ¶       51683aad1244dacade3ebec6f9c983d360f7bb
+¶   ¶   ¶       ca853db9928d9abcf3059a44ded06a029fa7b4
+¶   ¶   ¶       
+¶   ¶   +---f1
+¶   ¶   ¶       1597569b7dbbbe76309472f579375e6a9c5060
+¶   ¶   ¶       3a0046dfb876334068a595892b0319e30df094
+¶   ¶   ¶       4ecef94bff591ecddd890f54956a1054769be2
+¶   ¶   ¶       70beba51319fd19ae4b93398d0f349446c5a92
+¶   ¶   ¶       736b53d5ea8f13be4f2f4b47cecc2473c1a66c
+¶   ¶   ¶       
+¶   ¶   +---f2
+¶   ¶   ¶       0d2b792953744891734e78b74f9c8696a9ef4b
+¶   ¶   ¶       137b7adc052e8f68d63b881569c7f77f5bc74a
+¶   ¶   ¶       72bf7c15619864dc03e2284d0b6ede712c8425
+¶   ¶   ¶       74eefaad48d84759c99248ee5fff81973ca165
+¶   ¶   ¶       a839da17a062f1350c0d26d5c23e3d0135292b
+¶   ¶   ¶       f7363a8034fe3f0190f125457ad9728f819c97
+¶   ¶   ¶       
+¶   ¶   +---f3
+¶   ¶   ¶       91d9e3f722f94fbec55fb8e5c898506bac42f1
+¶   ¶   ¶       cecb718051aa68c897505f173d5435b4eea936
+¶   ¶   ¶       
+¶   ¶   +---f4
+¶   ¶   ¶       30144e7206b981c3aaf626e0a9ef209fd0b64b
+¶   ¶   ¶       3d7482415f1b13b7d9baf9a41384e29e77370b
+¶   ¶   ¶       88cae9cf7f576955fb64ac0a9eb1f3842263b6
+¶   ¶   ¶       
+¶   ¶   +---f5
+¶   ¶   ¶       1fd18e616e5f847df58e02b8a5650ce1920e6c
+¶   ¶   ¶       2aacb548dc655773659c113be7c6a4a52b5f31
+¶   ¶   ¶       88dee1702266a0833cd4bc56497e9198f72b43
+¶   ¶   ¶       b823103768eb91ed1a0a0c3357ab881d36f14a
+¶   ¶   ¶       e40beabb9a70ef6277043507d3d89b6fdc7dd5
+¶   ¶   ¶       
+¶   ¶   +---f6
+¶   ¶   ¶       15c35e9c099540cd045ea0d08bcbecd5671386
+¶   ¶   ¶       481a50eae0d9cba9929e31f5012e67b6a3c4d3
+¶   ¶   ¶       8025990e9bbb48eaa6f0a94cf23ac6eb8b00d5
+¶   ¶   ¶       d6f04bd5695b4b81c9503788920623428424b9
+¶   ¶   ¶       
+¶   ¶   +---f7
+¶   ¶   ¶       0e2a964e0b1078d9851c80cd305ac6d7367d3a
+¶   ¶   ¶       60181c9ef0fac5ab678c9b99c77eac727eda0e
+¶   ¶   ¶       b6f4ce4a8049b6324a4619b4545606d9390103
+¶   ¶   ¶       cb8915c2c694d9b8be8450be12700e2391990f
+¶   ¶   ¶       d5b4feee96930ce07ec2453af95539dd16140e
+¶   ¶   ¶       
+¶   ¶   +---f8
+¶   ¶   ¶       272e83f56ca36ff856cd36da4b6b2c097688b6
+¶   ¶   ¶       3b4f532e0428dbac78f58bf4392660e616b25c
+¶   ¶   ¶       7a48129140598b3095b1389b7b8d38087caad6
+¶   ¶   ¶       fa232300a0b5bddcbc7995f139c6341876e61f
+¶   ¶   ¶       
+¶   ¶   +---f9
+¶   ¶   ¶       6ea753949a0a2c92a2ff9f7226deabad34dcf7
+¶   ¶   ¶       db0a6520be398a2b72c2446bba2a9b2119c7fd
+¶   ¶   ¶       
+¶   ¶   +---fa
+¶   ¶   ¶       037930bd1bbb1b6486213ba324d7045d500401
+¶   ¶   ¶       24d3b4e2301c43a720424110c1e44b126cc1ee
+¶   ¶   ¶       328d97c231f4af6a5095395af4bfa21c267268
+¶   ¶   ¶       4f0df1fc71fd2af65b025fadcecfb9721e7381
+¶   ¶   ¶       6d4a01542085fa48db9d6985e4cb3dc474babb
+¶   ¶   ¶       8d05ee6aef8b76634d16ccbb8949666460b96d
+¶   ¶   ¶       8fc0ed3b9bb7d519d7868a7c1253c2415a361d
+¶   ¶   ¶       95abcaa0c6ca7199d55f044b879acbcc858db7
+¶   ¶   ¶       ae206d6569022e0f3326b896d47bac73542b6b
+¶   ¶   ¶       c8aeaec51ca7cebe52032408411a1bf9ede616
+¶   ¶   ¶       
+¶   ¶   +---fb
+¶   ¶   ¶       012b53694a179698a229a228844240c6eb4d8b
+¶   ¶   ¶       5c12d5e0c0dee5e972d9f2b3742f6e78a9f9e8
+¶   ¶   ¶       9db0696b58ec8e81ce49561d32f6d369f636d8
+¶   ¶   ¶       
+¶   ¶   +---fc
+¶   ¶   ¶       6edd81bb8c75b48422e1499e32d6227f032396
+¶   ¶   ¶       6efebb8fdbb3024109c1ce476908f148332bf6
+¶   ¶   ¶       94e651a6d6eb0999fbef858e0eba7eff86d7ea
+¶   ¶   ¶       
+¶   ¶   +---fd
+¶   ¶   ¶       1c24bcc2e480f2195381c52b650b35b346ca2c
+¶   ¶   ¶       3734d9084a2175cc2809db4edab66f1a2c7869
+¶   ¶   ¶       7c6b70c51c4ef4c39c2eca3d3b61e204fea592
+¶   ¶   ¶       7cdbcdcde573ed57594378eb8aa6ca26701c4d
+¶   ¶   ¶       a97fe4ab438d70f2c09e935db3fdd889f9984e
+¶   ¶   ¶       dbfbc7e614f5f48899b89f7b1fa883709027b4
+¶   ¶   ¶       e9703396c3e4a053a6d9980f29e5cb208d685f
+¶   ¶   ¶       
+¶   ¶   +---fe
+¶   ¶   ¶       0d6f457f0d88d95340f7eb47c87f65b686d5bd
+¶   ¶   ¶       4094713369e1a491e224373d8923133f262daa
+¶   ¶   ¶       51488c7066f6687ef680d6bfaa4f7768ef205c
+¶   ¶   ¶       6e042f47de5382a38869784700edfc87ec1ed3
+¶   ¶   ¶       e45375827f8599fb8b93eba3373645961eed57
+¶   ¶   ¶       fd427b48137aa918383ac532f9977e5af68fd9
+¶   ¶   ¶       
+¶   ¶   +---ff
+¶   ¶   ¶       15c5f8463df8fdbc1f03b869af4ac2b4e45177
+¶   ¶   ¶       59f57c79ac8e49ae89d977fccf09163ee553c6
+¶   ¶   ¶       66b590f129a20274734f661106aa4d4cc125f6
+¶   ¶   ¶       6d89ca80f7c2f93b940d2615af97233e420680
+¶   ¶   ¶       93a1a3bc23c003f8c4a8c250e32778fa96f600
+¶   ¶   ¶       d3b8700db63ac54ada8e6dff94707f6831e86c
+¶   ¶   ¶       
+¶   ¶   +---info
+¶   ¶   L---pack
+¶   +---refs
+¶   ¶   +---heads
+¶   ¶   ¶       main
+¶   ¶   ¶       
+¶   ¶   +---remotes
+¶   ¶   ¶   L---origin
+¶   ¶   ¶           HEAD
+¶   ¶   ¶           main
+¶   ¶   ¶           
+¶   ¶   L---tags
+¶   ¶           checkpoint_tasks_start
+¶   ¶           
+¶   L---worktrees
+¶       L---ZA_RAMKI_clean
+¶           ¶   commondir
+¶           ¶   gitdir
+¶           ¶   HEAD
+¶           ¶   index
+¶           ¶   ORIG_HEAD
+¶           ¶   
+¶           +---logs
+¶           ¶       HEAD
+¶           ¶       
+¶           L---refs
++---assets
+¶   +---fonts
+¶   ¶       Manasco.otf
+¶   ¶       Roboto-Medium.ttf
+¶   ¶       Roboto-Regular.ttf
+¶   ¶       
+¶   +---img
+¶   ¶   ¶   logo.png
+¶   ¶   ¶   
+¶   ¶   L---measurements
+¶   ¶           photo-example-1.png
+¶   ¶           photo-example-2.png
+¶   ¶           plan-bindings.png
+¶   ¶           plan-gabarits.png
+¶   ¶           
+¶   L---pngs
+¶           photo-guide-bad.png
+¶           photo-guide-good.png
+¶           
++---checklist
+¶   ¶   app.js
+¶   ¶   index.html
+¶   ¶   manifest.json
+¶   ¶   service-worker.js
+¶   ¶   styles.css
+¶   ¶   
+¶   L---checklist_bak
+¶           index.html.bak_planner_data_include
+¶           index.html.bak_planner_state_include
+¶           
++---content
+¶   ¶   index.json
+¶   ¶   
+¶   +---articles
+¶   ¶   +---checklist
+¶   ¶   ¶       template_checklist.md
+¶   ¶   ¶       
+¶   ¶   +---designer
+¶   ¶   ¶       brief-to-visualizer.md
+¶   ¶   ¶       camera-list-howto.md
+¶   ¶   ¶       handoff-package-to-visualizer.md
+¶   ¶   ¶       how-to-give-revisions.md
+¶   ¶   ¶       measurements-common-mistakes.md
+¶   ¶   ¶       measurements-faq.md
+¶   ¶   ¶       project-files-structure.md
+¶   ¶   ¶       site-photo-standards.md
+¶   ¶   ¶       site-visit-and-measurements.md
+¶   ¶   ¶       
+¶   ¶   +---documentation
+¶   ¶   ¶       deliverables.md
+¶   ¶   ¶       
+¶   ¶   +---policy
+¶   ¶   ¶       template_policy.md
+¶   ¶   ¶       
+¶   ¶   +---procedure
+¶   ¶   ¶       template_procedure.md
+¶   ¶   ¶       
+¶   ¶   +---process
+¶   ¶   ¶       fixed-vs-flexible.md
+¶   ¶   ¶       revision-rounds-rules.md
+¶   ¶   ¶       stages.md
+¶   ¶   ¶       
+¶   ¶   +---reference
+¶   ¶   ¶       template_reference.md
+¶   ¶   ¶       
+¶   ¶   +---standart
+¶   ¶   ¶       template_standart.md
+¶   ¶   ¶       
+¶   ¶   +---visualizer
+¶   ¶   ¶       delivery-format.md
+¶   ¶   ¶       good-bad-visuals.md
+¶   ¶   ¶       intake-questions.md
+¶   ¶   ¶       quality-checklist.md
+¶   ¶   ¶       receiving-brief.md
+¶   ¶   ¶       
+¶   ¶   L---_guide
+¶   ¶           writing_rules.md
+¶   ¶           
+¶   +---data
+¶   ¶       checklists.json
+¶   ¶       templates.json
+¶   ¶       
+¶   L---ui
+¶           categories.json
+¶           roles.json
+¶           
++---js
+¶   ¶   api.js
+¶   ¶   app.js
+¶   ¶   app.js.bak_checklists_openfix
+¶   ¶   router.js
+¶   ¶   
+¶   +---planner
+¶   ¶       planner_actions.js
+¶   ¶       planner_api.js
+¶   ¶       planner_data.js
+¶   ¶       planner_readonly.js
+¶   ¶       planner_state.js
+¶   ¶       planner_ux.js
+¶   ¶       
+¶   +---utils
+¶   ¶       exporters.js
+¶   ¶       kb_newmarks.js
+¶   ¶       links_xlsx.js
+¶   ¶       supabase_client.js
+¶   ¶       template_runtime.js
+¶   ¶       viewer_nav.js
+¶   ¶       viewer_nav.js.bak_generic_return_realfix
+¶   ¶       viewer_nav.js.bak_step1_generic_return
+¶   ¶       viewer_nav.js.bak_step1_generic_return_retry
+¶   ¶       viewer_nav.js.bak_step2_generic_return_tracker
+¶   ¶       viewer_nav.js.bak_step3_generic_return_goClose
+¶   ¶       viewer_nav.js.bak_step4_return_lock
+¶   ¶       viewer_nav.js.before_full_restore
+¶   ¶       viewer_nav.js.before_recovery_breadcrumb_break
+¶   ¶       xlsx_exporter.js
+¶   ¶       
+¶   +---vendor
+¶   ¶       xlsx.bundle.js
+¶   ¶       
+¶   L---views
+¶       ¶   admin.js
+¶       ¶   admin.js.bak_fix_actions_template
+¶       ¶   articles.js
+¶       ¶   articles.js.bak_articles_viewernav_return
+¶       ¶   articles.js.bak_generic_return_realfix
+¶       ¶   articles.js.bak_return_chain_fix
+¶       ¶   articles.js.bak_return_chain_fix_2
+¶       ¶   articles.js.bak_return_chain_fix_3
+¶       ¶   articles.js.bak_return_chain_fix_4
+¶       ¶   articles.js.bak_step5_viewer_nav
+¶       ¶   articles.js.before_full_restore
+¶       ¶   articles.js.before_recovery_breadcrumb_break
+¶       ¶   checklists.js
+¶       ¶   checklists.js.bak_fix_tags_list
+¶       ¶   checklists.js.bak_remove_summary
+¶       ¶   checklists.js.bak_step4_viewer_nav
+¶       ¶   checklists.js.before_full_restore
+¶       ¶   login.js
+¶       ¶   planner.js
+¶       ¶   planner.js.bak_step1_docs_helper_final
+¶       ¶   planner.js.bak_step1_docs_open_helper
+¶       ¶   planner.js.bak_step1_docs_open_helper_retry
+¶       ¶   planner.js.bak_step2_docs_shape
+¶       ¶   planner.js.bak_step2_docs_shape_retry
+¶       ¶   templates.js
+¶       ¶   templates.js.bak_step3_viewer_nav
+¶       ¶   templates.js.before_full_restore
+¶       ¶   
+¶       L---_future
+¶               planner_v1_tabs_proto.js
+¶               
++---sql
+¶   ¶   2026-03-07_task_activity_v1.sql
+¶   ¶   
+¶   L---migrations
+¶           2026-03-07_set_task_status_add_activity.sql
+¶           2026-03-07_task_activity_v1.sql
+¶           
+L---tools
+        publish-data.ps1
+        

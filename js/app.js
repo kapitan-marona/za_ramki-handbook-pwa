@@ -181,10 +181,10 @@ window.initAuth = async function(){
     if(q) q.disabled = false;
 
     if(section === "login"){ await Views.Login.show(); return; }
-  if(section === "planner"){ await Views.Planner.show(); return; }
-if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q.value||"") : ""); return; }
-    if(section === "templates"){ await Views.Templates.show(); await Views.Templates.open(param); applySearch(q ? (q.value||"") : ""); return; }
-    if(section === "checklists"){ await Views.Checklists.show(); applySearch(q ? (q.value||"") : ""); await Views.Checklists.open(param); return; }
+    if(section === "planner"){ await Views.Planner.show(); return; }
+    if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q.value||"") : ""); return; }
+    if(section === "templates"){ await Views.Templates.show(param); applySearch(q ? (q.value||"") : ""); return; }
+    if(section === "checklists"){ await Views.Checklists.show(param); applySearch(q ? (q.value||"") : ""); return; }
 
     // ✅ admin route
     if(section === "admin"){
@@ -228,6 +228,7 @@ if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
 
 
 

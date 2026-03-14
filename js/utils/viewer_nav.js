@@ -39,7 +39,6 @@
       }
 
       remember();
-
       window.addEventListener("hashchange", remember);
     }catch(e){
       console.warn("[ViewerNav] tracker install error", e);
@@ -50,6 +49,9 @@
     try{
       const saved = sessionStorage.getItem(key) || "";
       if(isPlannerTaskHash(saved)) return saved;
+
+      const last = sessionStorage.getItem("viewer_last_hash") || "";
+      if(isPlannerTaskHash(last)) return last;
     }catch(e){}
     return "";
   }
@@ -112,4 +114,48 @@
     formatDMY
   };
 
+})();
+
+(function(){
+  if(window.__zrMiniHeaderInstalled) return;
+  window.__zrMiniHeaderInstalled = true;
+
+  function applyMiniHeaderState(viewer){
+    if(!viewer) return;
+
+    const y = viewer.scrollTop || 0;
+    const maxScroll = Math.max(0, viewer.scrollHeight - viewer.clientHeight);
+    const canMini = maxScroll > 100;
+
+    if(!canMini){
+      viewer.classList.remove("viewer-mini-header");
+      return;
+    }
+
+    if(y > 28){
+      viewer.classList.add("viewer-mini-header");
+      return;
+    }
+
+    if(y < 12){
+      viewer.classList.remove("viewer-mini-header");
+    }
+  }
+
+  function installMiniHeader(){
+    const viewer = document.querySelector("#viewer");
+    if(!viewer) return;
+
+    if(viewer.__zrMiniHeaderBound) return;
+    viewer.__zrMiniHeaderBound = true;
+
+    viewer.addEventListener("scroll", function(){
+      applyMiniHeaderState(viewer);
+    }, { passive:true });
+
+    requestAnimationFrame(() => applyMiniHeaderState(viewer));
+  }
+
+  document.addEventListener("DOMContentLoaded", installMiniHeader);
+  document.addEventListener("zr:view:open", installMiniHeader);
 })();

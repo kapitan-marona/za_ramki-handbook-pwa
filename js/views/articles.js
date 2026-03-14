@@ -25,52 +25,39 @@ Views.Articles = (() => {
     return /^#\/planner\/[^\/]+/.test(String(hash || ""));
   }
 
-  function rememberInstructionContext(){
-    try{
-      const current = getCurrentHash();
-      const prev = sessionStorage.getItem(INS_LAST_HASH_KEY) || "";
-
-      if(isArticleDetailHash(current)){
-        if(isPlannerTaskHash(prev)){
-          sessionStorage.setItem(INS_RETURN_HASH_KEY, prev);
-        }else if(String(prev) === "#/articles"){
-          sessionStorage.removeItem(INS_RETURN_HASH_KEY);
-        }
-      }
-
-      sessionStorage.setItem(INS_LAST_HASH_KEY, current);
-    }catch(e){}
-  }
   function installInstructionContextTracker(){
     try{
       if(window.__zrInstructionContextTrackerInstalled) return;
       window.__zrInstructionContextTrackerInstalled = true;
 
-      rememberInstructionContext();
-
-      window.addEventListener("hashchange", () => {
-        try{
-          rememberInstructionContext();
-        }catch(e){}
-      });
+      if(window.ViewerNav && typeof ViewerNav.installTracker === "function"){
+        ViewerNav.installTracker({
+          lastKey: INS_LAST_HASH_KEY,
+          returnKey: INS_RETURN_HASH_KEY,
+          isDetailHash: isArticleDetailHash,
+          isListHash: function(hash){
+            return String(hash || "") === "#/articles";
+          }
+        });
+      }
     }catch(e){}
   }
 
   function getInstructionReturnHash(){
     try{
-      const current = getCurrentHash();
-      const saved = sessionStorage.getItem(INS_RETURN_HASH_KEY) || "";
-
-      if(isArticleHash(current) && isPlannerTaskHash(saved)){
-        return saved;
+      if(window.ViewerNav && typeof ViewerNav.getReturnHash === "function"){
+        return ViewerNav.getReturnHash(INS_RETURN_HASH_KEY) || "#/articles";
       }
-
-      return "#/articles";
-    }catch(e){
-      return "#/articles";
-    }
+    }catch(e){}
+    return "#/articles";
   }
+
   function getInstructionCloseLabel(){
+    try{
+      if(window.ViewerNav && typeof ViewerNav.getCloseLabel === "function"){
+        return ViewerNav.getCloseLabel(getInstructionReturnHash());
+      }
+    }catch(e){}
     return isPlannerTaskHash(getInstructionReturnHash()) ? "К задаче" : "Закрыть";
   }
 
@@ -78,16 +65,8 @@ Views.Articles = (() => {
     const target = getInstructionReturnHash();
 
     try{
-      if(isPlannerTaskHash(target) && window.Router && typeof Router.go === "function"){
-        const m = target.match(/^#\/planner\/(.+)$/);
-        if(m && m[1]){
-          Router.go("planner", decodeURIComponent(m[1]));
-          return;
-        }
-      }
-
-      if(window.Router && typeof Router.go === "function"){
-        Router.go("articles");
+      if(window.ViewerNav && typeof ViewerNav.goClose === "function"){
+        ViewerNav.goClose(target, "articles");
         return;
       }
     }catch(e){}
@@ -168,7 +147,7 @@ Views.Articles = (() => {
     }
 
     for(const it of items){
-      const isNew = isNewWindowActive(it, 7) && !!it.hasInlineNew;
+      const isNew = isNewWindowActive(it, 7);
       const badge = isNew ? `<span class="kb-updated-badge">обновлено</span>` : "";
       const catTitle = CATMAP[it.category] || it.category || "";
       const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
@@ -253,6 +232,7 @@ Views.Articles = (() => {
     const toc = document.createElement("aside");
     toc.className = "article-toc";
     toc.innerHTML = `
+      <button class="btn zr-toc-toggle" type="button" aria-expanded="true" title="Свернуть оглавление">→</button>
       <div class="article-toc-title">В этой инструкции</div>
       <nav class="article-toc-list">
         ${h2s.map(h => `<a href="#${h.id}" data-toc="${h.id}">${esc(h.textContent || "")}</a>`).join("")}
@@ -268,8 +248,28 @@ Views.Articles = (() => {
     Array.from(viewer.childNodes).forEach(n => main.appendChild(n));
     layout.appendChild(main);
     layout.appendChild(toc);
-
     viewer.appendChild(layout);
+
+    const toggleBtn = toc.querySelector(".zr-toc-toggle");
+    if(toggleBtn){
+      const syncToggleState = () => {
+        const collapsed = layout.classList.contains("zr-toc-collapsed");
+        toggleBtn.textContent = collapsed ? "←" : "→";
+        toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        toggleBtn.setAttribute("title", collapsed ? "Развернуть оглавление" : "Свернуть оглавление");
+      };
+
+      toggleBtn.addEventListener("click", () => {
+        layout.classList.toggle("zr-toc-collapsed");
+        syncToggleState();
+      });
+
+      if(window.innerWidth <= 960){
+        layout.classList.add("zr-toc-collapsed");
+      }
+
+      syncToggleState();
+    }
 
     toc.querySelectorAll("[data-toc]").forEach(a => {
       a.addEventListener("click", (e) => {
@@ -445,7 +445,7 @@ Views.Articles = (() => {
   }
 
   async function openArticle(id){
-    const viewer = $("#viewer");
+    const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
 
     if(!id){
       viewer.innerHTML = `
@@ -506,8 +506,8 @@ Views.Articles = (() => {
     }
 
     md = normalizeMd(md);
-    md = md.replace(/>([^<\r\n]+)</g, '<mark class="kb-newmark">$1</mark>');
-    md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '<mark class="kb-newmark">$1</mark>');
+    const inlineNewActive = isNewWindowActive(meta, 7) && !!meta.hasInlineNew;
+    md = applyInlineNewMarkers(md, inlineNewActive);
     const catTitle = CATMAP[meta.category] || meta.category || "";
     const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
     const tags = (meta.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join("");

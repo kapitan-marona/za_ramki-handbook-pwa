@@ -88,10 +88,6 @@ Views.Checklists = (() => {
   }
 
   function getLinkedFromMeta(){
-    const target = getChecklistReturnHash();
-    if(isPlannerTaskHash(target)){
-      return `<span class="tag">Связано с: задача</span>`;
-    }
     return "";
   }
 
@@ -144,7 +140,11 @@ Views.Checklists = (() => {
     if(!list || !viewer) return;
 
     list.innerHTML = "";
-    viewer.innerHTML = `<div class="empty">Выберите чек-лист слева.</div>`;
+    const current = getCurrentHash();
+    const hasOpenChecklist = /^#\/checklists\/.+/.test(String(current || ""));
+    if(!hasOpenChecklist){
+      viewer.innerHTML = `<div class="empty">Выберите чек-лист слева.</div>`;
+    }
 
     const q = norm(_q).trim();
     const items = Array.isArray(_data) ? _data : [];
@@ -443,17 +443,21 @@ Views.Checklists = (() => {
     return Array.isArray(data) ? data : [];
   }
 
-  async function show(){
+  async function show(param){
     setPanelTitle("Чек-листы");
     _data = await loadChecklistsFromSupabase();
     renderList();
+
+    if(param){
+      await open(param);
+    }
   }
 
   async function open(id){
-    const viewer = $("#viewer");
+    const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
     if(!viewer) return;
 
-    const item = (Array.isArray(_data) ? _data : []).find(x => (x.id || "") === (id || ""));
+    const item = (Array.isArray(_data) ? _data : []).find(x => String(x.id) === String(id));
     if(!item){
       viewer.innerHTML = `<div class="empty">Чек-лист не найден.</div>`;
       return;
@@ -508,4 +512,13 @@ Views.Checklists = (() => {
 
   return { show, open, setFilter };
 })();
+
+
+
+
+
+
+
+
+
 

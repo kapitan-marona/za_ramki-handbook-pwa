@@ -8,6 +8,7 @@ Views.Planner = (() => {
       .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
       .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
   }
+  
 
   function todayISO(){
     const d = new Date();
@@ -1428,6 +1429,10 @@ loadDocs(task);
 
   return { show };
 })();
+
+
+
+
 
 
 

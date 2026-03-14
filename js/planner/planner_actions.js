@@ -346,7 +346,7 @@
             <div id="plLinkArticlePicker" style="display:flex; flex-direction:column; gap:10px;">
               <div>
                 <div class="muted" style="font-size:12px; margin-bottom:6px;">Поиск инструкции</div>
-                <input class="pl-control" id="plLinkArticleSearch" placeholder="Начните вводить название инструкции" />
+                <input class="pl-control" id="plLinkArticleSearch" placeholder="Начните вводить название документа" />
               </div>
               <div style="position:relative;">
                 <div id="plLinkArticleResults" style="
@@ -367,11 +367,11 @@
               </div>
               <div>
                 <div class="muted" style="font-size:12px; margin-bottom:6px;">Выбранный ID</div>
-                <input class="pl-control" id="plLinkRefId" placeholder="Например: a_mm6t8xb9" />
+                <input class="pl-control" id="plLinkRefId" placeholder="Например: ID записи" />
               </div>
               <div>
                 <div class="muted" style="font-size:12px; margin-bottom:6px;">Название</div>
-                <input class="pl-control" id="plLinkInternalLabel" placeholder="Например: Инструкция" />
+                <input class="pl-control" id="plLinkInternalLabel" placeholder="Например: Название документа" />
               </div>
             </div>
           </div>
@@ -416,14 +416,9 @@
 
         if(!resultsHost) return;
 
-        if(type !== "article"){
+        if(type === "external"){
           resultsHost.innerHTML = "";
           resultsHost.style.display = "none";
-          return;
-        }
-
-        if(!window.PlannerAPI || typeof PlannerAPI.searchArticlesForLink !== "function"){
-          resultsHost.innerHTML = `<div class="muted" style="font-size:12px;">Поиск инструкций недоступен.</div>`;
           return;
         }
 
@@ -431,7 +426,28 @@
         resultsHost.style.display = "block";
         resultsHost.innerHTML = `<div class="muted" style="font-size:12px; padding:6px 8px;">Ищу…</div>`;
 
-        const items = (await PlannerAPI.searchArticlesForLink(q)).slice(0, 5);
+        let items = [];
+        if(type === "article"){
+          if(!window.PlannerAPI || typeof PlannerAPI.searchArticlesForLink !== "function"){
+            resultsHost.innerHTML = `<div class="muted" style="font-size:12px;">Поиск инструкций недоступен.</div>`;
+            return;
+          }
+          items = await PlannerAPI.searchArticlesForLink(q);
+        }else if(type === "template"){
+          if(!window.PlannerAPI || typeof PlannerAPI.searchTemplatesForLink !== "function"){
+            resultsHost.innerHTML = `<div class="muted" style="font-size:12px;">Поиск шаблонов недоступен.</div>`;
+            return;
+          }
+          items = await PlannerAPI.searchTemplatesForLink(q);
+        }else if(type === "checklist"){
+          if(!window.PlannerAPI || typeof PlannerAPI.searchChecklistsForLink !== "function"){
+            resultsHost.innerHTML = `<div class="muted" style="font-size:12px;">Поиск чек-листов недоступен.</div>`;
+            return;
+          }
+          items = await PlannerAPI.searchChecklistsForLink(q);
+        }
+
+        items = (items || []).slice(0, 5);
 
         if(!items || items.length === 0){
           resultsHost.style.display = q ? "block" : "none";
@@ -467,18 +483,15 @@
             const labelEl = document.getElementById("plLinkInternalLabel");
 
             if(refEl) refEl.value = btn.dataset.id || "";
-            if(labelEl){
-              labelEl.value = btn.dataset.title || "";
-            }
-            if(searchEl){
-              searchEl.value = btn.dataset.title || "";
-            }
+            if(labelEl) labelEl.value = btn.dataset.title || "";
+            if(searchEl) searchEl.value = btn.dataset.title || "";
+
             resultsHost.innerHTML = "";
             resultsHost.style.display = "none";
           };
         });
       }catch(err){
-        console.warn("[PlannerActions] article search error", err);
+        console.warn("[PlannerActions] internal search error", err);
         const resultsHost = document.getElementById("plLinkArticleResults");
         if(resultsHost){
           const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
@@ -525,6 +538,8 @@
       const articlePicker = document.getElementById("plLinkArticlePicker");
       const searchEl = document.getElementById("plLinkArticleSearch");
       const resultsHost = document.getElementById("plLinkArticleResults");
+      const refEl = document.getElementById("plLinkRefId");
+      const labelEl = document.getElementById("plLinkInternalLabel");
 
       if(internalBlock) internalBlock.style.display = (type === "external") ? "none" : "";
       if(externalBlock) externalBlock.style.display = (type === "external") ? "" : "none";
@@ -534,10 +549,26 @@
       }
 
       if(searchEl){
-        searchEl.disabled = (type !== "article");
+        searchEl.disabled = (type === "external");
         searchEl.placeholder = (type === "article")
           ? "Начните вводить название инструкции"
-          : "Поиск пока доступен только для инструкций";
+          : (type === "template")
+            ? "Начните вводить название шаблона"
+            : (type === "checklist")
+              ? "Начните вводить название чек-листа"
+              : "Начните вводить название документа";
+      }
+
+      if(refEl) refEl.placeholder = "Например: ID записи";
+
+      if(labelEl){
+        labelEl.placeholder = (type === "article")
+          ? "Например: Инструкция"
+          : (type === "template")
+            ? "Например: Шаблон"
+            : (type === "checklist")
+              ? "Например: Чек-лист"
+              : "Например: Название документа";
       }
 
       if(resultsHost){
@@ -668,6 +699,8 @@ window.PlannerActions = {
     ensureInProgress
   };
 })();
+
+
 
 
 

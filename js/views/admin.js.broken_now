@@ -98,7 +98,6 @@ Views.Admin = (() => {
     }catch(e){}
     return "";
   }
-
   const TYPE_IDS = ["standard","procedure","check","reference","policy"];
   const ROLE_IDS = ["admin","staff"];
 
@@ -140,7 +139,6 @@ Views.Admin = (() => {
       </div>
     `;
   }
-
   function showLoading(msg="Загрузка…"){
     showViewer(`<div class="empty">${esc(msg)}</div>`);
   }
@@ -246,26 +244,6 @@ Views.Admin = (() => {
     throw new Error("Сессия истекла. Войди снова и повтори действие.");
   }
 
-  // ===== PHASE 2 — SHARED HELPER SURFACE (bridge prep only)
-  const AdminShared = {
-    $,
-    SB: window.SB,
-    esc,
-    norm,
-    normLower,
-    setBusy,
-    setStatus,
-    setPanelTitle,
-    showViewer,
-    showLoading,
-    withTimeout,
-    ensureSession,
-    renderAdminTabs,
-    inpStyle,
-    taStyle,
-    setMode: (nextMode) => { MODE = nextMode; }
-  };
-
   // state
   let MODE = "employees";
   let CONTENT_MODE = "articles";
@@ -336,27 +314,493 @@ Views.Admin = (() => {
   // =============================
   // EMPLOYEES (allowlist)
   // =============================
-    const Employees = (window.Views && typeof window.Views.AdminEmployeesFactory === "function")
-      ? window.Views.AdminEmployeesFactory(AdminShared)
-      : {
-          load: async () => {
-            throw new Error("Admin employees module not loaded.");
+const Employees = (() => {
+
+  async function sbAllowlistList(){
+    const p = SB.from("allowlist").select("email,role,enabled").order("email", { ascending:true });
+    const { data, error } = await withTimeout(p, 12000, "allowlist select");
+    if(error) throw error;
+    return data || [];
+  }
+  async function sbAllowlistUpsert(row){
+    await ensureSession();
+    const p = SB.from("allowlist").upsert(row, { onConflict:"email" });
+    const { error } = await withTimeout(p, 20000, "allowlist upsert");
+    if(error) throw error;
+  }
+  async function sbAllowlistDelete(email){
+    await ensureSession();
+    const p = SB.from("allowlist").delete().eq("email", email);
+    const { error } = await withTimeout(p, 20000, "allowlist delete");
+    if(error) throw error;
+  }
+
+  function employeesHtml(items){
+    const rows = (items || []).map(it => `
+      <div class="item" style="display:grid; grid-template-columns: 1fr 120px 90px 170px; gap:10px; align-items:center;">
+        <div class="mono" style="overflow:hidden; text-overflow:ellipsis;">${esc(it.email)}</div>
+
+        <select data-al-role="${esc(it.email)}" style="${inpStyle}">
+          <option value="staff" ${it.role==="staff"?"selected":""}>staff</option>
+          <option value="admin" ${it.role==="admin"?"selected":""}>admin</option>
+        </select>
+
+        <label style="display:flex; gap:8px; align-items:center; user-select:none;">
+          <input type="checkbox" data-al-enabled="${esc(it.email)}" ${it.enabled ? "checked" : ""} />
+          <span>enabled</span>
+        </label>
+
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button class="btn btn-sm" data-al-save="${esc(it.email)}"><span class="dot"></span>Сохранить</button>
+          <button class="btn btn-sm" data-al-del="${esc(it.email)}"><span class="dot"></span>Удалить</button>
+        </div>
+      </div>
+    `).join("");
+
+    return `
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">Админка → Сотрудники</h1>
+            <p class="article-sub">Управление доступами (allowlist). Только admin.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Добавить / обновить доступ</div>
+        <div class="item-meta" style="margin-top:10px;">
+          <span class="tag">allowlist</span>
+          <span class="tag">admin only</span>
+        </div>
+
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div style="display:grid; grid-template-columns: 1fr 140px; gap:10px; align-items:end;">
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Email</div>
+              <input id="al_email" style="${inpStyle}" placeholder="email@example.com" />
+            </div>
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Роль</div>
+              <select id="al_role" style="${inpStyle}">
+                <option value="staff">staff</option>
+                <option value="admin">admin</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+            <label style="display:flex; gap:8px; align-items:center; user-select:none;">
+              <input id="al_enabled" type="checkbox" checked />
+              <span>enabled</span>
+            </label>
+            <button class="btn btn-sm" id="al_add"><span class="dot"></span>Добавить / обновить</button>
+            <button class="btn btn-sm" id="al_reload"><span class="dot"></span>Обновить список</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div class="item-title">Список сотрудников</div>
+          <div class="item-meta">
+            <span class="tag">Всего: ${(items||[]).length}</span>
+          </div>
+        </div>
+
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          ${rows || `<div class="empty" style="padding:12px;color:var(--muted)">Список пуст.</div>`}
+        </div>
+      </div>
+    `;
+  }
+
+  function bindEmployees(){
+    const root = $("#viewer");
+    if(!root) return;
+
+    $("#al_add").onclick = async () => {
+      setBusy(true, "Сохраняю…");
+      try{
+        const email = normLower($("#al_email").value);
+        if(!email || !email.includes("@")) { setBusy(false);
+window.__adminSaveLock = false;
+ return alert("Введи корректный email."); }
+        const role = normLower($("#al_role").value) || "staff";
+        const enabled = !!$("#al_enabled").checked;
+        await sbAllowlistUpsert({ email, role, enabled });
+        $("#al_email").value = "";
+        setBusy(false);
+window.__adminSaveLock = false;
+
+        await Employees.load();
+      }catch(e){
+        console.error(e);
+        setBusy(false);
+window.__adminSaveLock = false;
+
+        alert(e.message || String(e));
+      }
+    };
+
+    $("#al_reload").onclick = () => Employees.load();
+
+    root.querySelectorAll("[data-al-save]").forEach(btn => {
+      btn.onclick = async () => {
+        const email = btn.getAttribute("data-al-save");
+        setBusy(true, "Сохраняю…");
+        try{
+          const role = root.querySelector(`[data-al-role="${CSS.escape(email)}"]`).value;
+          const enabled = !!root.querySelector(`[data-al-enabled="${CSS.escape(email)}"]`).checked;
+          await sbAllowlistUpsert({ email, role, enabled });
+          setBusy(false);
+window.__adminSaveLock = false;
+
+          await Employees.load();
+        }catch(e){
+          console.error(e);
+          setBusy(false);
+window.__adminSaveLock = false;
+
+          alert(e.message || String(e));
+        }
+      };
+    });
+
+    root.querySelectorAll("[data-al-del]").forEach(btn => {
+      btn.onclick = async () => {
+        const email = btn.getAttribute("data-al-del");
+        if(!confirm("Удалить из allowlist?")) return;
+        setBusy(true, "Удаляю…");
+        try{
+          await sbAllowlistDelete(email);
+          setBusy(false);
+window.__adminSaveLock = false;
+
+          await Employees.load();
+        }catch(e){
+          console.error(e);
+          setBusy(false);
+window.__adminSaveLock = false;
+
+          alert(e.message || String(e));
+        }
+      };
+    });
+  }
+
+  async function loadEmployees(){
+    setPanelTitle("Админка");
+    setStatus("…");
+    MODE = "employees";
+    renderAdminTabs();
+    showLoading("Загрузка allowlist…");
+
+    try{
+      const items = await sbAllowlistList();
+      showViewer(employeesHtml(items));
+      bindEmployees();
+      setStatus(String(items.length));
+    }catch(e){
+      console.error(e);
+      showViewer(`<div class="empty">Ошибка allowlist: ${esc(e.message || String(e))}</div>`);
+      setStatus("ошибка");
+    }
+    }
+
+  return { load: loadEmployees };
+})();
+
+  // =============================
+  // PROJECTS (minimal)
+  // =============================
+
+  async function sbProjectsList(){
+    const p = SB.from("projects")
+      .select("id,title,notes,created_at")
+      .order("created_at", { ascending:false });
+    const { data, error } = await withTimeout(p, 12000, "projects list");
+    if(error) throw error;
+    return data || [];
+  }
+
+  async function sbProjectsInsert(row){
+    await ensureSession();
+    const p = SB.from("projects").insert(row);
+    const { error } = await withTimeout(p, 20000, "projects insert");
+    if(error) throw error;
+  }
+
+  async function sbProjectTaskCount(projectId){
+    const p = SB.from("tasks")
+      .select("id", { count:"exact", head:true })
+      .eq("project_id", projectId);
+
+    const { count, error } = await withTimeout(p, 12000, "project task count");
+    if(error) throw error;
+    return Number(count || 0);
+  }
+
+  async function sbProjectsUpdate(id, row){
+    await ensureSession();
+    const p = SB.from("projects").update(row).eq("id", id);
+    const { error } = await withTimeout(p, 20000, "projects update");
+    if(error) throw error;
+  }
+
+  async function sbProjectsDelete(id){
+    await ensureSession();
+    const p = SB.from("projects").delete().eq("id", id);
+    const { error } = await withTimeout(p, 20000, "projects delete");
+    if(error) throw error;
+  }
+
+  function projectsHtml(items){
+    const rows = (items || []).map(it => `
+      <div class="item">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:220px;">
+              <div class="item-title">${esc(it.title || "(без названия)")}</div>
+              <div class="muted" style="margin-top:4px;">ID: <span class="mono">${esc(it.id || "")}</span></div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-sm" data-pr-edit-toggle="${esc(it.id)}"><span class="dot"></span>Редактировать</button>
+              <button class="btn btn-sm" data-pr-del="${esc(it.id)}"><span class="dot"></span>Удалить</button>
+            </div>
+          </div>
+
+          <div data-pr-view="${esc(it.id)}">
+            ${it.notes ? `<div class="muted" style="margin-top:2px;">${esc(it.notes)}</div>` : `<div class="muted" style="margin-top:2px;">Заметки пусты.</div>`}
+          </div>
+
+          <div data-pr-edit-box="${esc(it.id)}" style="display:none;">
+            <div>
+              <div class="muted" style="margin:0 0 6px 2px;">Название</div>
+              <input data-pr-title="${esc(it.id)}" style="${inpStyle}" value="${esc(it.title || "")}" />
+            </div>
+
+            <div style="margin-top:10px;">
+              <div class="muted" style="margin:0 0 6px 2px;">Заметки</div>
+              <textarea data-pr-notes="${esc(it.id)}" style="${taStyle}; min-height:90px;" rows="4">${esc(it.notes || "")}</textarea>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap;">
+              <button class="btn btn-sm" data-pr-save="${esc(it.id)}"><span class="dot"></span>Сохранить</button>
+              <button class="btn btn-sm" data-pr-cancel="${esc(it.id)}"><span class="dot"></span>Отмена</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join("");
+
+    return `
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px;">
+            <h1 class="article-title">Админка → Проекты</h1>
+            <p class="article-sub">Минимальное создание проектов.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Создать проект</div>
+        <div class="item-meta" style="margin-top:10px;">
+          <span class="tag">projects</span>
+          <span class="tag">minimal</span>
+        </div>
+
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          <div>
+            <div class="muted" style="margin:0 0 6px 2px;">Название</div>
+            <input id="pr_title" style="${inpStyle}" />
+          </div>
+
+          <div style="margin-top:10px;">
+            <div class="muted" style="margin:0 0 6px 2px;">Заметки (опционально)</div>
+            <textarea id="pr_notes" style="${taStyle}; min-height:90px;" rows="4"></textarea>
+          </div>
+
+          <div style="display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap;">
+            <button class="btn btn-sm" id="pr_add"><span class="dot"></span>Создать проект</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item" style="cursor:default;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div class="item-title">Список проектов</div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-sm" id="pr_reload"><span class="dot"></span>Обновить список</button>
+            <div class="item-meta">
+              <span class="tag">Всего: ${(items||[]).length}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="markdown" style="padding:0; margin-top:12px;">
+          ${rows || `<div class="empty" style="padding:12px;color:var(--muted)">Список пуст.</div>`}
+        </div>
+      </div>
+    `;
+  }
+
+  function bindProjects(){
+    const root = $("#viewer");
+    if(!root) return;
+
+    $("#pr_add").onclick = async () => {
+      setBusy(true, "Создаю…");
+      try{
+        const title = norm($("#pr_title").value);
+        const notes = norm($("#pr_notes").value);
+
+        if(!title){
+          setBusy(false);
+window.__adminSaveLock = false;
+
+          return alert("Название обязательно.");
+        }
+
+        await sbProjectsInsert({
+          title,
+          notes: notes || null
+        });
+
+        $("#pr_title").value = "";
+        $("#pr_notes").value = "";
+
+        setBusy(false);
+window.__adminSaveLock = false;
+
+        await loadProjects();
+      }catch(e){
+        console.error(e);
+        setBusy(false);
+window.__adminSaveLock = false;
+
+
+        alert(e.message || String(e));
+      }
+    };
+
+    $("#pr_reload").onclick = () => loadProjects();
+
+    root.querySelectorAll("[data-pr-edit-toggle]").forEach(btn => {
+      btn.onclick = () => {
+        const id = btn.getAttribute("data-pr-edit-toggle");
+        if(!id) return;
+
+        const box = root.querySelector(`[data-pr-edit-box="${CSS.escape(id)}"]`);
+        if(box) box.style.display = "";
+      };
+    });
+
+    root.querySelectorAll("[data-pr-cancel]").forEach(btn => {
+      btn.onclick = () => {
+        const id = btn.getAttribute("data-pr-cancel");
+        if(!id) return;
+
+        const box = root.querySelector(`[data-pr-edit-box="${CSS.escape(id)}"]`);
+        if(box) box.style.display = "none";
+      };
+    });
+
+    root.querySelectorAll("[data-pr-save]").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.getAttribute("data-pr-save");
+        if(!id) return;
+
+        const titleEl = root.querySelector(`[data-pr-title="${CSS.escape(id)}"]`);
+        const notesEl = root.querySelector(`[data-pr-notes="${CSS.escape(id)}"]`);
+
+        const title = norm(titleEl ? titleEl.value : "");
+        const notes = norm(notesEl ? notesEl.value : "");
+
+        if(!title){
+          alert("Название обязательно.");
+          return;
+        }
+
+        setBusy(true, "Сохраняю…");
+        try{
+          await sbProjectsUpdate(id, {
+            title,
+            notes: notes || null
+          });
+
+          setBusy(false);
+window.__adminSaveLock = false;
+
+          await loadProjects();
+        }catch(e){
+          console.error(e);
+          setBusy(false);
+window.__adminSaveLock = false;
+
+          alert(e.message || String(e));
+        }
+      };
+    });
+
+    root.querySelectorAll("[data-pr-del]").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.getAttribute("data-pr-del");
+        if(!id) return;
+        if(!confirm("Удалить проект?")) return;
+
+        setBusy(true, "Проверяю…");
+        try{
+          const taskCount = await sbProjectTaskCount(id);
+          if(taskCount > 0){
+            setBusy(false);
+window.__adminSaveLock = false;
+
+            alert("Проект нельзя удалить: к нему привязаны задачи.");
+            return;
           }
-        };
 
-    const Projects = (window.Views && typeof window.Views.AdminProjectsFactory === "function")
-      ? window.Views.AdminProjectsFactory(AdminShared)
-      : {
-          load: async () => {
-            throw new Error("Admin projects module not loaded.");
-          }
-        };
+          setBusy(true, "Удаляю…");
+          await sbProjectsDelete(id);
+          setBusy(false);
+window.__adminSaveLock = false;
 
-    // =============================
-    // TASKS (placeholder)
-    // =============================
+          await loadProjects();
+        }catch(e){
+          console.error(e);
+          setBusy(false);
+window.__adminSaveLock = false;
 
-    // =============================
+
+          const msg = String((e && (e.message || e.details || e.hint)) || e || "");
+          alert(msg || "Не удалось удалить проект.");
+        }
+      };
+    });
+  }
+
+  async function loadProjects(){
+    setPanelTitle("Админка");
+    setStatus("…");
+    MODE = "projects";
+    renderAdminTabs();
+    showLoading("Загрузка проектов…");
+
+    try{
+      const items = await sbProjectsList();
+      showViewer(projectsHtml(items));
+      bindProjects();
+      setStatus(String(items.length));
+    }catch(e){
+      console.error(e);
+      showViewer(`<div class="empty">Ошибка проектов: ${esc(e.message || String(e))}</div>`);
+      setStatus("ошибка");
+    }
+  }
+
+  // =============================
   // TASKS (placeholder)
   // =============================
   async function loadTasks(){
@@ -938,19 +1382,15 @@ Views.Admin = (() => {
     if(saveBtn){
       saveBtn.onclick = async () => {
 
-        if(window.__adminSaveLock) return;
-        if(!window.__adminClickGuard("admin_save")) return;
-        if(!window.__adminClickGuard("tpl_save")) return;
-        window.__adminSaveLock = true;
-
+  if(window.__adminSaveLock) return; if(!window.__adminClickGuard("admin_save")) return;
+if(!window.__adminClickGuard("tpl_save")) return;
+  window.__adminSaveLock = true;
         setBusy(true, "Сохраняю…");
         try{
           const id = normLower($("#a_id").value);
-          if(!id){
-            setBusy(false);
-            window.__adminSaveLock = false;
-            return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную.");
-          }
+          if(!id){ setBusy(false);
+window.__adminSaveLock = false;
+ return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную."); }
 
           const row = {
             id,
@@ -968,19 +1408,16 @@ Views.Admin = (() => {
 
           await sbArticlesUpsert(row);
 
-          // --- SAFE: keep admin editor route stable ---
-          try{
+// --- SAFE: keep admin editor route stable ---
+try{
   const targetHash = "#/admin/articles/" + encodeURIComponent(row.id);
   if(location.hash !== targetHash){
-    setBusy(false);
-    window.__adminSaveLock = false;
     location.hash = targetHash;
     return;
   }
 }catch(e){}
-
           setBusy(false);
-          window.__adminSaveLock = false;
+window.__adminSaveLock = false;
 
           alert("Сохранено ✅");
           goAdmin("content:articles:" + id);
@@ -988,7 +1425,8 @@ Views.Admin = (() => {
         }catch(e){
           console.error(e);
           setBusy(false);
-          window.__adminSaveLock = false;
+window.__adminSaveLock = false;
+
           alert(e.message || String(e));
         }
       };
@@ -1004,7 +1442,7 @@ Views.Admin = (() => {
         try{
           await sbArticlesDelete(id);
           setBusy(false);
-          window.__adminSaveLock = false;
+window.__adminSaveLock = false;
 
           alert("Удалено ✅");
           goAdmin("content:articles");
@@ -1012,7 +1450,8 @@ Views.Admin = (() => {
         }catch(e){
           console.error(e);
           setBusy(false);
-          window.__adminSaveLock = false;
+window.__adminSaveLock = false;
+
           alert(e.message || String(e));
         }
       };
@@ -1141,15 +1580,15 @@ Views.Admin = (() => {
   }
 
   function genTemplateId(){ return "tpl_" + Date.now().toString(36); }
-
-  function openTemplate(id, opts){
-    try{
-      window.__tplReopenSafe = true;
-      goAdmin("content:templates:" + id);
-    }finally{
-      setTimeout(() => window.__tplReopenSafe = false, 50);
-    }
+function openTemplate(id, opts){
+  try{
+    window.__tplReopenSafe = true;
+    goAdmin("content:templates:" + id);
+  }finally{
+    setTimeout(()=>window.__tplReopenSafe=false, 50);
   }
+}
+
 
   function templateEditorHtml(row, isNew){
     const id = row.id || "";
@@ -1308,19 +1747,15 @@ Views.Admin = (() => {
     if(saveBtn){
       saveBtn.onclick = async () => {
 
-        if(window.__adminSaveLock) return;
-        if(!window.__adminClickGuard("admin_save")) return;
-        if(!window.__adminClickGuard("tpl_save")) return;
-        window.__adminSaveLock = true;
-
+  if(window.__adminSaveLock) return; if(!window.__adminClickGuard("admin_save")) return;
+if(!window.__adminClickGuard("tpl_save")) return;
+  window.__adminSaveLock = true;
         setBusy(true, "Сохраняю…");
         try{
           const id = normLower($("#t_id").value);
-          if(!id){
-            setBusy(false);
-            window.__adminSaveLock = false;
-            return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную.");
-          }
+          if(!id){ setBusy(false);
+window.__adminSaveLock = false;
+ return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную."); }
 
           const currentId = id;
           const existing = await sbTemplatesGet(currentId);
@@ -1343,25 +1778,24 @@ Views.Admin = (() => {
 
           if(!row.title){
             setBusy(false);
-            window.__adminSaveLock = false;
+window.__adminSaveLock = false;
+
             return alert("Заголовок обязателен.");
           }
 
           await sbTemplatesUpsert(row);
 
-          // --- SAFE: keep admin editor route stable ---
-          try{
+// --- SAFE: keep admin editor route stable ---
+try{
   const targetHash = "#/admin/templates/" + encodeURIComponent(row.id);
   if(location.hash !== targetHash){
-    setBusy(false);
-    window.__adminSaveLock = false;
     location.hash = targetHash;
     return;
   }
 }catch(e){}
-
           setBusy(false);
-          window.__adminSaveLock = false;
+window.__adminSaveLock = false;
+
 
           // SAFE REFRESH (no rerender / no list reload)
           try{
@@ -1374,11 +1808,14 @@ Views.Admin = (() => {
         }catch(e){
           console.error(e);
           setBusy(false);
-          window.__adminSaveLock = false;
+window.__adminSaveLock = false;
+
           alert(e.message || String(e));
         }
       };
     }
+
+
   }
 
   async function loadTemplates(openId){
@@ -1395,8 +1832,8 @@ Views.Admin = (() => {
       const items = await sbTemplatesListAll();
 
       if(!openId || !(window.__tplReopenSafe)){
-        renderTemplatesList(items);
-      }
+  renderTemplatesList(items);
+}
       setStatus(String(items.length));
 
       if(!openId){
@@ -1648,17 +2085,16 @@ Views.Admin = (() => {
     if(saveBtn){
       saveBtn.onclick = async () => {
 
-        if(window.__adminSaveLock) return;
-        if(!window.__adminClickGuard("admin_save")) return;
-        if(!window.__adminClickGuard("tpl_save")) return;
-        window.__adminSaveLock = true;
-
+  if(window.__adminSaveLock) return; if(!window.__adminClickGuard("admin_save")) return;
+if(!window.__adminClickGuard("tpl_save")) return;
+  window.__adminSaveLock = true;
         setBusy(true, "Сохраняю…");
         try{
           const id = normLower($("#cl_id").value);
           if(!id){
             setBusy(false);
-            window.__adminSaveLock = false;
+window.__adminSaveLock = false;
+
             return alert("ID обязателен.");
           }
 
@@ -1680,25 +2116,23 @@ Views.Admin = (() => {
 
           if(!row.title){
             setBusy(false);
-            window.__adminSaveLock = false;
+window.__adminSaveLock = false;
+
             return alert("Название обязательно.");
           }
 
           await sbChecklistsUpsert(row);
 
-          // --- SAFE: keep admin editor route stable ---
-          try{
+// --- SAFE: keep admin editor route stable ---
+try{
   const targetHash = "#/admin/checklists/" + encodeURIComponent(row.id);
   if(location.hash !== targetHash){
-    setBusy(false);
-    window.__adminSaveLock = false;
     location.hash = targetHash;
     return;
   }
 }catch(e){}
-
           setBusy(false);
-          window.__adminSaveLock = false;
+window.__adminSaveLock = false;
 
           alert("Сохранено ✅");
           goAdmin("content:checklists:" + id);
@@ -1706,7 +2140,8 @@ Views.Admin = (() => {
         }catch(e){
           console.error(e);
           setBusy(false);
-          window.__adminSaveLock = false;
+window.__adminSaveLock = false;
+
           alert(e.message || String(e));
         }
       };
@@ -1812,7 +2247,7 @@ Views.Admin = (() => {
         const p = parseParam(param);
         if(p.mode === "employees"){ await Employees.load(); return; }
         if(p.mode === "tasks"){ await loadTasks(); return; }
-        if(p.mode === "projects"){ await Projects.load(); return; }
+        if(p.mode === "projects"){ await loadProjects(); return; }
         if(p.mode === "content"){ await loadContent(p.contentMode, p.id); return; }
         await Employees.load();
       }catch(e){
@@ -1825,7 +2260,6 @@ Views.Admin = (() => {
     }
   };
 })();
-
 
 
 

@@ -26,82 +26,6 @@ Views.Admin = (() => {
     policy:    "Документация"
   };
 
-  // ===== PHASE 5A — Article Presets (creation only)
-  const ARTICLE_TYPE_PRESETS = {
-    standard: `## Цель
-Кратко опиши, зачем нужна эта инструкция.
-
-## Когда применять
-Опиши ситуации, в которых используется.
-
-## Описание
-Основная часть инструкции.
-
-## Важно
-> Важно: укажи ключевые моменты.`,
-
-    procedure: `## Шаги
-
-### 1. Подготовка
-Что нужно сделать перед началом.
-
-### 2. Основные действия
-Опиши пошагово процесс.
-
-### 3. Проверка результата
-Как понять, что всё сделано правильно.`,
-
-    check: `## Чек-лист
-
-- [ ] Пункт проверки 1
-- [ ] Пункт проверки 2
-- [ ] Пункт проверки 3
-
-## Примечания
-Дополнительные пояснения.`,
-
-    reference: `## Описание
-Кратко опиши, что это.
-
-## Параметры / значения
-•  
-
-## Примеры
-Приведи примеры использования.`,
-
-    policy: `## Общие положения
-Опиши правило или регламент.
-
-## Обязательные требования
-•  
-
-## Ответственность
-Кто отвечает за соблюдение.`
-  };
-
-  function maybeInsertPreset(isNew){
-    try{
-      if(!isNew) return "";
-
-      const typeEl = document.getElementById("a_type");
-      const mdEl = document.getElementById("a_md");
-      if(!typeEl || !mdEl) return "";
-
-      const type = String(typeEl.value || "").trim();
-      if(!type) return "";
-
-      const preset = ARTICLE_TYPE_PRESETS[type];
-      if(!preset) return "";
-
-      mdEl.value = preset;
-      return preset;
-    }catch(e){}
-    return "";
-  }
-
-  const TYPE_IDS = ["standard","procedure","check","reference","policy"];
-  const ROLE_IDS = ["admin","staff"];
-
   const TAGS_PRESET = [
     "Документация","Дизайн","Визуализация","3D","Заказчик","Обмер","Замер",
     "Чертежи","Объект","Передача проекта","Правки","Этапы","Хранение","Правила"
@@ -247,7 +171,7 @@ Views.Admin = (() => {
   }
 
   // ===== PHASE 2 — SHARED HELPER SURFACE (bridge prep only)
-  const AdminShared = {
+    const AdminShared = {
     $,
     SB: window.SB,
     esc,
@@ -261,8 +185,17 @@ Views.Admin = (() => {
     withTimeout,
     ensureSession,
     renderAdminTabs,
+    renderContentSubTabs,
+    goAdmin,
+    renderTagsPalette,
+    parseSelectedTags,
+    bindTagsPalette,
+    renderActionsBuilder,
+    bindActionsUI,
+    readActionsFromUI,
     inpStyle,
     taStyle,
+    TYPE_LABELS,
     setMode: (nextMode) => { MODE = nextMode; }
   };
 
@@ -270,7 +203,6 @@ Views.Admin = (() => {
   let MODE = "employees";
   let CONTENT_MODE = "articles";
   let TAG_DICT = TAGS_PRESET.slice().sort((a,b)=>a.localeCompare(b));
-  let CAT_DICT = [];
 
   function parseParam(param){
     const p = (param || "").trim();
@@ -344,21 +276,41 @@ Views.Admin = (() => {
           }
         };
 
-    const Projects = (window.Views && typeof window.Views.AdminProjectsFactory === "function")
-      ? window.Views.AdminProjectsFactory(AdminShared)
-      : {
-          load: async () => {
-            throw new Error("Admin projects module not loaded.");
-          }
-        };
+        const Projects = (window.Views && typeof window.Views.AdminProjectsFactory === "function")
+          ? window.Views.AdminProjectsFactory(AdminShared)
+          : {
+              load: async () => {
+                throw new Error("Admin projects module not loaded.");
+              }
+            };
 
-    // =============================
-    // TASKS (placeholder)
-    // =============================
+        const Templates = (window.Views && typeof window.Views.AdminTemplatesFactory === "function")
+          ? window.Views.AdminTemplatesFactory(AdminShared)
+          : {
+              load: async () => {
+                throw new Error("Admin templates module not loaded.");
+              }
+            };
 
-    // =============================
-  // TASKS (placeholder)
-  // =============================
+        const Checklists = (window.Views && typeof window.Views.AdminChecklistsFactory === "function")
+          ? window.Views.AdminChecklistsFactory(AdminShared)
+          : {
+              load: async () => {
+                throw new Error("Admin checklists module not loaded.");
+              }
+            };
+
+        const Articles = (window.Views && typeof window.Views.AdminArticlesFactory === "function")
+          ? window.Views.AdminArticlesFactory(AdminShared)
+          : {
+              load: async () => {
+                throw new Error("Admin articles module not loaded.");
+              }
+            };
+
+        // =============================
+        // TASKS (placeholder)
+        // =============================
   async function loadTasks(){
     setPanelTitle("Админка");
     setStatus("—");
@@ -387,91 +339,6 @@ Views.Admin = (() => {
     `);
   }
 
-  // =============================
-  // CONTENT → ARTICLES (kb_articles)
-  // =============================
-  async function sbArticlesListAll(){
-    const p = SB.from("kb_articles")
-      .select("id,title,category,type,tags,roles,status,updated_at,excerpt,has_inline_new")
-      .order("updated_at", { ascending:false });
-    const { data, error } = await withTimeout(p, 12000, "kb_articles list");
-    if(error) throw error;
-    return data || [];
-  }
-
-  async function sbArticlesGet(id){
-    const p = SB.from("kb_articles")
-      .select("id,title,category,type,tags,roles,status,updated_at,excerpt,content_md,actions,has_inline_new")
-      .eq("id", id).single();
-    const { data, error } = await withTimeout(p, 12000, "kb_articles get");
-    if(error) throw error;
-    return data;
-  }
-
-  async function sbArticlesUpsert(row){
-    // Ensure token is present and not near expiry before write
-    await ensureSession();
-
-    // First try
-    try{
-      const p = SB.from("kb_articles").upsert(row, { onConflict:"id" }).select("id");
-      const { error } = await withTimeout(p, 45000, "kb_articles upsert");
-      if(error) throw error;
-      return;
-    }catch(e){
-      // Retry once on transient/timeout-like failures (do NOT log out)
-      const msg = (e && e.message) ? String(e.message) : String(e);
-      const status = (e && typeof e.status === "number") ? e.status : null;
-      const transient =
-        msg.includes("Timeout") ||
-        msg.toLowerCase().includes("network") ||
-        msg.toLowerCase().includes("fetch") ||
-        status === 0 || status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
-
-      if(!transient) throw e;
-
-      console.warn("[Admin] kb_articles upsert transient, retrying once…", e);
-      try{
-        await new Promise(res => setTimeout(res, 600));
-        await ensureSession(); // refresh again
-      }catch(_e){}
-
-      const p2 = SB.from("kb_articles").upsert(row, { onConflict:"id" }).select("id");
-      const { error: error2 } = await withTimeout(p2, 45000, "kb_articles upsert retry");
-      if(error2) throw error2;
-    }
-  }
-
-  async function sbArticlesDelete(id){
-    await ensureSession();
-    const p = SB.from("kb_articles").delete().eq("id", id);
-    const { error } = await withTimeout(p, 20000, "kb_articles delete");
-    if(error) throw error;
-  }
-
-  function buildCatDict(items){
-    const set = new Set();
-    (items || []).forEach(it => { if(it.category) set.add(String(it.category)); });
-    return Array.from(set.values()).sort((a,b) => a.localeCompare(b));
-  }
-
-  function typeOptions(selected){
-    return TYPE_IDS.map(id => {
-      const t = TYPE_LABELS[id] || id;
-      return `<option value="${esc(id)}" ${id===selected ? "selected" : ""}>${esc(t)}</option>`;
-    }).join("");
-  }
-
-  function renderRolesPicker(selected){
-    const sel = new Set(selected || []);
-    return ROLE_IDS.map(r => `
-      <label style="display:flex; gap:8px; align-items:center; user-select:none;">
-        <input type="checkbox" data-role="${esc(r)}" ${sel.has(r) ? "checked" : ""} />
-        <span>${esc(r)}</span>
-      </label>
-    `).join("");
-  }
-
   function renderTagsPalette(selected){
     const sel = new Set(selected || []);
     return `
@@ -487,22 +354,6 @@ Views.Admin = (() => {
       </div>
       <div class="muted" style="margin-top:8px;">Теги выбираются из справочника.</div>
     `;
-  }
-
-  function renderCategoryDatalist(){
-    if(!CAT_DICT.length) return "";
-    return `
-      <datalist id="cat_list">
-        ${CAT_DICT.map(c => `<option value="${esc(c)}"></option>`).join("")}
-      </datalist>
-      <div class="muted" style="margin-top:6px;">Начни вводить — появятся подсказки.</div>
-    `;
-  }
-
-  function parseSelectedRoles(root){
-    const out = [];
-    root.querySelectorAll("[data-role]").forEach(ch => { if(ch.checked) out.push(ch.getAttribute("data-role")); });
-    return out;
   }
 
   function parseSelectedTags(root){
@@ -632,157 +483,6 @@ Views.Admin = (() => {
     return out;
   }
 
-  function genId(){ return "a_" + Date.now().toString(36); }
-
-  function editorHtml(row, isNew){
-    const id = row.id || "";
-    const title = row.title || "";
-    const category = row.category || "";
-    const type = row.type || "standard";
-    const status = row.status || "draft";
-    const excerpt = row.excerpt || "";
-    const md = row.content_md || "";
-    const actions = Array.isArray(row.actions) ? row.actions : [];
-    const roles = Array.isArray(row.roles) ? row.roles : [];
-    const tags = Array.isArray(row.tags) ? row.tags : [];
-
-    return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">Контент → Инструкции</h1>
-            <p class="article-sub">${isNew ? "Создание новой инструкции (служебный режим)" : ("Редактирование: " + esc(id))}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Основные поля</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
-
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">ID (уникальный ключ, латиница, без пробелов)</div>
-              <div style="display:grid; grid-template-columns: 1fr 190px; gap:10px; align-items:end;">
-                <input id="a_id" style="${inpStyle}" value="${esc(id)}" ${isNew ? "" : "disabled"} placeholder="a_..." />
-                <button class="btn btn-sm" id="gen_id" ${isNew ? "" : "disabled"}><span class="dot"></span>Сгенерировать ID</button>
-              </div>
-              <div class="muted" style="margin-top:6px;">ID используется в URL и в базе как ключ. Лучше не менять после публикации.</div>
-            </div>
-
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Заголовок</div>
-              <input id="a_title" style="${inpStyle}" value="${esc(title)}" />
-            </div>
-
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Раздел (category)</div>
-              <input id="a_category" list="cat_list" style="${inpStyle}" value="${esc(category)}" placeholder="например: process" />
-              ${renderCategoryDatalist()}
-            </div>
-
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Тип (только для админа)</div>
-              <select id="a_type" style="${inpStyle}">${typeOptions(type)}</select>
-            </div>
-
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Статус</div>
-              <select id="a_status" style="${inpStyle}">
-                ${["draft","published","archived"].map(s => `<option value="${s}" ${s===status?"selected":""}>${s}</option>`).join("")}
-              </select>
-            </div>
-
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Для кого (roles)</div>
-              <div style="display:flex; gap:12px; flex-wrap:wrap; padding:10px 0 0 2px;">
-                ${renderRolesPicker(roles)}
-              </div>
-            </div>
-
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Краткое описание</div>
-              <textarea id="a_excerpt" style="${taStyle}; min-height:70px;" rows="3">${esc(excerpt)}</textarea>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Теги</div>
-        <div class="item-meta" style="margin-top:10px;">
-          <span class="tag">dictionary</span>
-          <span class="tag">multi-select</span>
-        </div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div id="tagsPalette">${renderTagsPalette(tags)}</div>
-          <div class="muted" style="margin-top:8px;">Выбрано: <span id="tagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Кнопки действий</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div id="actionsBox">${renderActionsBuilder(actions)}</div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Контент (Markdown)</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <textarea id="a_md" style="${taStyle}; min-height:220px;" rows="14">${esc(md)}</textarea>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default;">
-        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-          <button class="btn" id="a_save"><span class="dot"></span>Сохранить</button>
-          ${isNew ? "" : `<button class="btn" id="a_del"><span class="dot"></span>Удалить</button>`}
-        </div>
-      </div>
-    `;
-  }
-
-  function renderArticlesList(items){
-    const list = $("#list");
-    renderAdminTabs();
-    renderContentSubTabs();
-
-    list.insertAdjacentHTML("beforeend", `
-      <div class="hr"></div>
-      <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="art_reload"><span class="dot"></span>Обновить</button>
-      </div>
-      <div class="muted" style="margin:0 0 8px 0;">Инструкций: ${items.length}. Создание новых записей вне админки; здесь — редактирование существующих.</div>
-    `);
-
-    $("#art_reload").onclick = () => loadArticles("");
-
-    if(!items.length){
-      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">Пока нет записей в kb_articles.</div>`);
-      return;
-    }
-
-    items.forEach(it => {
-      const st = it.status ? `<span class="tag accent">${esc(it.status)}</span>` : "";
-      const typeTitle = TYPE_LABELS[it.type] || (it.type || "");
-      const tp = typeTitle ? `<span class="tag">${esc(typeTitle)}</span>` : "";
-      const cat = it.category ? `<span class="tag">${esc(it.category)}</span>` : "";
-      const ex = it.excerpt ? `<div class="muted" style="margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(it.excerpt)}</div>` : "";
-
-      const a = document.createElement("a");
-      a.className = "item";
-      a.href = `#/admin/${encodeURIComponent("content:articles:" + it.id)}`;
-      a.innerHTML = `
-        <div class="item-title">${esc(it.title || it.id)}</div>
-        <div class="item-meta">${st}${tp}${cat}</div>
-        ${ex}
-      `;
-      list.appendChild(a);
-    });
-  }
-
   function bindTagsPalette(){
     const root = $("#viewer");
     if(!root) return;
@@ -865,913 +565,6 @@ Views.Admin = (() => {
     });
   }
 
-  function bindEditor(isNew, initialActions){
-    const root = $("#viewer");
-    if(!root) return;
-
-    let presetTouchedByUser = false;
-    let lastAutoPresetType = "";
-    let lastAutoPresetValue = "";
-
-    bindTagsPalette();
-    bindActionsUI(initialActions || []);
-
-    const gen = $("#gen_id");
-    if(gen){
-      gen.onclick = () => {
-        const idEl = $("#a_id");
-        if(idEl && !idEl.value.trim()) idEl.value = genId();
-      };
-    }
-
-    const mdEl = $("#a_md");
-    const typeEl = $("#a_type");
-
-    if(mdEl){
-      mdEl.addEventListener("input", () => {
-        if(!isNew) return;
-        const currentType = typeEl ? String(typeEl.value || "").trim() : "";
-        const expectedPreset = currentType ? String(ARTICLE_TYPE_PRESETS[currentType] || "") : "";
-        const currentValue = String(mdEl.value || "");
-
-        if(!currentValue.trim()){
-          presetTouchedByUser = false;
-          lastAutoPresetType = "";
-          lastAutoPresetValue = "";
-          return;
-        }
-
-        if(
-          lastAutoPresetType &&
-          currentType === lastAutoPresetType &&
-          currentValue === lastAutoPresetValue &&
-          expectedPreset === lastAutoPresetValue
-        ){
-          return;
-        }
-
-        if(expectedPreset && currentValue === expectedPreset){
-          lastAutoPresetType = currentType;
-          lastAutoPresetValue = expectedPreset;
-          return;
-        }
-
-        presetTouchedByUser = true;
-      });
-    }
-
-    if(typeEl){
-      typeEl.addEventListener("change", () => {
-        if(!isNew) return;
-        if(!mdEl) return;
-        if(presetTouchedByUser) return;
-
-        const applied = maybeInsertPreset(isNew);
-        if(applied){
-          lastAutoPresetType = String(typeEl.value || "").trim();
-          lastAutoPresetValue = applied;
-        }
-      });
-    }
-
-    const saveBtn = $("#a_save");
-    if(saveBtn){
-      saveBtn.onclick = async () => {
-
-        if(window.__adminSaveLock) return;
-        if(!window.__adminClickGuard("admin_save")) return;
-        if(!window.__adminClickGuard("tpl_save")) return;
-        window.__adminSaveLock = true;
-
-        setBusy(true, "Сохраняю…");
-        try{
-          const id = normLower($("#a_id").value);
-          if(!id){
-            setBusy(false);
-            window.__adminSaveLock = false;
-            return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную.");
-          }
-
-          const row = {
-            id,
-            title: norm($("#a_title").value),
-            category: normLower($("#a_category").value),
-            type: normLower($("#a_type").value),
-            status: normLower($("#a_status").value) || "draft",
-            excerpt: norm($("#a_excerpt").value),
-            roles: parseSelectedRoles(root),
-            tags: parseSelectedTags(root),
-            actions: readActionsFromUI(root),
-            content_md: ($("#a_md").value || ""),
-            has_inline_new: (/>[^<\r\n]+</.test(($("#a_md").value || "").toString()) || /&gt;[^&\r\n]+&lt;/.test(($("#a_md").value || "").toString()))
-          };
-
-          await sbArticlesUpsert(row);
-
-          // --- SAFE: keep admin editor route stable ---
-          try{
-  const targetHash = "#/admin/articles/" + encodeURIComponent(row.id);
-  if(location.hash !== targetHash){
-    setBusy(false);
-    window.__adminSaveLock = false;
-    location.hash = targetHash;
-    return;
-  }
-}catch(e){}
-
-          setBusy(false);
-          window.__adminSaveLock = false;
-
-          alert("Сохранено ✅");
-          goAdmin("content:articles:" + id);
-          await loadArticles(id);
-        }catch(e){
-          console.error(e);
-          setBusy(false);
-          window.__adminSaveLock = false;
-          alert(e.message || String(e));
-        }
-      };
-    }
-
-    const delBtn = $("#a_del");
-    if(delBtn){
-      delBtn.onclick = async () => {
-        const id = normLower($("#a_id").value);
-        if(!id) return;
-        if(!confirm("Удалить инструкцию?")) return;
-        setBusy(true, "Удаляю…");
-        try{
-          await sbArticlesDelete(id);
-          setBusy(false);
-          window.__adminSaveLock = false;
-
-          alert("Удалено ✅");
-          goAdmin("content:articles");
-          await loadArticles("");
-        }catch(e){
-          console.error(e);
-          setBusy(false);
-          window.__adminSaveLock = false;
-          alert(e.message || String(e));
-        }
-      };
-    }
-  }
-
-  async function loadArticles(openId){
-    setPanelTitle("Админка");
-    setStatus("…");
-    MODE = "content";
-    CONTENT_MODE = "articles";
-
-    // While editor is open, block auth-driven rerenders to avoid "вылеты"
-    try{ if(window.App) App._navLock = !!(openId && String(openId).length); }catch(e){}
-
-    showLoading("Загрузка инструкций…");
-
-    try{
-      const items = await sbArticlesListAll();
-      CAT_DICT = buildCatDict(items);
-
-      renderArticlesList(items);
-      setStatus(String(items.length));
-
-      if(!openId){
-        showViewer(`<div class="empty">Выбери существующую инструкцию слева для редактирования.</div>`);
-        return;
-      }
-
-      if(openId === "new"){
-        showViewer(`
-          <div class="item" style="cursor:default; margin-bottom:12px;">
-            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-              <div style="flex:1; min-width:240px;">
-                <h1 class="article-title">Контент → Инструкции</h1>
-                <p class="article-sub">Создание новых инструкций через админку отключено.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="item" style="cursor:default;">
-            <div class="item-title">Edit-only mode</div>
-            <div class="item-meta" style="margin-top:10px;">
-              <span class="tag">articles</span>
-              <span class="tag">edit_only</span>
-              <span class="tag">no_create_in_admin</span>
-            </div>
-            <div style="margin-top:12px;">
-              <div class="empty">Новые инструкции создаются вне админки. Здесь можно редактировать только существующие записи.</div>
-            </div>
-          </div>
-        `);
-        setStatus(String(items.length));
-        return;
-      }
-
-      const row = await sbArticlesGet(openId);
-      showViewer(editorHtml(row, false));
-      bindEditor(false, row.actions);
-
-    }catch(e){
-      console.error(e);
-      showViewer(`<div class="empty">Ошибка загрузки инструкций: ${esc(e.message || String(e))}</div>`);
-      setStatus("ошибка");
-    }
-  }
-
-  // =============================
-  // CONTENT → TEMPLATES (kb_templates)
-  // =============================
-  async function sbTemplatesListAll(){
-    const p = SB.from("kb_templates")
-      .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
-      .order("sort", { ascending:true })
-      .order("title", { ascending:true });
-    const { data, error } = await withTimeout(p, 12000, "kb_templates list");
-    if(error) throw error;
-    return data || [];
-  }
-
-  async function sbTemplatesGet(id){
-    const p = SB.from("kb_templates")
-      .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
-      .eq("id", id).single();
-    const { data, error } = await withTimeout(p, 12000, "kb_templates get");
-    if(error) throw error;
-    return data;
-  }
-
-  async function sbTemplatesUpsert(row){
-    await ensureSession();
-
-    try{
-      const p = SB.from("kb_templates").upsert(row, { onConflict:"id" }).select("id");
-      const { error } = await withTimeout(p, 45000, "kb_templates upsert");
-      if(error) throw error;
-      return;
-    }catch(e){
-      const msg = (e && e.message) ? String(e.message) : String(e);
-      const status = (e && typeof e.status === "number") ? e.status : null;
-      const transient =
-        msg.includes("Timeout") ||
-        msg.toLowerCase().includes("network") ||
-        msg.toLowerCase().includes("fetch") ||
-        status === 0 || status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
-
-      if(!transient) throw e;
-
-      console.warn("[Admin] kb_templates upsert transient, retrying once…", e);
-      try{
-        await new Promise(res => setTimeout(res, 600));
-        await ensureSession();
-      }catch(_e){}
-
-      const p2 = SB.from("kb_templates").upsert(row, { onConflict:"id" }).select("id");
-      const { error: error2 } = await withTimeout(p2, 45000, "kb_templates upsert retry");
-      if(error2) throw error2;
-    }
-  }
-
-  async function sbTemplatesDelete(id){
-    await ensureSession();
-    const p = SB.from("kb_templates").delete().eq("id", id);
-    const { error } = await withTimeout(p, 20000, "kb_templates delete");
-    if(error) throw error;
-  }
-
-  function genTemplateId(){ return "tpl_" + Date.now().toString(36); }
-
-  function openTemplate(id, opts){
-    try{
-      window.__tplReopenSafe = true;
-      goAdmin("content:templates:" + id);
-    }finally{
-      setTimeout(() => window.__tplReopenSafe = false, 50);
-    }
-  }
-
-  function templateEditorHtml(row, isNew){
-    const id = row.id || "";
-    const title = row.title || "";
-    const format = row.format || "";
-    const actions = Array.isArray(row.actions) ? row.actions : [];
-    const tags = Array.isArray(row.tags) ? row.tags : [];
-    const published = row.published !== false;
-    const sort = row.sort != null ? String(row.sort) : "1000";
-
-    return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">Контент → Шаблоны</h1>
-            <p class="article-sub">${isNew ? "Создание нового шаблона" : ("Редактирование: " + esc(id))}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Основные поля</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
-
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">ID (уникальный ключ, латиница, без пробелов)</div>
-              <div style="display:grid; grid-template-columns: 1fr 190px; gap:10px; align-items:end;">
-                <input id="t_id" style="${inpStyle}" value="${esc(id)}" ${isNew ? "" : "disabled"} placeholder="tpl_..." />
-                <button class="btn btn-sm" id="gen_tpl_id" ${isNew ? "" : "disabled"}><span class="dot"></span>Сгенерировать ID</button>
-              </div>
-              <div class="muted" style="margin-top:6px;">ID используется как ключ шаблона. Лучше не менять после сохранения.</div>
-            </div>
-
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Заголовок</div>
-              <input id="t_title" style="${inpStyle}" value="${esc(title)}" />
-            </div>
-
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Формат</div>
-              <input id="t_format" style="${inpStyle}" value="${esc(format)}" placeholder="например: brief / excel / text" />
-            </div>
-
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Published</div>
-              <select id="t_published" style="${inpStyle}">
-                <option value="1" ${published ? "selected" : ""}>да</option>
-                <option value="0" ${published ? "" : "selected"}>нет</option>
-              </select>
-            </div>
-
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Sort</div>
-              <input id="t_sort" type="number" style="${inpStyle}" value="${esc(sort)}" />
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Теги</div>
-        <div class="item-meta" style="margin-top:10px;">
-          <span class="tag">dictionary</span>
-          <span class="tag">multi-select</span>
-        </div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div id="tplTagsPalette">${renderTagsPalette(tags)}</div>
-          <div class="muted" style="margin-top:8px;">Выбрано: <span id="tplTagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Кнопки действий</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div id="tplActionsBox">${renderActionsBuilder(actions)}</div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default;">
-        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-          <button class="btn" id="t_save"><span class="dot"></span>Сохранить</button>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderTemplatesList(items){
-    const list = $("#list");
-    renderAdminTabs();
-    renderContentSubTabs();
-
-    list.insertAdjacentHTML("beforeend", `
-      <div class="hr"></div>
-      <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="tpl_reload"><span class="dot"></span>Обновить</button>
-      </div>
-      <div class="muted" style="margin:0 0 8px 0;">Шаблонов: ${items.length}. В админке доступно только редактирование существующих записей.</div>
-    `);
-
-    $("#tpl_reload").onclick = () => loadTemplates("");
-
-    if(!items.length){
-      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">Пока нет записей в kb_templates.</div>`);
-      return;
-    }
-
-    items.forEach(it => {
-      const fm = it.format ? `<span class="tag">${esc(it.format)}</span>` : "";
-      const tagHtml = Array.isArray(it.tags) && it.tags.length
-        ? it.tags.map(tag => `<span class="tag" data-tag-filter="${esc(String(tag))}">${esc(String(tag))}</span>`).join("")
-        : "";
-      const meta = [fm, tagHtml].filter(Boolean).join("");
-
-      const a = document.createElement("a");
-      a.className = "item";
-      a.href = `#/admin/${encodeURIComponent("content:templates:" + it.id)}`;
-      a.innerHTML = `
-        <div class="item-title">${esc(it.title || it.id || "Шаблон")}</div>
-        <div class="item-meta">${meta}</div>
-      `;
-      list.appendChild(a);
-    });
-  }
-
-  function bindTemplateEditor(isNew, rowData){
-    const root = $("#viewer");
-    if(!root) return;
-
-    bindTagsPalette();
-    bindActionsUI(Array.isArray(rowData?.actions) ? rowData.actions : [], "tplActionsBox");
-
-    const syncTplTags = () => {
-      const el = $("#tplTagsChosen");
-      if(el) el.textContent = parseSelectedTags(root).join(", ");
-    };
-
-    root.querySelectorAll("[data-tag]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        setTimeout(syncTplTags, 0);
-      });
-    });
-
-    syncTplTags();
-
-    const genBtn = $("#gen_tpl_id");
-    if(genBtn){
-      genBtn.onclick = () => {
-        const idEl = $("#t_id");
-        if(idEl && !idEl.value.trim()) idEl.value = genTemplateId();
-      };
-    }
-
-    const saveBtn = $("#t_save");
-    if(saveBtn){
-      saveBtn.onclick = async () => {
-
-        if(window.__adminSaveLock) return;
-        if(!window.__adminClickGuard("admin_save")) return;
-        if(!window.__adminClickGuard("tpl_save")) return;
-        window.__adminSaveLock = true;
-
-        setBusy(true, "Сохраняю…");
-        try{
-          const id = normLower($("#t_id").value);
-          if(!id){
-            setBusy(false);
-            window.__adminSaveLock = false;
-            return alert("ID обязателен. Нажми 'Сгенерировать ID' или введи вручную.");
-          }
-
-          const currentId = id;
-          const existing = await sbTemplatesGet(currentId);
-
-          const sortRaw = norm($("#t_sort").value);
-          const actionsVal = readActionsFromUI(root);
-
-          const row = {
-            id: currentId,
-            title: norm($("#t_title").value),
-            format: normLower($("#t_format").value),
-            link: existing && Object.prototype.hasOwnProperty.call(existing, "link")
-              ? (existing.link || null)
-              : null,
-            actions: actionsVal,
-            tags: parseSelectedTags(root),
-            published: ($("#t_published").value || "1") === "1",
-            sort: sortRaw ? Number(sortRaw) : 1000
-          };
-
-          if(!row.title){
-            setBusy(false);
-            window.__adminSaveLock = false;
-            return alert("Заголовок обязателен.");
-          }
-
-          await sbTemplatesUpsert(row);
-
-          // --- SAFE: keep admin editor route stable ---
-          try{
-  const targetHash = "#/admin/templates/" + encodeURIComponent(row.id);
-  if(location.hash !== targetHash){
-    setBusy(false);
-    window.__adminSaveLock = false;
-    location.hash = targetHash;
-    return;
-  }
-}catch(e){}
-
-          setBusy(false);
-          window.__adminSaveLock = false;
-
-          // SAFE REFRESH (no rerender / no list reload)
-          try{
-            openTemplate(id, { reopen:true });
-          }catch(e){
-            console.warn("[ADMIN_TEMPLATES_SAFE_REFRESH_FAIL]", e);
-          }
-
-          return;
-        }catch(e){
-          console.error(e);
-          setBusy(false);
-          window.__adminSaveLock = false;
-          alert(e.message || String(e));
-        }
-      };
-    }
-  }
-
-  async function loadTemplates(openId){
-    setPanelTitle("Админка");
-    setStatus("…");
-    MODE = "content";
-    CONTENT_MODE = "templates";
-
-    try{ if(window.App) App._navLock = !!(openId && String(openId).length); }catch(e){}
-
-    showLoading("Загрузка шаблонов…");
-
-    try{
-      const items = await sbTemplatesListAll();
-
-      if(!openId || !(window.__tplReopenSafe)){
-        renderTemplatesList(items);
-      }
-      setStatus(String(items.length));
-
-      if(!openId){
-        showViewer(`<div class="empty">Выбери существующий шаблон слева для редактирования.</div>`);
-        return;
-      }
-
-      if(openId === "new"){
-        showViewer(`
-          <div class="item" style="cursor:default; margin-bottom:12px;">
-            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-              <div style="flex:1; min-width:240px;">
-                <h1 class="article-title">Контент → Шаблоны</h1>
-                <p class="article-sub">Создание новых шаблонов через админку отключено.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="item" style="cursor:default;">
-            <div class="item-title">Edit-only mode</div>
-            <div class="item-meta" style="margin-top:10px;">
-              <span class="tag">templates</span>
-              <span class="tag">edit_only</span>
-              <span class="tag">no_create_in_admin</span>
-            </div>
-            <div style="margin-top:12px;">
-              <div class="empty">Новые шаблоны создаются вне админки. Здесь можно редактировать только существующие записи.</div>
-            </div>
-          </div>
-        `);
-        setStatus(String(items.length));
-        return;
-      }
-
-      const row = await sbTemplatesGet(openId);
-      showViewer(templateEditorHtml(row, false));
-      bindTemplateEditor(false, row);
-
-    }catch(e){
-      console.error(e);
-      showViewer(`<div class="empty">Ошибка загрузки шаблонов: ${esc(e.message || String(e))}</div>`);
-      setStatus("ошибка");
-    }
-  }
-
-  // =============================
-  // CONTENT → CHECKLISTS (open-only, Supabase metadata source)
-  // =============================
-  async function loadChecklistsSource(){
-    const p = SB.from("kb_checklists")
-      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at")
-      .order("sort", { ascending:true })
-      .order("title", { ascending:true });
-
-    const { data, error } = await withTimeout(p, 12000, "kb_checklists list");
-    if(error) throw error;
-    return Array.isArray(data) ? data : [];
-  }
-
-  async function sbChecklistsGet(id){
-    const p = SB.from("kb_checklists")
-      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at")
-      .eq("id", id).single();
-    const { data, error } = await withTimeout(p, 12000, "kb_checklists get");
-    if(error) throw error;
-    return data;
-  }
-
-  async function sbChecklistsUpsert(row){
-    await ensureSession();
-
-    try{
-      const p = SB.from("kb_checklists").upsert(row, { onConflict:"id" }).select("id");
-      const { error } = await withTimeout(p, 45000, "kb_checklists upsert");
-      if(error) throw error;
-      return;
-    }catch(e){
-      const msg = (e && e.message) ? String(e.message) : String(e);
-      const status = (e && typeof e.status === "number") ? e.status : null;
-      const transient =
-        msg.includes("Timeout") ||
-        msg.toLowerCase().includes("network") ||
-        msg.toLowerCase().includes("fetch") ||
-        status === 0 || status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
-
-      if(!transient) throw e;
-
-      console.warn("[Admin] kb_checklists upsert transient, retrying once…", e);
-      try{
-        await new Promise(res => setTimeout(res, 600));
-        await ensureSession();
-      }catch(_e){}
-
-      const p2 = SB.from("kb_checklists").upsert(row, { onConflict:"id" }).select("id");
-      const { error: error2 } = await withTimeout(p2, 45000, "kb_checklists upsert retry");
-      if(error2) throw error2;
-    }
-  }
-
-  function checklistAdminEditorHtml(row){
-    const id = row.id || "";
-    const title = row.title || "";
-    const desc = row.desc || "";
-    const actions = Array.isArray(row.actions) ? row.actions : [];
-    const tags = Array.isArray(row.tags) ? row.tags : [];
-    const published = !!row.published;
-    const sort = row.sort != null ? String(row.sort) : "1000";
-
-    return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">Контент → Чек-листы</h1>
-            <p class="article-sub">Редактирование существующей записи</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Метаданные</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
-
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">ID</div>
-              <input id="cl_id" style="${inpStyle}" value="${esc(id)}" disabled />
-            </div>
-
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Название</div>
-              <input id="cl_title" style="${inpStyle}" value="${esc(title)}" />
-            </div>
-
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Описание</div>
-              <textarea id="cl_desc" style="${taStyle}; min-height:90px;" rows="4">${esc(desc)}</textarea>
-            </div>
-
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Published</div>
-              <select id="cl_published" style="${inpStyle}">
-                <option value="1" ${published ? "selected" : ""}>да</option>
-                <option value="0" ${published ? "" : "selected"}>нет</option>
-              </select>
-            </div>
-
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Sort</div>
-              <input id="cl_sort" type="number" style="${inpStyle}" value="${esc(sort)}" />
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Теги</div>
-        <div class="item-meta" style="margin-top:10px;">
-          <span class="tag">dictionary</span>
-          <span class="tag">multi-select</span>
-        </div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div id="clTagsPalette">${renderTagsPalette(tags)}</div>
-          <div class="muted" style="margin-top:8px;">Выбрано: <span id="clTagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Кнопки действий</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div id="clActionsBox">${renderActionsBuilder(actions)}</div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Структура</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div class="empty" style="padding:12px;color:var(--muted)">Структура пунктов чек-листа пока не хранится в этой таблице. На этом этапе редактируются только метаданные и ресурсы.</div>
-        </div>
-      </div>
-
-      <div class="item" style="cursor:default;">
-        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-          <button class="btn" id="cl_save"><span class="dot"></span>Сохранить</button>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderChecklistsList(items){
-    const list = $("#list");
-    renderAdminTabs();
-    renderContentSubTabs();
-
-    list.insertAdjacentHTML("beforeend", `
-      <div class="hr"></div>
-      <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="cl_reload_admin"><span class="dot"></span>Обновить</button>
-      </div>
-      <div class="muted" style="margin:0 0 8px 0;">Чек-листов: ${items.length}. Пока из Supabase доступны только метаданные существующих записей.</div>
-    `);
-
-    $("#cl_reload_admin").onclick = () => loadAdminChecklists("");
-
-    if(!items.length){
-      list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">Пока нет записей в kb_checklists.</div>`);
-      return;
-    }
-
-    items.forEach(it => {
-      const tags = Array.isArray(it.tags) && it.tags.length
-        ? it.tags.map(tag => `<span class="tag" data-tag-filter="${esc(String(tag))}">${esc(String(tag))}</span>`).join("")
-        : "";
-      const desc = it.desc ? `<div class="muted" style="margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(it.desc)}</div>` : "";
-
-      const a = document.createElement("a");
-      a.className = "item";
-      a.href = `#/admin/${encodeURIComponent("content:checklists:" + it.id)}`;
-      a.innerHTML = `
-        <div class="item-title">${esc(it.title || it.id || "Чек-лист")}</div>
-        <div class="item-meta">${tags}</div>
-        ${desc}
-      `;
-      list.appendChild(a);
-    });
-  }
-
-  function bindChecklistEditor(rowData){
-    const root = $("#viewer");
-    if(!root) return;
-
-    bindTagsPalette();
-    bindActionsUI(Array.isArray(rowData?.actions) ? rowData.actions : [], "clActionsBox");
-
-    const syncClTags = () => {
-      const el = $("#clTagsChosen");
-      if(el) el.textContent = parseSelectedTags(root).join(", ");
-    };
-
-    root.querySelectorAll("[data-tag]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        setTimeout(syncClTags, 0);
-      });
-    });
-
-    syncClTags();
-
-    const saveBtn = $("#cl_save");
-    if(saveBtn){
-      saveBtn.onclick = async () => {
-
-        if(window.__adminSaveLock) return;
-        if(!window.__adminClickGuard("admin_save")) return;
-        if(!window.__adminClickGuard("tpl_save")) return;
-        window.__adminSaveLock = true;
-
-        setBusy(true, "Сохраняю…");
-        try{
-          const id = normLower($("#cl_id").value);
-          if(!id){
-            setBusy(false);
-            window.__adminSaveLock = false;
-            return alert("ID обязателен.");
-          }
-
-          const existing = await sbChecklistsGet(id);
-          const sortRaw = norm($("#cl_sort").value);
-
-          const row = {
-            id,
-            title: norm($("#cl_title").value),
-            desc: norm($("#cl_desc").value) || null,
-            url: existing && Object.prototype.hasOwnProperty.call(existing, "url")
-              ? (existing.url || null)
-              : null,
-            actions: readActionsFromUI(root),
-            tags: parseSelectedTags(root),
-            published: ($("#cl_published").value || "1") === "1",
-            sort: sortRaw ? Number(sortRaw) : 1000
-          };
-
-          if(!row.title){
-            setBusy(false);
-            window.__adminSaveLock = false;
-            return alert("Название обязательно.");
-          }
-
-          await sbChecklistsUpsert(row);
-
-          // --- SAFE: keep admin editor route stable ---
-          try{
-  const targetHash = "#/admin/checklists/" + encodeURIComponent(row.id);
-  if(location.hash !== targetHash){
-    setBusy(false);
-    window.__adminSaveLock = false;
-    location.hash = targetHash;
-    return;
-  }
-}catch(e){}
-
-          setBusy(false);
-          window.__adminSaveLock = false;
-
-          alert("Сохранено ✅");
-          goAdmin("content:checklists:" + id);
-          await loadAdminChecklists(id);
-        }catch(e){
-          console.error(e);
-          setBusy(false);
-          window.__adminSaveLock = false;
-          alert(e.message || String(e));
-        }
-      };
-    }
-  }
-
-  async function loadAdminChecklists(openId){
-    setPanelTitle("Админка");
-    setStatus("…");
-    MODE = "content";
-    CONTENT_MODE = "checklists";
-
-    try{ if(window.App) App._navLock = !!(openId && String(openId).length); }catch(e){}
-
-    showLoading("Загрузка чек-листов…");
-
-    try{
-      const items = await loadChecklistsSource();
-
-      renderChecklistsList(items);
-      setStatus(String(items.length));
-
-      if(!openId){
-        showViewer(`<div class="empty">Выбери существующий чек-лист слева для редактирования.</div>`);
-        return;
-      }
-
-      if(openId === "new"){
-        showViewer(`
-          <div class="item" style="cursor:default; margin-bottom:12px;">
-            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-              <div style="flex:1; min-width:240px;">
-                <h1 class="article-title">Контент → Чек-листы</h1>
-                <p class="article-sub">Создание новых чек-листов через админку отключено.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="item" style="cursor:default;">
-            <div class="item-title">Edit-only mode</div>
-            <div class="item-meta" style="margin-top:10px;">
-              <span class="tag">checklists</span>
-              <span class="tag">edit_only</span>
-              <span class="tag">no_create_in_admin</span>
-            </div>
-            <div style="margin-top:12px;">
-              <div class="empty">Новые чек-листы создаются вне админки. Здесь можно редактировать только существующие записи.</div>
-            </div>
-          </div>
-        `);
-        setStatus(String(items.length));
-        return;
-      }
-
-      const row = await sbChecklistsGet(openId);
-      showViewer(checklistAdminEditorHtml(row));
-      bindChecklistEditor(row);
-
-    }catch(e){
-      console.error(e);
-      showViewer(`<div class="empty">Ошибка загрузки чек-листов: ${esc(e.message || String(e))}</div>`);
-      setStatus("ошибка");
-    }
-  }
-
   async function loadContent(mode, openId){
     MODE = "content";
     CONTENT_MODE = mode || "articles";
@@ -1780,17 +573,17 @@ Views.Admin = (() => {
     renderContentSubTabs();
 
     if(CONTENT_MODE === "articles"){
-      await loadArticles(openId || "");
+      await Articles.load(openId || "");
       return;
     }
 
     if(CONTENT_MODE === "templates"){
-      await loadTemplates(openId || "");
+      await Templates.load(openId || "");
       return;
     }
 
     if(CONTENT_MODE === "checklists"){
-      await loadAdminChecklists(openId || "");
+      await Checklists.load(openId || "");
       return;
     }
   }
@@ -1825,6 +618,12 @@ Views.Admin = (() => {
     }
   };
 })();
+
+
+
+
+
+
 
 
 

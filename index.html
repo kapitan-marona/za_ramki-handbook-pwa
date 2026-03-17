@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZA RAMKI — Handbook</title>
+  <meta name="theme-color" content="#1b1b1b" />
+  <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./colors.css" />
   <link rel="stylesheet" href="./theme.css" />
@@ -64,13 +66,17 @@
     // IMPORTANT: use ONLY anon key (public). NEVER use service_role key in client code.
     window.SUPABASE_URL  = "https://oedmueajusqhekgnyfsl.supabase.co";
     window.SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lZG11ZWFqdXNxaGVrZ255ZnNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3NzEzNjUsImV4cCI6MjA4NzM0NzM2NX0.Blndb_1_aJBg9WOV1YwvroIhK9eYuMTltBEh-hD7Yws";
+    window.PUSH_VAPID_PUBLIC_KEY = "BKBNpsavLva4LfbCCNKo791rsd-zfgrO4_e6k2mu5j5avriBhVnjDaJnrSCXqaZC2tDzxe0nUKBF45V3nqLpp1U";
   </script>
   <script src="./js/utils/supabase_client.js?v=20260226144059"></script>
 
   <!-- Core -->
   <script src="./js/api.js?v=20260226135003"></script>
   <script src="./js/router.js?v=20260226135003"></script>
-<script src="./js/utils/viewer_nav.js?v=202603122330"></script>
+  <script src="./js/utils/viewer_nav.js?v=202603122330"></script>
+  <script src="./js/utils/favorites.js?v=20260315210000"></script>
+  <script src="./js/utils/push.js?v=20260315224500"></script>
+  <script src="./js/utils/planner_push_sender.js"></script>
 
   <!-- Views -->
   <script src="./js/views/login.js?v=20260226135003"></script>
@@ -99,6 +105,9 @@
   <script src="./js/views/planner.js?v=20260304222347"></script>
 </body>
 </html>
+
+
+
 
 
 

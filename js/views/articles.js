@@ -441,6 +441,44 @@ Views.Articles = (() => {
     setupArticleToc(viewer);
   }
 
+  function getFavApi(){
+    return window.ZRFavorites || null;
+  }
+
+  function isArticleFavorite(id){
+    try{
+      const api = getFavApi();
+      return !!(api && api.isFavorite("articles", id));
+    }catch(e){}
+    return false;
+  }
+
+  function renderArticleFavoriteButton(id){
+    const active = isArticleFavorite(id);
+    return `<button class="btn btn-sm" id="insFavBtn" type="button" aria-pressed="${active ? "true" : "false"}" title="${active ? "Убрать из избранного" : "Добавить в избранное"}">${active ? "★" : "☆"}</button>`;
+  }
+
+  function bindArticleFavoriteButton(id){
+    const btn = document.getElementById("insFavBtn");
+    if(!btn) return;
+
+    btn.onclick = () => {
+      try{
+        const api = getFavApi();
+        if(!api) return;
+
+        api.toggleFavorite("articles", id);
+        const active = api.isFavorite("articles", id);
+
+        btn.textContent = active ? "★" : "☆";
+        btn.setAttribute("aria-pressed", active ? "true" : "false");
+        btn.setAttribute("title", active ? "Убрать из избранного" : "Добавить в избранное");
+      }catch(e){
+        console.error("[Favorites][Articles]", e);
+      }
+    };
+  }
+
   function renderActions(actions){
     if(!actions || !actions.length) return "";
     const btns = actions.map(a => {
@@ -646,7 +684,10 @@ Views.Articles = (() => {
       <div class="item" data-ins-section="header" style="cursor:default; margin-bottom:12px;">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
           <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">${esc(meta.title)}</h1>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h1 class="article-title" style="margin:0;">${esc(meta.title)}</h1>
+              ${renderArticleFavoriteButton(meta.id)}
+            </div>
             <p class="article-sub">${esc(updated)}</p>
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -675,6 +716,8 @@ Views.Articles = (() => {
       backBtn.textContent = getInstructionCloseLabel();
       backBtn.onclick = () => goInstructionClose();
     }
+
+    bindArticleFavoriteButton(meta.id);
 
     setupArticleBodyCollapse(viewer);
     enhanceArticleWithToc(viewer);
@@ -793,6 +836,7 @@ Views.Articles = (() => {
     }
   };
 })();
+
 
 
 

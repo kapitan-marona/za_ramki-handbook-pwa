@@ -260,6 +260,44 @@ Views.Templates = (() => {
     return [];
   }
 
+  function getFavApi(){
+    return window.ZRFavorites || null;
+  }
+
+  function isTemplateFavorite(id){
+    try{
+      const api = getFavApi();
+      return !!(api && api.isFavorite("templates", id));
+    }catch(e){}
+    return false;
+  }
+
+  function renderTemplateFavoriteButton(id){
+    const active = isTemplateFavorite(id);
+    return `<button class="btn btn-sm" id="tplFavBtn" type="button" aria-pressed="${active ? "true" : "false"}" title="${active ? "Убрать из избранного" : "Добавить в избранное"}">${active ? "★" : "☆"}</button>`;
+  }
+
+  function bindTemplateFavoriteButton(id){
+    const btn = document.getElementById("tplFavBtn");
+    if(!btn) return;
+
+    btn.onclick = () => {
+      try{
+        const api = getFavApi();
+        if(!api) return;
+
+        api.toggleFavorite("templates", id);
+        const active = api.isFavorite("templates", id);
+
+        btn.textContent = active ? "★" : "☆";
+        btn.setAttribute("aria-pressed", active ? "true" : "false");
+        btn.setAttribute("title", active ? "Убрать из избранного" : "Добавить в избранное");
+      }catch(e){
+        console.error("[Favorites][Templates]", e);
+      }
+    };
+  }
+
   function renderViewerShell(template, options){
     const o = options || {};
     const metaHtml = renderMetaRow(template);
@@ -270,7 +308,10 @@ Views.Templates = (() => {
       <div class="item" data-tpl-section="header" style="cursor:default; margin-bottom:12px;">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
           <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">${esc(template.title || "Шаблон")}</h1>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h1 class="article-title" style="margin:0;">${esc(template.title || "Шаблон")}</h1>
+              ${renderTemplateFavoriteButton(template.id)}
+            </div>
             ${sub}
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -478,6 +519,8 @@ Views.Templates = (() => {
       const backBtn = document.getElementById("tplBackBtn");
       if(backBtn) backBtn.onclick = () => goTemplateClose();
 
+      bindTemplateFavoriteButton(t.id);
+
       const listBtn = document.getElementById("tplListBtn");
       bindMobileListToggle(listBtn);
 
@@ -559,6 +602,8 @@ Views.Templates = (() => {
       const backBtn = document.getElementById("tplBackBtn");
       if(backBtn) backBtn.onclick = () => goTemplateClose();
 
+      bindTemplateFavoriteButton(t.id);
+
       const listBtn = document.getElementById("tplListBtn");
       bindMobileListToggle(listBtn);
 
@@ -633,6 +678,8 @@ Views.Templates = (() => {
 
       const backBtn = document.getElementById("tplBackBtn");
       if(backBtn) backBtn.onclick = () => goTemplateClose();
+
+      bindTemplateFavoriteButton(t.id);
 
       const listBtn = document.getElementById("tplListBtn");
       bindMobileListToggle(listBtn);
@@ -740,4 +787,7 @@ function setupTemplateBodyCollapse(viewer){
   controls.appendChild(btn);
   section.appendChild(controls);
 }
+
+
+
 

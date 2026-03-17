@@ -27,6 +27,93 @@ window.syncRoleUI = function(){
   }catch(e){}
 };
 
+window.syncPushUI = async function(){
+  try{
+    var btn = document.querySelector("#pushBtn");
+    var state = document.querySelector("#pushState");
+    if(!btn || !state) return;
+
+    if(!window.ZRPush || !ZRPush.isSupported()){
+      btn.disabled = true;
+      btn.textContent = "Push недоступен";
+      state.textContent = "—";
+      return;
+    }
+
+    try{
+      await ZRPush.ensureServiceWorker();
+    }catch(e){
+      console.warn("[Push] service worker register failed", e);
+    }
+
+    var perm = ZRPush.getPermissionState();
+
+    if(perm === "granted"){
+      btn.disabled = false;
+      btn.textContent = "Push включены";
+      state.textContent = "ON";
+      return;
+    }
+
+    if(perm === "denied"){
+      btn.disabled = true;
+      btn.textContent = "Push заблокированы";
+      state.textContent = "BLOCK";
+      return;
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Включить push";
+    state.textContent = "OFF";
+  }catch(e){
+    console.warn("[Push] sync UI failed", e);
+  }
+};
+
+window.handlePushEnableClick = async function(){
+  try{
+    if(!window.ZRPush || !ZRPush.isSupported()){
+      alert("Push не поддерживается в этом браузере.");
+      return;
+    }
+
+    var perm = ZRPush.getPermissionState();
+
+    if(perm === "default"){
+      perm = await ZRPush.requestPermissionInteractive();
+    }
+
+    if(perm !== "granted"){
+      await window.syncPushUI();
+      alert("Разрешение на push не выдано.");
+      return;
+    }
+
+    var res = await ZRPush.subscribeCurrentUser();
+    await window.syncPushUI();
+
+    if(!res || !res.ok){
+      if(res && res.reason === "missing-vapid-key"){
+        alert("Foundation готов. Дальше нужен реальный PUSH_VAPID_PUBLIC_KEY.");
+        return;
+      }
+
+      alert("Push foundation включена, но подписка/регистрация не завершилась. Проверь консоль.");
+      return;
+    }
+
+    if(res.backend && res.backend.ok){
+      alert("Push подписка сохранена ✅");
+      return;
+    }
+
+    alert("Push подписка создана, но backend registration пока не завершилась. Проверь table/policies.");
+  }catch(e){
+    console.warn("[Push] enable flow failed", e);
+    alert("Ошибка включения push. Смотри консоль.");
+  }
+};
+
 window.renderAuthArea = function(){
   var el = document.querySelector("#authArea");
   if(!el) return;
@@ -39,11 +126,26 @@ window.renderAuthArea = function(){
 
   el.innerHTML =
     '<span class="pill">' + (App.session.role || '—') + '</span>' +
+    '<button type="button" class="btn btn-sm" id="pushBtn">Push</button>' +
+    '<span class="pill" id="pushState">—</span>' +
     '<button type="button" class="btn btn-sm" id="logoutBtn">Выйти</button>';
+
+  var pushBtn = document.querySelector("#pushBtn");
+  if(pushBtn){
+    pushBtn.onclick = async function(){
+      await window.handlePushEnableClick();
+    };
+  }
 
   var btn = document.querySelector("#logoutBtn");
   if(btn){
     btn.onclick = async function(){
+      try{
+        if(window.ZRPush && ZRPush.deactivateCurrentSubscription){
+          await ZRPush.deactivateCurrentSubscription();
+        }
+      }catch(e){}
+
       try{ if(window.SB && SB.auth) await SB.auth.signOut(); }catch(e){}
       try{ delete window.__plannerState; }catch(e){}
       App.session.user = null;
@@ -57,6 +159,7 @@ window.renderAuthArea = function(){
   }
 
   window.syncRoleUI();
+  window.syncPushUI();
 };
 
 window.applySession = async function(user){
@@ -88,6 +191,14 @@ window.applySession = async function(user){
 
   window.renderAuthArea();
   window.syncRoleUI();
+
+  if(App.session.user && window.ZRPush && ZRPush.syncExistingSubscription){
+    try{
+      await ZRPush.syncExistingSubscription();
+    }catch(e){
+      console.warn("[Push] sync existing subscription skipped", e);
+    }
+  }
 };
 
 window.initAuth = async function(){
@@ -228,6 +339,9 @@ window.initAuth = async function(){
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
+
 
 
 

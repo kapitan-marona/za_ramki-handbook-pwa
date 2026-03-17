@@ -247,7 +247,35 @@
         old_project_title: oldTitle || null,
         new_project_title: newTitle || null
       });
-    }
+    
+      const actor = window.App?.session?.user?.id || null;
+
+      if(afterOne && afterOne !== actor){
+        const eventType = beforeOne ? "reassigned" : "assigned";
+
+        const taskRes = await SB
+          .from("tasks")
+          .select("title")
+          .eq("id", taskId)
+          .single();
+
+        const title = taskRes?.data?.title || "Задача";
+
+        sendPlannerPush({
+          users: [afterOne],
+          payload: {
+            type: "planner",
+            event: eventType,
+            taskId: taskId,
+            title,
+            message: eventType === "assigned"
+              ? "Вам назначена задача"
+              : "Вам переназначена задача",
+            url: "./#/planner/" + taskId
+          }
+        });
+      }
+}
 
     return r.data || null;
   }
@@ -571,6 +599,7 @@
     searchChecklistsForLink
   };
 })();
+
 
 
 

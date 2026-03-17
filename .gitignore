@@ -50,3 +50,5 @@ backups/
 # Planner internal notes
 Planner 2.0*
 Ошибки, баги и косметика.txt
+
+node_modules/

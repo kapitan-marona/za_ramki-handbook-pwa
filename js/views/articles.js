@@ -455,7 +455,7 @@ Views.Articles = (() => {
 
   function renderArticleFavoriteButton(id){
     const active = isArticleFavorite(id);
-    return `<button class="btn btn-sm" id="insFavBtn" type="button" aria-pressed="${active ? "true" : "false"}" title="${active ? "Убрать из избранного" : "Добавить в избранное"}">${active ? "★" : "☆"}</button>`;
+    return `<button class="btn btn-sm zr-fav-btn ${active ? "is-active" : ""}" id="insFavBtn" type="button" aria-pressed="${active ? "true" : "false"}" title="${active ? "Убрать из избранного" : "Добавить в избранное"}" aria-label="${active ? "Убрать из избранного" : "Добавить в избранное"}"><span class="zr-fav-btn__icon" aria-hidden="true">${active ? "★" : "☆"}</span><span class="zr-fav-btn__text">Избранное</span></button>`;
   }
 
   function bindArticleFavoriteButton(id){
@@ -470,9 +470,13 @@ Views.Articles = (() => {
         api.toggleFavorite("articles", id);
         const active = api.isFavorite("articles", id);
 
-        btn.textContent = active ? "★" : "☆";
+        btn.classList.toggle("is-active", active);
         btn.setAttribute("aria-pressed", active ? "true" : "false");
         btn.setAttribute("title", active ? "Убрать из избранного" : "Добавить в избранное");
+        btn.setAttribute("aria-label", active ? "Убрать из избранного" : "Добавить в избранное");
+
+        const icon = btn.querySelector(".zr-fav-btn__icon");
+        if(icon) icon.textContent = active ? "★" : "☆";
       }catch(e){
         console.error("[Favorites][Articles]", e);
       }
@@ -542,6 +546,55 @@ Views.Articles = (() => {
     location.hash = "#/articles";
   }
 
+  function getFavoriteArticleItems(){
+    try{
+      const api = getFavApi();
+      if(!api || typeof api.getFavorites !== "function") return [];
+      const store = api.getFavorites() || {};
+      const ids = Array.isArray(store.articles) ? store.articles : [];
+      if(!ids.length) return [];
+      const map = new Map(INDEX.map(it => [String(it.id), it]));
+      return ids.map(id => map.get(String(id))).filter(Boolean);
+    }catch(e){}
+    return [];
+  }
+
+  function renderFavoriteArticlesStart(){
+    const items = getFavoriteArticleItems();
+
+    if(!items.length){
+      return `
+        <div class="empty">
+          Выбери статью слева или используй поиск сверху.<br/><br/>
+          Подсказка: позже добавим роли, избранное и «что нового».
+        </div>`;
+    }
+
+    return `
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Избранное</div>
+        <div class="item-meta">Быстрый доступ к сохранённым статьям.</div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        ${items.map((it) => {
+          const catTitle = CATMAP[it.category] || it.category || "";
+          const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
+          const tags = (it.tags||[]).slice(0,4).map(t => `<span class="tag">${esc(t)}</span>`).join("");
+          const roles = (it.roles||[]).slice(0,2).map(r => `<span class="tag">${esc(r)}</span>`).join("");
+          const updated = it.updatedAt ? `<span class="tag">Обновлено: ${esc(formatMetaDate(it.updatedAt))}</span>` : "";
+
+          return `
+            <a class="item" href="#/${encodeURIComponent("articles")}/${encodeURIComponent(it.id)}">
+              <div class="item-title">${esc(it.title || "Статья")}</div>
+              <div class="item-meta">${cat}${updated}${tags}${roles}</div>
+            </a>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
   function setupArticleBodyCollapse(viewer){
     if(!viewer) return;
 
@@ -606,11 +659,7 @@ Views.Articles = (() => {
 
     if(!id){
       disableMobileReadingMode();
-      viewer.innerHTML = `
-        <div class="empty">
-          Выбери статью слева или используй поиск сверху.<br/><br/>
-          Подсказка: позже добавим роли, избранное и «что нового».
-        </div>`;
+      viewer.innerHTML = renderFavoriteArticlesStart();
       enhanceArticleWithToc(viewer);
       return;
     }
@@ -682,15 +731,15 @@ Views.Articles = (() => {
       </div>
 
       <div class="item" data-ins-section="header" style="cursor:default; margin-bottom:12px;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:240px;">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div class="zr-viewer-header-row">
+          <div class="zr-viewer-header-main">
+            <div class="zr-viewer-title-row">
               <h1 class="article-title" style="margin:0;">${esc(meta.title)}</h1>
               ${renderArticleFavoriteButton(meta.id)}
             </div>
             <p class="article-sub">${esc(updated)}</p>
           </div>
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div class="zr-viewer-header-actions">
             <button class="btn btn-sm" id="insTocBtn" type="button">Показать оглавление</button>
             <button class="btn btn-sm" id="insBackBtn" type="button">Закрыть</button>
           </div>
@@ -836,6 +885,9 @@ Views.Articles = (() => {
     }
   };
 })();
+
+
+
 
 
 

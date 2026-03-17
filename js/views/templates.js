@@ -274,7 +274,7 @@ Views.Templates = (() => {
 
   function renderTemplateFavoriteButton(id){
     const active = isTemplateFavorite(id);
-    return `<button class="btn btn-sm" id="tplFavBtn" type="button" aria-pressed="${active ? "true" : "false"}" title="${active ? "Убрать из избранного" : "Добавить в избранное"}">${active ? "★" : "☆"}</button>`;
+    return `<button class="btn btn-sm zr-fav-btn ${active ? "is-active" : ""}" id="tplFavBtn" type="button" aria-pressed="${active ? "true" : "false"}" title="${active ? "Убрать из избранного" : "Добавить в избранное"}" aria-label="${active ? "Убрать из избранного" : "Добавить в избранное"}"><span class="zr-fav-btn__icon" aria-hidden="true">${active ? "★" : "☆"}</span><span class="zr-fav-btn__text">Избранное</span></button>`;
   }
 
   function bindTemplateFavoriteButton(id){
@@ -289,9 +289,13 @@ Views.Templates = (() => {
         api.toggleFavorite("templates", id);
         const active = api.isFavorite("templates", id);
 
-        btn.textContent = active ? "★" : "☆";
+        btn.classList.toggle("is-active", active);
         btn.setAttribute("aria-pressed", active ? "true" : "false");
         btn.setAttribute("title", active ? "Убрать из избранного" : "Добавить в избранное");
+        btn.setAttribute("aria-label", active ? "Убрать из избранного" : "Добавить в избранное");
+
+        const icon = btn.querySelector(".zr-fav-btn__icon");
+        if(icon) icon.textContent = active ? "★" : "☆";
       }catch(e){
         console.error("[Favorites][Templates]", e);
       }
@@ -306,15 +310,15 @@ Views.Templates = (() => {
 
     return `
       <div class="item" data-tpl-section="header" style="cursor:default; margin-bottom:12px;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:240px;">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div class="zr-viewer-header-row">
+          <div class="zr-viewer-header-main">
+            <div class="zr-viewer-title-row">
               <h1 class="article-title" style="margin:0;">${esc(template.title || "Шаблон")}</h1>
               ${renderTemplateFavoriteButton(template.id)}
             </div>
             ${sub}
           </div>
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div class="zr-viewer-header-actions">
             <button class="btn btn-sm zr-mobile-only" id="tplListBtn" type="button">Показать список</button>
             <button class="btn btn-sm" id="tplBackBtn" type="button">${getTemplateCloseLabel()}</button>
           </div>
@@ -441,7 +445,7 @@ Views.Templates = (() => {
     }
 
     disableMobileReadingMode();
-    viewer.innerHTML = `<div class="empty">Выберите шаблон слева.</div>`;
+    viewer.innerHTML = renderFavoriteTemplatesStart();
   }
 
   async function open(templateId){
@@ -727,6 +731,52 @@ Views.Templates = (() => {
     }
   }
 
+  function getFavoriteTemplateItems(){
+    try{
+      const api = getFavApi();
+      if(!api || typeof api.getFavorites !== "function") return [];
+      const store = api.getFavorites() || {};
+      const ids = Array.isArray(store.templates) ? store.templates : [];
+      if(!ids.length) return [];
+      const map = new Map((_data || []).map(it => [String(it.id), it]));
+      return ids.map(id => map.get(String(id))).filter(Boolean);
+    }catch(e){}
+    return [];
+  }
+
+  function renderFavoriteTemplatesStart(){
+    const items = getFavoriteTemplateItems();
+
+    if(!items.length){
+      return `<div class="empty">Выберите шаблон слева.</div>`;
+    }
+
+    return `
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Избранное</div>
+        <div class="item-meta">Быстрый доступ к сохранённым шаблонам.</div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        ${items.map((t) => {
+          const metaParts = [];
+          if(t.format) metaParts.push(`<span class="tag">${esc(t.format)}</span>`);
+          if(t.updated_at || t.updatedAt) metaParts.push(`<span class="tag">Обновлено: ${esc(fmtMetaDate(t.updated_at || t.updatedAt))}</span>`);
+          if(Array.isArray(t.tags) && t.tags.length){
+            t.tags.forEach(tag => metaParts.push(`<span class="tag">${esc(String(tag))}</span>`));
+          }
+
+          return `
+            <a class="item" href="#/${encodeURIComponent("templates")}/${encodeURIComponent(t.id)}">
+              <div class="item-title">${esc(t.title || "Шаблон")}</div>
+              ${metaParts.length ? `<div class="item-meta">${metaParts.join("")}</div>` : ""}
+            </a>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
   function setFilter(q){
     _q = (q ?? "").toString();
     renderList();
@@ -787,6 +837,9 @@ function setupTemplateBodyCollapse(viewer){
   controls.appendChild(btn);
   section.appendChild(controls);
 }
+
+
+
 
 
 

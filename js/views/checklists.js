@@ -187,7 +187,7 @@ Views.Checklists = (() => {
 
   function renderChecklistFavoriteButton(id){
     const active = isChecklistFavorite(id);
-    return `<button class="btn btn-sm" id="clFavBtn" type="button" aria-pressed="${active ? "true" : "false"}" title="${active ? "Убрать из избранного" : "Добавить в избранное"}">${active ? "★" : "☆"}</button>`;
+    return `<button class="btn btn-sm zr-fav-btn ${active ? "is-active" : ""}" id="clFavBtn" type="button" aria-pressed="${active ? "true" : "false"}" title="${active ? "Убрать из избранного" : "Добавить в избранное"}" aria-label="${active ? "Убрать из избранного" : "Добавить в избранное"}"><span class="zr-fav-btn__icon" aria-hidden="true">${active ? "★" : "☆"}</span><span class="zr-fav-btn__text">Избранное</span></button>`;
   }
 
   function bindChecklistFavoriteButton(id){
@@ -202,9 +202,13 @@ Views.Checklists = (() => {
         api.toggleFavorite("checklists", id);
         const active = api.isFavorite("checklists", id);
 
-        btn.textContent = active ? "★" : "☆";
+        btn.classList.toggle("is-active", active);
         btn.setAttribute("aria-pressed", active ? "true" : "false");
         btn.setAttribute("title", active ? "Убрать из избранного" : "Добавить в избранное");
+        btn.setAttribute("aria-label", active ? "Убрать из избранного" : "Добавить в избранное");
+
+        const icon = btn.querySelector(".zr-fav-btn__icon");
+        if(icon) icon.textContent = active ? "★" : "☆";
       }catch(e){
         console.error("[Favorites][Checklists]", e);
       }
@@ -245,6 +249,52 @@ Views.Checklists = (() => {
     return parts.join("");
   }
 
+  function getFavoriteChecklistItems(){
+    try{
+      const api = getFavApi();
+      if(!api || typeof api.getFavorites !== "function") return [];
+      const store = api.getFavorites() || {};
+      const ids = Array.isArray(store.checklists) ? store.checklists : [];
+      if(!ids.length) return [];
+      const map = new Map((_data || []).map(it => [String(it.id), it]));
+      return ids.map(id => map.get(String(id))).filter(Boolean);
+    }catch(e){}
+    return [];
+  }
+
+  function renderFavoriteChecklistsStart(){
+    const items = getFavoriteChecklistItems();
+
+    if(!items.length){
+      return `<div class="empty">Выберите чек-лист слева.</div>`;
+    }
+
+    return `
+      <div class="item" style="cursor:default; margin-bottom:12px;">
+        <div class="item-title">Избранное</div>
+        <div class="item-meta">Быстрый доступ к сохранённым чек-листам.</div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        ${items.map((c) => {
+          const tagsHtml = Array.isArray(c.tags) && c.tags.length
+            ? c.tags.map(tag => `<span class="tag">${esc(String(tag))}</span>`).join("")
+            : "";
+          const updated = (c.updated_at || c.updatedAt)
+            ? `<span class="tag">Обновлено: ${esc(formatDate(c.updated_at || c.updatedAt))}</span>`
+            : "";
+
+          return `
+            <a class="item" href="#/checklists/${encodeURIComponent(String(c.id || ""))}">
+              <div class="item-title">${esc(c.title || "Чек-лист")}</div>
+              <div class="item-meta">${updated}${tagsHtml}</div>
+            </a>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
   function renderList(){
     const list = $("#list");
     const viewer = $("#viewer");
@@ -254,7 +304,7 @@ Views.Checklists = (() => {
     const current = getCurrentHash();
     const hasOpenChecklist = /^#\/checklists\/.+/.test(String(current || ""));
     if(!hasOpenChecklist){
-      viewer.innerHTML = `<div class="empty">Выберите чек-лист слева.</div>`;
+      viewer.innerHTML = renderFavoriteChecklistsStart();
     }
 
     const q = norm(_q).trim();
@@ -584,15 +634,15 @@ Views.Checklists = (() => {
 
     viewer.innerHTML = `
       <div class="item" data-cl-section="header" style="cursor:default; margin-bottom:12px;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:240px;">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div class="zr-viewer-header-row">
+          <div class="zr-viewer-header-main">
+            <div class="zr-viewer-title-row">
               <h1 class="article-title" style="margin:0;">${esc(item.title || "Чек-лист")}</h1>
               ${renderChecklistFavoriteButton(item.id)}
             </div>
             <p class="article-sub">${esc(subtitle)}</p>
           </div>
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div class="zr-viewer-header-actions">
             <button class="btn btn-sm zr-mobile-only" id="clListBtn" type="button">Показать список</button>
             <button class="btn btn-sm" id="clBackBtn" type="button">${getChecklistCloseLabel()}</button>
           </div>
@@ -637,5 +687,8 @@ Views.Checklists = (() => {
 
   return { show, open, setFilter };
 })();
+
+
+
 
 

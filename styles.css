@@ -946,3 +946,87 @@ body{
 
 
 
+
+/* ZA RAMKI — viewer header unified layout */
+.zr-viewer-header-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.zr-viewer-header-main{
+  flex:1;
+  min-width:240px;
+}
+
+.zr-viewer-title-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.zr-viewer-header-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+/* ZA RAMKI — favorites button polish */
+.zr-fav-btn{
+  min-height:32px;
+  padding:7px 10px;
+  gap:7px;
+  border-color: var(--border);
+  background: var(--card);
+  white-space:nowrap;
+}
+
+.zr-fav-btn .zr-fav-btn__icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:14px;
+  min-width:14px;
+  font-size:14px;
+  line-height:1;
+}
+
+.zr-fav-btn .zr-fav-btn__text{
+  font-size:12px;
+  line-height:1;
+}
+
+.zr-fav-btn:hover{
+  border-color: var(--accent-35);
+  background: var(--item);
+}
+
+.zr-fav-btn.is-active{
+  border-color: var(--accent-55);
+  background: var(--accent-08);
+  color: var(--accent-95);
+  box-shadow: 0 0 0 1px var(--accent-12);
+}
+
+.zr-fav-btn.is-active .zr-fav-btn__icon{
+  transform: translateY(-0.5px);
+}
+
+@media (max-width: 640px){
+  .zr-viewer-header-row{
+    align-items:stretch;
+  }
+
+  .zr-viewer-header-actions{
+    width:100%;
+  }
+
+  .zr-fav-btn{
+    min-height:30px;
+    padding:6px 10px;
+  }
+}

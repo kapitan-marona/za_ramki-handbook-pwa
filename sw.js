@@ -30,8 +30,8 @@ self.addEventListener("push", (event) => {
 
     const options = {
       body: body,
-      icon: payload.icon || "./assets/img/logo.png",
-      badge: payload.badge || "./assets/img/logo.png",
+      icon: "/assets/icons/icon-push.png",
+      badge: "/assets/icons/icon-push.png",
       tag: payload.tag || "zr-push",
       renotify: true,
       requireInteraction: true,

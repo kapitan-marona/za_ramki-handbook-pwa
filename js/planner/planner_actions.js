@@ -231,18 +231,37 @@
             throw new Error(isEdit ? "onSave handler missing" : "onCreate handler missing");
           }
 
-          const result = await onSubmit(payload);
+          let result = null;
+
+          try{
+            result = await onSubmit(payload);
+          }catch(err){
+            console.warn("[PlannerActions] submit core error", err);
+            throw err;
+          }
 
           const taskIdForAssignee = isEdit
             ? (task && task.id ? String(task.id) : "")
             : (result && result.id ? String(result.id) : "");
 
           if(taskIdForAssignee && window.PlannerAPI && typeof PlannerAPI.setTaskAssignees === "function"){
-            await PlannerAPI.setTaskAssignees(taskIdForAssignee, nextAssignees);
+            try{
+              if(msg) msg.textContent = "Сохраняю исполнителя…";
+              await PlannerAPI.setTaskAssignees(taskIdForAssignee, nextAssignees);
+            }catch(err){
+              console.warn("[PlannerActions] assignees sync error", err);
+              throw err;
+            }
           }
 
           if(typeof opts.onAfterSubmit === "function"){
-            await opts.onAfterSubmit(taskIdForAssignee, result);
+            try{
+              if(msg) msg.textContent = "Обновляю интерфейс…";
+              await opts.onAfterSubmit(taskIdForAssignee, result);
+            }catch(err){
+              console.warn("[PlannerActions] after submit error", err);
+              throw err;
+            }
           }
 
           close();
@@ -699,6 +718,8 @@ window.PlannerActions = {
     ensureInProgress
   };
 })();
+
+
 
 
 

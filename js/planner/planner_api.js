@@ -240,7 +240,7 @@
 
     const r = await SB.from("tasks").insert(row).select("id").single();
     if(r && r.error) throw r.error;
-    return r.data || null;
+    return updatedRow || null;
   }
 
   async function fetchProjects(){
@@ -279,9 +279,17 @@
       .from("tasks")
       .select("id,project_id,projects(title)")
       .eq("id", taskId)
-      .single();
+      .maybeSingle();
 
-    if(beforeRes && beforeRes.error) throw beforeRes.error;
+    if(beforeRes && beforeRes.error && beforeRes.error.code !== "PGRST116"){
+      throw beforeRes.error;
+    }
+    if(beforeRes && beforeRes.error && beforeRes.error.code === "PGRST116"){
+      console.warn("[PlannerAPI] updateTask before-read: task not visible or not found", {
+        taskId,
+        error: beforeRes.error
+      });
+    }
     const before = beforeRes.data || null;
 
     const row = {
@@ -299,9 +307,19 @@
       .update(row)
       .eq("id", taskId)
       .select("id")
-      .single();
+      .maybeSingle();
 
-    if(r && r.error) throw r.error;
+    if(r && r.error && r.error.code !== "PGRST116") throw r.error;
+    if(r && r.error && r.error.code === "PGRST116"){
+      console.warn("[PlannerAPI] updateTask returning read empty, fallback to original taskId", {
+        taskId,
+        error: r.error
+      });
+    }
+
+    const updatedRow = (r && r.data && r.data.id)
+      ? r.data
+      : { id: taskId };
 
     const oldProjectId = before && before.project_id ? String(before.project_id) : "";
     const newProjectId = row.project_id ? String(row.project_id) : "";
@@ -314,9 +332,16 @@
           .from("projects")
           .select("id,title")
           .eq("id", newProjectId)
-          .single();
+          .maybeSingle();
 
-        if(projRes && projRes.error) throw projRes.error;
+        if(projRes && projRes.error && projRes.error.code !== "PGRST116") throw projRes.error;
+        if(projRes && projRes.error && projRes.error.code === "PGRST116"){
+          console.warn("[PlannerAPI] updateTask project lookup empty", {
+            taskId,
+            newProjectId,
+            error: projRes.error
+          });
+        }
         newTitle = (projRes.data && projRes.data.title) ? String(projRes.data.title) : "";
       }
 
@@ -344,7 +369,7 @@
       });
     }
 
-    return r.data || null;
+    return updatedRow || null;
   }
 
   async function fetchTaskById(taskId, ctx){
@@ -569,7 +594,7 @@
       .single();
 
     if(r && r.error) throw r.error;
-    return r.data || null;
+    return updatedRow || null;
   }
 
   async function removeTaskLink(linkId){

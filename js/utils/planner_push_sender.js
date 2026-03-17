@@ -1,18 +1,27 @@
-// ZA RAMKI — Planner Push Sender (transport only)
-window.sendPlannerPush = async function({ users, payload }){
+window.sendPlannerPush = async function({ userId, title, body, url, tag }){
   try{
-    if(!users || !users.length) return;
+    if(!userId) return false;
 
-    await fetch("https://oedmueajusqhekgnyfsl.functions.supabase.co/send-push", {
+    const r = await fetch("https://oedmueajusqhekgnyfsl.functions.supabase.co/test-push", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        users,
-        payload
+        user_id: String(userId),
+        title: String(title || "ZA RAMKI"),
+        body: String(body || ""),
+        url: String(url || "./#/planner"),
+        tag: String(tag || ("planner-" + Date.now()))
       })
     });
 
+    if(!r.ok){
+      console.warn("[planner push] http error", r.status);
+      return false;
+    }
+
+    return true;
   }catch(e){
-    console.warn("[PlannerPush] send failed", e);
+    console.warn("[planner push] failed", e);
+    return false;
   }
 };

@@ -52,3 +52,14 @@ Planner 2.0*
 Ошибки, баги и косметика.txt
 
 node_modules/
+
+node_modules/
+
+package.json
+package-lock.json
+supabase/
+
+*.bak
+*.broken_*
+*.before-repatch*
+new 1.txt

@@ -835,6 +835,29 @@ async function loadDocs(task){
         }
 
         const r = await (PlannerAPI.addTaskComment(task.id, text).then(() => ({ error: null })).catch(error => ({ error })));
+
+        // push (after comment)
+        try{
+          const assignees = getTaskAssigneeIds(task);
+          const targetUserId = assignees.length ? String(assignees[0]) : "";
+          const actorId = String(window.App?.session?.user?.id || "");
+
+          if(
+            targetUserId &&
+            targetUserId !== actorId &&
+            typeof window.sendPlannerPush === "function"
+          ){
+            await sendPlannerPush({
+              userId: targetUserId,
+              title: "ZA RAMKI",
+              body: "Новый комментарий в задаче",
+              url: "./#/planner/" + task.id,
+              tag: "planner-comment_added-" + task.id
+            });
+          }
+        }catch(e){
+          console.warn("[PlannerPush] comment_added error", e);
+        }
         if(r && r.error) throw r.error;
 
         if(inp) inp.value = "";
@@ -1198,7 +1221,37 @@ async function loadDocs(task){
           if(msg) msg.textContent = "Сохраняю…";
 
           try{
-            await PlannerActions.setStatus(task.id, s);
+            const beforeStatus = String(task.status || "");
+
+          await PlannerActions.setStatus(task.id, s);
+
+          // push (after successful save)
+          try{
+            const tasks2 = await fetchAllActiveTasks();
+            const updated = tasks2.find(x => String(x.id) === String(task.id));
+
+            const assignees = updated && Array.isArray(updated.assignees) ? updated.assignees : [];
+            const targetUserId = assignees.length ? String(assignees[0]) : "";
+            const actorId = String(window.App?.session?.user?.id || "");
+
+            if(
+              updated &&
+              beforeStatus !== String(updated.status || "") &&
+              targetUserId &&
+              targetUserId !== actorId &&
+              typeof window.sendPlannerPush === "function"
+            ){
+              await sendPlannerPush({
+                userId: targetUserId,
+                title: "ZA RAMKI",
+                body: "Статус задачи изменён",
+                url: "./#/planner/" + task.id,
+                tag: "planner-status_changed-" + task.id
+              });
+            }
+          }catch(e){
+            console.warn("[PlannerPush] status_changed error", e);
+          }
             if(msg) msg.textContent = "Готово.";
             // local refresh (anti-jitter): update list + details without re-mounting full planner
             const tasks2 = await fetchAllActiveTasks();
@@ -1395,6 +1448,8 @@ loadDocs(task);
 
   return { show };
 })();
+
+
 
 
 

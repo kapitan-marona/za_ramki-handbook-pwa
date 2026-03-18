@@ -89,28 +89,7 @@
     const r = await SB.rpc("set_task_status", { p_new_status: newStatus, p_task_id: taskId });
     if(r && r.error) throw r.error;
 
-    const afterAssignees = await fetchTaskAssignees(taskId);
-    const targetUserId = Array.isArray(afterAssignees) && afterAssignees.length
-      ? String(afterAssignees[0].user_id || "")
-      : "";
-
-    const actorId = String(window.App?.session?.user?.id || "");
-
-    if(
-      before &&
-      String(before.status || "") !== String(newStatus || "") &&
-      targetUserId &&
-      targetUserId !== actorId &&
-      plannerPushAllowed(targetUserId, "status_changed", taskId)
-    ){
-      await sendPlannerPush({
-        userId: targetUserId,
-        title: "ZA RAMKI",
-        body: "Статус задачи изменён",
-        url: "./#/planner/" + taskId,
-        tag: "planner-status_changed-" + taskId
-      });
-    }
+    // push moved to PlannerActions layer
 
     return true;
   }
@@ -190,19 +169,7 @@
     const r = await SB.rpc("add_task_comment", { p_task_id: taskId, p_body: body });
     if(r && r.error) throw r.error;
 
-    if(
-      targetUserId &&
-      targetUserId !== actorId &&
-      plannerPushAllowed(targetUserId, "comment_added", taskId)
-    ){
-      await sendPlannerPush({
-        userId: targetUserId,
-        title: "ZA RAMKI",
-        body: "Новый комментарий в задаче",
-        url: "./#/planner/" + taskId,
-        tag: "planner-comment_added-" + taskId
-      });
-    }
+    // push moved to PlannerActions layer
 
     return true;
   }
@@ -523,24 +490,7 @@
         to_assignee_email: toProfile && toProfile.email ? String(toProfile.email) : null
       });
 
-      const actorId = String(window.App?.session?.user?.id || "");
-      const eventType = beforeOne ? "reassigned" : "assigned";
-
-      if(
-        afterOne &&
-        afterOne !== actorId &&
-        plannerPushAllowed(afterOne, eventType, taskId)
-      ){
-        await sendPlannerPush({
-          userId: afterOne,
-          title: "ZA RAMKI",
-          body: eventType === "assigned"
-            ? "Вам назначена задача"
-            : "Вам переназначена задача",
-          url: "./#/planner/" + taskId,
-          tag: "planner-" + eventType + "-" + taskId
-        });
-      }
+      // push moved to PlannerActions layer
     }
 
     return true;
@@ -710,4 +660,7 @@
     searchChecklistsForLink
   };
 })();
+
+
+
 

@@ -247,7 +247,36 @@
           if(taskIdForAssignee && window.PlannerAPI && typeof PlannerAPI.setTaskAssignees === "function"){
             try{
               if(msg) msg.textContent = "Сохраняю исполнителя…";
+              const before = Array.isArray(task && task.assignees) ? task.assignees : [];
+
               await PlannerAPI.setTaskAssignees(taskIdForAssignee, nextAssignees);
+
+              // push (after assignment)
+              try{
+                const actorId = String(window.App?.session?.user?.id || "");
+                const after = nextAssignees || [];
+
+                const beforeOne = before.length ? String(before[0]) : null;
+                const afterOne = after.length ? String(after[0]) : null;
+
+                if(afterOne && afterOne !== actorId){
+                  const eventType = beforeOne ? "reassigned" : "assigned";
+
+                  if(typeof window.sendPlannerPush === "function"){
+                    await sendPlannerPush({
+                      userId: afterOne,
+                      title: "ZA RAMKI",
+                      body: eventType === "assigned"
+                        ? "Вам назначена задача"
+                        : "Вам переназначена задача",
+                      url: "./#/planner/" + taskIdForAssignee,
+                      tag: "planner-" + eventType + "-" + taskIdForAssignee
+                    });
+                  }
+                }
+              }catch(e){
+                console.warn("[PlannerPush] assignment error", e);
+              }
             }catch(err){
               console.warn("[PlannerActions] assignees sync error", err);
               throw err;
@@ -718,6 +747,7 @@ window.PlannerActions = {
     ensureInProgress
   };
 })();
+
 
 
 

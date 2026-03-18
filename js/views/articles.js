@@ -9,6 +9,8 @@ Views.Articles = (() => {
   const INS_LAST_HASH_KEY = "zr_ins_last_hash";
   const INS_RETURN_HASH_KEY = "zr_ins_return_hash";
   const INS_TOC_STATE_KEY = "zr_articles_toc_collapsed";
+  const INS_SCROLL_KEY = "zr_articles_scroll_map";
+  const INS_BODY_STATE_KEY = "zr_articles_body_state_map";
 
   function getCurrentHash(){
     return String(location.hash || "");
@@ -171,6 +173,84 @@ Views.Articles = (() => {
     try{
       localStorage.setItem(INS_TOC_STATE_KEY, v ? "1" : "0");
     }catch(e){}
+  }
+
+  function getStoredArticleScroll(id){
+    try{
+      const raw = localStorage.getItem(INS_SCROLL_KEY) || "{}";
+      const map = JSON.parse(raw);
+      const v = map && id ? Number(map[String(id)]) : 0;
+      return Number.isFinite(v) && v > 0 ? v : 0;
+    }catch(e){}
+    return 0;
+  }
+
+  function setStoredArticleScroll(id, top){
+    try{
+      if(!id) return;
+      const raw = localStorage.getItem(INS_SCROLL_KEY) || "{}";
+      const map = JSON.parse(raw);
+      map[String(id)] = Math.max(0, Number(top) || 0);
+      localStorage.setItem(INS_SCROLL_KEY, JSON.stringify(map));
+    }catch(e){}
+  }
+
+  function getStoredArticleBodyExpanded(id){
+    try{
+      const raw = localStorage.getItem(INS_BODY_STATE_KEY) || "{}";
+      const map = JSON.parse(raw);
+      return !!(map && id && map[String(id)] === 1);
+    }catch(e){}
+    return false;
+  }
+
+  function setStoredArticleBodyExpanded(id, expanded){
+    try{
+      if(!id) return;
+      const raw = localStorage.getItem(INS_BODY_STATE_KEY) || "{}";
+      const map = JSON.parse(raw);
+      map[String(id)] = expanded ? 1 : 0;
+      localStorage.setItem(INS_BODY_STATE_KEY, JSON.stringify(map));
+    }catch(e){}
+  }
+
+  function bindArticleScrollMemory(viewer, id){
+    if(!viewer || !id) return;
+
+    try{
+      if(viewer.__zrArticleScrollHandler){
+        viewer.removeEventListener("scroll", viewer.__zrArticleScrollHandler);
+      }
+    }catch(e){}
+
+    const onScroll = () => {
+      setStoredArticleScroll(id, viewer.scrollTop || 0);
+    };
+
+    viewer.__zrArticleScrollHandler = onScroll;
+    viewer.addEventListener("scroll", onScroll, { passive:true });
+
+    try{
+      if(window.__zrArticleVisibilityHandler){
+        document.removeEventListener("visibilitychange", window.__zrArticleVisibilityHandler);
+      }
+      if(window.__zrArticlePageHideHandler){
+        window.removeEventListener("pagehide", window.__zrArticlePageHideHandler);
+      }
+    }catch(e){}
+
+    window.__zrArticleVisibilityHandler = function(){
+      if(document.visibilityState === "hidden"){
+        setStoredArticleScroll(id, viewer.scrollTop || 0);
+      }
+    };
+
+    window.__zrArticlePageHideHandler = function(){
+      setStoredArticleScroll(id, viewer.scrollTop || 0);
+    };
+
+    document.addEventListener("visibilitychange", window.__zrArticleVisibilityHandler);
+    window.addEventListener("pagehide", window.__zrArticlePageHideHandler);
   }
 
   function parseUpdatedAt(meta){
@@ -403,9 +483,14 @@ Views.Articles = (() => {
       a.addEventListener("click", (e) => {
         e.preventDefault();
         const id = a.getAttribute("data-toc");
-        const target = mdRoot.querySelector("#" + CSS.escape(id));
+        const target = document.getElementById(id);
         if(!target) return;
-        viewer.scrollTo({ top: Math.max(0, target.offsetTop - 12), behavior: "smooth" });
+
+        const viewerRect = viewer.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const top = viewer.scrollTop + (targetRect.top - viewerRect.top) - 16;
+
+        viewer.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
       });
     });
 
@@ -608,7 +693,7 @@ Views.Articles = (() => {
     `;
   }
 
-  function setupArticleBodyCollapse(viewer){
+  function setupArticleBodyCollapse(viewer, articleId){
     if(!viewer) return;
 
     const section = viewer.querySelector('[data-ins-section="body"]');
@@ -628,11 +713,20 @@ Views.Articles = (() => {
     const fullHeight = markdown.scrollHeight || 0;
     if(fullHeight <= limit) return;
 
-    let expanded = false;
+    let expanded = !!getStoredArticleBodyExpanded(articleId);
 
-    markdown.style.maxHeight = limit + "px";
-    markdown.style.overflow = "hidden";
-    markdown.style.position = "relative";
+    const applyExpandedState = () => {
+      if(expanded){
+        markdown.style.maxHeight = "";
+        markdown.style.overflow = "";
+      }else{
+        markdown.style.maxHeight = limit + "px";
+        markdown.style.overflow = "hidden";
+        markdown.style.position = "relative";
+      }
+    };
+
+    applyExpandedState();
 
     const controls = document.createElement("div");
     controls.setAttribute("data-ins-collapse","controls");
@@ -644,10 +738,11 @@ Views.Articles = (() => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "btn btn-sm";
-    btn.textContent = "Показать полностью";
+    btn.textContent = expanded ? "Свернуть" : "Показать полностью";
 
     btn.onclick = () => {
       expanded = !expanded;
+      setStoredArticleBodyExpanded(articleId, expanded);
 
       if(expanded){
         markdown.style.maxHeight = "";
@@ -668,7 +763,8 @@ Views.Articles = (() => {
   }
 
   async function openArticle(id){
-    const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
+    const viewer = $("#viewer");
+    const savedScrollTop = id ? getStoredArticleScroll(id) : 0;
 
     if(!id){
       disableMobileReadingMode();
@@ -788,12 +884,20 @@ Views.Articles = (() => {
 
     bindArticleFavoriteButton(meta.id);
 
-    setupArticleBodyCollapse(viewer);
+    setupArticleBodyCollapse(viewer, meta.id);
     enhanceArticleWithToc(viewer);
     enableMobileReadingMode();
 
     const listBtn = document.getElementById("insListBtn");
     bindMobileListToggle(listBtn);
+
+    bindArticleScrollMemory(viewer, meta.id);
+
+    requestAnimationFrame(() => {
+      try{
+        viewer.scrollTop = savedScrollTop > 0 ? savedScrollTop : 0;
+      }catch(e){}
+    });
 
     setStatus("готово");
   }
@@ -905,6 +1009,9 @@ Views.Articles = (() => {
     }
   };
 })();
+
+
+
 
 
 

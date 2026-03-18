@@ -2064,3 +2064,70 @@ body{
   color: #FFF3EA;
 }
 
+
+/* =========================================================
+   PHASE A — article TOC + sticky header final stabilizer
+   ========================================================= */
+
+.article-layout{
+  align-items: start !important;
+}
+
+.article-main{
+  min-width: 0;
+}
+
+[data-ins-section="header"]{
+  top: 0 !important;
+  z-index: 8 !important;
+  padding-top: 4px !important;
+  padding-bottom: 6px !important;
+  margin-top: 0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04) !important;
+  transition: box-shadow .16s ease, background-color .16s ease !important;
+}
+
+.viewer-mini-header [data-ins-section="header"]{
+  top: 0 !important;
+  padding-top: 4px !important;
+  padding-bottom: 6px !important;
+  margin-top: 0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04) !important;
+}
+
+.viewer-mini-header .article-title,
+[data-ins-section="header"] .article-title{
+  font-size: 22px !important;
+  line-height: 1.2 !important;
+  transition: none !important;
+}
+
+.viewer-mini-header .article-sub,
+[data-ins-section="header"] .article-sub{
+  display: block !important;
+  overflow: visible !important;
+  max-height: none !important;
+  opacity: 1 !important;
+  margin-top: 6px !important;
+  margin-bottom: 0 !important;
+  transition: none !important;
+}
+
+[data-ins-section="header"] .btn,
+.viewer-mini-header [data-ins-section="header"] .btn{
+  padding: 8px 12px !important;
+  font-size: inherit !important;
+  transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease, opacity .16s ease !important;
+}
+
+.article-toc{
+  top: 12px !important;
+}
+
+#insTocBtn.is-active{
+  border-color: var(--accent-55);
+  background: var(--accent-08);
+  box-shadow: 0 0 0 1px var(--accent-12);
+}

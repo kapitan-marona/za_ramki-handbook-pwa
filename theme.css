@@ -1,4 +1,4 @@
-﻿/* ===========================
+/* ===========================
    ZA RAMKI — Brand Theme (UI-tuned)
    theme.css = бренд/оверрайды (последний в <head>)
    colors.css = source of truth для цветов
@@ -118,11 +118,30 @@ input, textarea, select{
   border: 1px solid var(--border);
   background: rgba(26,23,20,.60);
   color: var(--text);
+  transition:
+    border-color .16s ease,
+    background-color .16s ease,
+    box-shadow .16s ease,
+    opacity .16s ease;
 }
-input:focus, textarea:focus, select:focus{
+input:hover, textarea:hover, select:hover{
+  border-color: var(--accent-35);
+}
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible{
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-12);
+  border-color: var(--accent-55);
+  box-shadow: 0 0 0 3px var(--accent-12);
+}
+input:disabled,
+textarea:disabled,
+select:disabled{
+  opacity: .5;
+  pointer-events: none;
 }
 
 /* ---------- Compact buttons (BriefPro) ---------- */

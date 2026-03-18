@@ -234,9 +234,9 @@ const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) 
     // ---------- LEFT ----------
     function renderLeft(tasks){
       const head = `
-        <div style="padding:10px 10px 6px 10px;">
-          <div style="font-weight:700; letter-spacing:.08em;">PLANNER</div>
-          
+        <div style="padding:12px 10px 8px 10px;">
+          <div class="zr-panel-topline">PLANNER</div>
+          <div class="zr-panel-subline">Список задач и быстрый переход к деталям.</div>
         </div>
       `;
 
@@ -269,9 +269,7 @@ const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) 
     : "В списке слева пока пусто.";
 
   host.innerHTML = `
-    <div class="item" style="cursor:default;">
-      <div class="item-meta"><span class="muted">${esc(emptyText)}</span></div>
-    </div>
+    <div class="zr-empty-shell">${esc(emptyText)}</div>
   `;
   return;
 }
@@ -284,15 +282,14 @@ const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) 
       }catch(e){ console.warn("[Planner] left sortMineFirst error", e); }
       host.innerHTML = leftTasks.map(t => {
         const due = t.due_date ? `<span class="pl-due ${isOverdue(t) ? "is-overdue" : ""}">${esc(dueLabel(t.due_date))}</span>` : "";
-        const st  = t.status ? `· ${esc(statusLabel(t.status))}` : "";
         const badge = isOverdue(t) ? `<span class="tag warn">Срок истёк</span>` : ``;
 
         const assigneeLabel = getTaskAssigneeLabel(t, uid);
 const isSel = selectedId && String(selectedId) === String(t.id);
         return `
-          <div class="item" data-id="${esc(t.id)}" style="${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
-            <div class="item-title">${esc(t.title || "(без названия)")}${badge}</div>
-            <div class="item-meta">${[assigneeLabel, startLabel(t.start_date), due, urgencyLabel(t.urgency), (t.status ? statusLabel(t.status) : "")].filter(Boolean).join(" · ")}</div>
+          <div class="item ${isSel ? 'zr-list-row--active' : ''}" data-id="${esc(t.id)}">
+            <div class="zr-list-row-title">${esc(t.title || "(без названия)")}${badge}</div>
+            <div class="zr-list-row-meta">${[assigneeLabel, startLabel(t.start_date), due, urgencyLabel(t.urgency), (t.status ? statusLabel(t.status) : "")].filter(Boolean).join(" · ")}</div>
           </div>
         `;
       }).join("");
@@ -314,8 +311,8 @@ viewerEl.querySelectorAll("button, input, textarea, select").forEach(x => { try{
 viewerEl.innerHTML = `
   <div class="pl-head">
     <div class="pl-head-left">
-      <div style="font-weight:700; letter-spacing:.08em;">PLANNER</div>
-      <div class="muted" style="margin-top:6px; font-size:12px;">Обзор по статусам · клик по карточке открывает детали</div>
+      <div class="zr-panel-topline">PLANNER</div>
+      <div class="zr-panel-subline">Обзор по статусам · клик по карточке открывает детали</div>
 
       <div class="pl-progress-row">
         <span class="pl-bracket">[</span>
@@ -462,13 +459,13 @@ viewerEl.innerHTML = `
                 </div>
               `;
             }).join("")
-          : `<div class="muted" style="padding:10px 2px; font-size:12px;">Пусто</div>`;
+          : `<div class="zr-board-col-empty">Пусто</div>`;
 
         return `
-          <div style="flex:1; min-width:260px; padding:10px 12px; border:1px solid rgba(255,255,255,.10); border-radius:16px;">
-            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;">
-              <div style="font-weight:650;">${esc(c.label)}</div>
-              <div class="muted" style="font-size:12px;">${items.length}</div>
+          <div class="zr-board-col">
+            <div class="zr-board-col-head">
+              <div class="zr-board-col-title">${esc(c.label)}</div>
+              <div class="zr-board-col-count">${items.length}</div>
             </div>
             ${cards}
           </div>
@@ -494,7 +491,7 @@ viewerEl.innerHTML = `
       if(!host) return;
 
       if(!items || items.length === 0){
-        host.innerHTML = `<div class="muted" style="font-size:12px;">Пункты пока не добавлены.</div>`;
+        host.innerHTML = `<div class="zr-planner-muted">Пункты пока не добавлены.</div>`;
         return;
       }
 
@@ -502,21 +499,22 @@ viewerEl.innerHTML = `
       const total = items.length;
 
       host.innerHTML = `
-        <div class="muted" style="font-size:12px; margin-bottom:8px;">${doneCount}/${total} выполнено</div>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          ${items.map(it => `
-            <label style="display:flex; gap:10px; align-items:flex-start; cursor:${isReadOnly ? "default" : "pointer"};">
-              <input
-                type="checkbox"
-                class="pl-ci"
-                data-id="${esc(it.id)}"
-                ${it.done ? "checked" : ""}
-                ${isReadOnly ? "disabled" : ""}
-                style="margin-top:3px;"
-              >
-              <span style="${it.done ? "opacity:.75; text-decoration:line-through;" : ""}">${esc(it.text || "(пусто)")}</span>
-            </label>
-          `).join("")}
+        <div class="zr-planner-checklist">
+          <div class="zr-planner-checklist-summary">${doneCount}/${total} выполнено</div>
+          <div class="zr-planner-checklist-list">
+            ${items.map(it => `
+              <label class="zr-card zr-card--row zr-planner-checklist-row" style="cursor:${isReadOnly ? "default" : "pointer"};">
+                <input
+                  type="checkbox"
+                  class="pl-ci"
+                  data-id="${esc(it.id)}"
+                  ${it.done ? "checked" : ""}
+                  ${isReadOnly ? "disabled" : ""}
+                >
+                <span class="zr-planner-checklist-text ${it.done ? "is-done" : ""}">${esc(it.text || "(пусто)")}</span>
+              </label>
+            `).join("")}
+          </div>
         </div>
       `;
     }
@@ -696,68 +694,27 @@ async function loadDocs(task){
     }
 
     host.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:6px;">
+      <div class="zr-planner-docs-list">
         ${docs.map((d) => {
           const canRemove = !!(isAdmin && !isArchived && d.removable && d.link_id);
           const removeBtn = canRemove
-            ? `<button class="pl-doc-remove" data-link-id="${esc(d.link_id)}" type="button" title="Убрать" style="
-                flex:0 0 auto;
-                width:26px;
-                height:26px;
-                border:1px solid rgba(255,255,255,.10);
-                border-radius:999px;
-                background:transparent;
-                color:inherit;
-                opacity:.55;
-                cursor:pointer;
-                line-height:1;
-                padding:0;
-              ">×</button>`
+            ? `<button class="btn btn-sm pl-btn-ghost zr-planner-doc-remove pl-doc-remove" data-link-id="${esc(d.link_id)}" type="button" title="Убрать">×</button>`
             : ``;
 
-          const commonStyle = `
-            display:block;
-            width:100%;
-            min-width:0;
-            box-sizing:border-box;
-            padding:6px 12px;
-            border:1px solid rgba(255,255,255,.10);
-            border-radius:999px;
-            background:transparent;
-            color:inherit;
-            text-decoration:none;
-            text-align:center;
-            cursor:pointer;
-            overflow:hidden;
-          `;
-
-          const labelHtml = `
-            <span style="
-              display:block;
-              overflow:hidden;
-              text-overflow:ellipsis;
-              white-space:nowrap;
-              font-size:12px;
-              line-height:1.2;
-            ">${esc(d.label)}</span>
-          `;
-
           const main = (d.section === "external")
-            ? `<a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer" style="${commonStyle}">
-                ${labelHtml}
+            ? `<a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm pl-btn-ghost zr-planner-doc-link">
+                ${esc(d.label)}
               </a>`
-            : `<button class="pl-doc" data-sec="${esc(d.section)}" data-id="${esc(d.id)}" type="button" style="${commonStyle}">
-                ${labelHtml}
+            : `<button class="btn btn-sm pl-btn-ghost zr-planner-doc-link pl-doc" data-sec="${esc(d.section)}" data-id="${esc(d.id)}" type="button">
+                ${esc(d.label)}
               </button>`;
 
           return `
-            <div style="display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; width:100%; min-width:0;">
-              <div style="min-width:0; overflow:hidden;">
+            <div class="zr-planner-doc-row">
+              <div class="zr-planner-doc-main">
                 ${main}
               </div>
-              <div style="width:26px; display:flex; align-items:center; justify-content:center;">
-                ${removeBtn}
-              </div>
+              ${removeBtn}
             </div>
           `;
         }).join("")}
@@ -821,9 +778,9 @@ async function loadDocs(task){
   }
 
   const list = (!items || items.length === 0)
-    ? `<div class="muted" style="font-size:12px;">Комментариев пока нет.</div>`
-    : `<div style="display:flex; flex-direction:column; gap:0;">
-        ${items.map((c, idx) => {
+    ? `<div class="zr-planner-muted">Комментариев пока нет.</div>`
+    : `<div class="zr-planner-comments">
+        ${items.map((c) => {
           const author = resolvePersonLabel({
             id: c.author_id,
             display_name: c.author_display_name,
@@ -832,19 +789,14 @@ async function loadDocs(task){
             email: c.author_email
           }, { uid, fallback: "Автор" });
           const ts = fmtCommentTs(c.created_at);
-          const isLast = idx === items.length - 1;
 
           return `
-            <div style="padding:6px 0; ${isLast ? "" : "border-bottom:1px solid rgba(255,255,255,.08);"}">
-              <div style="display:flex; align-items:baseline; gap:6px; min-width:0; flex-wrap:wrap;">
-                <span style="font-size:12px; line-height:1.35; min-width:0;">
-                  <span class="muted">${esc(author)}:</span>
-                  <span>${esc(c.body || "")}</span>
-                </span>
-                <span class="muted" style="font-size:10px; line-height:1.2; opacity:.72; white-space:nowrap;">
-                  ${esc(ts)}
-                </span>
+            <div class="zr-card zr-card--row zr-planner-comment-row">
+              <div class="zr-planner-comment-meta">
+                <span class="zr-planner-comment-author">${esc(author)}</span>
+                <span class="zr-planner-comment-time">${esc(ts)}</span>
               </div>
+              <div class="zr-planner-comment-body">${esc(c.body || "")}</div>
             </div>
           `;
         }).join("")}
@@ -852,11 +804,11 @@ async function loadDocs(task){
 
   host.innerHTML = `
     ${list}
-    <div style="margin-top:12px;">
+    <div class="zr-planner-comment-compose">
       <textarea id="plCommentInput" rows="3" class="pl-control pl-textarea" placeholder="Напишите комментарий…"></textarea>
-      <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-        <button class="btn btn-sm" id="plCommentSend" type="button">Отправить</button>
-        <span class="muted" id="plCommentMsg" style="font-size:12px;"></span>
+      <div class="zr-planner-comment-footer">
+        <button class="btn btn-sm pl-btn-primary" id="plCommentSend" type="button">Отправить</button>
+        <span class="zr-planner-muted" id="plCommentMsg"></span>
       </div>
     </div>
   `;
@@ -1005,18 +957,18 @@ async function loadDocs(task){
   if(!host) return;
 
   if(!items || items.length === 0){
-    host.innerHTML = `<div class="muted" style="font-size:12px;">История пока пуста.</div>`;
+    host.innerHTML = `<div class="zr-planner-muted">История пока пуста.</div>`;
     return;
   }
 
   host.innerHTML = `
-    <div style="display:flex; flex-direction:column; gap:6px;">
+    <div class="zr-planner-activity">
       ${items.map(a => `
-        <div style="font-size:12px; line-height:1.35; display:flex; gap:8px;">
-          <span class="muted" style="white-space:nowrap;">
+        <div class="zr-card zr-card--row zr-planner-activity-row">
+          <span class="zr-planner-activity-time">
             ${esc(formatDateTimeShort(a.created_at))}
           </span>
-          <span style="opacity:.9;">
+          <span class="zr-planner-activity-text">
             ${esc(formatActivityText(a))}
           </span>
         </div>
@@ -1058,20 +1010,31 @@ async function loadDocs(task){
       if(cur === "problem") next.push(["in_progress","Проблема решена"], ["done","Успешно завершена"]);
       if(isAdmin && cur !== "canceled" && cur !== "done") next.push(["canceled","Отменить задачу"]);
 
-      const editBtnHtml = (!isArchived && isAdmin)
-        ? `<button class="btn btn-sm" id="plEditTask" type="button">Редактировать</button>`
+            const editBtnHtml = (!isArchived && isAdmin)
+        ? `<button class="btn btn-sm pl-btn-ghost" id="plEditTask" type="button">Редактировать</button>`
         : ``;
       const archiveBtnHtml = (!isArchived && isAdmin)
-        ? `<button class="btn btn-sm" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
+        ? `<button class="btn btn-sm pl-btn-danger-soft" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
         : ``;
 
       const actionsHtml = (next.length === 0 && !archiveBtnHtml && !editBtnHtml) ? "" : `
-        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-          ${next.map(([s,label]) => `<button class="btn btn-sm pl-status" data-s="${esc(s)}" type="button">${esc(label)}</button>`).join("")}
-          ${editBtnHtml}
-          ${archiveBtnHtml}
+        <div class="zr-planner-actions">
+          <div class="zr-planner-actions-main">
+            ${next.map(([s,label]) => {
+              const cls = (s === "done")
+                ? "btn btn-sm pl-btn-primary pl-status"
+                : (s === "problem" || s === "canceled")
+                  ? "btn btn-sm pl-btn-danger-soft pl-status"
+                  : "btn btn-sm pl-btn-ghost pl-status";
+              return `<button class="${cls}" data-s="${esc(s)}" type="button">${esc(label)}</button>`;
+            }).join("")}
+          </div>
+          <div class="zr-planner-actions-side">
+            ${editBtnHtml}
+            ${archiveBtnHtml}
+          </div>
         </div>
-        ${(next.length > 0 || editBtnHtml) ? `<div class="muted pl-status-msg" style="margin-top:8px; font-size:12px;"></div>` : ``}
+        ${(next.length > 0 || editBtnHtml) ? `<div class="zr-planner-muted pl-status-msg zr-planner-status-note"></div>` : ``}
       `;
       const urg = urgencyLabel(task.urgency) ? `<span class="pill">${esc(urgencyLabel(task.urgency))}</span>` : "";
       const start = task.start_date ? `<span class="pill">${esc(startLabel(task.start_date))}</span>` : "";
@@ -1080,86 +1043,89 @@ async function loadDocs(task){
         : "";
 
       viewerEl.innerHTML = `
-        <div class="item" style="cursor:default; margin:10px 12px 12px 12px;">
-          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-            <div style="flex:1; min-width:260px;">
-              <div class="item-title">${esc(task.title || "(без названия)")}</div>
-              <div class="item-meta" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-                ${start}${due}${overduePill}${archivedPill}${urg}${st}
+        <div class="zr-planner-detail">
+          <div class="zr-card zr-card--section zr-planner-hero" style="${detailsProblemStyle}">
+            <div class="zr-planner-hero-top">
+              <div class="zr-planner-hero-main">
+                <div class="zr-planner-title">${esc(task.title || "(без названия)")}</div>
+                <div class="zr-planner-meta">
+                  ${start}${due}${overduePill}${archivedPill}${urg}${st}
+                </div>
+              </div>
+
+              <div>
+                <button class="btn btn-sm pl-btn-ghost" id="plBack" type="button">Назад</button>
               </div>
             </div>
 
-            <div style="display:flex; align-items:center; gap:8px;">
-              <button class="btn btn-sm" id="plBack" type="button">Назад</button>
-            </div>
+            ${actionsHtml}
           </div>
 
-          ${actionsHtml}
-        </div>
-        <!-- Row 1: core + docs -->
-        <div style="display:flex; gap:12px; padding:0 12px; align-items:flex-start; flex-wrap:wrap;">
-          <!-- Left: core -->
-          <div style="flex:2; min-width:320px;">
+          <div class="zr-planner-grid">
+            <div class="zr-planner-maincol">
+              ${task.project_title ? `
+                <div class="zr-card zr-card--section zr-planner-section">
+                  <div class="zr-section-head">
+                    <div class="zr-section-title">Проект</div>
+                  </div>
+                  <div class="zr-planner-body-text">${esc(task.project_title)}</div>
+                </div>
+              ` : ""}
 
-            ${task.project_title ? `
-              <div class="item" style="cursor:default;">
-                <div class="item-title">Проект</div>
-                <div class="item-meta" style="margin-top:8px;">${esc(task.project_title)}</div>
-              </div>
-            ` : ""}
-
-            <div class="item" style="cursor:default;">
-  <div class="item-title">Исполнитель</div>
-  <div class="item-meta" id="plAssigneeView" style="margin-top:8px;"></div>
-</div>
-
-<div class="item" style="cursor:default;">
-              <div class="item-title">Описание</div>
-              <div class="item-meta" style="margin-top:8px;">${task.body ? esc(task.body) : '<span class="muted">Описание пустое.</span>'}</div>
-            </div>
-
-            <div class="item" style="cursor:default;">
-              <div class="item-title">Пункты задачи</div>
-              <div class="item-meta" id="plChecklist" style="margin-top:10px;"></div>
-            </div>
-          </div>
-
-                    <!-- Right: linked docs -->
-          <div style="flex:1; min-width:240px;">
-            <div class="item" style="cursor:default;">
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                <div class="item-title">Документы</div>
-
-                ${(isAdmin && !isArchived) ? `
-                  <button class="btn btn-sm pl-btn-ghost" id="plAddDocBtn" type="button">
-                    + Добавить
-                  </button>
-                ` : ``}
+              <div class="zr-card zr-card--section zr-planner-section">
+                <div class="zr-section-head">
+                  <div class="zr-section-title">Исполнитель</div>
+                </div>
+                <div class="zr-planner-assignee" id="plAssigneeView"></div>
               </div>
 
-              <div class="item-meta" id="plDocs" style="margin-top:10px;"></div>
+              <div class="zr-card zr-card--section zr-planner-section">
+                <div class="zr-section-head">
+                  <div class="zr-section-title">Описание</div>
+                </div>
+                <div class="zr-planner-body-text">${task.body ? esc(task.body) : '<span class="zr-planner-muted">Описание пустое.</span>'}</div>
+              </div>
+
+              <div class="zr-card zr-card--section zr-planner-section">
+                <div class="zr-section-head">
+                  <div class="zr-section-title">Пункты задачи</div>
+                </div>
+                <div id="plChecklist"></div>
+              </div>
+            </div>
+
+            <div class="zr-planner-sidecol">
+              <div class="zr-card zr-card--subtle zr-planner-section">
+                <div class="zr-section-head">
+                  <div class="zr-section-title">Документы</div>
+
+                  ${(isAdmin && !isArchived) ? `
+                    <button class="btn btn-sm pl-btn-ghost" id="plAddDocBtn" type="button">+ Добавить</button>
+                  ` : ``}
+                </div>
+
+                <div id="plDocs"></div>
+              </div>
             </div>
           </div>
-        </div>
-        </div>
 
-        <!-- Row 2: comments -->
-        <div style="padding:0 12px 12px 12px;">
-          <div class="item" style="cursor:default;">
-            <div class="item-title">Комментарии</div>
-            <div class="item-meta" id="plComments" style="margin-top:10px;"></div>
-          </div>
-        </div>
+          <div class="zr-planner-logcol">
+            <div class="zr-card zr-card--subtle zr-planner-section">
+              <div class="zr-section-head">
+                <div class="zr-section-title">Комментарии</div>
+              </div>
+              <div id="plComments"></div>
+            </div>
 
-        <!-- Row 3: activity -->
-        <div style="padding:0 12px 12px 12px;">
-          <div class="item" style="cursor:default;">
-            <div class="item-title">История</div>
-            <div class="item-meta" id="plActivity" style="margin-top:10px; max-height:220px; overflow:auto; padding-right:4px;"></div>
+            <div class="zr-card zr-card--subtle zr-planner-section">
+              <div class="zr-section-head">
+                <div class="zr-section-title">История</div>
+              </div>
+              <div id="plActivity"></div>
+            </div>
           </div>
         </div>
       `;
-
       const _addDocBtn = document.getElementById("plAddDocBtn");
       if(_addDocBtn){
         _addDocBtn.onclick = () => {
@@ -1429,6 +1395,15 @@ loadDocs(task);
 
   return { show };
 })();
+
+
+
+
+
+
+
+
+
 
 
 

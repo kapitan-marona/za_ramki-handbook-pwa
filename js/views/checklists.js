@@ -266,31 +266,35 @@ Views.Checklists = (() => {
     const items = getFavoriteChecklistItems();
 
     if(!items.length){
-      return `<div class="empty">Выберите чек-лист слева.</div>`;
+      return `<div class="zr-empty-shell">Выберите чек-лист слева.</div>`;
     }
 
     return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Избранное</div>
-        <div class="item-meta">Быстрый доступ к сохранённым чек-листам.</div>
-      </div>
+      <div class="zr-stack-md">
+        <div class="zr-list-intro zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Избранное</div>
+          </div>
+          <div class="item-meta">Быстрый доступ к сохранённым чек-листам.</div>
+        </div>
 
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        ${items.map((c) => {
-          const tagsHtml = Array.isArray(c.tags) && c.tags.length
-            ? c.tags.map(tag => `<span class="tag">${esc(String(tag))}</span>`).join("")
-            : "";
-          const updated = (c.updated_at || c.updatedAt)
-            ? `<span class="tag">Обновлено: ${esc(formatDate(c.updated_at || c.updatedAt))}</span>`
-            : "";
+        <div class="zr-stack-sm">
+          ${items.map((c) => {
+            const tagsHtml = Array.isArray(c.tags) && c.tags.length
+              ? c.tags.map(tag => `<span class="tag">${esc(String(tag))}</span>`).join("")
+              : "";
+            const updated = (c.updated_at || c.updatedAt)
+              ? `<span class="tag">Обновлено: ${esc(formatDate(c.updated_at || c.updatedAt))}</span>`
+              : "";
 
-          return `
-            <a class="item" href="#/checklists/${encodeURIComponent(String(c.id || ""))}">
-              <div class="item-title">${esc(c.title || "Чек-лист")}</div>
-              <div class="item-meta">${updated}${tagsHtml}</div>
-            </a>
-          `;
-        }).join("")}
+            return `
+              <a class="zr-list-row" href="#/checklists/${encodeURIComponent(String(c.id || ""))}">
+                <div class="zr-list-row-title">${esc(c.title || "Чек-лист")}</div>
+                <div class="zr-list-row-tags">${updated}${tagsHtml}</div>
+              </a>
+            `;
+          }).join("")}
+        </div>
       </div>
     `;
   }
@@ -320,22 +324,30 @@ Views.Checklists = (() => {
     setStatus(`${filtered.length} / ${items.length}`);
 
     if(filtered.length === 0){
-      list.innerHTML = `<div class="empty" style="padding:12px;">Ничего не найдено.</div>`;
+      list.innerHTML = `<div class="zr-empty-shell">Ничего не найдено.</div>`;
       return;
     }
+
+    const selectedId = (() => {
+      try{
+        const p = (window.Router && typeof Router.parse === "function") ? Router.parse() : null;
+        return p && p.page === "checklists" && p.param ? String(p.param) : "";
+      }catch(e){}
+      return "";
+    })();
 
     filtered.forEach((c) => {
       const a = document.createElement("a");
       const cid = String(c.id || "");
-      a.className = "item";
+      a.className = `zr-list-row ${selectedId === cid ? "zr-list-row--active" : ""}`;
       a.href = "#/checklists/" + encodeURIComponent(cid);
       const tagsHtml = Array.isArray(c.tags) && c.tags.length
         ? c.tags.map(tag => `<span class="tag">${esc(String(tag))}</span>`).join("")
         : "";
 
       a.innerHTML = `
-        <div class="item-title">${esc(c.title || "Чек-лист")}</div>
-        <div class="item-meta">${tagsHtml}</div>`;
+        <div class="zr-list-row-title">${esc(c.title || "Чек-лист")}</div>
+        <div class="zr-list-row-tags">${tagsHtml}</div>`;
 
       a.onclick = (e) => {
         e.preventDefault();
@@ -379,10 +391,10 @@ Views.Checklists = (() => {
   function renderPlainItems(items){
     if(!Array.isArray(items) || !items.length) return "";
     return `
-      <div style="display:flex; flex-direction:column; gap:8px;">
+      <div class="zr-stack-sm">
         ${items.map((text, idx) => `
-          <div class="item" style="cursor:default; padding:10px 12px;">
-            <div class="item-meta">
+          <div class="zr-card zr-card--row">
+            <div class="item-meta zr-inline-md">
               <input type="checkbox" class="cl-checkbox">
               <span>${esc(String(text || ""))}</span>
             </div>
@@ -398,7 +410,7 @@ Views.Checklists = (() => {
 
     const state = getChecklistGroupState(String(item.id || ""));
     return `
-      <div data-cl-groups-root="1" style="display:flex; flex-direction:column; gap:10px;">
+      <div data-cl-groups-root="1" class="zr-stack-md">
         ${groups.map((group, idx) => {
           const title = group?.title || `Группа ${idx + 1}`;
           const rows = Array.isArray(group?.items) ? group.items : (Array.isArray(group?.steps) ? group.steps : []);
@@ -406,9 +418,9 @@ Views.Checklists = (() => {
           const expanded = state[key] !== false;
 
           return `
-            <div class="item" data-cl-group="${esc(key)}" style="cursor:default; padding:12px;">
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                <div class="item-title" style="margin:0;">${esc(title)}</div>
+            <div class="zr-card zr-card--subtle zr-stack-sm" data-cl-group="${esc(key)}">
+              <div class="zr-section-head">
+                <div class="zr-section-title">${esc(title)}</div>
                 <button
                   class="btn btn-sm"
                   type="button"
@@ -419,12 +431,12 @@ Views.Checklists = (() => {
 
               <div
                 data-cl-group-body="${esc(key)}"
-                style="margin-top:10px; display:${expanded ? "block" : "none"};"
+                style="display:${expanded ? "block" : "none"};"
               >
                 ${rows.length ? `
-                  <div style="display:flex; flex-direction:column; gap:8px;">
+                  <div class="zr-stack-sm">
                     ${rows.map((row, rowIdx) => `
-                      <div class="item" style="cursor:default; padding:10px 12px;">
+                      <div class="zr-card zr-card--row">
                         <div class="item-meta">
                           <span class="tag">${rowIdx + 1}</span>
                           <span>${esc(String(row || ""))}</span>
@@ -432,7 +444,7 @@ Views.Checklists = (() => {
                       </div>
                     `).join("")}
                   </div>
-                ` : `<div class="muted" style="font-size:12px;">Пустая группа.</div>`}
+                ` : `<div class="zr-muted-note">Пустая группа.</div>`}
               </div>
             </div>
           `;
@@ -450,10 +462,10 @@ Views.Checklists = (() => {
 
     const desc = (item?.desc || "").toString().trim();
     if(desc){
-      return `<div style="line-height:1.6;">${esc(desc)}</div>`;
+      return `<div class="markdown zr-editorial-body">${esc(desc)}</div>`;
     }
 
-    return `<div class="muted">Описание отсутствует. Используйте кнопку открытия чек-листа ниже.</div>`;
+    return `<div class="zr-muted-note">Описание отсутствует. Используйте кнопку открытия чек-листа ниже.</div>`;
   }
 
   function renderResources(item){
@@ -463,7 +475,7 @@ Views.Checklists = (() => {
 
     if(actions.length){
       resources.push(`
-        <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="zr-stack-sm">
           ${actions.map((a) => {
             const label = esc(a?.label || "Открыть");
             const href = esc(a?.url || "#");
@@ -476,11 +488,11 @@ Views.Checklists = (() => {
     }else{
       if(url){
         resources.push(`
-          <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="zr-stack-sm">
             <a class="btn" href="${esc(url)}" target="_blank" rel="noopener">
               <span class="dot"></span>Открыть чек-лист
             </a>
-            <div class="muted" style="font-size:12px; line-height:1.5;">
+            <div class="zr-muted-note">
               Ссылка: <span class="mono">${esc(url)}</span>
             </div>
           </div>
@@ -489,7 +501,7 @@ Views.Checklists = (() => {
 
       if(Array.isArray(item?.resources) && item.resources.length){
         resources.push(`
-          <div style="display:flex; flex-direction:column; gap:8px; margin-top:${url ? "12px" : "0"};">
+          <div class="zr-stack-sm" style="${url ? "margin-top:12px;" : ""}">
             ${item.resources.map((r) => {
               const label = esc(r?.label || r?.title || "Ресурс");
               const href = esc(r?.url || "#");
@@ -502,7 +514,7 @@ Views.Checklists = (() => {
 
     return resources.length
       ? resources.join("")
-      : `<div class="muted">Дополнительные ресурсы отсутствуют.</div>`;
+      : `<div class="zr-muted-note">Дополнительные ресурсы отсутствуют.</div>`;
   }
 
   function setupBodyCollapse(viewer){
@@ -633,33 +645,40 @@ Views.Checklists = (() => {
     const metaRow = renderMetaRow(item);
 
     viewer.innerHTML = `
-      <div class="item" data-cl-section="header" style="cursor:default; margin-bottom:12px;">
-        <div class="zr-viewer-header-row">
-          <div class="zr-viewer-header-main">
-            <div class="zr-viewer-title-row">
-              <h1 class="article-title" style="margin:0;">${esc(item.title || "Чек-лист")}</h1>
-              ${renderChecklistFavoriteButton(item.id)}
+      <div class="zr-stack-lg zr-viewer-shell">
+        <div class="zr-card zr-card--section zr-stack-md" data-cl-section="header">
+          <div class="zr-viewer-header-row">
+            <div class="zr-viewer-header-main zr-stack-sm">
+              <div class="zr-viewer-title-row">
+                <h1 class="article-title">${esc(item.title || "Чек-лист")}</h1>
+                ${renderChecklistFavoriteButton(item.id)}
+              </div>
+              <p class="article-sub">${esc(subtitle)}</p>
             </div>
-            <p class="article-sub">${esc(subtitle)}</p>
-          </div>
-          <div class="zr-viewer-header-actions">
-            <button class="btn btn-sm zr-mobile-only" id="clListBtn" type="button">Показать список</button>
-            <button class="btn btn-sm" id="clBackBtn" type="button">${getChecklistCloseLabel()}</button>
+            <div class="zr-viewer-header-actions">
+              <button class="btn btn-sm zr-mobile-only" id="clListBtn" type="button">Показать список</button>
+              <button class="btn btn-sm" id="clBackBtn" type="button">${getChecklistCloseLabel()}</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="item" data-cl-section="meta" style="cursor:default; margin-bottom:12px;">
-        <div class="item-meta">${metaRow || `<span class="muted">Метаданные отсутствуют.</span>`}</div>
-      </div>
+        <div class="zr-card zr-card--subtle zr-stack-sm" data-cl-section="meta">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Мета</div>
+          </div>
+          <div class="item-meta">${metaRow || `<span class="zr-muted-note">Метаданные отсутствуют.</span>`}</div>
+        </div>
 
-      <div class="item" data-cl-section="body" style="cursor:default; margin-bottom:12px;">
-        <div data-cl-body-root="1">${renderBody(item)}</div>
-      </div>
+        <div class="zr-card zr-card--section zr-stack-md" data-cl-section="body">
+          <div data-cl-body-root="1">${renderBody(item)}</div>
+        </div>
 
-      <div class="item" data-cl-section="resources" style="cursor:default;">
-        <div class="item-title">Ресурсы</div>
-        <div class="item-meta" style="margin-top:10px;">${renderResources(item)}</div>
+        <div class="zr-card zr-card--subtle zr-stack-sm" data-cl-section="resources">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Ресурсы</div>
+          </div>
+          <div class="zr-resource-block">${renderResources(item)}</div>
+        </div>
       </div>
     `;
 
@@ -687,6 +706,8 @@ Views.Checklists = (() => {
 
   return { show, open, setFilter };
 })();
+
+
 
 
 

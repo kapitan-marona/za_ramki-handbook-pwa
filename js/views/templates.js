@@ -309,33 +309,40 @@ Views.Templates = (() => {
     const sub = o.sub ? `<p class="article-sub">${esc(o.sub)}</p>` : "";
 
     return `
-      <div class="item" data-tpl-section="header" style="cursor:default; margin-bottom:12px;">
-        <div class="zr-viewer-header-row">
-          <div class="zr-viewer-header-main">
-            <div class="zr-viewer-title-row">
-              <h1 class="article-title" style="margin:0;">${esc(template.title || "Шаблон")}</h1>
-              ${renderTemplateFavoriteButton(template.id)}
+      <div class="zr-stack-lg zr-viewer-shell">
+        <div class="zr-card zr-card--section zr-stack-md" data-tpl-section="header">
+          <div class="zr-viewer-header-row">
+            <div class="zr-viewer-header-main zr-stack-sm">
+              <div class="zr-viewer-title-row">
+                <h1 class="article-title">${esc(template.title || "Шаблон")}</h1>
+                ${renderTemplateFavoriteButton(template.id)}
+              </div>
+              ${sub}
             </div>
-            ${sub}
-          </div>
-          <div class="zr-viewer-header-actions">
-            <button class="btn btn-sm zr-mobile-only" id="tplListBtn" type="button">Показать список</button>
-            <button class="btn btn-sm" id="tplBackBtn" type="button">${getTemplateCloseLabel()}</button>
+            <div class="zr-viewer-header-actions">
+              <button class="btn btn-sm zr-mobile-only" id="tplListBtn" type="button">Показать список</button>
+              <button class="btn btn-sm" id="tplBackBtn" type="button">${getTemplateCloseLabel()}</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="item" data-tpl-section="meta" style="cursor:default; margin-bottom:12px; ${metaHtml ? "" : "display:none;"}">
-        <div class="item-meta">${metaHtml}</div>
-      </div>
+        <div class="zr-card zr-card--subtle zr-stack-sm" data-tpl-section="meta" style="${metaHtml ? "" : "display:none;"}">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Мета</div>
+          </div>
+          <div class="item-meta">${metaHtml}</div>
+        </div>
 
-      <div class="item" data-tpl-section="body" style="cursor:default; margin-bottom:12px;">
-        ${o.body || ""}
-      </div>
+        <div class="zr-card zr-card--section zr-stack-md" data-tpl-section="body">
+          ${o.body || ""}
+        </div>
 
-      <div class="item" data-tpl-section="resources" style="cursor:default;">
-        <div class="item-title">Ресурсы</div>
-        <div class="item-meta" style="margin-top:10px;">${resourcesHtml}</div>
+        <div class="zr-card zr-card--subtle zr-stack-sm" data-tpl-section="resources">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Ресурсы</div>
+          </div>
+          <div class="zr-resource-block">${resourcesHtml}</div>
+        </div>
       </div>
     `;
   }
@@ -412,9 +419,17 @@ Views.Templates = (() => {
 
     setStatus(`${filtered.length}`);
 
+    const selectedId = (() => {
+      try{
+        const p = (window.Router && typeof Router.parse === "function") ? Router.parse() : null;
+        return p && p.page === "templates" && p.param ? String(p.param) : "";
+      }catch(e){}
+      return "";
+    })();
+
     filtered.forEach((t) => {
       const a = document.createElement("a");
-      a.className = "item";
+      a.className = `zr-list-row ${selectedId === String(t.id) ? "zr-list-row--active" : ""}`;
       a.href = `#/${encodeURIComponent("templates")}/${encodeURIComponent(t.id)}`;
       const metaParts = [];
       if(t.format) metaParts.push(`<span class="tag">${esc(t.format)}</span>`);
@@ -425,8 +440,8 @@ Views.Templates = (() => {
       }
 
       a.innerHTML = `
-        <div class="item-title">${esc(t.title || "Шаблон")}</div>
-        ${metaParts.length ? `<div class="item-meta">${metaParts.join("")}</div>` : ""}
+        <div class="zr-list-row-title">${esc(t.title || "Шаблон")}</div>
+        ${metaParts.length ? `<div class="zr-list-row-tags">${metaParts.join("")}</div>` : ""}
       `;
       list.appendChild(a);
     });
@@ -464,10 +479,9 @@ Views.Templates = (() => {
       const saved = JSON.parse(localStorage.getItem(key) || "{}");
 
       const body = `
-        <div class="markdown">
+        <div class="markdown zr-stack-lg">
           <div class="zr-form-grid">
-
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">Адрес объекта</span>
               <input id="f_address" class="zr-input" placeholder="Например: Oulu, Isokatu 10" />
             </div>
@@ -482,7 +496,7 @@ Views.Templates = (() => {
               <input id="f_meas_pdf" class="zr-input" />
             </div>
 
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">План мебели</span>
               <div class="zr-row-2">
                 <input id="f_furn_dwg" class="zr-input" placeholder="DWG" />
@@ -490,7 +504,7 @@ Views.Templates = (() => {
               </div>
             </div>
 
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">Концепт + ТЗ визуализатору</span>
               <div class="zr-row-2">
                 <input id="f_concept" class="zr-input" placeholder="Концепт" />
@@ -498,11 +512,10 @@ Views.Templates = (() => {
               </div>
             </div>
 
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">Ссылка на ведомость материалов</span>
               <input id="f_materials" class="zr-input" />
             </div>
-
           </div>
 
           <div class="zr-actions-right">
@@ -591,8 +604,8 @@ Views.Templates = (() => {
 
     if(templateId !== "brief_visualizer"){
       const body = `
-        <div class="markdown">
-          <p class="article-sub" style="margin:0;">Пока без формы. Можно открыть файл по ссылке.</p>
+        <div class="markdown zr-stack-sm">
+          <p class="article-sub zr-note-reset">Пока без формы. Можно открыть файл по ссылке.</p>
         </div>
       `;
 
@@ -621,9 +634,9 @@ Views.Templates = (() => {
       const saved = JSON.parse(localStorage.getItem(key) || "{}");
 
       const body = `
-        <div class="markdown">
+        <div class="markdown zr-stack-lg">
           <div class="zr-form-grid">
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">Проект</span>
               <input id="f_project" class="zr-input" />
             </div>
@@ -638,29 +651,29 @@ Views.Templates = (() => {
               <input id="f_deadline" class="zr-input" />
             </div>
 
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">Стиль/настроение</span>
               <input id="f_style" class="zr-input" />
             </div>
 
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">Палитра</span>
               <input id="f_palette" class="zr-input" />
             </div>
 
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">Камеры</span>
-              <textarea id="f_cameras" rows="4" class="zr-input"></textarea>
+              <textarea id="f_cameras" rows="4" class="zr-input zr-textarea"></textarea>
             </div>
 
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">Обязательные позиции</span>
-              <textarea id="f_must" rows="4" class="zr-input"></textarea>
+              <textarea id="f_must" rows="4" class="zr-input zr-textarea"></textarea>
             </div>
 
-            <div class="zr-field" style="grid-column:1 / -1;">
+            <div class="zr-field zr-span-full">
               <span class="zr-label">Материалы/примечания</span>
-              <textarea id="f_notes" rows="5" class="zr-input"></textarea>
+              <textarea id="f_notes" rows="5" class="zr-input zr-textarea"></textarea>
             </div>
           </div>
 
@@ -748,31 +761,35 @@ Views.Templates = (() => {
     const items = getFavoriteTemplateItems();
 
     if(!items.length){
-      return `<div class="empty">Выберите шаблон слева.</div>`;
+      return `<div class="zr-empty-shell">Выберите шаблон слева.</div>`;
     }
 
     return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Избранное</div>
-        <div class="item-meta">Быстрый доступ к сохранённым шаблонам.</div>
-      </div>
+      <div class="zr-stack-md">
+        <div class="zr-list-intro zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Избранное</div>
+          </div>
+          <div class="item-meta">Быстрый доступ к сохранённым шаблонам.</div>
+        </div>
 
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        ${items.map((t) => {
-          const metaParts = [];
-          if(t.format) metaParts.push(`<span class="tag">${esc(t.format)}</span>`);
-          if(t.updated_at || t.updatedAt) metaParts.push(`<span class="tag">Обновлено: ${esc(fmtMetaDate(t.updated_at || t.updatedAt))}</span>`);
-          if(Array.isArray(t.tags) && t.tags.length){
-            t.tags.forEach(tag => metaParts.push(`<span class="tag">${esc(String(tag))}</span>`));
-          }
+        <div class="zr-stack-sm">
+          ${items.map((t) => {
+            const metaParts = [];
+            if(t.format) metaParts.push(`<span class="tag">${esc(t.format)}</span>`);
+            if(t.updated_at || t.updatedAt) metaParts.push(`<span class="tag">Обновлено: ${esc(fmtMetaDate(t.updated_at || t.updatedAt))}</span>`);
+            if(Array.isArray(t.tags) && t.tags.length){
+              t.tags.forEach(tag => metaParts.push(`<span class="tag">${esc(String(tag))}</span>`));
+            }
 
-          return `
-            <a class="item" href="#/${encodeURIComponent("templates")}/${encodeURIComponent(t.id)}">
-              <div class="item-title">${esc(t.title || "Шаблон")}</div>
-              ${metaParts.length ? `<div class="item-meta">${metaParts.join("")}</div>` : ""}
-            </a>
-          `;
-        }).join("")}
+            return `
+              <a class="zr-list-row" href="#/${encodeURIComponent("templates")}/${encodeURIComponent(t.id)}">
+                <div class="zr-list-row-title">${esc(t.title || "Шаблон")}</div>
+                ${metaParts.length ? `<div class="zr-list-row-tags">${metaParts.join("")}</div>` : ""}
+              </a>
+            `;
+          }).join("")}
+        </div>
       </div>
     `;
   }
@@ -837,6 +854,8 @@ function setupTemplateBodyCollapse(viewer){
   controls.appendChild(btn);
   section.appendChild(controls);
 }
+
+
 
 
 

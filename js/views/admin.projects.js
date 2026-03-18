@@ -68,22 +68,20 @@ window.Views.AdminProjectsFactory = function(deps){
   function projectsHtml(items){
     const rows = (items || []).map(it => `
       <div class="item">
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div class="zr-stack-md">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap;">
             <div style="flex:1; min-width:220px;">
-              <div class="item-title">${esc(it.title || "(без названия)")}</div>
-              <div class="muted" style="margin-top:4px;">ID: <span class="mono">${esc(it.id || "")}</span></div>
+              <div class="item-title" style="margin:0;">${esc(it.title || "(без названия)")}</div>
+              <div class="muted mono" style="margin-top:6px; font-size:12px; line-height:1.45; word-break:break-all;">ID: ${esc(it.id || "")}</div>
             </div>
 
-            <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+            <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; align-self:flex-start;">
               <button class="btn btn-sm" data-pr-edit-toggle="${esc(it.id)}"><span class="dot"></span>Редактировать</button>
               <button class="btn btn-sm" data-pr-del="${esc(it.id)}"><span class="dot"></span>Удалить</button>
             </div>
           </div>
 
-          <div data-pr-view="${esc(it.id)}">
-            ${it.notes ? `<div class="muted" style="margin-top:2px;">${esc(it.notes)}</div>` : `<div class="muted" style="margin-top:2px;">Заметки пусты.</div>`}
-          </div>
+          <div data-pr-view="${esc(it.id)}" style="display:none;"></div>
 
           <div data-pr-edit-box="${esc(it.id)}" style="display:none;">
             <div>
@@ -310,3 +308,4 @@ window.Views.AdminProjectsFactory = function(deps){
 
   return api;
 };
+

@@ -233,9 +233,17 @@ Views.Articles = (() => {
     setStatus(`${items.length} / ${INDEX.length}`);
 
     if(items.length === 0){
-      list.innerHTML = `<div class="empty" style="padding:12px;color:var(--muted)">Ничего не найдено.</div>`;
+      list.innerHTML = `<div class="zr-empty-shell">Ничего не найдено.</div>`;
       return;
     }
+
+    const selectedId = (() => {
+      try{
+        const p = (window.Router && typeof Router.parse === "function") ? Router.parse() : null;
+        return p && p.page === "articles" && p.param ? String(p.param) : "";
+      }catch(e){}
+      return "";
+    })();
 
     for(const it of items){
       const isNew = isNewWindowActive(it, 7);
@@ -246,11 +254,11 @@ Views.Articles = (() => {
       const roles = (it.roles||[]).slice(0,2).map(r => `<span class="tag">${esc(r)}</span>`).join("");
 
       const a = document.createElement("a");
-      a.className = "item";
+      a.className = `zr-list-row ${selectedId === String(it.id) ? "zr-list-row--active" : ""}`;
       a.href = `#/${encodeURIComponent("articles")}/${encodeURIComponent(it.id)}`;
       a.innerHTML = `
-        <div class="item-title">${esc(it.title)}${badge}</div>
-        <div class="item-meta">${cat}${tags}${roles}</div>
+        <div class="zr-list-row-title">${esc(it.title)}${badge}</div>
+        <div class="zr-list-row-tags">${cat}${tags}${roles}</div>
       `;
       list.appendChild(a);
     }
@@ -564,33 +572,37 @@ Views.Articles = (() => {
 
     if(!items.length){
       return `
-        <div class="empty">
+        <div class="zr-empty-shell">
           Выбери статью слева или используй поиск сверху.<br/><br/>
           Подсказка: позже добавим роли, избранное и «что нового».
         </div>`;
     }
 
     return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Избранное</div>
-        <div class="item-meta">Быстрый доступ к сохранённым статьям.</div>
-      </div>
+      <div class="zr-stack-md">
+        <div class="zr-list-intro zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Избранное</div>
+          </div>
+          <div class="item-meta">Быстрый доступ к сохранённым статьям.</div>
+        </div>
 
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        ${items.map((it) => {
-          const catTitle = CATMAP[it.category] || it.category || "";
-          const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
-          const tags = (it.tags||[]).slice(0,4).map(t => `<span class="tag">${esc(t)}</span>`).join("");
-          const roles = (it.roles||[]).slice(0,2).map(r => `<span class="tag">${esc(r)}</span>`).join("");
-          const updated = it.updatedAt ? `<span class="tag">Обновлено: ${esc(formatMetaDate(it.updatedAt))}</span>` : "";
+        <div class="zr-stack-sm">
+          ${items.map((it) => {
+            const catTitle = CATMAP[it.category] || it.category || "";
+            const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
+            const tags = (it.tags||[]).slice(0,4).map(t => `<span class="tag">${esc(t)}</span>`).join("");
+            const roles = (it.roles||[]).slice(0,2).map(r => `<span class="tag">${esc(r)}</span>`).join("");
+            const updated = it.updatedAt ? `<span class="tag">Обновлено: ${esc(formatMetaDate(it.updatedAt))}</span>` : "";
 
-          return `
-            <a class="item" href="#/${encodeURIComponent("articles")}/${encodeURIComponent(it.id)}">
-              <div class="item-title">${esc(it.title || "Статья")}</div>
-              <div class="item-meta">${cat}${updated}${tags}${roles}</div>
-            </a>
-          `;
-        }).join("")}
+            return `
+              <a class="zr-list-row" href="#/${encodeURIComponent("articles")}/${encodeURIComponent(it.id)}">
+                <div class="zr-list-row-title">${esc(it.title || "Статья")}</div>
+                <div class="zr-list-row-tags">${cat}${updated}${tags}${roles}</div>
+              </a>
+            `;
+          }).join("")}
+        </div>
       </div>
     `;
   }
@@ -726,37 +738,44 @@ Views.Articles = (() => {
     const html0 = window.marked ? window.marked.parse(md) : `<pre>${esc(md)}</pre>`;
     const html = decorateCallouts(html0);
     viewer.innerHTML = `
-      <div style="margin-bottom:12px;">
-        <button class="btn btn-sm zr-mobile-only" id="insListBtn" type="button">Раскрыть список</button>
-      </div>
+      <div class="zr-stack-lg zr-viewer-shell">
+        <div class="zr-inline-sm">
+          <button class="btn btn-sm zr-mobile-only" id="insListBtn" type="button">Раскрыть список</button>
+        </div>
 
-      <div class="item" data-ins-section="header" style="cursor:default; margin-bottom:12px;">
-        <div class="zr-viewer-header-row">
-          <div class="zr-viewer-header-main">
-            <div class="zr-viewer-title-row">
-              <h1 class="article-title" style="margin:0;">${esc(meta.title)}</h1>
-              ${renderArticleFavoriteButton(meta.id)}
+        <div class="zr-card zr-card--section zr-stack-md" data-ins-section="header">
+          <div class="zr-viewer-header-row">
+            <div class="zr-viewer-header-main zr-stack-sm">
+              <div class="zr-viewer-title-row">
+                <h1 class="article-title">${esc(meta.title)}</h1>
+                ${renderArticleFavoriteButton(meta.id)}
+              </div>
+              <p class="article-sub">${esc(updated)}</p>
             </div>
-            <p class="article-sub">${esc(updated)}</p>
-          </div>
-          <div class="zr-viewer-header-actions">
-            <button class="btn btn-sm" id="insTocBtn" type="button">Показать оглавление</button>
-            <button class="btn btn-sm" id="insBackBtn" type="button">Закрыть</button>
+            <div class="zr-viewer-header-actions">
+              <button class="btn btn-sm" id="insTocBtn" type="button">Показать оглавление</button>
+              <button class="btn btn-sm" id="insBackBtn" type="button">Закрыть</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="item" data-ins-section="meta" style="cursor:default; margin-bottom:12px;">
-        <div class="item-meta">${renderMetaRow(meta)}${cat}${tags}${roles}</div>
-      </div>
+        <div class="zr-card zr-card--subtle zr-stack-sm" data-ins-section="meta">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Мета</div>
+          </div>
+          <div class="item-meta">${renderMetaRow(meta)}${cat}${tags}${roles}</div>
+        </div>
 
-      <div class="item" data-ins-section="body" style="cursor:default; margin-bottom:12px;">
-        <div class="markdown">${html}</div>
-      </div>
+        <div class="zr-card zr-card--section zr-stack-md" data-ins-section="body">
+          <div class="markdown zr-editorial-body">${html}</div>
+        </div>
 
-      <div class="item" data-ins-section="resources" style="cursor:default;">
-        <div class="item-title">Ресурсы</div>
-        <div class="item-meta" style="margin-top:10px;">${renderActions(meta.actions)}</div>
+        <div class="zr-card zr-card--subtle zr-stack-sm" data-ins-section="resources">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Ресурсы</div>
+          </div>
+          <div class="zr-resource-block">${renderActions(meta.actions)}</div>
+        </div>
       </div>
     `;
 
@@ -885,6 +904,8 @@ Views.Articles = (() => {
     }
   };
 })();
+
+
 
 
 

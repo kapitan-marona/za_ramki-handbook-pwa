@@ -240,7 +240,7 @@
 
     const r = await SB.from("tasks").insert(row).select("id").single();
     if(r && r.error) throw r.error;
-    return updatedRow || null;
+    return r.data || null;
   }
 
   async function fetchProjects(){
@@ -710,3 +710,4 @@
     searchChecklistsForLink
   };
 })();
+

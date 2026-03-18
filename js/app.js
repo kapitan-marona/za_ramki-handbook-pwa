@@ -30,13 +30,12 @@ window.syncRoleUI = function(){
 window.syncPushUI = async function(){
   try{
     var btn = document.querySelector("#pushBtn");
-    var state = document.querySelector("#pushState");
-    if(!btn || !state) return;
+    if(!btn) return;
 
     if(!window.ZRPush || !ZRPush.isSupported()){
       btn.disabled = true;
       btn.textContent = "Push недоступен";
-      state.textContent = "—";
+      btn.setAttribute("aria-pressed", "false");
       return;
     }
 
@@ -47,30 +46,37 @@ window.syncPushUI = async function(){
     }
 
     var perm = ZRPush.getPermissionState();
+    var hasActive = false;
 
-    if(perm === "granted"){
-      btn.disabled = false;
-      btn.textContent = "Push включены";
-      state.textContent = "ON";
-      return;
+    try{
+      hasActive = !!(ZRPush.hasActiveCurrentSubscription && await ZRPush.hasActiveCurrentSubscription());
+    }catch(e){
+      console.warn("[Push] active state check failed", e);
     }
 
     if(perm === "denied"){
       btn.disabled = true;
       btn.textContent = "Push заблокированы";
-      state.textContent = "BLOCK";
+      btn.setAttribute("aria-pressed", "false");
+      return;
+    }
+
+    if(hasActive){
+      btn.disabled = false;
+      btn.textContent = "Push: ON";
+      btn.setAttribute("aria-pressed", "true");
       return;
     }
 
     btn.disabled = false;
-    btn.textContent = "Включить push";
-    state.textContent = "OFF";
+    btn.textContent = "Push: OFF";
+    btn.setAttribute("aria-pressed", "false");
   }catch(e){
     console.warn("[Push] sync UI failed", e);
   }
 };
 
-window.handlePushEnableClick = async function(){
+window.handlePushToggleClick = async function(){
   try{
     if(!window.ZRPush || !ZRPush.isSupported()){
       alert("Push не поддерживается в этом браузере.");
@@ -78,6 +84,20 @@ window.handlePushEnableClick = async function(){
     }
 
     var perm = ZRPush.getPermissionState();
+    var hasActive = false;
+
+    try{
+      hasActive = !!(ZRPush.hasActiveCurrentSubscription && await ZRPush.hasActiveCurrentSubscription());
+    }catch(e){
+      console.warn("[Push] active state check failed", e);
+    }
+
+    if(hasActive){
+      await ZRPush.deactivateCurrentSubscription();
+      await window.syncPushUI();
+      alert("Push отключены для текущего устройства / браузера.");
+      return;
+    }
 
     if(perm === "default"){
       perm = await ZRPush.requestPermissionInteractive();
@@ -109,8 +129,8 @@ window.handlePushEnableClick = async function(){
 
     alert("Push подписка создана, но backend registration пока не завершилась. Проверь table/policies.");
   }catch(e){
-    console.warn("[Push] enable flow failed", e);
-    alert("Ошибка включения push. Смотри консоль.");
+    console.warn("[Push] toggle flow failed", e);
+    alert("Ошибка переключения push. Смотри консоль.");
   }
 };
 
@@ -126,14 +146,13 @@ window.renderAuthArea = function(){
 
   el.innerHTML =
     '<span class="pill">' + (App.session.role || '—') + '</span>' +
-    '<button type="button" class="btn btn-sm" id="pushBtn">Push</button>' +
-    '<span class="pill" id="pushState">—</span>' +
+    '<button type="button" class="btn btn-sm" id="pushBtn" aria-pressed="false">Push</button>' +
     '<button type="button" class="btn btn-sm" id="logoutBtn">Выйти</button>';
 
   var pushBtn = document.querySelector("#pushBtn");
   if(pushBtn){
     pushBtn.onclick = async function(){
-      await window.handlePushEnableClick();
+      await window.handlePushToggleClick();
     };
   }
 
@@ -275,6 +294,28 @@ window.initAuth = async function(){
     if(p.section === "checklists" && Views.Checklists && Views.Checklists.setFilter) Views.Checklists.setFilter(q);
   }
 
+  function syncTopSearchUI(section){
+    var q = $("#q");
+    var status = $("#status");
+    if(!q) return;
+
+    var searchable = section === "articles" || section === "templates" || section === "checklists";
+
+    q.disabled = !searchable;
+
+    if(searchable){
+      q.placeholder = "Поиск по базе…";
+      return;
+    }
+
+    q.value = "";
+    q.placeholder = (section === "planner")
+      ? "Поиск в Planner пока недоступен"
+      : "Поиск недоступен в этом разделе";
+
+    if(status) status.textContent = "—";
+  }
+
   async function render(){
     var p = Router.parse();
     var section = p.section;
@@ -289,7 +330,7 @@ window.initAuth = async function(){
     }
 
     setActiveTab(section);
-    if(q) q.disabled = false;
+    syncTopSearchUI(section);
 
     if(section === "login"){ await Views.Login.show(); return; }
     if(section === "planner"){ await Views.Planner.show(); return; }
@@ -339,6 +380,9 @@ window.initAuth = async function(){
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
+
 
 
 

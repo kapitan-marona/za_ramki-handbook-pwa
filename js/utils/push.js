@@ -109,6 +109,7 @@ window.ZRPush = (function(){
       const sub = await reg.pushManager.getSubscription();
       if(!sub || !sub.endpoint) return { ok:true, skipped:true };
 
+      const endpoint = sub.endpoint;
       const userId = getCurrentUserId();
 
       const q = SB
@@ -117,15 +118,35 @@ window.ZRPush = (function(){
           is_active: false,
           updated_at: new Date().toISOString()
         })
-        .eq("endpoint", sub.endpoint);
+        .eq("endpoint", endpoint);
 
       const { error } = userId ? await q.eq("user_id", userId) : await q;
-
       if(error) throw error;
-      return { ok:true };
+
+      try{
+        await sub.unsubscribe();
+      }catch(unsubErr){
+        console.warn("[Push] unsubscribe failed", unsubErr);
+      }
+
+      return { ok:true, endpoint:endpoint };
     }catch(e){
       console.warn("[Push] deactivate failed", e);
       return { ok:false, reason:"deactivate-failed", error:e };
+    }
+  }
+
+  async function hasActiveCurrentSubscription(){
+    if(!isSupported()) return false;
+
+    try{
+      const reg = await ensureServiceWorker();
+      if(!reg) return false;
+      const sub = await reg.pushManager.getSubscription();
+      return !!(sub && sub.endpoint);
+    }catch(e){
+      console.warn("[Push] active subscription check failed", e);
+      return false;
     }
   }
 
@@ -196,6 +217,8 @@ window.ZRPush = (function(){
     requestPermissionInteractive: requestPermissionInteractive,
     subscribeCurrentUser: subscribeCurrentUser,
     syncExistingSubscription: syncExistingSubscription,
-    deactivateCurrentSubscription: deactivateCurrentSubscription
+    deactivateCurrentSubscription: deactivateCurrentSubscription,
+    hasActiveCurrentSubscription: hasActiveCurrentSubscription
   };
 })();
+

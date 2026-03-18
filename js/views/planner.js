@@ -284,7 +284,7 @@ const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) 
         const due = t.due_date ? `<span class="pl-due ${isOverdue(t) ? "is-overdue" : ""}">${esc(dueLabel(t.due_date))}</span>` : "";
         const badge = isOverdue(t) ? `<span class="tag warn">Срок истёк</span>` : ``;
 
-        const assigneeLabel = getTaskAssigneeLabel(t, uid);
+        const assigneeLabel = (role === "admin") ? getTaskAssigneeLabel(t, uid) : "";
 const isSel = selectedId && String(selectedId) === String(t.id);
         return `
           <div class="item ${isSel ? 'zr-list-row--active' : ''}" data-id="${esc(t.id)}">
@@ -1395,6 +1395,9 @@ loadDocs(task);
 
   return { show };
 })();
+
+
+
 
 
 

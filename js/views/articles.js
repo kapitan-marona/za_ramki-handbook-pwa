@@ -240,7 +240,7 @@ Views.Articles = (() => {
     const selectedId = (() => {
       try{
         const p = (window.Router && typeof Router.parse === "function") ? Router.parse() : null;
-        return p && p.page === "articles" && p.param ? String(p.param) : "";
+        return p && p.section === "articles" && p.param ? String(p.param) : "";
       }catch(e){}
       return "";
     })();
@@ -363,8 +363,9 @@ Views.Articles = (() => {
       const syncToggleState = () => {
         const collapsed = layout.classList.contains("zr-toc-collapsed");
 
-        toggleBtn.textContent = collapsed ? "Показать оглавление" : "Скрыть оглавление";
-        toggleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        toggleBtn.textContent = "Оглавление";
+        toggleBtn.setAttribute("aria-pressed", collapsed ? "false" : "true");
+        toggleBtn.classList.toggle("is-active", !collapsed);
         toggleBtn.style.display = "inline-flex";
 
         if(window.innerWidth > 960){
@@ -753,7 +754,7 @@ Views.Articles = (() => {
               <p class="article-sub">${esc(updated)}</p>
             </div>
             <div class="zr-viewer-header-actions">
-              <button class="btn btn-sm" id="insTocBtn" type="button">Показать оглавление</button>
+              <button class="btn btn-sm" id="insTocBtn" type="button" aria-pressed="false">Оглавление</button>
               <button class="btn btn-sm" id="insBackBtn" type="button">Закрыть</button>
             </div>
           </div>
@@ -904,6 +905,7 @@ Views.Articles = (() => {
     }
   };
 })();
+
 
 
 

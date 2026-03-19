@@ -267,8 +267,8 @@
                       userId: afterOne,
                       title: "ZA RAMKI",
                       body: eventType === "assigned"
-                        ? "Вам назначена задача"
-                        : "Вам переназначена задача",
+                        ? (payload.title ? payload.title + " — назначена вам" : "Вам назначена задача")
+                        : (payload.title ? payload.title + " — переназначена вам" : "Задача переназначена"),
                       url: "./#/planner/" + taskIdForAssignee,
                       tag: "planner-" + eventType + "-" + taskIdForAssignee
                     });
@@ -747,6 +747,7 @@ window.PlannerActions = {
     ensureInProgress
   };
 })();
+
 
 
 

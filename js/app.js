@@ -27,57 +27,20 @@ window.syncRoleUI = function(){
   }catch(e){}
 };
 
-window.syncPushUI = async function(){
-  try{
-    var btn = document.querySelector("#pushBtn");
-    if(!btn) return;
-
-    if(!window.ZRPush || !ZRPush.isSupported()){
-      btn.disabled = true;
-      btn.textContent = "Push недоступен";
-      btn.setAttribute("aria-pressed", "false");
-      return;
-    }
-
-    try{
-      await ZRPush.ensureServiceWorker();
-    }catch(e){
-      console.warn("[Push] service worker register failed", e);
-    }
-
-    var perm = ZRPush.getPermissionState();
-    var hasActive = false;
-
-    try{
-      hasActive = !!(ZRPush.hasActiveCurrentSubscription && await ZRPush.hasActiveCurrentSubscription());
-    }catch(e){
-      console.warn("[Push] active state check failed", e);
-    }
-
-    if(perm === "denied"){
-      btn.disabled = true;
-      btn.textContent = "Push заблокированы";
-      btn.setAttribute("aria-pressed", "false");
-      return;
-    }
-
-    if(hasActive){
-      btn.disabled = false;
-      btn.textContent = "Push: ON";
-      btn.setAttribute("aria-pressed", "true");
-      return;
-    }
-
-    btn.disabled = false;
-    btn.textContent = "Push: OFF";
-    btn.setAttribute("aria-pressed", "false");
-  }catch(e){
-    console.warn("[Push] sync UI failed", e);
-  }
-};
 
 window.handlePushToggleClick = async function(){
+  var pushBtn = null;
+
   try{
+    if(window.__pushToggleBusy) return;
+    window.__pushToggleBusy = true;
+
+    pushBtn = document.querySelector("#pushBtn");
+    if(pushBtn){
+      pushBtn.classList.add("is-pending");
+      pushBtn.disabled = true;
+    }
+
     if(!window.ZRPush || !ZRPush.isSupported()){
       alert("Push не поддерживается в этом браузере.");
       return;
@@ -94,7 +57,6 @@ window.handlePushToggleClick = async function(){
 
     if(hasActive){
       await ZRPush.deactivateCurrentSubscription();
-      await window.syncPushUI();
       alert("Push отключены для текущего устройства / браузера.");
       return;
     }
@@ -104,13 +66,11 @@ window.handlePushToggleClick = async function(){
     }
 
     if(perm !== "granted"){
-      await window.syncPushUI();
       alert("Разрешение на push не выдано.");
       return;
     }
 
     var res = await ZRPush.subscribeCurrentUser();
-    await window.syncPushUI();
 
     if(!res || !res.ok){
       if(res && res.reason === "missing-vapid-key"){
@@ -123,7 +83,7 @@ window.handlePushToggleClick = async function(){
     }
 
     if(res.backend && res.backend.ok){
-      alert("Push подписка сохранена ✅");
+      alert("Push уведомления активированы ✅");
       return;
     }
 
@@ -131,6 +91,19 @@ window.handlePushToggleClick = async function(){
   }catch(e){
     console.warn("[Push] toggle flow failed", e);
     alert("Ошибка переключения push. Смотри консоль.");
+  }finally{
+    window.__pushToggleBusy = false;
+
+    if(pushBtn){
+      pushBtn.classList.remove("is-pending");
+      pushBtn.disabled = false;
+    }
+
+    try{
+      await window.syncPushUI();
+    }catch(syncErr){
+      console.warn("[Push] final UI sync failed", syncErr);
+    }
   }
 };
 
@@ -380,6 +353,8 @@ window.initAuth = async function(){
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
 
 
 

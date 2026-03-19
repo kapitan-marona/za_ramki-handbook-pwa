@@ -222,3 +222,63 @@ window.ZRPush = (function(){
   };
 })();
 
+
+window.syncPushUI = async function(){
+  try{
+    var btn = document.querySelector("#pushBtn");
+    if(!btn) return;
+
+    function bellIcon(){
+      var common = 'width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"';
+      return '<svg ' + common + '><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6-1.38-2.32a4.2 4.2 0 0 1-.62-2.12V9a5 5 0 1 0-10 0v2.56c0 .75-.21 1.49-.62 2.12L5 16h14z"/></svg>';
+    }
+
+    function applyBell(state, pressed, disabled, label){
+      btn.disabled = !!disabled;
+      btn.innerHTML = bellIcon();
+      btn.setAttribute("aria-pressed", pressed ? "true" : "false");
+      btn.setAttribute("aria-label", label);
+      btn.setAttribute("title", label);
+      btn.classList.add("push-icon-btn");
+      btn.classList.toggle("is-on", state === "on");
+      btn.classList.toggle("is-off", state === "off");
+      btn.classList.toggle("is-disabled", !!disabled);
+    }
+
+    if(!window.ZRPush || !ZRPush.isSupported()){
+      applyBell("off", false, true, "Уведомления недоступны");
+      return;
+    }
+
+    try{
+      await ZRPush.ensureServiceWorker();
+    }catch(e){
+      console.warn("[Push] service worker register failed", e);
+    }
+
+    var perm = ZRPush.getPermissionState();
+    var hasActive = false;
+
+    try{
+      hasActive = !!(ZRPush.hasActiveCurrentSubscription && await ZRPush.hasActiveCurrentSubscription());
+    }catch(e){
+      console.warn("[Push] active state check failed", e);
+    }
+
+    if(perm === "denied"){
+      applyBell("off", false, true, "Уведомления заблокированы");
+      return;
+    }
+
+    if(hasActive){
+      applyBell("on", true, false, "Уведомления включены");
+      return;
+    }
+
+    applyBell("off", false, false, "Уведомления выключены");
+  }catch(e){
+    console.warn("[Push] sync UI failed", e);
+  }
+};
+
+

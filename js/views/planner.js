@@ -282,13 +282,16 @@ const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) 
       }catch(e){ console.warn("[Planner] left sortMineFirst error", e); }
       host.innerHTML = leftTasks.map(t => {
         const due = t.due_date ? `<span class="pl-due ${isOverdue(t) ? "is-overdue" : ""}">${esc(dueLabel(t.due_date))}</span>` : "";
-        const badge = isOverdue(t) ? `<span class="tag warn">Срок истёк</span>` : ``;
-
         const assigneeLabel = (role === "admin") ? getTaskAssigneeLabel(t, uid) : "";
-const isSel = selectedId && String(selectedId) === String(t.id);
+        const isSel = selectedId && String(selectedId) === String(t.id);
+        const projectLine = t.project_title
+          ? `<div class="item-meta" style="margin-top:6px;">${esc(t.project_title)}</div>`
+          : "";
+
         return `
           <div class="item ${isSel ? 'zr-list-row--active' : ''}" data-id="${esc(t.id)}">
-            <div class="zr-list-row-title">${esc(t.title || "(без названия)")}${badge}</div>
+            <div class="zr-list-row-title">${esc(t.title || "(без названия)")}</div>
+            ${projectLine}
             <div class="zr-list-row-meta">${[assigneeLabel, startLabel(t.start_date), due, urgencyLabel(t.urgency), (t.status ? statusLabel(t.status) : "")].filter(Boolean).join(" · ")}</div>
           </div>
         `;
@@ -303,7 +306,6 @@ const isSel = selectedId && String(selectedId) === String(t.id);
     function renderRightHeader(tasks){
       const total = Array.isArray(tasks) ? tasks.length : 0;
       const done = total ? tasks.filter(t => t.status === "done").length : 0;
-      const pct = total ? Math.round((done / total) * 100) : 0;
 
       viewerEl.classList.remove("pl-archived");
 viewerEl.querySelectorAll("button, input, textarea, select").forEach(x => { try{ x.disabled = false; }catch(e){} });
@@ -313,19 +315,11 @@ viewerEl.innerHTML = `
     <div class="pl-head-left">
       <div class="zr-panel-topline">PLANNER</div>
       <div class="zr-panel-subline">Обзор по статусам · клик по карточке открывает детали</div>
-
-      <div class="pl-progress-row">
-        <span class="pl-bracket">[</span>
-        <div class="pl-progress">
-          <div class="pl-progress-bar" style="--pl-progress:${pct}%;"></div>
-        </div>
-        <span class="pl-bracket">]</span>
-</div>
     </div>
 
     <div class="pl-head-actions">
       ${(role === "admin" && done > 0) ? `<button class="btn btn-sm pl-btn-ghost" id="plArchiveDone" type="button">В архив: завершённые</button>` : ``}
-      ${role === "admin" ? `<button class="btn btn-sm pl-btn-primary" id="plQuickCreate" type="button">+ Задача</button>` : ``}
+      ${role === "admin" ? `<button class="btn btn-sm pl-btn-primary" id="plQuickCreate" type="button">+</button>` : ``}
       <button class="btn btn-sm pl-btn-ghost ${state.refreshBusy ? "is-loading" : ""}" id="plRefresh" type="button" ${state.refreshBusy ? "disabled" : ""}>${state.refreshBusy ? "Обновляю…" : "Обновить"}</button>
     </div>
   </div>
@@ -455,7 +449,7 @@ viewerEl.innerHTML = `
                 <div class="item" data-id="${esc(t.id)}" style="margin-top:10px; ${isProblem ? 'outline:1px solid rgba(255,80,80,.45); box-shadow:0 0 0 1px rgba(255,80,80,.18), 0 12px 30px rgba(0,0,0,.35);' : ''} ${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
                   <div class="item-title">${esc(t.title || "(без названия)")}</div>
                   ${projectLine}
-                  <div class="item-meta">${[startLabel(t.start_date), dueLabel(t.due_date), (isOverdue(t) ? "Срок истёк" : ""), urgencyLabel(t.urgency), statusLabel(t.status || "")].filter(Boolean).map(esc).join(" · ")}</div>
+                  <div class="item-meta">${[startLabel(t.start_date), dueLabel(t.due_date), urgencyLabel(t.urgency), statusLabel(t.status || "")].filter(Boolean).map(esc).join(" · ")}</div>
                 </div>
               `;
             }).join("")
@@ -847,10 +841,10 @@ async function loadDocs(task){
             targetUserId !== actorId &&
             typeof window.sendPlannerPush === "function"
           ){
-            await sendPlannerPush({
+            sendPlannerPush({
               userId: targetUserId,
               title: "ZA RAMKI",
-              body: "Новый комментарий в задаче",
+              body: (task && task.title ? task.title + " — новый комментарий" : "Новый комментарий"),
               url: "./#/planner/" + task.id,
               tag: "planner-comment_added-" + task.id
             });
@@ -1241,10 +1235,10 @@ async function loadDocs(task){
               targetUserId !== actorId &&
               typeof window.sendPlannerPush === "function"
             ){
-              await sendPlannerPush({
+              sendPlannerPush({
                 userId: targetUserId,
                 title: "ZA RAMKI",
-                body: "Статус задачи изменён",
+                body: (updated && updated.title ? updated.title + " — статус: " + statusLabel(updated.status) : "Статус задачи изменён"),
                 url: "./#/planner/" + task.id,
                 tag: "planner-status_changed-" + task.id
               });
@@ -1365,8 +1359,9 @@ loadDocs(task);
       if(role === "admin"){
         board.innerHTML = `
           <div class="empty" style="text-align:center;">
-            <h2>PLANNER пуст.</h2>
-            <p>Создайте первую задачу.</p>
+            <h2>Новых задач пока нет.</h2>
+            <p>Чтобы добавить новую задачу, нажмите "+".</p>
+            <p>Включи уведомления (колокольчик), чтобы быть в курсе изменений.</p>
             <div style="margin-top:16px;">
               <button class="btn" id="plCreateTask" type="button">Создать задачу</button>
             </div>
@@ -1375,8 +1370,8 @@ loadDocs(task);
       }else{
         board.innerHTML = `
           <div class="empty" style="text-align:center;">
-            <div style="font-size:72px;">😎</div>
-            <div style="margin-top:12px;">Новых задач нет. Всё разобрали.</div>
+            <h2>Новых задач пока нет.</h2>
+            <p>Включи уведомления (колокольчик), чтобы быть в курсе изменений.</p>
           </div>
         `;
       }
@@ -1448,6 +1443,15 @@ loadDocs(task);
 
   return { show };
 })();
+
+
+
+
+
+
+
+
+
 
 
 

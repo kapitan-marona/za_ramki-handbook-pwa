@@ -85,10 +85,12 @@ body{
 }
 
 .panel, .viewer{
+
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 16px;
   overflow:hidden;
+
 }
 
 .panel-head{
@@ -2130,4 +2132,177 @@ body{
   border-color: var(--accent-55);
   background: var(--accent-08);
   box-shadow: 0 0 0 1px var(--accent-12);
+}
+
+
+
+
+/* =========================================================
+   ZA RAMKI — PLANNER EMPTY STATE POLISH
+   ========================================================= */
+
+.viewer .empty{
+  max-width: 560px;
+  margin: 18px auto 6px auto;
+  padding: 28px 24px;
+  text-align: center;
+  background: rgba(26,23,20,.34);
+  border: 1px dashed rgba(255,243,234,.10);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.viewer .empty::before{
+  content: "";
+  display: block;
+  width: 42px;
+  height: 1px;
+  margin: 0 auto 16px auto;
+  background: color-mix(in srgb, var(--accent-35) 70%, transparent);
+  opacity: .9;
+}
+
+.viewer .empty h2{
+  margin: 0 0 10px 0;
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.viewer .empty p{
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--muted) 90%, transparent);
+}
+
+.viewer .empty p + p{
+  margin-top: 8px;
+}
+
+.viewer .empty .btn{
+  min-height: 34px;
+  padding: 8px 14px;
+}
+
+.viewer .empty > div[style*="margin-top:16px"]{
+  margin-top: 18px !important;
+}
+
+@media (max-width: 640px){
+  .viewer .empty{
+    margin: 12px auto 4px auto;
+    padding: 22px 18px;
+    border-radius: 16px;
+  }
+
+  .viewer .empty h2{
+    font-size: 20px;
+  }
+
+  .viewer .empty p{
+    font-size: 13px;
+  }
+}
+
+.push-icon-btn{
+  min-width: 36px;
+  width: 36px;
+  height: 36px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.push-icon-btn svg{
+  width: 16px;
+  height: 16px;
+}
+
+.push-icon-btn.is-off{
+  color: var(--muted);
+}
+
+.push-icon-btn.is-disabled{
+  opacity: .5;
+}
+
+
+/* =========================================================
+   ZA RAMKI — PUSH BUTTON (single clean path)
+   ========================================================= */
+
+#pushBtn.push-icon-btn{
+  min-width: 32px !important;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  gap: 0 !important;
+}
+
+#pushBtn.push-icon-btn svg{
+  width: 14px !important;
+  height: 14px !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+}
+
+#pushBtn.push-icon-btn.is-on{
+  color: #FFF3EA !important;
+  background: var(--accent) !important;
+  border-color: transparent !important;
+  box-shadow: 0 0 0 1px var(--accent-12) !important;
+}
+
+#pushBtn.push-icon-btn.is-on:hover{
+  filter: brightness(1.04);
+}
+
+#pushBtn.push-icon-btn.is-off{
+  color: color-mix(in srgb, var(--muted) 90%, transparent) !important;
+  background: transparent !important;
+  border-color: var(--border) !important;
+}
+
+#pushBtn.push-icon-btn.is-off:hover{
+  color: var(--text) !important;
+  border-color: var(--accent-35) !important;
+  background: color-mix(in srgb, var(--card) 86%, var(--accent-08)) !important;
+}
+
+#pushBtn.push-icon-btn.is-disabled{
+  opacity: .5 !important;
+}
+
+
+/* ZA RAMKI — PUSH BUTTON pending state */
+#pushBtn.push-icon-btn.is-pending{
+  opacity: .88 !important;
+  pointer-events: none !important;
+  position: relative;
+}
+
+#pushBtn.push-icon-btn.is-pending svg{
+  opacity: .92;
+}
+
+#pushBtn.push-icon-btn.is-pending::after{
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 72%, transparent);
+  border-right-color: transparent;
+  animation: zr-push-spin .7s linear infinite;
+}
+
+@keyframes zr-push-spin{
+  to{ transform: rotate(360deg); }
 }

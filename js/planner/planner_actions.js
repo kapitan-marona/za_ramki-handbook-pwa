@@ -723,11 +723,15 @@
           if(msg) msg.textContent = "Сохраняю…";
           const saved = await PlannerAPI.addTaskLink(task.id, payload);
 
-          if(typeof opts.onAdded === "function"){
-            await opts.onAdded(saved, payload);
-          }
-
           close();
+
+          if(typeof opts.onAdded === "function"){
+            try{
+              await opts.onAdded(saved, payload);
+            }catch(afterErr){
+              console.warn("[PlannerActions] onAdded callback error", afterErr);
+            }
+          }
         }catch(err){
           console.warn("[PlannerActions] openLinkDialog submit error", err);
           const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
@@ -747,6 +751,10 @@ window.PlannerActions = {
     ensureInProgress
   };
 })();
+
+
+
+
 
 
 

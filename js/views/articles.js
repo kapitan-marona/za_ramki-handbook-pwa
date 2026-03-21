@@ -279,11 +279,11 @@ Views.Articles = (() => {
     md = (md ?? "").toString();
 
     if(active){
-      md = md.replace(/>([^<\r\n]+)</g, '<mark class="kb-newmark">$1</mark>');
-      md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '<mark class="kb-newmark">$1</mark>');
+      md = md.replace(/>(.+?)</g, '<mark class="kb-newmark">$1</mark>');
+      md = md.replace(/&gt;(.+?)&lt;/g, '<mark class="kb-newmark">$1</mark>');
     }else{
-      md = md.replace(/>([^<\r\n]+)</g, '$1');
-      md = md.replace(/&gt;([^&\r\n]+)&lt;/g, '$1');
+      md = md.replace(/>(.+?)</g, '$1');
+      md = md.replace(/&gt;(.+?)&lt;/g, '$1');
     }
 
     return md;
@@ -326,7 +326,7 @@ Views.Articles = (() => {
     })();
 
     for(const it of items){
-      const isNew = isNewWindowActive(it, 7);
+      const isNew = !!it.hasInlineNew && isNewWindowActive(it, 7);
       const badge = isNew ? `<span class="kb-updated-badge">обновлено</span>` : "";
       const catTitle = CATMAP[it.category] || it.category || "";
       const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
@@ -984,17 +984,18 @@ Views.Articles = (() => {
       return;
     }
 
-    const map = new Map();
+    const fileMap = new Map();
     for(const it of fileItems){
-      map.set(it.id, it);
-    }
-    for(const it of sbItems){
-      const prev = map.get(it.id);
-      if(prev && prev.path && !it.path) it.path = prev.path;
-      map.set(it.id, it);
+      fileMap.set(it.id, it);
     }
 
-    INDEX = sortItems(Array.from(map.values()));
+    INDEX = sortItems(
+      sbItems.map(it => {
+        const prev = fileMap.get(it.id);
+        if(prev && prev.path && !it.path) it.path = prev.path;
+        return it;
+      })
+    );
   }
 
   return {
@@ -1009,6 +1010,8 @@ Views.Articles = (() => {
     }
   };
 })();
+
+
 
 
 

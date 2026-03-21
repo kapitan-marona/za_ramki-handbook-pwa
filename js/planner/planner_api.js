@@ -174,6 +174,22 @@
     return true;
   }
 
+  async function deleteTaskComment(commentId){
+    const SB = SBx();
+    if(!commentId) throw new Error("commentId required");
+
+    const r = await SB
+      .from("task_comments")
+      .update({
+        deleted_at: new Date().toISOString()
+      })
+      .eq("id", commentId)
+      .is("deleted_at", null);
+
+    if(r && r.error) throw r.error;
+    return true;
+  }
+
   async function archiveTask(taskId){
     const SB = SBx();
     const r = await SB.rpc("archive_task", { p_task_id: taskId });
@@ -544,7 +560,7 @@
       .single();
 
     if(r && r.error) throw r.error;
-    return updatedRow || null;
+    return (r && r.data) ? r.data : null;
   }
 
   async function removeTaskLink(linkId){
@@ -640,6 +656,7 @@
     fetchTaskFiles,
     fetchComments,
     addTaskComment,
+    deleteTaskComment,
     createTask,
     fetchProjects,
     updateTask,
@@ -660,6 +677,8 @@
     searchChecklistsForLink
   };
 })();
+
+
 
 
 

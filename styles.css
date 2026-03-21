@@ -2306,3 +2306,954 @@ body{
 @keyframes zr-push-spin{
   to{ transform: rotate(360deg); }
 }
+
+
+/* =========================================================
+   PHASE E — Planner documents panel stabilization
+   fixed body height + internal scroll only
+   ========================================================= */
+
+#plDocs{
+  min-width:0;
+}
+
+#plDocs,
+#plDocs .zr-planner-docs-list{
+  min-width:0;
+}
+
+#plDocs .zr-planner-docs-list{
+  max-height:320px;
+  overflow:auto;
+  scroll-behavior:smooth;
+  padding-right:4px;
+  overscroll-behavior:contain;
+}
+
+#plDocs .zr-planner-doc-row{
+  min-width:0;
+}
+
+#plDocs .zr-planner-doc-main{
+  min-width:0;
+}
+
+#plDocs .zr-planner-doc-link{
+  max-width:100%;
+}
+
+@media (max-width: 960px){
+  #plDocs .zr-planner-docs-list{
+    max-height:240px;
+  }
+}
+
+
+/* =========================================================
+   PHASE E ADDENDUM — inline checklist display polish
+   ========================================================= */
+
+.zr-planner-inline-cl{
+  padding: 12px 14px;
+}
+
+.zr-planner-inline-cl-head{
+  align-items:flex-start;
+}
+
+.zr-planner-inline-cl-toggle{
+  padding: 4px 0;
+  min-height: auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.zr-planner-inline-cl-toggle:hover,
+.zr-planner-inline-cl-toggle:focus,
+.zr-planner-inline-cl-toggle:focus-visible{
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.zr-planner-inline-cl-body{
+  margin-top: 10px;
+}
+
+.zr-planner-inline-cl-list{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.zr-planner-inline-cl-row{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.zr-planner-inline-cl-row input{
+  margin-top: 2px;
+}
+
+.zr-planner-inline-cl-row .tag{
+  display: none;
+}
+
+.zr-planner-inline-cl-text{
+  display: block;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.zr-planner-inline-cl-status{
+  margin-top: 2px;
+}
+
+@media (max-width: 960px){
+  .zr-planner-inline-cl{
+    padding: 10px 12px;
+  }
+
+  .zr-planner-inline-cl-list{
+    gap: 9px;
+  }
+}
+
+
+/* =========================================================
+   PHASE E ADDENDUM — inline checklist quiet save polish
+   ========================================================= */
+
+.zr-planner-inline-cl-head{
+  align-items:flex-start;
+}
+
+.zr-planner-inline-cl-status{
+  display:block;
+  width:100%;
+  margin-top:6px;
+  padding-left:2px;
+  font-size:10px;
+  line-height:1.3;
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
+  white-space:normal;
+  opacity:.82;
+}
+
+.zr-planner-inline-cl-status[data-tone="saving"],
+.zr-planner-inline-cl-status[data-tone="success"],
+.zr-planner-inline-cl-status[data-tone="error"]{
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
+}
+
+.zr-planner-inline-cl.is-saving .zr-planner-inline-cl-body{
+  pointer-events:none;
+}
+
+.zr-planner-inline-cl.is-saving .zr-planner-inline-cl-row{
+  opacity:1;
+}
+
+.zr-planner-inline-cl.is-saving input[type="checkbox"]{
+  filter:none;
+  opacity:1;
+}
+
+
+/* =========================================================
+   PHASE E ADDENDUM — task points container polish
+   ========================================================= */
+
+#plChecklist{
+  min-width:0;
+}
+
+#plChecklist .zr-planner-inline-checklists{
+  gap:12px;
+}
+
+#plChecklist .zr-planner-inline-cl{
+  padding: 12px 14px;
+  background: rgba(255,243,234,.02);
+  border-radius: 14px;
+}
+
+#plChecklist .zr-planner-inline-cl + .zr-planner-inline-cl{
+  border-top: 1px solid rgba(255,243,234,.05);
+}
+
+#plChecklist .zr-planner-inline-cl-head{
+  display:block;
+}
+
+#plChecklist .zr-planner-inline-cl-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  width:100%;
+  min-height:32px;
+  padding: 0;
+  border:0;
+  border-radius:0;
+  background: transparent;
+  box-shadow:none;
+  color: var(--text);
+  font-size:13px;
+  line-height:1.4;
+  font-weight:600;
+}
+
+#plChecklist .zr-planner-inline-cl-toggle:hover,
+#plChecklist .zr-planner-inline-cl-toggle:focus,
+#plChecklist .zr-planner-inline-cl-toggle:focus-visible,
+#plChecklist .zr-planner-inline-cl-toggle:active{
+  border:0;
+  background: transparent;
+  box-shadow:none;
+  transform:none;
+}
+
+#plChecklist .zr-planner-inline-cl-status{
+  display:block;
+  width:100%;
+  margin-top:4px;
+  padding-left:14px;
+}
+
+#plChecklist .zr-planner-inline-cl-body{
+  margin-top:10px;
+  padding-left:14px;
+}
+
+#plChecklist .zr-planner-inline-cl-group + .zr-planner-inline-cl-group{
+  margin-top:12px;
+}
+
+#plChecklist .zr-planner-inline-cl-group-title{
+  margin-bottom:7px;
+}
+
+#plChecklist .zr-planner-inline-cl-list{
+  gap:9px;
+}
+
+#plChecklist .zr-planner-inline-cl-row{
+  gap:10px;
+}
+
+#plChecklist .zr-planner-inline-cl-text{
+  font-size:13px;
+  line-height:1.5;
+}
+
+@media (max-width: 960px){
+  #plChecklist .zr-planner-inline-checklists{
+    gap:10px;
+  }
+
+  #plChecklist .zr-planner-inline-cl{
+    padding: 10px 12px;
+  }
+
+  #plChecklist .zr-planner-inline-cl-status,
+  #plChecklist .zr-planner-inline-cl-body{
+    padding-left:12px;
+  }
+}
+
+
+/* =========================================================
+   PHASE E ADDENDUM — inline checklist status inline header
+   ========================================================= */
+
+#plChecklist .zr-planner-inline-cl-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:nowrap;
+}
+
+#plChecklist .zr-planner-inline-cl-toggle{
+  flex:1 1 auto;
+  min-width:0;
+}
+
+#plChecklist .zr-planner-inline-cl-status{
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-end;
+  width:auto;
+  min-width:72px;
+  margin-top:0;
+  margin-left:12px;
+  padding-left:0;
+  font-size:10px;
+  line-height:1.2;
+  white-space:nowrap;
+  flex:0 0 auto;
+  opacity:.78;
+}
+
+@media (max-width: 960px){
+  #plChecklist .zr-planner-inline-cl-head{
+    gap:10px;
+  }
+
+  #plChecklist .zr-planner-inline-cl-status{
+    min-width:64px;
+    margin-left:10px;
+  }
+}
+
+
+/* =========================================================
+   PHASE E.1 — Planner comments chat-like polish
+   subtle own-comment delete control
+   ========================================================= */
+
+.zr-planner-comments{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.zr-planner-comment-row{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  padding:12px 14px;
+  border-radius:16px;
+  background: rgba(255,243,234,.035);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
+  transition: background-color .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+
+.zr-planner-comment-row:hover{
+  background: rgba(255,243,234,.05);
+}
+
+.zr-planner-comment-meta{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.zr-planner-comment-author{
+  font-size:11px;
+  line-height:1.2;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color: color-mix(in srgb, var(--muted) 92%, transparent);
+  white-space:nowrap;
+}
+
+.zr-planner-comment-time{
+  font-size:11px;
+  line-height:1.2;
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
+  white-space:nowrap;
+  justify-self:start;
+}
+
+.zr-planner-comment-body{
+  font-size:14px;
+  line-height:1.62;
+  color: color-mix(in srgb, var(--text) 96%, transparent);
+  white-space:pre-wrap;
+  word-break:break-word;
+  padding-left:0;
+}
+
+.pl-comment-delete{
+  min-height:24px !important;
+  padding:3px 8px !important;
+  border-radius:999px !important;
+  font-size:11px !important;
+  line-height:1 !important;
+  background: transparent !important;
+  border: 1px solid rgba(255,243,234,.08) !important;
+  color: color-mix(in srgb, var(--muted) 82%, transparent) !important;
+  box-shadow:none !important;
+  opacity:.18;
+  transition:
+    opacity .12s ease,
+    border-color .12s ease,
+    color .12s ease,
+    background-color .12s ease;
+}
+
+.zr-planner-comment-row:hover .pl-comment-delete,
+.zr-planner-comment-row:focus-within .pl-comment-delete,
+.pl-comment-delete:focus,
+.pl-comment-delete:focus-visible{
+  opacity:.9;
+}
+
+.pl-comment-delete:hover,
+.pl-comment-delete:focus,
+.pl-comment-delete:focus-visible{
+  color: var(--text) !important;
+  border-color: rgba(255,243,234,.16) !important;
+  background: rgba(255,243,234,.04) !important;
+}
+
+.pl-comment-delete:active{
+  transform:none !important;
+}
+
+.zr-planner-comment-compose{
+  margin-top:8px;
+  padding-top:10px;
+  border-top: 1px solid rgba(255,243,234,.06);
+}
+
+.zr-planner-comment-footer{
+  justify-content:space-between;
+}
+
+.zr-planner-comment-footer .zr-planner-muted{
+  min-height:18px;
+}
+
+@media (max-width: 640px){
+  .zr-planner-comment-row{
+    padding:11px 12px;
+    border-radius:14px;
+  }
+
+  .zr-planner-comment-meta{
+    grid-template-columns:1fr auto;
+    gap:6px 8px;
+  }
+
+  .zr-planner-comment-author{
+    grid-column:1 / 2;
+  }
+
+  .zr-planner-comment-time{
+    grid-column:1 / 2;
+    grid-row:2 / 3;
+  }
+
+  .pl-comment-delete{
+    grid-column:2 / 3;
+    grid-row:1 / 3;
+    align-self:start;
+  }
+}
+
+/* =========================================================
+   PHASE E.1 — Planner comments inline row polish
+   author + body left, time + delete right
+   ========================================================= */
+
+.zr-planner-comment-row{
+  display:grid !important;
+  grid-template-columns: minmax(0,1fr) auto auto !important;
+  align-items:start !important;
+  gap:8px 12px !important;
+  padding:10px 12px !important;
+  border-radius:14px !important;
+  background: rgba(255,243,234,.03) !important;
+}
+
+.zr-planner-comment-meta{
+  display:contents !important;
+}
+
+.zr-planner-comment-author{
+  display:inline !important;
+  font-size:13px !important;
+  line-height:1.5 !important;
+  letter-spacing:0 !important;
+  text-transform:none !important;
+  color: var(--text) !important;
+  white-space:normal !important;
+  font-weight:600 !important;
+}
+
+.zr-planner-comment-author::after{
+  content: ":"; 
+  margin-right:6px;
+  opacity:.78;
+}
+
+.zr-planner-comment-body{
+  grid-column:1 / 2 !important;
+  grid-row:1 / 2 !important;
+  display:inline !important;
+  margin:0 !important;
+  padding:0 !important;
+  font-size:13px !important;
+  line-height:1.5 !important;
+  color: color-mix(in srgb, var(--text) 95%, transparent) !important;
+}
+
+.zr-planner-comment-author + .zr-planner-comment-time + .pl-comment-delete + .zr-planner-comment-body{
+  margin-top:0 !important;
+}
+
+/* force author + body to read as one line/paragraph */
+.zr-planner-comment-row .zr-planner-comment-author,
+.zr-planner-comment-row .zr-planner-comment-body{
+  vertical-align:top;
+}
+
+.zr-planner-comment-time{
+  grid-column:2 / 3 !important;
+  grid-row:1 / 2 !important;
+  align-self:center !important;
+  justify-self:end !important;
+  font-size:10px !important;
+  line-height:1.2 !important;
+  color: color-mix(in srgb, var(--muted) 72%, transparent) !important;
+  white-space:nowrap !important;
+  margin-top:2px !important;
+}
+
+.pl-comment-delete{
+  grid-column:3 / 4 !important;
+  grid-row:1 / 2 !important;
+  align-self:center !important;
+  justify-self:end !important;
+  min-height:26px !important;
+  height:26px !important;
+  padding:0 9px !important;
+  border-radius:999px !important;
+  font-size:11px !important;
+  line-height:1 !important;
+  opacity:.48 !important;
+  border:1px solid rgba(255,243,234,.12) !important;
+  background: rgba(255,243,234,.04) !important;
+  color: color-mix(in srgb, var(--text) 84%, transparent) !important;
+}
+
+.zr-planner-comment-row:hover .pl-comment-delete,
+.zr-planner-comment-row:focus-within .pl-comment-delete,
+.pl-comment-delete:hover,
+.pl-comment-delete:focus,
+.pl-comment-delete:focus-visible{
+  opacity:.95 !important;
+}
+
+.pl-comment-delete:hover,
+.pl-comment-delete:focus,
+.pl-comment-delete:focus-visible{
+  border-color: rgba(255,243,234,.18) !important;
+  background: rgba(255,243,234,.07) !important;
+  color: var(--text) !important;
+}
+
+@media (max-width: 760px){
+  .zr-planner-comment-row{
+    grid-template-columns:minmax(0,1fr) auto !important;
+    gap:6px 10px !important;
+  }
+
+  .zr-planner-comment-time{
+    grid-column:2 / 3 !important;
+    grid-row:1 / 2 !important;
+    align-self:start !important;
+    margin-top:3px !important;
+  }
+
+  .pl-comment-delete{
+    grid-column:2 / 3 !important;
+    grid-row:2 / 3 !important;
+    justify-self:end !important;
+    margin-top:2px !important;
+  }
+
+  .zr-planner-comment-body{
+    grid-column:1 / 2 !important;
+    grid-row:1 / 3 !important;
+  }
+}
+
+/* =========================================================
+   PHASE E.1 — inline author + comment text
+   ========================================================= */
+
+.zr-planner-comment-main{
+  grid-column:1 / 2;
+  grid-row:1 / 2;
+  min-width:0;
+  font-size:13px;
+  line-height:1.5;
+  color: color-mix(in srgb, var(--text) 95%, transparent);
+  word-break:break-word;
+  white-space:pre-wrap;
+}
+
+.zr-planner-comment-author-inline{
+  font-weight:600;
+  color: var(--text);
+  margin-right:4px;
+}
+
+.zr-planner-comment-body-inline{
+  color: inherit;
+}
+
+.zr-planner-comment-row .zr-planner-comment-author,
+.zr-planner-comment-row .zr-planner-comment-body{
+  display:none !important;
+}
+
+/* =========================================================
+   PHASE E.1 — final inline comment flow fix
+   ========================================================= */
+
+.zr-planner-comment-main{
+  grid-column: 1 / 2 !important;
+  grid-row: 1 / 2 !important;
+  display: block !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  align-self: start !important;
+}
+
+.zr-planner-comment-author-inline,
+.zr-planner-comment-body-inline{
+  display: inline !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  vertical-align: top !important;
+}
+
+.zr-planner-comment-author-inline{
+  font-weight: 600 !important;
+  color: var(--text) !important;
+  margin-right: 4px !important;
+}
+
+.zr-planner-comment-body-inline{
+  color: color-mix(in srgb, var(--text) 95%, transparent) !important;
+}
+
+/* =========================================================
+   PHASE E.1 — Planner activity quiet polish
+   ========================================================= */
+
+.zr-planner-activity{
+  gap:6px !important;
+  max-height:160px !important;
+  padding-right:2px !important;
+}
+
+.zr-planner-activity-row{
+  grid-template-columns:auto minmax(0,1fr) !important;
+  gap:8px !important;
+  padding:7px 0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  opacity:.84;
+}
+
+.zr-planner-activity-row + .zr-planner-activity-row{
+  border-top:1px solid rgba(255,243,234,.04);
+}
+
+.zr-planner-activity-time{
+  font-size:10px !important;
+  line-height:1.25 !important;
+  color: color-mix(in srgb, var(--muted) 70%, transparent) !important;
+}
+
+.zr-planner-activity-text{
+  font-size:11px !important;
+  line-height:1.4 !important;
+  color: color-mix(in srgb, var(--muted) 82%, var(--text) 18%) !important;
+}
+
+#plActivity .zr-planner-muted{
+  font-size:11px;
+}
+
+/* === Planner Documents — cleanup === */
+
+#plDocsList .item,
+#plDocsList .doc,
+#plDocsList .pill {
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  background: var(--item) !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* text */
+#plDocsList .item span,
+#plDocsList .doc span {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* remove heavy pill feel */
+#plDocsList .pill {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* delete button */
+#plDocsList button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+#plDocsList button:hover {
+  opacity: 1;
+  background: var(--accent);
+}
+
+
+/* === Planner Documents — cards grid === */
+
+#plDocs .zr-planner-docs-list{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:10px;
+}
+
+#plDocs .zr-planner-doc-card{
+  position:relative;
+  min-width:0;
+}
+
+#plDocs .zr-planner-doc-link{
+  width:100%;
+  min-height:72px;
+  padding:12px 14px;
+  padding-right:38px;
+  border-radius:14px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:flex-start;
+  text-align:left;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:none;
+  white-space:normal;
+}
+
+#plDocs .zr-planner-doc-link:hover{
+  background:rgba(255,255,255,0.05);
+  border-color:rgba(196,90,42,0.28);
+}
+
+#plDocs .zr-planner-doc-label{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  line-height:1.35;
+  font-size:13px;
+}
+
+#plDocs .zr-planner-doc-remove{
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:22px;
+  height:22px;
+  min-width:22px;
+  min-height:22px;
+  padding:0;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+  font-size:12px;
+  z-index:2;
+  background:rgba(20,20,20,0.55);
+  border:1px solid rgba(255,255,255,0.08);
+}
+
+#plDocs .zr-planner-doc-remove:hover{
+  background:rgba(196,90,42,0.18);
+  border-color:rgba(196,90,42,0.30);
+}
+
+@media (max-width: 900px){
+  #plDocs .zr-planner-docs-list{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* === Planner Documents — text compact === */
+
+#plDocs .zr-planner-doc-link{
+  min-height:60px;
+  padding:10px 12px;
+  padding-right:34px;
+  align-items:flex-start;
+}
+
+#plDocs .zr-planner-doc-label{
+  font-size:12.5px;
+  line-height:1.3;
+  margin-top:1px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+
+/* === Planner Documents — readability boost === */
+
+#plDocs .zr-planner-doc-link{
+  flex-direction:column;
+  gap:4px;
+}
+
+#plDocs .zr-planner-doc-meta{
+  font-size:10px;
+  opacity:0.5;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+}
+
+#plDocs .zr-planner-doc-label{
+  font-size:13px;
+  line-height:1.35;
+  font-weight:500;
+}
+
+
+/* === Planner Documents — readability fix 2 === */
+
+#plDocs .zr-planner-doc-link{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:3px;
+}
+
+#plDocs .zr-planner-doc-meta{
+  display:block;
+  font-size:10px;
+  line-height:1.15;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  opacity:.58;
+}
+
+#plDocs .zr-planner-doc-label{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  font-size:12.5px;
+  line-height:1.28;
+  font-weight:500;
+  text-align:left;
+}
+
+
+/* === Planner Documents — stability fix === */
+
+#plDocs .zr-planner-doc-card{
+  position:relative;
+  display:flex;
+}
+
+#plDocs .zr-planner-doc-link{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+
+  min-height:64px; /* фиксируем базовую высоту */
+  width:100%;
+}
+
+#plDocs .zr-planner-doc-remove{
+  position:absolute;
+  top:6px;
+  right:6px;
+}
+
+
+/* === Planner Documents — stability only === */
+
+#plDocs .zr-planner-doc-card{
+  position:relative;
+  min-width:0;
+}
+
+#plDocs .zr-planner-doc-link{
+  position:relative;
+  box-sizing:border-box;
+}
+
+#plDocs .zr-planner-doc-remove{
+  position:absolute;
+  top:8px;
+  right:8px;
+  z-index:3;
+}
+
+#plDocs .zr-planner-doc-meta,
+#plDocs .zr-planner-doc-label{
+  position:relative;
+  z-index:1;
+}
+
+
+/* === Planner Documents — text wrap stability === */
+
+#plDocs .zr-planner-doc-link{
+  position:relative;
+}
+
+#plDocs .zr-planner-doc-copy{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:4px;
+  width:100%;
+  min-width:0;
+  text-align:left;
+}
+
+#plDocs .zr-planner-doc-meta{
+  display:block;
+  margin:0;
+}
+
+#plDocs .zr-planner-doc-label{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  margin:0;
+  max-width:100%;
+}
+

@@ -218,6 +218,9 @@ window.initAuth = async function(){
     if(!App._authSub){
       App._authSub = SB.auth.onAuthStateChange(function(evt, session){
         var u = (session && session.user) ? session.user : null;
+        var prevUserId = (window.App && App.session && App.session.user && App.session.user.id) ? String(App.session.user.id) : "";
+        var nextUserId = (u && u.id) ? String(u.id) : "";
+        var shouldHardRerender = (evt === "SIGNED_IN" || evt === "SIGNED_OUT" || evt === "USER_UPDATED" || prevUserId !== nextUserId);
 
         // IMPORTANT: do not call async Supabase APIs inside onAuthStateChange callback.
         // Defer applySession to the next tick to avoid auth deadlocks (Navigator Lock).
@@ -233,7 +236,7 @@ window.initAuth = async function(){
               console.warn("[Auth] applySession failed", e);
             }
             App.session.ready = true;
-            if(!App._navLock && typeof App._render === "function") App._render();
+            if(shouldHardRerender && !App._navLock && typeof App._render === "function") App._render();
           })();
         }, 0);
       });
@@ -353,6 +356,10 @@ window.initAuth = async function(){
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
+
+
 
 
 

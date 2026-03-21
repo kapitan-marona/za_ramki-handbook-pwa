@@ -11,6 +11,11 @@ Views.Checklists = (() => {
 
   let _data = [];
   let _q = "";
+  let _activeChecklistId = "";
+  let _activeInstanceId = "";
+  let _activeItemsState = {};
+  let _checklistSaveBusy = false;
+  let _checklistSaveTimer = null;
 
   function setStatus(t){
     const el = $("#status");
@@ -20,6 +25,199 @@ Views.Checklists = (() => {
   function setPanelTitle(t){
     const el = $("#panelTitle");
     if(el) el.textContent = t;
+  }
+
+  function getChecklistApi(){
+    if(window.ZRChecklistAPI) return window.ZRChecklistAPI;
+
+    window.ZRChecklistAPI = {
+      getCurrentUserId(){
+        const userId =
+          window?.App?.session?.user?.id ||
+          window?.SB?.auth?.user?.()?.id ||
+          "";
+
+        if(!userId){
+          throw new Error("Checklist user is not resolved.");
+        }
+
+        return String(userId);
+      },
+
+      async getTaskScopedInstance(taskId, checklistId){
+        if(!window.SB) throw new Error("Supabase client is not available.");
+        if(!taskId) return null;
+
+        const { data, error } = await SB
+          .from("checklist_instances")
+          .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
+          .eq("task_id", String(taskId))
+          .eq("checklist_id", String(checklistId))
+          .order("created_at", { ascending:true })
+          .limit(2);
+
+        if(error) throw error;
+
+        const rows = Array.isArray(data) ? data : [];
+        if(rows.length > 1){
+          console.warn("[Checklists] Duplicate task-scoped instances detected", {
+            task_id: String(taskId),
+            checklist_id: String(checklistId),
+            count: rows.length
+          });
+        }
+
+        return rows.length ? rows[0] : null;
+      },
+
+      async getLegacyUserScopedInstance(checklistId){
+        if(!window.SB) throw new Error("Supabase client is not available.");
+
+        const userId = this.getCurrentUserId();
+
+        const { data, error } = await SB
+          .from("checklist_instances")
+          .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
+          .eq("user_id", userId)
+          .is("task_id", null)
+          .eq("checklist_id", String(checklistId))
+          .order("created_at", { ascending:true })
+          .limit(2);
+
+        if(error) throw error;
+
+        const rows = Array.isArray(data) ? data : [];
+        if(rows.length > 1){
+          console.warn("[Checklists] Duplicate legacy user-scoped instances detected", {
+            user_id: userId,
+            checklist_id: String(checklistId),
+            count: rows.length
+          });
+        }
+
+        return rows.length ? rows[0] : null;
+      },
+
+      async getInstance(taskId, checklistId){
+        if(taskId){
+          return await this.getTaskScopedInstance(taskId, checklistId);
+        }
+        return await this.getLegacyUserScopedInstance(checklistId);
+      },
+
+      async createInstance(taskId, checklistId){
+        if(!window.SB) throw new Error("Supabase client is not available.");
+
+        const userId = this.getCurrentUserId();
+
+        const payload = {
+          user_id: userId,
+          checklist_id: String(checklistId),
+          items_state: {}
+        };
+
+        if(taskId){
+          payload.task_id = String(taskId);
+        }
+
+        const { data, error } = await SB
+          .from("checklist_instances")
+          .insert(payload)
+          .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
+          .single();
+
+        if(error) throw error;
+        return data || null;
+      },
+
+      async resolveInstance(taskId, checklistId){
+        const existing = await this.getInstance(taskId, checklistId);
+        if(existing) return existing;
+
+        try{
+          return await this.createInstance(taskId, checklistId);
+        }catch(err){
+          const fallback = await this.getInstance(taskId, checklistId);
+          if(fallback) return fallback;
+          throw err;
+        }
+      },
+
+      async updateItemsState(instanceId, itemsState){
+        if(!window.SB) throw new Error("Supabase client is not available.");
+
+        const safeState = normalizeItemsState(itemsState);
+
+        const { data, error } = await SB
+          .from("checklist_instances")
+          .update({
+            items_state: safeState,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", String(instanceId))
+          .select("id,task_id,items_state,updated_at")
+          .single();
+
+        if(error) throw error;
+        return data || null;
+      }
+    };
+
+    return window.ZRChecklistAPI;
+  }
+
+  function normalizeItemsState(raw){
+    if(!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+
+    const next = {};
+    Object.keys(raw).forEach((key) => {
+      next[String(key)] = !!raw[key];
+    });
+    return next;
+  }
+
+  function getItemChecked(itemsState, idx){
+    return !!normalizeItemsState(itemsState)[String(idx)];
+  }
+
+  function setChecklistLocalStatus(text, tone){
+    const el = document.getElementById("clSaveStatus");
+    if(!el) return;
+
+    const safeTone = String(tone || "neutral");
+    const hasText = !!(text && String(text).trim());
+
+    el.textContent = hasText ? String(text) : "";
+    el.setAttribute("data-tone", safeTone);
+    el.style.visibility = hasText ? "visible" : "hidden";
+    el.style.opacity = hasText ? "1" : "0";
+
+    if(_checklistSaveTimer){
+      try{ clearTimeout(_checklistSaveTimer); }catch(e){}
+      _checklistSaveTimer = null;
+    }
+
+    if(hasText && safeTone === "success"){
+      _checklistSaveTimer = setTimeout(() => {
+        const node = document.getElementById("clSaveStatus");
+        if(!node) return;
+        node.textContent = "";
+        node.style.visibility = "hidden";
+        node.style.opacity = "0";
+        node.removeAttribute("data-tone");
+      }, 1400);
+    }
+  }
+
+  function setChecklistInputsDisabled(disabled){
+    const viewer = $("#viewer");
+    if(!viewer) return;
+    viewer.querySelectorAll("[data-cl-checkbox]").forEach(el => {
+      try{
+        el.style.pointerEvents = disabled ? "none" : "";
+        el.setAttribute("aria-disabled", disabled ? "true" : "false");
+      }catch(e){}
+    });
   }
 
   function norm(s){
@@ -388,14 +586,20 @@ Views.Checklists = (() => {
     setGroupStateMap(all);
   }
 
-  function renderPlainItems(items){
+  function renderPlainItems(items, itemsState){
     if(!Array.isArray(items) || !items.length) return "";
     return `
       <div class="zr-stack-sm">
         ${items.map((text, idx) => `
           <div class="zr-card zr-card--row">
             <div class="item-meta zr-inline-md">
-              <input type="checkbox" class="cl-checkbox">
+              <input
+                type="checkbox"
+                class="cl-checkbox"
+                data-cl-checkbox="1"
+                data-cl-item-index="${idx}"
+                ${getItemChecked(itemsState, idx) ? "checked" : ""}
+              >
               <span>${esc(String(text || ""))}</span>
             </div>
           </div>
@@ -404,11 +608,13 @@ Views.Checklists = (() => {
     `;
   }
 
-  function renderGroups(item){
+  function renderGroups(item, itemsState){
     const groups = Array.isArray(item?.groups) ? item.groups : [];
     if(!groups.length) return "";
 
     const state = getChecklistGroupState(String(item.id || ""));
+    let flatIndex = -1;
+
     return `
       <div data-cl-groups-root="1" class="zr-stack-md">
         ${groups.map((group, idx) => {
@@ -435,14 +641,26 @@ Views.Checklists = (() => {
               >
                 ${rows.length ? `
                   <div class="zr-stack-sm">
-                    ${rows.map((row, rowIdx) => `
-                      <div class="zr-card zr-card--row">
-                        <div class="item-meta">
-                          <span class="tag">${rowIdx + 1}</span>
-                          <span>${esc(String(row || ""))}</span>
+                    ${rows.map((row, rowIdx) => {
+                      flatIndex += 1;
+                      const itemIndex = flatIndex;
+
+                      return `
+                        <div class="zr-card zr-card--row">
+                          <label class="item-meta zr-inline-md">
+                            <input
+                              type="checkbox"
+                              class="cl-checkbox"
+                              data-cl-checkbox="1"
+                              data-cl-item-index="${itemIndex}"
+                              ${getItemChecked(itemsState, itemIndex) ? "checked" : ""}
+                            >
+                            <span class="tag">${rowIdx + 1}</span>
+                            <span>${esc(String(row || ""))}</span>
+                          </label>
                         </div>
-                      </div>
-                    `).join("")}
+                      `;
+                    }).join("")}
                   </div>
                 ` : `<div class="zr-muted-note">Пустая группа.</div>`}
               </div>
@@ -453,12 +671,12 @@ Views.Checklists = (() => {
     `;
   }
 
-  function renderBody(item){
-    const groupsHtml = renderGroups(item);
+  function renderBody(item, itemsState){
+    const groupsHtml = renderGroups(item, itemsState);
     if(groupsHtml) return groupsHtml;
 
     const items = Array.isArray(item?.items) ? item.items : (Array.isArray(item?.steps) ? item.steps : []);
-    if(items.length) return renderPlainItems(items);
+    if(items.length) return renderPlainItems(items, itemsState);
 
     const desc = (item?.desc || "").toString().trim();
     if(desc){
@@ -598,6 +816,53 @@ Views.Checklists = (() => {
     });
   }
 
+  function bindChecklistCheckboxes(){
+    const viewer = $("#viewer");
+    if(!viewer) return;
+
+    viewer.querySelectorAll("[data-cl-checkbox]").forEach(input => {
+      input.onchange = async () => {
+        const idx = String(input.getAttribute("data-cl-item-index") || "");
+        if(!idx) return;
+
+        if(_checklistSaveBusy){
+          input.checked = getItemChecked(_activeItemsState, idx);
+          return;
+        }
+
+        if(!_activeInstanceId){
+          console.error("[Checklists] Missing active instance id.");
+          input.checked = getItemChecked(_activeItemsState, idx);
+          setChecklistLocalStatus("Instance не найден", "error");
+          return;
+        }
+
+        const prevState = normalizeItemsState(_activeItemsState);
+        const nextState = normalizeItemsState(_activeItemsState);
+        nextState[idx] = !!input.checked;
+        _activeItemsState = nextState;
+
+        _checklistSaveBusy = true;
+        setChecklistInputsDisabled(true);
+        setChecklistLocalStatus("Сохранение…", "saving");
+
+        try{
+          const saved = await getChecklistApi().updateItemsState(_activeInstanceId, nextState);
+          _activeItemsState = normalizeItemsState(saved?.items_state || nextState);
+          setChecklistLocalStatus("Сохранено", "success");
+        }catch(e){
+          console.error("[Checklists] Checkbox save failed:", e);
+          _activeItemsState = prevState;
+          input.checked = getItemChecked(prevState, idx);
+          setChecklistLocalStatus("Ошибка сохранения", "error");
+        }finally{
+          _checklistSaveBusy = false;
+          setChecklistInputsDisabled(false);
+        }
+      };
+    });
+  }
+
   async function loadChecklistsFromSupabase(){
     if(!window.SB) return [];
 
@@ -618,6 +883,16 @@ Views.Checklists = (() => {
 
   async function show(param){
     setPanelTitle("Чек-листы");
+    _activeChecklistId = "";
+    _activeInstanceId = "";
+    _activeItemsState = {};
+    _checklistSaveBusy = false;
+
+    if(_checklistSaveTimer){
+      try{ clearTimeout(_checklistSaveTimer); }catch(e){}
+      _checklistSaveTimer = null;
+    }
+
     _data = await loadChecklistsFromSupabase();
     renderList();
 
@@ -635,13 +910,49 @@ Views.Checklists = (() => {
 
     const item = (Array.isArray(_data) ? _data : []).find(x => String(x.id) === String(id));
     if(!item){
+      _activeChecklistId = "";
+      _activeInstanceId = "";
+      _activeItemsState = {};
       disableMobileReadingMode();
       viewer.innerHTML = `<div class="empty">Чек-лист не найден.</div>`;
       return;
     }
 
+    _activeChecklistId = String(item.id || "");
+    _activeInstanceId = "";
+    _activeItemsState = {};
+
+    let taskContextId = "";
+    try{
+      const raw = sessionStorage.getItem("zr_checklists_open_context") || "";
+      const ctx = raw ? JSON.parse(raw) : null;
+      const returnHash = getChecklistReturnHash();
+
+      const fromPlannerTask = /^#\/planner\/[^\/]+/.test(String(returnHash || ""));
+      const sameChecklist = !!(ctx && ctx.checklistId && String(ctx.checklistId) === String(_activeChecklistId));
+
+      if(ctx && ctx.source === "planner" && sameChecklist && fromPlannerTask && ctx.taskId){
+        taskContextId = String(ctx.taskId);
+      }
+    }catch(e){}
+
+    try{
+      const instance = await getChecklistApi().resolveInstance(taskContextId || null, _activeChecklistId);
+      _activeInstanceId = String(instance?.id || "");
+      _activeItemsState = normalizeItemsState(instance?.items_state || {});
+    }catch(e){
+      console.error("[Checklists] Instance resolve failed:", e);
+      disableMobileReadingMode();
+      viewer.innerHTML = `<div class="empty">Не удалось загрузить состояние чек-листа.</div>`;
+      return;
+    }
+
     const desc = (item.desc || "").toString().trim();
-    const subtitle = desc || "Проверьте содержимое и при необходимости откройте внешний чек-лист.";
+    const subtitleBase = desc || "Проверьте содержимое и при необходимости откройте внешний чек-лист.";
+    const subtitle = taskContextId
+      ? `${subtitleBase} · Контекст задачи`
+      : subtitleBase;
+
     const metaRow = renderMetaRow(item);
 
     viewer.innerHTML = `
@@ -654,6 +965,13 @@ Views.Checklists = (() => {
                 ${renderChecklistFavoriteButton(item.id)}
               </div>
               <p class="article-sub">${esc(subtitle)}</p>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-height:28px;">
+                <span
+                  id="clSaveStatus"
+                  class="tag"
+                  style="visibility:hidden; opacity:0; transition:opacity .16s ease; min-height:24px;"
+                ></span>
+              </div>
             </div>
             <div class="zr-viewer-header-actions">
               <button class="btn btn-sm zr-mobile-only" id="clListBtn" type="button">Показать список</button>
@@ -670,7 +988,7 @@ Views.Checklists = (() => {
         </div>
 
         <div class="zr-card zr-card--section zr-stack-md" data-cl-section="body">
-          <div data-cl-body-root="1">${renderBody(item)}</div>
+          <div data-cl-body-root="1">${renderBody(item, _activeItemsState)}</div>
         </div>
 
         <div class="zr-card zr-card--subtle zr-stack-sm" data-cl-section="resources">
@@ -693,8 +1011,10 @@ Views.Checklists = (() => {
     bindMobileListToggle(listBtn);
 
     bindGroupToggles(item);
+    bindChecklistCheckboxes();
     setupBodyCollapse(viewer);
     enableMobileReadingMode();
+    setChecklistLocalStatus("", "neutral");
   }
 
   function setFilter(q){
@@ -706,6 +1026,9 @@ Views.Checklists = (() => {
 
   return { show, open, setFilter };
 })();
+
+
+
 
 
 

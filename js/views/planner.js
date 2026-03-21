@@ -1,7 +1,9 @@
 window.Views = window.Views || {};
 
 Views.Planner = (() => {
-  console.log("[PLANNER_BUILD] 2026-03-03");
+  
+
+console.log("[PLANNER_BUILD] 2026-03-03");
 
   function esc(s){
     return (s==null?"":String(s))
@@ -223,7 +225,14 @@ function shouldShowInLeft(task, role, uid, leftFilter){
     }
     // rebind after possible reset
     const today = todayISO();
-    const selectedId = getSelectedTaskId();
+    function getCurrentSelectedId(){
+  try{
+    return getSelectedTaskId();
+  }catch(e){
+    return null;
+  }
+}
+const selectedId = getCurrentSelectedId();
 const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) : !!(t.due_date && String(t.due_date) < today && t.status !== "done");
 
     // ---------- DATA (SELECT-only) ----------
@@ -231,7 +240,19 @@ const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) 
       if(!window.PlannerData) throw new Error("PlannerData missing");
       return await PlannerData.fetchAllActiveTasks({ role, today });
     }
-    // ---------- LEFT ----------
+
+    if(window.PlannerChecklistRuntime && typeof PlannerChecklistRuntime.init === "function"){
+      PlannerChecklistRuntime.init({
+        esc,
+        getChecklistHost: () => document.getElementById("plChecklist"),
+        fetchAllActiveTasks,
+        renderLeft,
+        getSelectedTaskId,
+        renderDetails,
+        loadInlineChecklists
+      });
+    }
+// ---------- LEFT ----------
     function renderLeft(tasks){
       const head = `
         <div style="padding:12px 10px 8px 10px;">
@@ -341,10 +362,8 @@ viewerEl.innerHTML = `
               try{
                 const created = await PlannerAPI.createTask(payload);
                 if(created && created.id){
-                  location.hash = "#/planner/" + encodeURIComponent(String(created.id));
-                }else{
-                  show();
-                }
+                  goTask(created.id);
+                }else { goTask(null); }
                 return created;
               }finally{
                 qc.disabled = false;
@@ -552,31 +571,53 @@ viewerEl.innerHTML = `
                 if(t2) renderDetails(t2);
               }
             }else{
-              const items = await fetchChecklistItems(task.id);
-              renderChecklist(items);
-              bindChecklist(task);
+              const items = await PlannerChecklistRuntime.fetchChecklistItems(task.id);
+              PlannerChecklistRuntime.renderChecklist(items);
+              PlannerChecklistRuntime.bindChecklist(task);
             }
           }catch(err){
             console.warn("[Planner] checklist toggle error", err);
-            const items = await fetchChecklistItems(task.id);
-            renderChecklist(items);
-            bindChecklist(task);
+            const items = await PlannerChecklistRuntime.fetchChecklistItems(task.id);
+            PlannerChecklistRuntime.renderChecklist(items);
+            PlannerChecklistRuntime.bindChecklist(task);
           }
         };
       });
     }
 
     async function loadChecklist(task, isReadOnly){
+      const host = document.getElementById("plChecklist");
+
       try{
-        const items = await fetchChecklistItems(task.id);
-        renderChecklist(items, !!isReadOnly);
+        const items = await PlannerChecklistRuntime.fetchChecklistItems(task.id);
+        const safeItems = Array.isArray(items) ? items : [];
+
+        if(safeItems.length > 0){
+          PlannerChecklistRuntime.renderChecklist(safeItems, !!isReadOnly);
+          await loadInlineChecklists(task, !!isReadOnly, safeItems, { soft:true });
+        }else{
+          if(host){
+            host.innerHTML = "";
+          }
+
+          await loadInlineChecklists(task, !!isReadOnly, safeItems, { soft:true });
+
+          const hasInlineRendered = !!(
+            host &&
+            host.querySelector &&
+            host.querySelector(".zr-planner-inline-cl")
+          );
+
+          if(!hasInlineRendered){
+            PlannerChecklistRuntime.renderChecklist([], !!isReadOnly);
+          }
+        }
 
         if(!isReadOnly){
-          bindChecklist(task);
+          PlannerChecklistRuntime.bindChecklist(task);
         }
       }catch(err){
         console.warn("[Planner] checklist load error", err);
-        const host = document.getElementById("plChecklist");
         if(host){
           const text = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
           host.innerHTML = `<div class="muted" style="font-size:12px;">Ошибка загрузки чекбоксов: ${esc(text)}</div>`;
@@ -651,6 +692,19 @@ function openPlannerDoc(section, id){
   if(!["articles","checklists","templates"].includes(sec)) return;
 
   try{
+    if(sec === "checklists"){
+      const taskId = getSelectedTaskId();
+      if(taskId){
+        try{
+          sessionStorage.setItem("zr_checklists_open_context", JSON.stringify({
+            source: "planner",
+            taskId: String(taskId),
+            checklistId: String(refId)
+          }));
+        }catch(e){}
+      }
+    }
+
     if(window.Router && typeof Router.go === "function"){
       Router.go(sec, refId);
       return;
@@ -696,18 +750,22 @@ async function loadDocs(task){
             : ``;
 
           const main = (d.section === "external")
-            ? `<a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm pl-btn-ghost zr-planner-doc-link">
-                ${esc(d.label)}
+            ? `<a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm pl-btn-ghost zr-planner-doc-link zr-planner-doc-link--external">
+                <span class="zr-planner-doc-copy">
+                  <span class="zr-planner-doc-meta">${esc(plannerDocTypeLabel(d.section))}</span>
+                  <span class="zr-planner-doc-label">${esc(d.label)}</span>
+                </span>
               </a>`
             : `<button class="btn btn-sm pl-btn-ghost zr-planner-doc-link pl-doc" data-sec="${esc(d.section)}" data-id="${esc(d.id)}" type="button">
-                ${esc(d.label)}
+                <span class="zr-planner-doc-copy">
+                  <span class="zr-planner-doc-meta">${esc(plannerDocTypeLabel(d.section))}</span>
+                  <span class="zr-planner-doc-label">${esc(d.label)}</span>
+                </span>
               </button>`;
 
           return `
-            <div class="zr-planner-doc-row">
-              <div class="zr-planner-doc-main">
-                ${main}
-              </div>
+            <div class="zr-planner-doc-card">
+              ${main}
               ${removeBtn}
             </div>
           `;
@@ -730,8 +788,26 @@ async function loadDocs(task){
           if(!window.PlannerAPI || typeof PlannerAPI.removeTaskLink !== "function"){
             throw new Error("removeTaskLink missing");
           }
+
+          const docsBefore = await fetchTaskLinks(task.id).catch(() => []);
+          const removingDoc = (docsBefore || [])
+            .map(parseTaskLink)
+            .filter(Boolean)
+            .find(x => String(x.link_id || "") === String(linkId));
+
           await PlannerAPI.removeTaskLink(linkId);
-          await loadDocs(task);
+
+          if(removingDoc && removingDoc.section === "checklists" && removingDoc.id){
+            try{
+              await getPlannerChecklistApi().deleteInstance(task.id, removingDoc.id);
+            }catch(e){
+              console.warn("[PlannerInlineChecklist] delete instance error", e);
+            }
+
+            removeInlineChecklistFromTaskView(removingDoc.id);
+          }
+
+          removeDocRowFromTaskView(linkId);
         }catch(err){
           console.warn("[Planner] remove doc link error", err);
           const text = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
@@ -753,7 +829,569 @@ async function loadDocs(task){
   async function fetchActivity(taskId){
     if(!window.PlannerData) throw new Error("PlannerData missing");
     return await PlannerData.fetchActivity(taskId);
-  }function renderComments(task, items){
+  }
+
+const PL_INLINE_CL_STATE_KEY = "zr_planner_inline_checklists_state";
+
+function getPlannerChecklistApi(){
+  if(window.ZRPlannerChecklistAPI) return window.ZRPlannerChecklistAPI;
+
+  window.ZRPlannerChecklistAPI = {
+    getCurrentUserId(){
+      const userId =
+        window?.App?.session?.user?.id ||
+        window?.SB?.auth?.user?.()?.id ||
+        "";
+
+      if(!userId){
+        throw new Error("Checklist user is not resolved.");
+      }
+
+      return String(userId);
+    },
+
+    async getInstance(taskId, checklistId){
+      if(!window.SB) throw new Error("Supabase client is not available.");
+      if(!taskId) throw new Error("Checklist task_id is required.");
+      if(!checklistId) throw new Error("Checklist checklist_id is required.");
+
+      const { data, error } = await SB
+        .from("checklist_instances")
+        .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
+        .eq("task_id", String(taskId))
+        .eq("checklist_id", String(checklistId))
+        .order("created_at", { ascending:true })
+        .limit(2);
+
+      if(error) throw error;
+
+      const rows = Array.isArray(data) ? data : [];
+      if(rows.length > 1){
+        console.warn("[PlannerInlineChecklist] Duplicate instances detected for task_id + checklist_id", {
+          task_id: String(taskId),
+          checklist_id: String(checklistId),
+          count: rows.length
+        });
+      }
+
+      return rows.length ? rows[0] : null;
+    },
+
+    async createInstance(taskId, checklistId){
+      if(!window.SB) throw new Error("Supabase client is not available.");
+      if(!taskId) throw new Error("Checklist task_id is required.");
+      if(!checklistId) throw new Error("Checklist checklist_id is required.");
+
+      const userId = this.getCurrentUserId();
+
+      const payload = {
+        task_id: String(taskId),
+        user_id: userId,
+        checklist_id: String(checklistId),
+        items_state: {}
+      };
+
+      const { data, error } = await SB
+        .from("checklist_instances")
+        .insert(payload)
+        .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
+        .single();
+
+      if(error) throw error;
+      return data || null;
+    },
+
+    async resolveInstance(taskId, checklistId){
+      const existing = await this.getInstance(taskId, checklistId);
+      if(existing) return existing;
+
+      try{
+        return await this.createInstance(taskId, checklistId);
+      }catch(err){
+        const fallback = await this.getInstance(taskId, checklistId);
+        if(fallback) return fallback;
+        throw err;
+      }
+    },
+
+    async deleteInstance(taskId, checklistId){
+      if(!window.SB) throw new Error("Supabase client is not available.");
+      if(!taskId) throw new Error("Checklist task_id is required.");
+      if(!checklistId) throw new Error("Checklist checklist_id is required.");
+
+      const { error } = await SB
+        .from("checklist_instances")
+        .delete()
+        .eq("task_id", String(taskId))
+        .eq("checklist_id", String(checklistId));
+
+      if(error) throw error;
+      return true;
+    },
+
+    async updateItemsState(instanceId, itemsState){
+      if(!window.SB) throw new Error("Supabase client is not available.");
+
+      const safeState = normalizePlannerInlineItemsState(itemsState);
+
+      const { data, error } = await SB
+        .from("checklist_instances")
+        .update({
+          items_state: safeState,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", String(instanceId))
+        .select("id,task_id,items_state,updated_at")
+        .single();
+
+      if(error) throw error;
+      return data || null;
+    }
+  };
+
+  return window.ZRPlannerChecklistAPI;
+}
+
+function normalizePlannerInlineItemsState(raw){
+  if(!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+
+  const next = {};
+  Object.keys(raw).forEach((key) => {
+    next[String(key)] = !!raw[key];
+  });
+  return next;
+}
+
+function getPlannerInlineItemChecked(itemsState, idx){
+  return !!normalizePlannerInlineItemsState(itemsState)[String(idx)];
+}
+
+function getPlannerInlineChecklistUiState(){
+  try{
+    return JSON.parse(sessionStorage.getItem(PL_INLINE_CL_STATE_KEY) || "{}") || {};
+  }catch(e){
+    return {};
+  }
+}
+
+function setPlannerInlineChecklistUiState(next){
+  try{
+    sessionStorage.setItem(PL_INLINE_CL_STATE_KEY, JSON.stringify(next || {}));
+  }catch(e){}
+}
+
+function isPlannerInlineChecklistExpanded(taskId, checklistId){
+  const map = getPlannerInlineChecklistUiState();
+  const key = String(taskId || "") + "::" + String(checklistId || "");
+  return map[key] !== false;
+}
+
+function setPlannerInlineChecklistExpanded(taskId, checklistId, expanded){
+  const map = getPlannerInlineChecklistUiState();
+  const key = String(taskId || "") + "::" + String(checklistId || "");
+  map[key] = !!expanded;
+  setPlannerInlineChecklistUiState(map);
+}
+
+function getPlannerInlineChecklistItems(def){
+  const groups = Array.isArray(def && def.groups) ? def.groups : [];
+  if(groups.length){
+    let flatIndex = -1;
+    return groups.map((group, groupIdx) => {
+      const rows = Array.isArray(group && group.items)
+        ? group.items
+        : (Array.isArray(group && group.steps) ? group.steps : []);
+
+      return {
+        key: "g" + groupIdx,
+        title: (group && group.title) ? String(group.title) : ("Группа " + (groupIdx + 1)),
+        rows: rows.map((row, rowIdx) => {
+          flatIndex += 1;
+          return {
+            index: flatIndex,
+            order: rowIdx + 1,
+            text: String(row || "")
+          };
+        })
+      };
+    });
+  }
+
+  const items = Array.isArray(def && def.items)
+    ? def.items
+    : (Array.isArray(def && def.steps) ? def.steps : []);
+
+  return [{
+    key: "plain",
+    title: "",
+    rows: items.map((row, idx) => ({
+      index: idx,
+      order: idx + 1,
+      text: String(row || "")
+    }))
+  }];
+}
+
+async function fetchInlineChecklistDocs(task){
+  const [links, files] = await Promise.all([
+    fetchTaskLinks(task.id).catch(() => []),
+    fetchTaskFiles(task.id).catch(() => [])
+  ]);
+
+  const docsFromLinks = (links || []).map(parseTaskLink).filter(Boolean);
+  const docsFromFiles = (files || []).map(parseInternalDoc).filter(Boolean);
+
+  const all = [...docsFromLinks, ...docsFromFiles]
+    .filter(d => d && d.section === "checklists" && d.id);
+
+  const map = new Map();
+  all.forEach((d) => {
+    const id = String(d.id || "");
+    if(!id) return;
+    if(!map.has(id)) map.set(id, d);
+  });
+
+  return Array.from(map.values());
+}
+
+async function fetchInlineChecklistDefs(checklistIds){
+  const ids = Array.isArray(checklistIds)
+    ? checklistIds.map(x => String(x)).filter(Boolean)
+    : [];
+
+  if(!ids.length) return [];
+
+  if(!window.SB) throw new Error("Supabase client is not available.");
+
+  const { data, error } = await SB
+    .from("kb_checklists")
+    .select("id,title,desc,items,published,sort,created_at,updated_at")
+    .in("id", ids)
+    .eq("published", true);
+
+  if(error) throw error;
+
+  const rows = Array.isArray(data) ? data : [];
+  const byId = new Map(rows.map(x => [String(x.id), x]));
+
+  return ids.map(id => byId.get(String(id))).filter(Boolean);
+}
+
+function renderInlineChecklistBlocks(task, defs, isReadOnly){
+  const runtime = window.__plannerInlineChecklistRuntime || {};
+  const disabledAttr = isReadOnly ? 'disabled' : '';
+
+  return `
+    <div class="zr-planner-inline-checklists">
+      ${defs.map((def) => {
+        const checklistId = String(def.id || "");
+        const rt = runtime[checklistId] || {};
+        const itemsState = normalizePlannerInlineItemsState(rt.itemsState || {});
+        const expanded = isPlannerInlineChecklistExpanded(task.id, checklistId);
+        const groups = getPlannerInlineChecklistItems(def);
+
+        return `
+          <div class="zr-card zr-card--subtle zr-planner-inline-cl" data-inline-cl="${esc(checklistId)}">
+            <div class="zr-planner-inline-cl-head">
+              <button
+                class="btn btn-sm pl-btn-ghost zr-planner-inline-cl-toggle"
+                type="button"
+                data-inline-cl-toggle="${esc(checklistId)}"
+                aria-expanded="${expanded ? "true" : "false"}"
+              >${expanded ? "▾" : "▸"} ${esc(def.title || "Чек-лист")}</button>
+
+              <span
+                class="zr-planner-inline-cl-status"
+                data-inline-cl-status="${esc(checklistId)}"
+              ></span>
+            </div>
+
+            <div
+              class="zr-planner-inline-cl-body"
+              data-inline-cl-body="${esc(checklistId)}"
+              style="display:${expanded ? "block" : "none"};"
+            >
+              ${groups.map((group) => `
+                <div class="zr-planner-inline-cl-group">
+                  ${group.title ? `<div class="zr-planner-inline-cl-group-title">${esc(group.title)}</div>` : ``}
+
+                  <div class="zr-planner-inline-cl-list">
+                    ${group.rows.length ? group.rows.map((row) => `
+                      <label class="zr-card zr-card--row zr-planner-inline-cl-row">
+                        <input
+                          type="checkbox"
+                          data-inline-cl-checkbox="1"
+                          data-checklist-id="${esc(checklistId)}"
+                          data-item-index="${esc(row.index)}"
+                          ${getPlannerInlineItemChecked(itemsState, row.index) ? "checked" : ""}
+                          ${disabledAttr}
+                        >
+                        ${group.title ? `<span class="tag">${esc(row.order)}</span>` : ``}
+                        <span class="zr-planner-inline-cl-text">${esc(row.text)}</span>
+                      </label>
+                    `).join("") : `<div class="zr-planner-muted">Пустой чек-лист.</div>`}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function setInlineChecklistStatus(checklistId, text, tone){
+  const host = document.querySelector('[data-inline-cl-status="' + String(checklistId) + '"]');
+  if(!host) return;
+
+  host.textContent = text ? String(text) : "";
+  host.setAttribute("data-tone", tone ? String(tone) : "neutral");
+}
+
+function setInlineChecklistInputsDisabled(checklistId, disabled){
+  const root = document.querySelector('[data-inline-cl="' + String(checklistId) + '"]');
+  if(root){
+    root.classList.toggle("is-saving", !!disabled);
+  }
+
+  document.querySelectorAll('[data-inline-cl-checkbox="1"][data-checklist-id="' + String(checklistId) + '"]').forEach((el) => {
+    try{
+      el.setAttribute("aria-disabled", disabled ? "true" : "false");
+    }catch(e){}
+  });
+}
+
+function bindInlineChecklistToggles(task){
+  document.querySelectorAll("[data-inline-cl-toggle]").forEach((btn) => {
+    btn.onclick = () => {
+      const checklistId = String(btn.getAttribute("data-inline-cl-toggle") || "");
+      if(!checklistId) return;
+
+      const body = document.querySelector('[data-inline-cl-body="' + checklistId + '"]');
+      if(!body) return;
+
+      const expanded = body.style.display !== "none";
+      const nextExpanded = !expanded;
+
+      body.style.display = nextExpanded ? "block" : "none";
+      btn.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+      btn.textContent = (nextExpanded ? "▾ " : "▸ ") + btn.textContent.replace(/^[▾▸]\s*/, "");
+
+      setPlannerInlineChecklistExpanded(task.id, checklistId, nextExpanded);
+    };
+  });
+}
+
+function bindInlineChecklistCheckboxes(task, isReadOnly){
+  if(isReadOnly) return;
+
+  window.__plannerInlineChecklistBusy = window.__plannerInlineChecklistBusy || {};
+
+  document.querySelectorAll('[data-inline-cl-checkbox="1"]').forEach((input) => {
+    input.onchange = async () => {
+      const checklistId = String(input.getAttribute("data-checklist-id") || "");
+      const itemIndex = String(input.getAttribute("data-item-index") || "");
+
+      if(!checklistId || itemIndex === "") return;
+
+      const runtime = window.__plannerInlineChecklistRuntime || {};
+      const rt = runtime[checklistId];
+
+      if(!rt || !rt.instanceId){
+        input.checked = false;
+        setInlineChecklistStatus(checklistId, "Instance не найден", "error");
+        return;
+      }
+
+      if(window.__plannerInlineChecklistBusy[checklistId]){
+        input.checked = getPlannerInlineItemChecked(rt.itemsState, itemIndex);
+        return;
+      }
+
+      const prevState = normalizePlannerInlineItemsState(rt.itemsState || {});
+      const nextState = normalizePlannerInlineItemsState(rt.itemsState || {});
+      nextState[itemIndex] = !!input.checked;
+      rt.itemsState = nextState;
+
+      window.__plannerInlineChecklistBusy[checklistId] = true;
+      setInlineChecklistInputsDisabled(checklistId, true);
+      setInlineChecklistStatus(checklistId, "Сохранение…", "saving");
+
+      try{
+        let needFullRefresh = false;
+
+        try{
+          if(task && String(task.status || "") === "taken"){
+            await PlannerActions.setStatus(task.id, "in_progress");
+            needFullRefresh = true;
+          }
+        }catch(e){
+          console.warn("[PlannerInlineChecklist] auto-progress error", e);
+        }
+
+        const saved = await getPlannerChecklistApi().updateItemsState(rt.instanceId, nextState);
+        rt.itemsState = normalizePlannerInlineItemsState(saved && saved.items_state ? saved.items_state : nextState);
+        setInlineChecklistStatus(checklistId, "Сохранено", "success");
+
+        if(needFullRefresh){
+          const tasks2 = await fetchAllActiveTasks();
+          renderLeft(tasks2);
+
+          const sel2 = getSelectedTaskId();
+          if(sel2){
+            const t2 = tasks2.find(x => String(x.id) === String(sel2));
+            if(t2) renderDetails(t2);
+          }
+          return;
+        }
+      }catch(err){
+        console.warn("[PlannerInlineChecklist] save error", err);
+        rt.itemsState = prevState;
+        input.checked = getPlannerInlineItemChecked(prevState, itemIndex);
+        setInlineChecklistStatus(checklistId, "Ошибка сохранения", "error");
+      }finally{
+        window.__plannerInlineChecklistBusy[checklistId] = false;
+        setInlineChecklistInputsDisabled(checklistId, false);
+      }
+    };
+  });
+}
+
+function plannerDocTypeLabel(section){
+  const s = String(section || "").trim().toLowerCase();
+  if(s === "articles") return "ИНСТРУКЦИЯ";
+  if(s === "templates") return "ШАБЛОН";
+  if(s === "checklists") return "ЧЕК-ЛИСТ";
+  if(s === "external") return "ССЫЛКА";
+  return "ДОКУМЕНТ";
+}
+function removeDocRowFromTaskView(linkId){
+  const safeId = String(linkId || "");
+  if(!safeId) return;
+
+  const host = document.getElementById("plDocs");
+  if(!host) return;
+
+  host.querySelectorAll('[data-link-id="' + safeId + '"]').forEach((btn) => {
+    const card = btn.closest(".zr-planner-doc-card") || btn.closest(".zr-planner-doc-row");
+    if(card){
+      try{ card.remove(); }catch(e){}
+    }
+  });
+
+  const list = host.querySelector(".zr-planner-docs-list");
+  const hasCards = !!(list && (list.querySelector(".zr-planner-doc-card") || list.querySelector(".zr-planner-doc-row")));
+
+  if(list && !hasCards){
+    host.innerHTML = `<div class="muted" style="font-size:12px;">Связанных документов нет.</div>`;
+  }
+}
+function removeInlineChecklistFromTaskView(checklistId){
+  const safeId = String(checklistId || "");
+  if(!safeId) return;
+
+  const host = document.getElementById("plChecklist");
+  if(!host) return;
+
+  host.querySelectorAll('[data-inline-cl="' + safeId + '"]').forEach((node) => {
+    try{ node.remove(); }catch(e){}
+  });
+
+  try{
+    if(window.__plannerInlineChecklistRuntime){
+      delete window.__plannerInlineChecklistRuntime[safeId];
+    }
+  }catch(e){}
+
+  try{
+    if(window.__plannerInlineChecklistBusy){
+      delete window.__plannerInlineChecklistBusy[safeId];
+    }
+  }catch(e){}
+
+  const wrap = host.querySelector(".zr-planner-inline-checklists");
+  if(wrap && !wrap.querySelector(".zr-planner-inline-cl")){
+    try{ wrap.remove(); }catch(e){}
+  }
+
+  const hasPlannerItems =
+    !!host.querySelector(".zr-planner-checklist") ||
+    !!host.querySelector(".zr-planner-checklist-list") ||
+    !!host.querySelector(".pl-ci");
+
+  const hasInlineItems = !!host.querySelector(".zr-planner-inline-cl");
+
+  if(!hasPlannerItems && !hasInlineItems){
+    host.innerHTML = `<div class="zr-planner-muted">Пункты пока не добавлены.</div>`;
+  }
+}
+async function loadInlineChecklists(task, isReadOnly, taskItems, opts){
+  const host = document.getElementById("plChecklist");
+  if(!host) return;
+
+  const soft = !!(opts && opts.soft);
+
+  try{
+    host.querySelectorAll(".zr-planner-inline-checklists").forEach((node) => {
+      try{ node.remove(); }catch(e){}
+    });
+
+    window.__plannerInlineChecklistRuntime = {};
+    window.__plannerInlineChecklistBusy = {};
+
+    const currentText = (host.textContent || "").trim();
+    const hasEmptyPlaceholder =
+      currentText === "Пункты пока не добавлены." ||
+      currentText === "Не удалось загрузить чек-лист.";
+
+    if(hasEmptyPlaceholder){
+      host.innerHTML = "";
+    }
+
+    const docs = await fetchInlineChecklistDocs(task);
+    if(!docs.length){
+      return;
+    }
+
+    const defs = await fetchInlineChecklistDefs(docs.map(d => d.id));
+    if(!defs.length){
+      return;
+    }
+
+    const api = getPlannerChecklistApi();
+    const runtime = {};
+
+    for(const def of defs){
+      const instance = await api.resolveInstance(task.id, def.id);
+      runtime[String(def.id)] = {
+        instanceId: String(instance && instance.id ? instance.id : ""),
+        itemsState: normalizePlannerInlineItemsState(instance && instance.items_state ? instance.items_state : {})
+      };
+    }
+
+    window.__plannerInlineChecklistRuntime = runtime;
+
+    if(!Array.isArray(taskItems) || taskItems.length === 0){
+      host.innerHTML = "";
+    }
+
+    host.insertAdjacentHTML("beforeend", renderInlineChecklistBlocks(task, defs, !!isReadOnly));
+
+    bindInlineChecklistToggles(task);
+    bindInlineChecklistCheckboxes(task, !!isReadOnly);
+  }catch(err){
+    console.warn("[PlannerInlineChecklist] load error", err);
+
+    if(!Array.isArray(taskItems) || taskItems.length === 0){
+      host.innerHTML = `<div class="zr-planner-muted">Не удалось загрузить чек-лист.</div>`;
+    }else{
+      host.insertAdjacentHTML("beforeend", `<div class="zr-planner-muted">Часть чек-листов не загрузилась.</div>`);
+    }
+  }
+}
+
+function renderComments(task, items){
   const host = document.getElementById("plComments");
   if(!host) return;
 
@@ -783,14 +1421,27 @@ async function loadDocs(task){
             email: c.author_email
           }, { uid, fallback: "Автор" });
           const ts = fmtCommentTs(c.created_at);
+          const canDeleteOwn = !!(uid && c && c.author_id && String(c.author_id) === String(uid));
+          const deleteBtn = canDeleteOwn
+            ? `<button
+                class="btn btn-sm pl-btn-ghost pl-comment-delete"
+                data-comment-id="${esc(c.id)}"
+                type="button"
+                title="Удалить комментарий"
+              >Удалить</button>`
+            : ``;
 
           return `
             <div class="zr-card zr-card--row zr-planner-comment-row">
               <div class="zr-planner-comment-meta">
                 <span class="zr-planner-comment-author">${esc(author)}</span>
                 <span class="zr-planner-comment-time">${esc(ts)}</span>
+                ${deleteBtn}
               </div>
-              <div class="zr-planner-comment-body">${esc(c.body || "")}</div>
+              <div class="zr-planner-comment-main">
+                <span class="zr-planner-comment-author-inline">${esc(author)}:</span>
+                <span class="zr-planner-comment-body-inline">${esc(c.body || "")}</span>
+              </div>
             </div>
           `;
         }).join("")}
@@ -810,7 +1461,40 @@ async function loadDocs(task){
   const send = document.getElementById("plCommentSend");
   const inp = document.getElementById("plCommentInput");
   const msg = document.getElementById("plCommentMsg");
+  host.querySelectorAll(".pl-comment-delete").forEach((btn) => {
+    btn.onclick = async () => {
+      const commentId = btn.dataset.commentId;
+      if(!commentId) return;
+      if(!confirm("Удалить комментарий?")) return;
 
+      btn.disabled = true;
+
+      try{
+        if(!window.PlannerAPI || typeof PlannerAPI.deleteTaskComment !== "function"){
+          throw new Error("deleteTaskComment missing");
+        }
+
+        await PlannerAPI.deleteTaskComment(commentId);
+
+        const row = btn.closest(".zr-planner-comment-row");
+        if(row){
+          try{ row.remove(); }catch(e){}
+        }
+
+        const list = host.querySelector(".zr-planner-comments");
+        const hasRows = !!(list && list.querySelector(".zr-planner-comment-row"));
+
+        if(list && !hasRows){
+          list.outerHTML = `<div class="zr-planner-muted">Комментариев пока нет.</div>`;
+        }
+      }catch(err){
+        console.warn("[Planner] delete comment error", err);
+        const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+        alert("Ошибка: " + t);
+        btn.disabled = false;
+      }
+    };
+  });
   if(send){
     send.onclick = async () => {
       const text = (inp && inp.value) ? inp.value.trim() : "";
@@ -1006,6 +1690,45 @@ async function loadDocs(task){
       }
     }
 
+    function getRenderedTaskId(){
+      try{
+        const root = viewerEl && viewerEl.querySelector && viewerEl.querySelector(".zr-planner-detail");
+        return root && root.getAttribute ? String(root.getAttribute("data-task-id") || "") : "";
+      }catch(e){
+        return "";
+      }
+    }
+
+    function markRenderedTaskId(taskId){
+      try{
+        const root = viewerEl && viewerEl.querySelector && viewerEl.querySelector(".zr-planner-detail");
+        if(root && root.setAttribute){
+          root.setAttribute("data-task-id", String(taskId || ""));
+        }
+      }catch(e){}
+    }
+
+    async function refreshTaskBlocks(task, opts){
+      const o = opts || {};
+      if(!task || !task.id) return;
+
+      const renderedTaskId = getRenderedTaskId();
+      if(!renderedTaskId || String(renderedTaskId) !== String(task.id)) return;
+
+      if(o.checklist){
+        await loadChecklist(task, !!o.readOnly);
+      }
+      if(o.docs){
+        await loadDocs(task);
+      }
+      if(o.comments){
+        await loadComments(task);
+      }
+      if(o.activity){
+        await loadActivity(task);
+      }
+    }
+
     function renderDetails(task){
 
       // STEP FIX — reset archived/read-only state
@@ -1143,6 +1866,8 @@ async function loadDocs(task){
           </div>
         </div>
       `;
+      markRenderedTaskId(task.id);
+
       const _addDocBtn = document.getElementById("plAddDocBtn");
       if(_addDocBtn){
         _addDocBtn.onclick = () => {
@@ -1151,9 +1876,19 @@ async function loadDocs(task){
               throw new Error("openLinkDialog missing");
             }
             PlannerActions.openLinkDialog(task, {
-              onAdded: async () => {
-                const fresh = await PlannerData.fetchTaskById(task.id, { role, today });
-                if(fresh) renderDetails(fresh);
+              onAdded: async (saved, payload) => {
+                try{
+                  await loadDocs(task);
+
+                  const addedType = payload && payload.link_type ? String(payload.link_type) : "";
+                  if(addedType === "checklist"){
+                    await loadInlineChecklists(task, false, [], { soft:true });
+                  }else{
+                    await loadChecklist(task, false);
+                  }
+                }catch(err){
+                  console.warn("[Planner] soft refresh after add error", err);
+                }
               }
             });
           }catch(err){
@@ -1202,7 +1937,7 @@ async function loadDocs(task){
         if(window.Router && Router.go){
           Router.go("planner");
         }else{
-          location.hash = "#/planner";
+          goTask(null);
         }
       };
 // bind status buttons (RPC)
@@ -1247,7 +1982,7 @@ async function loadDocs(task){
             console.warn("[PlannerPush] status_changed error", e);
           }
             if(msg) msg.textContent = "Готово.";
-            // local refresh (anti-jitter): update list + details without re-mounting full planner
+            // local refresh (safe): update list + rebuild details so action buttons/status UI stay correct
             const tasks2 = await fetchAllActiveTasks();
             renderLeft(tasks2);
 
@@ -1283,14 +2018,27 @@ async function loadDocs(task){
                 const targetId = taskIdAfterSave || task.id;
                 const tasks2 = await fetchAllActiveTasks();
                 const fresh = await PlannerData.fetchTaskById(targetId, { role, today });
+                try{
+                  console.log("[PlannerEdit] fresh task after save", {
+                    id: fresh && fresh.id,
+                    assignees: fresh && fresh.assignees,
+                    assignee_id: fresh && fresh.assignee_id,
+                    role: fresh && fresh.role,
+                    status: fresh && fresh.status
+                  });
+                }catch(e){}
 
                 renderLeft(tasks2);
 
                 if(fresh){
-                  renderDetails(fresh);
-                }else{
-                  show();
-                }
+                  await refreshTaskBlocks(fresh, {
+                    checklist: true,
+                    docs: true,
+                    comments: true,
+                    activity: true,
+                    readOnly: !!fresh.archived_at
+                  });
+                }else { goTask(null); }
               }
             });
           }catch(err){
@@ -1396,10 +2144,8 @@ loadDocs(task);
               onCreate: async (payload) => {
                 const created = await PlannerAPI.createTask(payload);
                 if(created && created.id){
-                  location.hash = "#/planner/" + encodeURIComponent(String(created.id));
-                }else{
-                  show();
-                }
+                  goTask(created.id);
+                }else { goTask(null); }
                 return created;
               }
             });
@@ -1443,206 +2189,6 @@ loadDocs(task);
 
   return { show };
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

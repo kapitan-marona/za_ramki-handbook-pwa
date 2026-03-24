@@ -3851,3 +3851,67 @@ body{
     overflow: visible;
   }
 }
+
+/* =========================================================
+   MOBILE HOTFIX — prevent footer overlap / nested scroll
+   Safe additive patch
+   ========================================================= */
+@media (max-width: 768px){
+
+  html,
+  body{
+    height:auto !important;
+    min-height:100% !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Let the page own vertical scrolling on mobile */
+  main,
+  .main,
+  .layout,
+  .shell,
+  .content,
+  .viewer,
+  .panel,
+  .details,
+  .detail,
+  .pl-viewer,
+  .pl-details,
+  .pl-content,
+  .pl-body,
+  .article-view,
+  .article-body,
+  .template-view,
+  .template-body{
+    height:auto !important;
+    max-height:none !important;
+    min-height:0 !important;
+    overflow:visible !important;
+  }
+
+  /* Prevent common flex/grid children from trapping scroll */
+  .viewer > *,
+  .panel > *,
+  .pl-viewer > *,
+  .pl-details > *{
+    min-height:0 !important;
+  }
+
+  /* Footer must stay in normal document flow on mobile */
+  footer,
+  .footer,
+  .app-footer,
+  .site-footer{
+    position:static !important;
+    inset:auto !important;
+    bottom:auto !important;
+    left:auto !important;
+    right:auto !important;
+    transform:none !important;
+    clear:both !important;
+    z-index:auto !important;
+    margin-top:16px !important;
+  }
+}

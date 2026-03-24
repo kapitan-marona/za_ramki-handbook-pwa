@@ -3808,46 +3808,24 @@ body{
 /* =========================================
    MOBILE SCROLL FIX — SINGLE SCROLL LAYER
    ========================================= */
-
-
-
-
-
-/* =========================
-   MOBILE SCROLL FIX (SAFE)
-   ========================= */
-
 @media (max-width: 768px){
 
   html, body {
-    height: auto;
-    overflow-x: hidden;
+    height: auto !important;
+    overflow: auto !important;
   }
 
   .main {
-    display: block;
-    height: auto;
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
-  .panel {
-    height: auto;
-    overflow: visible;
-    margin-bottom: 12px;
-  }
-
+  .panel,
   .viewer {
-    height: auto;
-    max-height: none;
-    overflow: visible;
+    height: auto !important;
+    overflow: visible !important;
   }
 
-  .list {
-    max-height: none;
-    overflow: visible;
-  }
-
-  .zr-planner-activity {
-    max-height: none;
-    overflow: visible;
-  }
 }
+

@@ -24,7 +24,7 @@
 
       <div class="search">
         <input id="q" type="search" placeholder="Поиск по базе…" />
-        <span class="pill">Найдено: <span id="status">—</span></span>
+        <span class="pill"><span id="status">0</span></span>
       </div>
 
       <div style="display:flex; gap:10px; align-items:center;"><div class="pill">v0</div><div id="authArea"></div></div>
@@ -43,7 +43,7 @@
   <button class="tab" data-tab="planner">PLANNER</button>
 <button class="tab" data-tab="articles">Инструкции</button>
   <button class="tab" data-tab="templates">Шаблоны</button>
-  <button class="tab" data-tab="checklists">Чек-листы</button>
+  <button class="tab" data-tab="checklists" style="display:none;">Чек-листы</button>
   <button class="tab zr-admin-tab" data-tab="admin" style="display:none;">Админка</button>
 </div>
 
@@ -115,6 +115,8 @@
 
   <script src="./js/views/planner.js?v=20260304222347"></script></body>
 </html>
+
+
 
 
 

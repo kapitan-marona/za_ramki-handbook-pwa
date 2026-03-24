@@ -20,10 +20,17 @@ window.fetchRole = async function(){
 
 window.syncRoleUI = function(){
   try{
-    var adminTab = document.querySelector('.tab.zr-admin-tab[data-tab="admin"]');
-    if(!adminTab) return;
     var isAdmin = !!(window.App && App.session && App.session.role === "admin");
-    adminTab.style.display = isAdmin ? "" : "none";
+
+    var adminTab = document.querySelector('.tab.zr-admin-tab[data-tab="admin"]');
+    if(adminTab){
+      adminTab.style.display = isAdmin ? "" : "none";
+    }
+
+    var checklistsTab = document.querySelector('.tab[data-tab="checklists"]');
+    if(checklistsTab){
+      checklistsTab.style.display = isAdmin ? "" : "none";
+    }
   }catch(e){}
 };
 
@@ -276,11 +283,14 @@ window.initAuth = async function(){
     if(!q) return;
 
     var searchable = section === "articles" || section === "templates" || section === "checklists";
+    var pill = status ? status.closest(".pill") : null;
 
     q.disabled = !searchable;
 
     if(searchable){
       q.placeholder = "Поиск по базе…";
+      if(pill) pill.style.display = "";
+      if(status && !String(status.textContent || "").trim()) status.textContent = "0";
       return;
     }
 
@@ -289,7 +299,8 @@ window.initAuth = async function(){
       ? "Поиск в Planner пока недоступен"
       : "Поиск недоступен в этом разделе";
 
-    if(status) status.textContent = "—";
+    if(status) status.textContent = "";
+    if(pill) pill.style.display = "none";
   }
 
   async function render(){
@@ -356,6 +367,8 @@ window.initAuth = async function(){
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
 
 
 

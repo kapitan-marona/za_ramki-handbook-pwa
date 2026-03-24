@@ -519,8 +519,7 @@ Views.Templates = (() => {
           </div>
 
           <div class="zr-actions-right">
-            <button class="btn" id="btn_save"><span class="dot"></span>Сохранить</button>
-            <button class="btn" id="btn_clear"><span class="dot"></span>Очистить</button>
+            <button class="btn" id="btn_save"><span class="dot"></span>Сохранить</button>`r`n            <button class="btn" id="btn_clear"><span class="dot"></span>Очистить</button>
             <button class="btn" id="btn_xlsx"><span class="dot"></span>Скачать Excel</button>
           </div>
         </div>
@@ -570,31 +569,6 @@ Views.Templates = (() => {
       $("#btn_save").onclick = () => {
         localStorage.setItem(key, JSON.stringify(readValues()));
         alert("Сохранено ✅");
-      };
-
-      $("#btn_clear").onclick = () => {
-        const hasValues = Object.values(fields).some((el) => {
-          return !!(el && String(el.value || "").trim());
-        });
-
-        if(!hasValues) return;
-        if(!confirm("Очистить все поля?")) return;
-
-        Object.values(fields).forEach((el) => {
-          if(el) el.value = "";
-        });
-
-        try{ localStorage.removeItem(key); }catch(e){}
-
-        try{
-          const viewerEl = $("#viewer");
-          if(viewerEl) viewerEl.scrollTop = 0;
-        }catch(e){}
-
-        try{
-          const firstField = $("#f_address");
-          if(firstField) firstField.focus();
-        }catch(e){}
       };
 
       $("#btn_xlsx").onclick = async () => {
@@ -704,8 +678,7 @@ Views.Templates = (() => {
           </div>
 
           <div class="zr-actions-right">
-            <button class="btn" id="btn_save"><span class="dot"></span>Сохранить</button>
-            <button class="btn" id="btn_clear"><span class="dot"></span>Очистить</button>
+            <button class="btn" id="btn_save"><span class="dot"></span>Сохранить</button>`r`n            <button class="btn" id="btn_clear"><span class="dot"></span>Очистить</button>
             <button class="btn" id="btn_copy"><span class="dot"></span>Скопировать</button>
             <button class="btn" id="btn_download"><span class="dot"></span>Скачать .txt</button>
           </div>
@@ -756,31 +729,6 @@ Views.Templates = (() => {
       $("#btn_save").onclick = () => {
         localStorage.setItem(key, JSON.stringify(readValues()));
         alert("Сохранено ✅");
-      };
-
-      $("#btn_clear").onclick = () => {
-        const hasValues = Object.values(fields).some((el) => {
-          return !!(el && String(el.value || "").trim());
-        });
-
-        if(!hasValues) return;
-        if(!confirm("Очистить все поля?")) return;
-
-        Object.values(fields).forEach((el) => {
-          if(el) el.value = "";
-        });
-
-        try{ localStorage.removeItem(key); }catch(e){}
-
-        try{
-          const viewerEl = $("#viewer");
-          if(viewerEl) viewerEl.scrollTop = 0;
-        }catch(e){}
-
-        try{
-          const firstField = $("#f_address");
-          if(firstField) firstField.focus();
-        }catch(e){}
       };
 
       $("#btn_copy").onclick = async () => {
@@ -906,9 +854,6 @@ function setupTemplateBodyCollapse(viewer){
   controls.appendChild(btn);
   section.appendChild(controls);
 }
-
-
-
 
 
 

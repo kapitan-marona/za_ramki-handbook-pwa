@@ -112,7 +112,8 @@
 
         const docsFromLinks = (links || []).map(parseTaskLinkFn).filter(Boolean);
         const docsFromFiles = (files || []).map(parseInternalDocFn).filter(Boolean);
-        const docs = [...docsFromLinks, ...docsFromFiles];
+        const docs = [...docsFromLinks, ...docsFromFiles]
+  .filter(d => d && d.section !== "checklists");
 
         if(docs.length === 0){
           host.innerHTML = `<div class="muted" style="font-size:12px;">Связанных документов нет.</div>`;
@@ -224,3 +225,4 @@
     removeDocRowFromTaskView
   };
 })();
+

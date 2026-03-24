@@ -3751,3 +3751,56 @@ body{
     max-width: none;
   }
 }
+
+.header .pill{
+  font-size: 11px;
+  padding: 2px 8px;
+  opacity: 0.75;
+}
+
+.header .pill span{
+  font-weight: 600;
+}
+
+
+.header .search{
+  position: relative;
+  min-height: 40px;
+  padding-right: 86px;
+}
+
+.header .search .pill{
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.1;
+  padding: 3px 7px;
+  opacity: .78;
+  white-space: nowrap;
+}
+
+.header .search .pill span{
+  font-weight: 600;
+}
+
+
+.header .search{
+  transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.header .search:focus-within{
+  background: color-mix(in srgb, var(--panel) 88%, var(--accent-08));
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.header .search input:focus,
+.header .search input:focus-visible{
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+

@@ -22,7 +22,7 @@
       return label;
     }
 
-    return `${assignees.length} исполнителя`;
+    return `${assignees.length} сотрудника`;
   }
 
   function getTaskAssigneeDetails(task, peopleMap, uid, deps){

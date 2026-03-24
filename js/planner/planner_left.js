@@ -79,9 +79,7 @@
         ? `<span class="pl-due ${isOverdue(t) ? "is-overdue" : ""}">${esc(dueLabel(t.due_date))}</span>`
         : "";
 
-      const assigneeLabel = (role === "admin")
-        ? getTaskAssigneeLabel(t, uid, { noYou: true })
-        : "";
+      const assigneeLabel = "";
       const isSel = selectedId && String(selectedId) === String(t.id);
       const projectLine = t.project_title
         ? `<div class="item-meta" style="margin-top:6px;">${esc(t.project_title)}</div>`

@@ -881,7 +881,13 @@ Views.Checklists = (() => {
     return Array.isArray(data) ? data : [];
   }
 
-  async function show(param){
+  async function show(){
+  const role = (window.App && App.session) ? String(App.session.role || "") : "";
+  const root = document.querySelector("#viewer");
+  if(role !== "admin"){
+    if(root) root.innerHTML = `<div class="empty">Чек-листы недоступны</div>`;
+    return;
+  }
     setPanelTitle("Чек-листы");
     _activeChecklistId = "";
     _activeInstanceId = "";
@@ -1026,6 +1032,7 @@ Views.Checklists = (() => {
 
   return { show, open, setFilter };
 })();
+
 
 
 

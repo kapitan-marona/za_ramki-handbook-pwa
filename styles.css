@@ -3915,3 +3915,31 @@ body{
     margin-top:16px !important;
   }
 }
+
+/* =========================================================
+   MOBILE FIX — Planner Details (no nested scroll)
+   ========================================================= */
+@media (max-width: 768px){
+
+  /* Главный виновник */
+  .pl-details{
+    height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+  }
+
+  /* Внутренний контейнер (если есть) */
+  .pl-details-inner,
+  .pl-body,
+  .pl-content{
+    height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+  }
+
+  /* Очень важно для flex/grid */
+  .pl-details > *{
+    min-height:0 !important;
+  }
+
+}

@@ -3804,28 +3804,3 @@ body{
   border-color: transparent !important;
 }
 
-
-/* =========================================
-   MOBILE SCROLL FIX — SINGLE SCROLL LAYER
-   ========================================= */
-@media (max-width: 768px){
-
-  html, body {
-    height: auto !important;
-    overflow: auto !important;
-  }
-
-  .main {
-    display: block !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .panel,
-  .viewer {
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-}
-

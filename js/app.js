@@ -125,9 +125,11 @@ window.renderAuthArea = function(){
   }
 
   el.innerHTML =
-    '<span class="pill">' + (App.session.role || '—') + '</span>' +
-    '<button type="button" class="btn btn-sm" id="pushBtn" aria-pressed="false">Push</button>' +
-    '<button type="button" class="btn btn-sm" id="logoutBtn">Выйти</button>';
+    '<div class="auth-group">' +
+      '<span class="pill auth-role">' + (App.session.role || '—') + '</span>' +
+      '<button type="button" class="btn btn-sm auth-push" id="pushBtn" aria-pressed="false">🔔</button>' +
+    '</div>' +
+    '<button type="button" class="btn btn-sm auth-logout" id="logoutBtn">Выйти</button>';
 
   var pushBtn = document.querySelector("#pushBtn");
   if(pushBtn){

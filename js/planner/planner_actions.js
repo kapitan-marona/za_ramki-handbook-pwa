@@ -14,6 +14,7 @@
     const submitLabel = isEdit ? "Сохранить" : "Создать";
 
     task = task || {};
+    
 
     const existing = document.getElementById("plCreateOverlay");
     if(existing){ try{ existing.remove(); }catch(e){} }
@@ -348,6 +349,20 @@
     opts = opts || {};
     task = task || {};
 
+    const allowedTypes = Array.isArray(opts.allowedTypes) && opts.allowedTypes.length
+      ? opts.allowedTypes.map(x => String(x || "").trim().toLowerCase()).filter(Boolean)
+      : ["article","checklist","template","external"];
+
+    const defaultType = allowedTypes.includes(String(opts.defaultType || "").trim().toLowerCase())
+      ? String(opts.defaultType || "").trim().toLowerCase()
+      : (allowedTypes[0] || "article");
+
+
+    const forcedType = allowedTypes.length === 1 ? allowedTypes[0] : "";
+    const dialogTitle = defaultType === "checklist" && allowedTypes.length === 1
+      ? "Добавить чек-лист"
+      : "Добавить документ";
+
     const existing = document.getElementById("plLinkOverlay");
     if(existing){ try{ existing.remove(); }catch(e){} }
 
@@ -363,7 +378,7 @@
     overlay.innerHTML = `
       <div class="item" style="width:min(620px, 96vw); cursor:default; padding:14px;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-          <div style="font-weight:700; letter-spacing:.06em;">Добавить документ</div>
+          <div style="font-weight:700; letter-spacing:.06em;">${dialogTitle}</div>
           <button class="btn btn-sm" id="plLinkClose" type="button">Закрыть</button>
         </div>
 
@@ -371,29 +386,37 @@
           <div>
             <div class="muted" style="font-size:12px; margin-bottom:8px;">Тип документа</div>
             <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              ${allowedTypes.includes("article") ? `
               <label style="display:flex; align-items:center; gap:6px;">
-                <input type="radio" name="plLinkType" value="article" checked>
+                <input type="radio" name="plLinkType" value="article" ${defaultType==="article" ? "checked" : ""}>
                 <span>Инструкция</span>
               </label>
+              ` : ``}
+              ${allowedTypes.includes("checklist") ? `
               <label style="display:flex; align-items:center; gap:6px;">
-                <input type="radio" name="plLinkType" value="checklist">
+                <input type="radio" name="plLinkType" value="checklist" ${defaultType==="checklist" ? "checked" : ""}>
                 <span>Чек-лист</span>
               </label>
+              ` : ``}
+              ${allowedTypes.includes("template") ? `
               <label style="display:flex; align-items:center; gap:6px;">
-                <input type="radio" name="plLinkType" value="template">
+                <input type="radio" name="plLinkType" value="template" ${defaultType==="template" ? "checked" : ""}>
                 <span>Шаблон</span>
               </label>
+              ` : ``}
+              ${allowedTypes.includes("external") ? `
               <label style="display:flex; align-items:center; gap:6px;">
-                <input type="radio" name="plLinkType" value="external">
+                <input type="radio" name="plLinkType" value="external" ${defaultType==="external" ? "checked" : ""}>
                 <span>Внешняя ссылка</span>
               </label>
+              ` : ``}
             </div>
           </div>
 
           <div id="plLinkInternalBlock">
             <div id="plLinkArticlePicker" style="display:flex; flex-direction:column; gap:10px;">
               <div>
-                <div class="muted" style="font-size:12px; margin-bottom:6px;">Поиск инструкции</div>
+                <div class="muted" id="plLinkSearchLabel" style="font-size:12px; margin-bottom:6px;">Поиск инструкции</div>
                 <input class="pl-control" id="plLinkArticleSearch" placeholder="Начните вводить название документа" />
               </div>
               <div style="position:relative;">
@@ -458,7 +481,11 @@
     async function runArticleSearch(){
       try{
         const checked = overlay.querySelector('input[name="plLinkType"]:checked');
-        const type = checked ? String(checked.value) : "article";
+        const forcedType =
+          Array.isArray(opts.allowedTypes) && opts.allowedTypes.length === 1
+            ? String(opts.allowedTypes[0] || "").trim().toLowerCase()
+            : "";
+        const type = forcedType || (checked ? String(checked.value) : "article");
         const resultsHost = document.getElementById("plLinkArticleResults");
         const searchEl = document.getElementById("plLinkArticleSearch");
 
@@ -579,12 +606,13 @@
     }
     function syncType(){
       const checked = overlay.querySelector('input[name="plLinkType"]:checked');
-      const type = checked ? String(checked.value) : "article";
+      const type = forcedType || (checked ? String(checked.value) : "article");
 
       const internalBlock = document.getElementById("plLinkInternalBlock");
       const externalBlock = document.getElementById("plLinkExternalBlock");
       const articlePicker = document.getElementById("plLinkArticlePicker");
       const searchEl = document.getElementById("plLinkArticleSearch");
+      const searchLabel = document.getElementById("plLinkSearchLabel");
       const resultsHost = document.getElementById("plLinkArticleResults");
       const refEl = document.getElementById("plLinkRefId");
       const labelEl = document.getElementById("plLinkInternalLabel");
@@ -594,6 +622,16 @@
 
       if(articlePicker){
         articlePicker.style.display = (type === "external") ? "none" : "";
+      }
+
+      if(searchLabel){
+        searchLabel.textContent = (type === "checklist")
+          ? "Поиск чек-листа"
+          : (type === "template")
+            ? "Поиск шаблона"
+            : (type === "article")
+              ? "Поиск инструкции"
+              : "Поиск документа";
       }
 
       if(searchEl){
@@ -678,7 +716,7 @@
       submitBtn.onclick = async () => {
         const msg = document.getElementById("plLinkMsg");
         const checked = overlay.querySelector('input[name="plLinkType"]:checked');
-        const type = checked ? String(checked.value) : "article";
+        const type = forcedType || (checked ? String(checked.value) : "article");
 
         submitBtn.disabled = true;
         if(msg) msg.textContent = "Проверяю…";
@@ -751,6 +789,10 @@ window.PlannerActions = {
     ensureInProgress
   };
 })();
+
+
+
+
 
 
 

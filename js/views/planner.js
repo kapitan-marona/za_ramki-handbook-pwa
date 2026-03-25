@@ -727,6 +727,14 @@ async function loadComments(task){
         });
       }
 
+      const _addChecklistBtn = document.getElementById("plAddChecklistBtn");
+      if(PDH.bindAddChecklistButton){
+        PDH.bindAddChecklistButton(task, {
+          button: _addChecklistBtn,
+          loadInlineChecklists
+        });
+      }
+
       const assigneeView = document.getElementById("plAssigneeView");
       if(PDH.initAssigneeBlock){
         PDH.initAssigneeBlock(task, {

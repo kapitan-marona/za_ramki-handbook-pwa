@@ -9,15 +9,26 @@ Views.Login = (() => {
     if(list) list.innerHTML = "";
     if(!viewer) return;
 
+    var recoveryMode = !!window.__authRecoveryMode;
+
     viewer.innerHTML =
-      '<h1 class="article-title">Вход</h1>' +
-      '<p class="article-sub">Введите e-mail и пароль или войдите по ссылке из письма.</p>' +
+      '<h1 class="article-title">' + (recoveryMode ? 'Создание пароля' : 'Вход') + '</h1>' +
+      '<p class="article-sub">' +
+        (recoveryMode
+          ? 'Задайте новый пароль для входа в систему.'
+          : 'Введите e-mail и пароль. Если пароля ещё нет — нажмите "Создать пароль".') +
+      '</p>' +
       '<div style="max-width:360px;">' +
-        '<input id="loginEmail" type="email" placeholder="Email" style="width:100%; padding:10px; border-radius:12px; margin:10px 0;" />' +
-        '<input id="loginPass" type="password" placeholder="Пароль" style="width:100%; padding:10px; border-radius:12px; margin:0 0 10px 0;" />' +
+        (recoveryMode
+          ? ''
+          : '<input id="loginEmail" type="email" placeholder="Email" style="width:100%; padding:10px; border-radius:12px; margin:10px 0;" />') +
+        '<input id="loginPass" type="password" placeholder="' + (recoveryMode ? 'Новый пароль' : 'Пароль') + '" style="width:100%; padding:10px; border-radius:12px; margin:' + (recoveryMode ? '10px 0 10px 0' : '0 0 10px 0') + ';" />' +
+        (recoveryMode
+          ? '<input id="loginPass2" type="password" placeholder="Повторите пароль" style="width:100%; padding:10px; border-radius:12px; margin:0 0 10px 0;" />'
+          : '') +
         '<div style="display:flex; gap:10px; flex-wrap:wrap;">' +
-          '<button id="loginBtn" class="btn">Вход</button>' +
-          '<button id="magicLinkBtn" class="btn" type="button">Войти по ссылке</button>' +
+          '<button id="loginBtn" class="btn">' + (recoveryMode ? 'Сохранить пароль' : 'Вход') + '</button>' +
+          (recoveryMode ? '' : '<button id="createPassBtn" class="btn" type="button">Создать пароль</button>') +
         '</div>' +
         '<div id="loginStatus" style="margin-top:10px; color:#9fb0c7;"></div>' +
         '<div id="loginError" style="margin-top:10px; color:#ff6b6b;"></div>' +
@@ -67,7 +78,7 @@ Views.Login = (() => {
       }
     }
 
-    async function doMagicLink(){
+    async function doCreatePassword(){
       try{
         setErr("");
         setStatus("");
@@ -85,51 +96,109 @@ Views.Login = (() => {
         }
 
         var loginBtn = $("#loginBtn");
-        var magicBtn = $("#magicLinkBtn");
+        var createBtn = $("#createPassBtn");
         if(loginBtn) loginBtn.disabled = true;
-        if(magicBtn) magicBtn.disabled = true;
+        if(createBtn) createBtn.disabled = true;
 
-        const res = await SB.auth.signInWithOtp({
-          email: email,
-          options: {
-            shouldCreateUser: false,
-            emailRedirectTo: "https://crm.za-ramki.com/"
-          }
+        const res = await SB.auth.resetPasswordForEmail(email, {
+          redirectTo: "https://crm.za-ramki.com/"
         });
 
         if(res && res.error){
-          setErr(res.error.message || "Не удалось отправить ссылку.");
+          setErr(res.error.message || "Не удалось отправить письмо.");
           return;
         }
 
-        setStatus("Ссылка для входа отправлена на e-mail. Проверьте почту.");
+        setStatus("Письмо для создания пароля отправлено на e-mail.");
       }catch(e){
-        console.warn("[Login] magic link failed", e);
-        setErr("Ошибка отправки ссылки. Смотри консоль.");
+        console.warn("[Login] create password failed", e);
+        setErr("Ошибка отправки письма. Смотри консоль.");
       }finally{
         var loginBtn2 = $("#loginBtn");
-        var magicBtn2 = $("#magicLinkBtn");
+        var createBtn2 = $("#createPassBtn");
         if(loginBtn2) loginBtn2.disabled = false;
-        if(magicBtn2) magicBtn2.disabled = false;
+        if(createBtn2) createBtn2.disabled = false;
       }
     }
 
-    $("#loginBtn").onclick = doLogin;
-    $("#magicLinkBtn").onclick = doMagicLink;
+    async function doSavePassword(){
+      try{
+        setErr("");
+        setStatus("");
+
+        const p1 = ($("#loginPass").value || "");
+        const p2 = ($("#loginPass2").value || "");
+
+        if(!p1 || !p2){
+          setErr("Введите пароль два раза.");
+          return;
+        }
+
+        if(p1 !== p2){
+          setErr("Пароли не совпадают.");
+          return;
+        }
+
+        if(p1.length < 6){
+          setErr("Пароль должен быть не короче 6 символов.");
+          return;
+        }
+
+        if(!window.SB || !SB.auth){
+          setErr("Supabase не подключён.");
+          return;
+        }
+
+        var btn = $("#loginBtn");
+        if(btn) btn.disabled = true;
+
+        const res = await SB.auth.updateUser({
+          password: p1
+        });
+
+        if(res && res.error){
+          setErr(res.error.message || "Не удалось сохранить пароль.");
+          return;
+        }
+
+        window.__authRecoveryMode = false;
+        setStatus("Пароль сохранён. Выполняется вход...");
+
+        if(typeof window.initAuth === "function") await window.initAuth();
+
+        if(window.Router) Router.go("planner");
+      }catch(e){
+        console.warn("[Login] save password failed", e);
+        setErr("Ошибка сохранения пароля. Смотри консоль.");
+      }finally{
+        var btn2 = $("#loginBtn");
+        if(btn2) btn2.disabled = false;
+      }
+    }
+
+    $("#loginBtn").onclick = recoveryMode ? doSavePassword : doLogin;
+
+    if(!recoveryMode && $("#createPassBtn")){
+      $("#createPassBtn").onclick = doCreatePassword;
+    }
 
     $("#loginPass").addEventListener("keydown", (e) => {
-      if(e.key === "Enter") doLogin();
-    });
-
-    $("#loginEmail").addEventListener("keydown", (e) => {
-      if(e.key === "Enter" && !($("#loginPass").value || "")){
-        doMagicLink();
+      if(e.key === "Enter"){
+        if(recoveryMode) doSavePassword();
+        else doLogin();
       }
     });
+
+    if(recoveryMode && $("#loginPass2")){
+      $("#loginPass2").addEventListener("keydown", (e) => {
+        if(e.key === "Enter") doSavePassword();
+      });
+    }
   }
 
   return { show };
 })();
+
 
 
 

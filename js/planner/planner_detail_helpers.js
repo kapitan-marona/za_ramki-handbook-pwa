@@ -81,6 +81,8 @@ window.PlannerDetailHelpers = (() => {
         }
 
         PlannerActions.openLinkDialog(task, {
+          allowedTypes: ["article","template","external"],
+          defaultType: "article",
           onAdded: async (saved, payload) => {
             try{
               if(typeof loadDocs === "function"){
@@ -104,6 +106,72 @@ window.PlannerDetailHelpers = (() => {
         });
       }catch(err){
         console.warn("[PlannerDetailHelpers] openLinkDialog error", err);
+        alert("Ошибка открытия окна");
+      }
+    };
+  }
+
+  function bindAddChecklistButton(task, opts){
+    const o = opts || {};
+    const button = o.button;
+    const loadInlineChecklists = o.loadInlineChecklists;
+
+    if(!button) return;
+
+    button.onclick = () => {
+      try{
+        if(!window.PlannerActions || typeof PlannerActions.openLinkDialog !== "function"){
+          throw new Error("openLinkDialog missing");
+        }
+
+        PlannerActions.openLinkDialog(task, {
+          allowedTypes: ["checklist"],
+          defaultType: "checklist",
+          onAdded: async () => {
+            try{
+              if(typeof loadInlineChecklists === "function"){
+                await loadInlineChecklists(task, false, [], { soft:true });
+              }
+            }catch(err){
+              console.warn("[PlannerDetailHelpers] soft refresh after checklist add error", err);
+            }
+          }
+        });
+      }catch(err){
+        console.warn("[PlannerDetailHelpers] open checklist dialog error", err);
+        alert("Ошибка открытия окна");
+      }
+    };
+  }
+
+  function bindAddChecklistButton(task, opts){
+    const o = opts || {};
+    const button = o.button;
+    const loadInlineChecklists = o.loadInlineChecklists;
+
+    if(!button) return;
+
+    button.onclick = () => {
+      try{
+        if(!window.PlannerActions || typeof PlannerActions.openLinkDialog !== "function"){
+          throw new Error("openLinkDialog missing");
+        }
+
+        PlannerActions.openLinkDialog(task, {
+          allowedTypes: ["checklist"],
+          defaultType: "checklist",
+          onAdded: async () => {
+            try{
+              if(typeof loadInlineChecklists === "function"){
+                await loadInlineChecklists(task, false, [], { soft:true });
+              }
+            }catch(err){
+              console.warn("[PlannerDetailHelpers] soft refresh after checklist add error", err);
+            }
+          }
+        });
+      }catch(err){
+        console.warn("[PlannerDetailHelpers] open checklist dialog error", err);
         alert("Ошибка открытия окна");
       }
     };
@@ -433,8 +501,11 @@ window.PlannerDetailHelpers = (() => {
             </div>
 
             <div class="zr-card zr-card--section zr-planner-section">
-              <div class="zr-section-head">
+              <div class="zr-section-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                 <div class="zr-section-title">Пункты задачи</div>
+                ${(isAdmin && !isArchived) ? `
+                  <button class="btn btn-sm pl-btn-ghost" id="plAddChecklistBtn" type="button">+ Добавить чек-лист</button>
+                ` : ``}
               </div>
               <div id="plChecklist"></div>
             </div>
@@ -478,6 +549,7 @@ window.PlannerDetailHelpers = (() => {
     initAssigneeBlock,
     bindBackButton,
     bindAddDocButton,
+    bindAddChecklistButton,
     bindEditButton,
     bindArchiveButton,
     buildActionState,
@@ -486,4 +558,6 @@ window.PlannerDetailHelpers = (() => {
     buildLayout
   };
 })();
+
+
 

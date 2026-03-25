@@ -99,15 +99,6 @@ body{
   }
 }
 
-.zr-planner-row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.zr-planner-row > .zr-planner-section{
-  min-width:0;
-}
 
 .main{
   max-width: 1200px;
@@ -481,11 +472,6 @@ body{
    PLANNER — anti-jitter stabilizer
    ================================ */
 
-/* Правая панель уже имеет overflow:auto,
-   но явно фиксируем поведение */
-.viewer{
-  overflow: auto;
-}
 
 /* Стабилизируем высоту async-блоков */
 #plChecklist,
@@ -3343,204 +3329,6 @@ body{
   max-width:100%;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-/* =========================================================
-   PLANNER SURFACE CLEANUP (SAFE OVERRIDE)
-   ========================================================= */
-
-/* 1. Общая поверхность карточек */
-.zr-planner-detail .zr-card--section,
-.zr-planner-detail .zr-card--subtle {
-  background: rgba(255,255,255,0.03) !important;
-  border: none !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important;
-  backdrop-filter: none !important;
-}
-
-/* 2. Убираем внутренние "слои" */
-.zr-planner-detail .zr-card--section::before,
-.zr-planner-detail .zr-card--section::after {
-  display: none !important;
-}
-
-/* 3. Документы — отдельная стабилизация */
-.zr-planner-detail #plDocs {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-/* карточки документов */
-.zr-planner-detail #plDocs .zr-planner-doc-card {
-  background: rgba(255,255,255,0.04) !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-/* 4. Комментарии */
-.zr-planner-detail #plComments {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-/* 5. Чек-листы */
-.zr-planner-detail .zr-checklist,
-.zr-planner-detail .zr-checklist-group {
-  box-shadow: none !important;
-  background: rgba(255,255,255,0.03) !important;
-}
-
-/* 6. Убираем "жёсткие края" */
-.zr-planner-detail * {
-  outline: none !important;
-}
-
-
-
-/* =========================================================
-   CLEAN — PLANNER DOCUMENTS (FINAL)
-   ========================================================= */
-
-.zr-planner-detail #plDocs {
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-}
-
-.zr-planner-docs-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.zr-planner-doc-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.04);
-  border: none;
-  box-shadow: none;
-  transition: background .15s ease;
-}
-
-.zr-planner-doc-card:hover {
-  background: rgba(255,255,255,0.06);
-}
-
-.zr-planner-doc-link {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.zr-planner-doc-meta {
-  font-size: 10px;
-  opacity: 0.6;
-}
-
-.zr-planner-doc-label {
-  font-size: 10px;
-  opacity: 0.7;
-}
-
-.zr-planner-doc-remove {
-  flex: 0 0 auto;
-  opacity: 0.6;
-  cursor: pointer;
-}
-
-.zr-planner-doc-remove:hover {
-  opacity: 1;
-}
-
-
-/* =========================================================
-   CLEAN — PLANNER COMMENTS + ACTIVITY (FINAL)
-   ========================================================= */
-
-.zr-planner-detail #plComments {
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-}
-
-.zr-planner-comments-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.zr-planner-comment {
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.04);
-  border: none;
-  box-shadow: none;
-}
-
-.zr-planner-comment-author {
-  font-size: 12px;
-  opacity: 0.7;
-  margin-bottom: 4px;
-}
-
-.zr-planner-comment-text {
-  font-size: 13px;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-#plComments textarea {
-  width: 100%;
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: rgba(255,255,255,0.04);
-  border: none;
-  box-shadow: none;
-  resize: vertical;
-}
-
-.zr-planner-activity {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.zr-planner-activity-row {
-  display: flex;
-  gap: 8px;
-  font-size: 12px;
-  line-height: 1.4;
-  opacity: 0.75;
-}
-
-.zr-planner-activity-time {
-  flex: 0 0 auto;
-  opacity: 0.5;
-}
-
-.zr-planner-activity-text {
-  flex: 1;
-  word-break: break-word;
-}
-
-
 /* =========================================================
    CLEAN — PLANNER CORE SURFACES (FINAL)
    ========================================================= */
@@ -3658,15 +3446,6 @@ body{
   min-width:0;
 }
 
-.zr-planner-row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.zr-planner-row > .zr-planner-section{
-  min-width:0;
-}
 
 .zr-planner-section{
   min-width:0;
@@ -4176,89 +3955,6 @@ body{
 
 }
 
-/* [TEMP/MOBILE/HEADER]
-   Reason: reduce header density and improve tap UX on mobile
-   Extract later to: header-mobile.css
-*/
-@media (max-width: 768px){
 
-  /* 1) уменьшаем высоту header */
-  .topbar,
-  .zr-header{
-    padding: 10px 12px !important;
-    gap: 8px !important;
-  }
 
-  /* 2) логотип + заголовок */
-  .topbar .brand,
-  .zr-header .brand{
-    font-size: 14px !important;
-    line-height: 1.2 !important;
-  }
 
-  /* 3) подзаголовок (если есть) */
-  .topbar .subtitle{
-    font-size: 11px !important;
-    opacity: .7 !important;
-  }
-
-  /* 4) pills (v0 / staff / bell) */
-  .pill,
-  .zr-pill{
-    font-size: 11px !important;
-    padding: 4px 8px !important;
-    border-radius: 999px !important;
-  }
-
-  /* 5) кнопка выйти */
-  .btn,
-  .zr-btn{
-    padding: 6px 10px !important;
-    font-size: 12px !important;
-  }
-
-  /* 6) строка поиска */
-  input[type="search"],
-  .search-input{
-    height: 36px !important;
-    font-size: 13px !important;
-    padding: 0 10px !important;
-    
-      /* --- auth layout (NEW) --- */
-
-  #authArea{
-    display:flex !important;
-    justify-content:space-between !important;
-    align-items:center !important;
-    width:100%;
-    gap:10px;
-  }
-
-  .auth-group{
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-
-  .auth-role{
-    opacity:.6;
-    font-size:11px;
-  }
-
-  .auth-push{
-    width:36px;
-    height:36px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:16px;
-    border-radius:50%;
-  }
-
-  .auth-logout{
-    opacity:.7;
-    font-size:12px;
-  }
-  }
-
-}

@@ -445,28 +445,7 @@ body{
   transform: none !important;
 }
 
-/* Planner activity — compact to ~3 rows */
-.zr-planner-activity{
-  max-height: 112px !important;
-  overflow: auto !important;
-  padding-right: 4px !important;
-  gap: 4px !important;
-}
 
-.zr-planner-activity-row{
-  gap: 6px !important;
-  padding: 5px 0 !important;
-}
-
-.zr-planner-activity-time{
-  font-size: 10px !important;
-  line-height: 1.2 !important;
-}
-
-.zr-planner-activity-text{
-  font-size: 11px !important;
-  line-height: 1.3 !important;
-}
 
 /* ================================
    PLANNER — anti-jitter stabilizer
@@ -528,17 +507,7 @@ body{
   margin-top:18px;
 }
 
-.pl-head .pl-progress{
-  margin-top: 14px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.10);
-  overflow: hidden;
-}
-.pl-head .pl-progress-bar{
-  height: 100%;
-  background: var(--accent);
-}
+
 
 .pl-quickadd{
   display:flex;
@@ -745,73 +714,6 @@ body{
   opacity: 1;
 }
 
-/* ================================
-   PLANNER — header progress + actions
-   ================================ */
-
-.pl-head{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap: 12px;
-  padding:10px 12px;
-}
-
-.pl-head-left{ flex:1; min-width:260px; }
-.pl-head-actions{
-  display:flex;
-  align-items:flex-start;
-  gap: 8px;
-  flex-wrap:wrap;
-}
-
-/* progress: strict bracket bar (no rounding) */
-.pl-progress-row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-top:10px;
-}
-
-.pl-bracket{
-  opacity:.75;
-  font-weight:700;
-  letter-spacing:.06em;
-}
-
-.pl-progress{
-  flex: 1 1 auto; width: 100%; min-width: 0;
-  height: 8px;
-  border-radius: 0;
-  background: rgba(255,255,255,.10);
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.pl-progress-bar{
-  height: 100%;
-  border-radius: 0;
-  /* green with safe fallback */
-  background: var(--ok, #3ad37a);
-}
-
-/* buttons: make primary look like action (not pill) */
-.pl-btn-primary{
-  border-color: transparent;
-  background: var(--accent);
-  color: #111;
-  font-weight: 650;
-}
-.pl-btn-primary:hover{
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-}
-
-.pl-btn-ghost{
-  background: rgba(255,243,234,.05);
-  border: none !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,.18);
-}
 /* Planner header progress — final scoped override */
 .pl-head{
   display:grid;
@@ -1606,27 +1508,13 @@ body{
   padding:0 10px 10px 10px;
 }
 
-#plLeftList .item{
-  background: color-mix(in srgb, var(--card) 82%, transparent);
-  border-color: rgba(255,243,234,.07);
-  padding:11px 12px;
-}
 
-#plLeftList .item .item-title{
-  font-size:14px;
-  line-height:1.35;
-}
 
-#plLeftList .item .item-meta{
-  margin-top:6px;
-  font-size:11px;
-  line-height:1.35;
-  color: color-mix(in srgb, var(--muted) 88%, transparent);
-}
 
-#plLeftList .item:hover{
-  border-color: var(--accent-35);
-}
+
+
+
+
 
 .pl-head{
   padding:12px 12px 10px 12px;
@@ -1636,9 +1524,7 @@ body{
   gap:6px;
 }
 
-.pl-head-actions .btn{
-  min-height:30px;
-}
+
 
 .zr-panel-topline{
   font-weight:700;
@@ -1753,14 +1639,7 @@ body{
   margin-top:6px;
 }
 
-.zr-planner-actions .btn{
-  min-height:28px;
-  padding:6px 10px;
-  font-size:12px;
-  border:none !important;
-  background: rgba(255,243,234,.06) !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,.22);
-}
+
 
 .zr-planner-actions-main{
   display:flex;
@@ -1965,37 +1844,6 @@ body{
   font-size:12px;
 }
 
-.zr-planner-activity{
-  max-height:110px;   /* было 160 */
-  overflow:auto;
-  padding-right:4px;
-}
-
-.zr-planner-activity .item{
-  padding:6px 8px;    /* компактнее */
-  font-size:12px;
-}
-
-.zr-planner-activity-row{
-  display:grid;
-  grid-template-columns:auto minmax(0,1fr);
-  gap:10px;
-  align-items:flex-start;
-}
-
-.zr-planner-activity-time{
-  font-size:11px;
-  line-height:1.35;
-  color: color-mix(in srgb, var(--muted) 84%, transparent);
-  white-space:nowrap;
-}
-
-.zr-planner-activity-text{
-  font-size:12px;
-  line-height:1.45;
-  color: color-mix(in srgb, var(--text) 90%, transparent);
-}
-
 .pl-btn-danger-soft{
   border: none !important;
   background: rgba(255,110,110,.12);
@@ -2017,126 +1865,6 @@ body{
     align-items:stretch;
   }
 }
-
-
-
-
-/* =========================================================
-   PHASE X — STROKE REDUCTION (CONTROLLED)
-   ========================================================= */
-
-/* cards + sections */
-.zr-card,
-.zr-card--section,
-.zr-card--subtle{
-  border: none !important;
-}
-
-/* planner + viewer blocks */
-.item{
-  border: none !important;
-}
-
-/* lists */
-.zr-list-row{
-  border: none !important;
-}
-
-/* checklist rows */
-.zr-planner-checklist-row{
-  border: none !important;
-}
-
-/* softer separation via spacing */
-.zr-card--section{
-  padding: 14px 16px;
-}
-
-.zr-card--subtle{
-  padding: 12px 14px;
-}
-
-
-/* =========================================================
-   PHASE X — STEP 3
-   Surface Contrast Tuning
-   ========================================================= */
-
-/* panel stays darker so list cards can separate better */
-.panel{
-  background: rgba(30,26,23,.78);
-}
-
-/* viewer gets a slightly clearer workspace tone */
-.viewer{
-  background: rgba(34,30,26,.84);
-}
-
-/* left list cards: slightly lighter than panel */
-.list .item{
-  background: rgba(44,38,33,.88) !important;
-}
-
-/* left list hover: soft lift without border comeback */
-.list .item:hover{
-  background: rgba(50,43,37,.92) !important;
-}
-
-/* article/template/checklist main body should read as primary content */
-[data-ins-section="body"].zr-card--section,
-[data-tpl-section="body"].zr-card--section,
-[data-cl-section="body"].zr-card--section{
-  background: rgba(52,45,39,.92) !important;
-}
-
-/* supporting surfaces stay softer */
-[data-ins-section="meta"].zr-card--subtle,
-[data-ins-section="resources"].zr-card--subtle,
-[data-tpl-section="meta"].zr-card--subtle,
-[data-tpl-section="resources"].zr-card--subtle,
-[data-cl-section="meta"].zr-card--subtle,
-[data-cl-section="resources"].zr-card--subtle{
-  background: rgba(41,35,30,.72) !important;
-}
-
-/* =========================================================
-   PHASE X — STEP 3.1
-   Meta unify + body deepen
-   ========================================================= */
-
-/* META + HEADER — один слой */
-[data-ins-section="meta"].zr-card--subtle,
-[data-tpl-section="meta"].zr-card--subtle,
-[data-cl-section="meta"].zr-card--subtle{
-  background: rgba(40,34,29,.78) !important;
-}
-
-/* убираем визуальный конфликт между блоками */
-[data-ins-section="meta"].zr-card--subtle + .zr-card--section,
-[data-tpl-section="meta"].zr-card--subtle + .zr-card--section,
-[data-cl-section="meta"].zr-card--subtle + .zr-card--section{
-  margin-top: 10px;
-}
-
-/* BODY — темнее, чтобы текст стал контрастнее */
-[data-ins-section="body"].zr-card--section,
-[data-tpl-section="body"].zr-card--section,
-[data-cl-section="body"].zr-card--section{
-  background: rgba(36,31,27,.96) !important;
-}
-
-/* усиление читаемости текста */
-.markdown{
-  color: rgba(255,243,234,.92);
-}
-
-/* заголовки чуть ярче */
-.markdown h1,
-.markdown h2,
-.markdown h3{
-  color: #FFF3EA;
-}
-
 
 /* =========================================================
    PHASE A — article TOC + sticky header final stabilizer
@@ -3054,51 +2782,6 @@ body{
   font-size:11px;
 }
 
-/* === Planner Documents — cleanup === */
-
-#plDocsList .item,
-#plDocsList .doc,
-#plDocsList .pill {
-  border-radius: 10px !important;
-  padding: 8px 12px !important;
-  background: var(--item) !important;
-  border: 1px solid rgba(255,255,255,0.05) !important;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-/* text */
-#plDocsList .item span,
-#plDocsList .doc span {
-  font-size: 13px;
-  opacity: 0.9;
-}
-
-/* remove heavy pill feel */
-#plDocsList .pill {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-}
-
-/* delete button */
-#plDocsList button {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  padding: 0;
-  font-size: 12px;
-  opacity: 0.7;
-}
-
-#plDocsList button:hover {
-  opacity: 1;
-  background: var(--accent);
-}
-
-
 /* === Planner Documents — cards grid === */
 
 #plDocs .zr-planner-docs-list{
@@ -3175,26 +2858,6 @@ body{
 }
 
 
-/* === Planner Documents — text compact === */
-
-#plDocs .zr-planner-doc-link{
-  min-height:52px;
-  padding:8px 10px;
-  padding-right:32px;
-  align-items:flex-start;
-}
-
-#plDocs .zr-planner-doc-label{
-  font-size:12px;
-  line-height:1.25;
-  margin-top:0;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-}
-
-
 /* === Planner Documents — readability boost === */
 
 #plDocs .zr-planner-doc-link{
@@ -3244,31 +2907,6 @@ body{
   line-height:1.28;
   font-weight:500;
   text-align:left;
-}
-
-
-/* === Planner Documents — stability fix === */
-
-#plDocs .zr-planner-doc-card{
-  position:relative;
-  display:flex;
-}
-
-#plDocs .zr-planner-doc-link{
-  position:relative;
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  justify-content:flex-start;
-
-  min-height:64px; /* фиксируем базовую высоту */
-  width:100%;
-}
-
-#plDocs .zr-planner-doc-remove{
-  position:absolute;
-  top:6px;
-  right:6px;
 }
 
 
@@ -3415,14 +3053,7 @@ body{
   gap:6px;
 }
 
-.zr-planner-actions .btn{
-  min-height:28px;
-  padding:6px 10px;
-  font-size:12px;
-  border:none;
-  background: rgba(255,243,234,.06);
-  box-shadow: 0 2px 6px rgba(0,0,0,.22);
-}
+
 
 .zr-planner-status-note{
   margin:0;
@@ -3740,25 +3371,11 @@ body{
     gap: 10px !important;
   }
 
-  #plLeftList .item{
-    padding: 14px 14px !important;
-    border-radius: 16px !important;
-    background: rgba(56,48,41,.92) !important;
-    box-shadow: 0 10px 24px rgba(0,0,0,.18) !important;
-  }
+  
 
-  #plLeftList .item .item-title{
-    font-size: 16px !important;
-    line-height: 1.35 !important;
-    font-weight: 650 !important;
-  }
+  
 
-  #plLeftList .item .item-meta{
-    margin-top: 8px !important;
-    gap: 7px !important;
-    font-size: 12px !important;
-    line-height: 1.45 !important;
-  }
+  
 
   /* 3) planner shell spacing */
   .zr-planner-detail{
@@ -3909,9 +3526,7 @@ body{
     gap: 8px !important;
   }
 
-  .pl-head-actions .btn{
-    flex: 1 1 auto !important;
-  }
+  
 }
 
 /* =========================================================
@@ -3954,6 +3569,325 @@ body{
   }
 
 }
+
+/* =========================================================
+   PATCH M — surface stroke reset
+   Purpose: remove legacy hard borders from content surfaces,
+   keep borders on controls only
+   ========================================================= */
+
+/* 1) Content surfaces */
+.panel,
+.viewer,
+.item,
+.zr-card,
+.zr-card--section,
+.zr-card--subtle,
+.zr-card--row,
+.zr-list-row,
+.zr-empty-shell,
+.zr-list-intro,
+.zr-board-col,
+.zr-planner-comment-row,
+.zr-planner-doc-card,
+.zr-planner-inline-cl,
+#plChecklist .zr-planner-inline-cl,
+#plLeftList .item,
+#plBoard .item,
+.zr-board-col .item{
+  border: none !important;
+}
+
+/* 2) Planner task cards keep soft depth */
+#plLeftList .item,
+#plBoard .item,
+.zr-board-col .item{
+  box-shadow:
+    0 1px 0 rgba(255,243,234,.02),
+    0 10px 24px rgba(0,0,0,.18) !important;
+}
+
+/* 3) Keep control borders */
+.btn,
+.tab,
+.tag,
+.pill,
+.search,
+.search input,
+.zr-input,
+.zr-textarea,
+.zr-select,
+.pl-control,
+input,
+textarea,
+select,
+button{
+  border-style: solid;
+}
+
+/* =========================================================
+   PATCH N1 — shared left list cards (planner-first baseline)
+   ========================================================= */
+
+.list .item,
+#plLeftList .item,
+.zr-list-row{
+  border: none !important;
+  border-radius: 14px !important;
+  background: rgba(44,38,33,.88) !important;
+  box-shadow:
+    0 1px 0 rgba(255,243,234,.02),
+    0 10px 24px rgba(0,0,0,.18) !important;
+  transition:
+    background-color .14s ease,
+    box-shadow .14s ease,
+    transform .14s ease,
+    opacity .14s ease !important;
+}
+
+.list .item:hover,
+#plLeftList .item:hover,
+.zr-list-row:hover{
+  border: none !important;
+  background: rgba(50,43,37,.92) !important;
+  box-shadow:
+    0 1px 0 rgba(255,243,234,.025),
+    0 12px 28px rgba(0,0,0,.22) !important;
+  transform: translateY(-1px) !important;
+}
+
+.list .item .item-title,
+#plLeftList .item .item-title,
+.zr-list-row-title{
+  color: var(--text) !important;
+}
+
+.list .item .item-meta,
+#plLeftList .item .item-meta,
+.zr-list-row-meta{
+  color: color-mix(in srgb, var(--muted) 88%, transparent) !important;
+}
+
+/* =========================================================
+   PATCH N2 — shared buttons (planner-first baseline)
+   ========================================================= */
+
+.btn{
+  border: 1px solid rgba(255,243,234,.08) !important;
+  border-radius: 12px !important;
+  background: rgba(255,243,234,.07) !important;
+  color: var(--text) !important;
+  box-shadow:
+    0 1px 0 rgba(255,243,234,.02),
+    0 4px 10px rgba(0,0,0,.18) !important;
+  transition:
+    border-color .14s ease,
+    background-color .14s ease,
+    box-shadow .14s ease,
+    transform .14s ease,
+    opacity .14s ease !important;
+}
+
+.btn:hover{
+  border-color: rgba(255,243,234,.12) !important;
+  background: rgba(255,243,234,.10) !important;
+  box-shadow:
+    0 1px 0 rgba(255,243,234,.025),
+    0 6px 14px rgba(0,0,0,.20) !important;
+}
+
+.btn:active{
+  transform: none !important;
+}
+
+.btn:focus,
+.btn:focus-visible{
+  outline: none !important;
+  border-color: rgba(255,243,234,.14) !important;
+  box-shadow:
+    0 0 0 2px rgba(255,243,234,.06),
+    0 6px 14px rgba(0,0,0,.20) !important;
+}
+
+.btn:disabled,
+.btn[disabled],
+.btn[aria-disabled="true"]{
+  opacity: .5 !important;
+  pointer-events: none !important;
+}
+
+/* keep exceptions explicit */
+.pl-btn-primary,
+.btn.pl-btn-primary{
+  background: var(--accent) !important;
+  color: #111 !important;
+  border-color: transparent !important;
+}
+
+.pl-btn-danger-soft,
+.btn.pl-btn-danger-soft{
+  background: rgba(255,110,110,.12) !important;
+  color: var(--text) !important;
+  border-color: rgba(255,110,110,.18) !important;
+}
+
+#pushBtn.push-icon-btn{
+  border-radius: 999px !important;
+}
+
+/* =========================================================
+   PATCH N3 — shared inputs / textareas / selects
+   ========================================================= */
+
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+textarea,
+select,
+.zr-input,
+.zr-textarea,
+.zr-select,
+.pl-control{
+  border: 1px solid rgba(255,243,234,.08) !important;
+  border-radius: 14px !important;
+  background: rgba(26,23,20,.58) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+  transition:
+    border-color .14s ease,
+    background-color .14s ease,
+    box-shadow .14s ease,
+    opacity .14s ease !important;
+}
+
+input[type="text"]:hover,
+input[type="search"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="date"]:hover,
+textarea:hover,
+select:hover,
+.zr-input:hover,
+.zr-textarea:hover,
+.zr-select:hover,
+.pl-control:hover{
+  border-color: rgba(255,243,234,.12) !important;
+}
+
+input[type="text"]:focus,
+input[type="text"]:focus-visible,
+input[type="search"]:focus,
+input[type="search"]:focus-visible,
+input[type="email"]:focus,
+input[type="email"]:focus-visible,
+input[type="password"]:focus,
+input[type="password"]:focus-visible,
+input[type="date"]:focus,
+input[type="date"]:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible,
+.zr-input:focus,
+.zr-input:focus-visible,
+.zr-textarea:focus,
+.zr-textarea:focus-visible,
+.zr-select:focus,
+.zr-select:focus-visible,
+.pl-control:focus,
+.pl-control:focus-visible{
+  outline: none !important;
+  border-color: rgba(255,243,234,.16) !important;
+  box-shadow: 0 0 0 3px rgba(255,243,234,.05) !important;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled,
+.zr-input:disabled,
+.zr-textarea:disabled,
+.zr-select:disabled,
+.pl-control:disabled{
+  opacity: .5 !important;
+  pointer-events: none !important;
+}
+
+/* =========================================================
+   PATCH N4 — tabs and pills shared interaction feel
+   ========================================================= */
+
+.tab{
+  border: 1px solid rgba(255,243,234,.08) !important;
+  background: rgba(255,243,234,.05) !important;
+  box-shadow: none !important;
+}
+
+.tab:hover{
+  border-color: rgba(255,243,234,.12) !important;
+  background: rgba(255,243,234,.08) !important;
+}
+
+.tab.is-active{
+  border-color: rgba(255,243,234,.14) !important;
+  background: rgba(255,243,234,.10) !important;
+  box-shadow: 0 0 0 1px rgba(255,243,234,.04) !important;
+}
+
+.pill,
+.tag{
+  border-color: rgba(255,243,234,.08) !important;
+  background: rgba(255,243,234,.04) !important;
+}
+
+.tag.accent,
+.pill.accent{
+  border-color: rgba(255,243,234,.12) !important;
+  background: rgba(255,243,234,.08) !important;
+  color: var(--text) !important;
+}
+
+/* =========================================================
+   PATCH P — exact active selector for left lists
+   ========================================================= */
+
+.zr-list-row.zr-list-row--active,
+.item.zr-list-row--active,
+#plLeftList .item.zr-list-row--active,
+.list .zr-list-row.zr-list-row--active{
+  border: none !important;
+  background: rgba(58,46,37,.94) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,243,234,.10),
+    0 10px 24px rgba(0,0,0,.22) !important;
+}
+
+.zr-list-row.zr-list-row--active:hover,
+.item.zr-list-row--active:hover,
+#plLeftList .item.zr-list-row--active:hover,
+.list .zr-list-row.zr-list-row--active:hover{
+  background: rgba(61,48,39,.96) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,243,234,.12),
+    0 12px 28px rgba(0,0,0,.24) !important;
+}
+
+.zr-list-row.zr-list-row--active .zr-list-row-title,
+.item.zr-list-row--active .zr-list-row-title,
+#plLeftList .item.zr-list-row--active .zr-list-row-title{
+  color: #FFF3EA !important;
+}
+
+.zr-list-row.zr-list-row--active .zr-list-row-meta,
+.item.zr-list-row--active .zr-list-row-meta,
+#plLeftList .item.zr-list-row--active .zr-list-row-meta{
+  color: rgba(255,243,234,.72) !important;
+}
+
+
+
+
 
 
 

@@ -529,7 +529,7 @@ Views.Checklists = (() => {
     const selectedId = (() => {
       try{
         const p = (window.Router && typeof Router.parse === "function") ? Router.parse() : null;
-        return p && p.page === "checklists" && p.param ? String(p.param) : "";
+        return p && p.section === "checklists" && p.param ? String(p.param) : "";
       }catch(e){}
       return "";
     })();
@@ -881,13 +881,9 @@ Views.Checklists = (() => {
     return Array.isArray(data) ? data : [];
   }
 
-  async function show(){
+  async function show(param){
   const role = (window.App && App.session) ? String(App.session.role || "") : "";
   const root = document.querySelector("#viewer");
-  if(role !== "admin"){
-    if(root) root.innerHTML = `<div class="empty">Чек-листы недоступны</div>`;
-    return;
-  }
     setPanelTitle("Чек-листы");
     _activeChecklistId = "";
     _activeInstanceId = "";
@@ -1032,6 +1028,9 @@ Views.Checklists = (() => {
 
   return { show, open, setFilter };
 })();
+
+
+
 
 
 

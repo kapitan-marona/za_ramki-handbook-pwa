@@ -256,11 +256,13 @@
     const esc = deps.esc;
     const runtime = window.__plannerInlineChecklistRuntime || {};
     const disabledAttr = isReadOnly ? 'disabled' : '';
+    const isAdmin = String(window?.App?.session?.role || "") === "admin";
 
     return `
       <div class="zr-planner-inline-checklists">
         ${defs.map((def) => {
           const checklistId = String(def.id || "");
+          const linkId = String(def.__task_link_id || "");
           const rt = runtime[checklistId] || {};
           const itemsState = normalizePlannerInlineItemsState(rt.itemsState || {});
           const expanded = isPlannerInlineChecklistExpanded(task.id, checklistId);
@@ -276,10 +278,21 @@
                   aria-expanded="${expanded ? "true" : "false"}"
                 >${expanded ? "▾" : "▸"} ${esc(def.title || "Чек-лист")}</button>
 
-                <span
-                  class="zr-planner-inline-cl-status"
-                  data-inline-cl-status="${esc(checklistId)}"
-                ></span>
+                <div class="zr-inline-md" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <span
+                    class="zr-planner-inline-cl-status"
+                    data-inline-cl-status="${esc(checklistId)}"
+                  ></span>
+
+                  ${(isAdmin && !isReadOnly && linkId) ? `
+                    <button
+                      class="btn btn-sm pl-btn-danger-soft"
+                      type="button"
+                      data-inline-cl-remove="${esc(checklistId)}"
+                      data-inline-cl-link-id="${esc(linkId)}"
+                    >Удалить</button>
+                  ` : ``}
+                </div>
               </div>
 
               <div
@@ -439,6 +452,46 @@
     });
   }
 
+  function bindInlineChecklistRemoveButtons(task, isReadOnly){
+    if(isReadOnly) return;
+    if(String(window?.App?.session?.role || "") !== "admin") return;
+
+    document.querySelectorAll("[data-inline-cl-remove]").forEach((btn) => {
+      btn.onclick = async () => {
+        const checklistId = String(btn.getAttribute("data-inline-cl-remove") || "");
+        const linkId = String(btn.getAttribute("data-inline-cl-link-id") || "");
+
+        if(!checklistId || !linkId) return;
+        if(!confirm("Удалить чек-лист из задачи?")) return;
+
+        btn.disabled = true;
+
+        try{
+          if(!window.PlannerAPI || typeof PlannerAPI.removeTaskLink !== "function"){
+            throw new Error("removeTaskLink missing");
+          }
+
+          await PlannerAPI.removeTaskLink(linkId);
+
+          try{
+            await getPlannerChecklistApi().deleteInstance(task.id, checklistId);
+          }catch(e){
+            console.warn("[PlannerInlineChecklist] deleteInstance warning", e);
+          }
+
+          removeInlineChecklistFromTaskView(checklistId);
+        }catch(err){
+          console.warn("[PlannerInlineChecklist] remove linked checklist error", err);
+          const text = (err && (err.message || err.details || err.hint))
+            ? (err.message || err.details || err.hint)
+            : String(err);
+          alert("Ошибка: " + text);
+          btn.disabled = false;
+        }
+      };
+    });
+  }
+
   function removeInlineChecklistFromTaskView(checklistId){
     const safeId = String(checklistId || "");
     if(!safeId) return;
@@ -510,6 +563,27 @@
         return;
       }
 
+      const docsByChecklistId = {};
+      docs.forEach((doc) => {
+        const id = String(doc && doc.id ? doc.id : "");
+        if(!id || docsByChecklistId[id]) return;
+        docsByChecklistId[id] = doc;
+      });
+
+      const defsWithLinks = defs.map((def) => {
+        const doc = docsByChecklistId[String(def && def.id ? def.id : "")] || {};
+        return {
+          ...def,
+          __task_link_id: String(
+            doc.link_id ||
+            doc.task_link_id ||
+            doc.raw_link_id ||
+            doc.id_link ||
+            ""
+          )
+        };
+      });
+
       const api = getPlannerChecklistApi();
       const runtime = {};
 
@@ -527,9 +601,10 @@
         host.innerHTML = "";
       }
 
-      host.insertAdjacentHTML("beforeend", renderInlineChecklistBlocks(task, defs, !!isReadOnly, deps));
+      host.insertAdjacentHTML("beforeend", renderInlineChecklistBlocks(task, defsWithLinks, !!isReadOnly, deps));
 
       bindInlineChecklistToggles(task);
+      bindInlineChecklistRemoveButtons(task, !!isReadOnly);
       bindInlineChecklistCheckboxes(task, !!isReadOnly, deps);
     }catch(err){
       console.warn("[PlannerInlineChecklist] load error", err);

@@ -4134,3 +4134,95 @@ body{
     flex: 1 1 auto !important;
   }
 }
+
+/* =========================================================
+   MOBILE PHASE 2 — Planner Header Cleanup
+   ========================================================= */
+@media (max-width: 768px){
+
+  /* 1) убираем вторичный блок planner (где "Обновить") */
+  #plBoard + .zr-card--section,
+  #plBoard ~ .zr-card--section{
+    display:none !important;
+  }
+
+  /* 2) если есть отдельный контейнер под обновление */
+  .pl-refresh,
+  .pl-board-actions,
+  .pl-secondary-header{
+    display:none !important;
+  }
+
+  /* 3) усиливаем основной заголовок planner */
+  .zr-planner h2,
+  .zr-planner-title-main{
+    font-size: 20px !important;
+    line-height: 1.25 !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* 4) подзаголовок делаем легче */
+  .zr-planner-sub,
+  .pl-subtitle{
+    font-size: 13px !important;
+    opacity: .7 !important;
+  }
+
+  /* 5) добавляем воздуха между блоками */
+  .zr-planner,
+  .zr-planner-detail{
+    gap: 14px !important;
+  }
+
+}
+
+/* [TEMP/MOBILE/HEADER]
+   Reason: reduce header density and improve tap UX on mobile
+   Extract later to: header-mobile.css
+*/
+@media (max-width: 768px){
+
+  /* 1) уменьшаем высоту header */
+  .topbar,
+  .zr-header{
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+
+  /* 2) логотип + заголовок */
+  .topbar .brand,
+  .zr-header .brand{
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* 3) подзаголовок (если есть) */
+  .topbar .subtitle{
+    font-size: 11px !important;
+    opacity: .7 !important;
+  }
+
+  /* 4) pills (v0 / staff / bell) */
+  .pill,
+  .zr-pill{
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    border-radius: 999px !important;
+  }
+
+  /* 5) кнопка выйти */
+  .btn,
+  .zr-btn{
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* 6) строка поиска */
+  input[type="search"],
+  .search-input{
+    height: 36px !important;
+    font-size: 13px !important;
+    padding: 0 10px !important;
+  }
+
+}

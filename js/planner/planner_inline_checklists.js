@@ -83,6 +83,45 @@
     }];
   }
 
+  function getChecklistInstanceOwnerUserId(task){
+    try{
+      const assigneeId = Array.isArray(task && task.assignees) && task.assignees.length
+        ? String(task.assignees[0] || "").trim()
+        : "";
+
+      if(assigneeId) return assigneeId;
+
+      const currentUserId =
+        window?.App?.session?.user?.id ||
+        window?.SB?.auth?.user?.()?.id ||
+        "";
+
+      return String(currentUserId || "").trim();
+    }catch(e){
+      return "";
+    }
+  }
+
+
+  function getChecklistInstanceOwnerUserId(task){
+    try{
+      const assigneeId = Array.isArray(task && task.assignees) && task.assignees.length
+        ? String(task.assignees[0] || "").trim()
+        : "";
+
+      if(assigneeId) return assigneeId;
+
+      const currentUserId =
+        window?.App?.session?.user?.id ||
+        window?.SB?.auth?.user?.()?.id ||
+        "";
+
+      return String(currentUserId || "").trim();
+    }catch(e){
+      return "";
+    }
+  }
+
   function getPlannerChecklistApi(){
     if(window.ZRPlannerChecklistAPI) return window.ZRPlannerChecklistAPI;
 
@@ -100,16 +139,22 @@
         return String(userId);
       },
 
-      async getInstance(taskId, checklistId){
+      async getInstance(taskId, checklistId, ownerUserId){
         if(!window.SB) throw new Error("Supabase client is not available.");
         if(!taskId) throw new Error("Checklist task_id is required.");
         if(!checklistId) throw new Error("Checklist checklist_id is required.");
 
-        const { data, error } = await SB
+        let query = SB
           .from("checklist_instances")
           .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
           .eq("task_id", String(taskId))
-          .eq("checklist_id", String(checklistId))
+          .eq("checklist_id", String(checklistId));
+
+        if(ownerUserId){
+          query = query.eq("user_id", String(ownerUserId));
+        }
+
+        const { data, error } = await query
           .order("created_at", { ascending:true })
           .limit(2);
 
@@ -127,12 +172,12 @@
         return rows.length ? rows[0] : null;
       },
 
-      async createInstance(taskId, checklistId){
+      async createInstance(taskId, checklistId, ownerUserId){
         if(!window.SB) throw new Error("Supabase client is not available.");
         if(!taskId) throw new Error("Checklist task_id is required.");
         if(!checklistId) throw new Error("Checklist checklist_id is required.");
 
-        const userId = this.getCurrentUserId();
+        const userId = ownerUserId ? String(ownerUserId) : this.getCurrentUserId();
 
         const payload = {
           task_id: String(taskId),
@@ -151,29 +196,35 @@
         return data || null;
       },
 
-      async resolveInstance(taskId, checklistId){
-        const existing = await this.getInstance(taskId, checklistId);
+      async resolveInstance(taskId, checklistId, ownerUserId){
+        const existing = await this.getInstance(taskId, checklistId, ownerUserId);
         if(existing) return existing;
 
         try{
-          return await this.createInstance(taskId, checklistId);
+          return await this.createInstance(taskId, checklistId, ownerUserId);
         }catch(err){
-          const fallback = await this.getInstance(taskId, checklistId);
+          const fallback = await this.getInstance(taskId, checklistId, ownerUserId);
           if(fallback) return fallback;
           throw err;
         }
       },
 
-      async deleteInstance(taskId, checklistId){
+      async deleteInstance(taskId, checklistId, ownerUserId){
         if(!window.SB) throw new Error("Supabase client is not available.");
         if(!taskId) throw new Error("Checklist task_id is required.");
         if(!checklistId) throw new Error("Checklist checklist_id is required.");
 
-        const { error } = await SB
+        let query = SB
           .from("checklist_instances")
           .delete()
           .eq("task_id", String(taskId))
           .eq("checklist_id", String(checklistId));
+
+        if(ownerUserId){
+          query = query.eq("user_id", String(ownerUserId));
+        }
+
+        const { error } = await query;
 
         if(error) throw error;
         return true;
@@ -474,7 +525,7 @@
           await PlannerAPI.removeTaskLink(linkId);
 
           try{
-            await getPlannerChecklistApi().deleteInstance(task.id, checklistId);
+            await getPlannerChecklistApi().deleteInstance(task.id, checklistId, getChecklistInstanceOwnerUserId(task));
           }catch(e){
             console.warn("[PlannerInlineChecklist] deleteInstance warning", e);
           }
@@ -586,9 +637,10 @@
 
       const api = getPlannerChecklistApi();
       const runtime = {};
+      const ownerUserId = getChecklistInstanceOwnerUserId(task);
 
       for(const def of defs){
-        const instance = await api.resolveInstance(task.id, def.id);
+        const instance = await api.resolveInstance(task.id, def.id, ownerUserId);
         runtime[String(def.id)] = {
           instanceId: String(instance && instance.id ? instance.id : ""),
           itemsState: normalizePlannerInlineItemsState(instance && instance.items_state ? instance.items_state : {})
@@ -637,3 +689,4 @@
     loadInlineChecklists
   };
 })();
+

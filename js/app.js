@@ -307,6 +307,11 @@ window.initAuth = async function(){
 
   async function render(){
     var p = Router.parse();
+
+    // session not ready → skip render (prevents login flash)
+    if(!App.session || !App.session.ready){
+      return;
+    }
     var section = p.section;
     var param = p.param;
     var q = $("#q");
@@ -318,7 +323,13 @@ window.initAuth = async function(){
       return;
     }
 
-    setActiveTab(section);
+    
+    // authenticated user should not stay on login screen
+    if(section === "login" && App.session && App.session.user){
+      Router.go("planner");
+      return;
+    }
+setActiveTab(section);
     syncTopSearchUI(section);
 
     if(section === "login"){ await Views.Login.show(); return; }
@@ -361,6 +372,32 @@ window.initAuth = async function(){
 
     App._render = render;
 
+        // --- [AUTH RECOVERY DETECTION] ---
+    (function(){
+      try{
+        var url = window.location.href || "";
+        var hash = window.location.hash || "";
+
+        var isRecovery =
+          url.includes("type=recovery") ||
+          hash.includes("type=recovery") ||
+          url.includes("access_token") ||
+          hash.includes("access_token");
+
+        if(isRecovery){
+          window.__authRecoveryMode = true;
+
+          // force login screen (password creation mode)
+          if(window.Router){
+            Router.go("login");
+          }
+        }
+      }catch(e){
+        console.warn("[Auth] recovery detect failed", e);
+      }
+    })();
+    // --- [/AUTH RECOVERY DETECTION] ---
+
     await window.initAuth();
 
     if(!location.hash) Router.go(App.session && App.session.user ? "planner" : "login");
@@ -369,6 +406,10 @@ window.initAuth = async function(){
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
+
+
+
+
 
 
 

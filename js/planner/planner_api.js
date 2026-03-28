@@ -545,6 +545,10 @@
       if(!refId) throw new Error("Укажите ID документа.");
     }
 
+    // IMPORTANT:
+    // For checklist links, ref_id must stay equal to the kb_checklists template id.
+    // Do NOT encode task/user/instance identity into task_links.ref_id here.
+    // Inline checklist runtime resolves task-scoped instances separately.
     const row = {
       task_id: taskId,
       link_type: linkType,
@@ -677,6 +681,7 @@
     searchChecklistsForLink
   };
 })();
+
 
 
 

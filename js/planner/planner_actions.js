@@ -154,7 +154,40 @@
       if(e && e.key === "Escape") close();
     }
 
-    overlay.addEventListener("click", (e) => { if(e.target === overlay) close(); });
+    const dialogEl = overlay.querySelector(".item");
+
+
+    let pointerStartedInsideDialog = false;
+
+
+    
+
+
+    overlay.addEventListener("mousedown", (e) => {
+
+
+      pointerStartedInsideDialog = !!(dialogEl && dialogEl.contains(e.target));
+
+
+    });
+
+
+    
+
+
+    overlay.addEventListener("click", (e) => {
+
+
+      const clickedOverlay = e.target === overlay;
+
+
+      if(clickedOverlay && !pointerStartedInsideDialog) close();
+
+
+      pointerStartedInsideDialog = false;
+
+
+    });
     document.addEventListener("keydown", onKey);
     document.body.appendChild(overlay);
 
@@ -663,7 +696,40 @@
       }
     }
 
-    overlay.addEventListener("click", (e) => { if(e.target === overlay) close(); });
+    const dialogEl = overlay.querySelector(".item");
+
+
+    let pointerStartedInsideDialog = false;
+
+
+    
+
+
+    overlay.addEventListener("mousedown", (e) => {
+
+
+      pointerStartedInsideDialog = !!(dialogEl && dialogEl.contains(e.target));
+
+
+    });
+
+
+    
+
+
+    overlay.addEventListener("click", (e) => {
+
+
+      const clickedOverlay = e.target === overlay;
+
+
+      if(clickedOverlay && !pointerStartedInsideDialog) close();
+
+
+      pointerStartedInsideDialog = false;
+
+
+    });
     document.addEventListener("keydown", onKey);
     document.body.appendChild(overlay);
 
@@ -789,6 +855,9 @@ window.PlannerActions = {
     ensureInProgress
   };
 })();
+
+
+
 
 
 

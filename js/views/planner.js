@@ -29,7 +29,7 @@ console.log("[PLANNER_BUILD] 2026-03-03");
 
   function goTask(id){
     try{
-      if(window.Router && typeof Router.go === "function"){
+      if(typeof Router !== "undefined" && typeof Router.go === "function"){
         if(id) Router.go("planner", String(id));
         else Router.go("planner");
         return;
@@ -100,14 +100,7 @@ console.log("[PLANNER_BUILD] 2026-03-03");
     }
     // rebind after possible reset
     const today = todayISO();
-    function getCurrentSelectedId(){
-  try{
-    return getSelectedTaskId();
-  }catch(e){
-    return null;
-  }
-}
-const selectedId = getCurrentSelectedId();
+    const selectedId = getSelectedTaskId();
 const isOverdue = (t) => window.PlannerState ? PlannerState.isOverdue(t, today) : !!(t.due_date && String(t.due_date) < today && t.status !== "done");
 
     // ---------- DATA (SELECT-only) ----------
@@ -173,7 +166,6 @@ if(window.PlannerChecklistRuntime && typeof PlannerChecklistRuntime.init === "fu
       const done = total ? tasks.filter(t => t.status === "done").length : 0;
 
       viewerEl.classList.remove("pl-archived");
-viewerEl.querySelectorAll("button, input, textarea, select").forEach(x => { try{ x.disabled = false; }catch(e){} });
 
 viewerEl.innerHTML = `
   <div class="pl-head">
@@ -244,7 +236,12 @@ viewerEl.innerHTML = `
         if(state.refreshBusy) return;
 
         state.refreshBusy = true;
-        renderRightHeader(tasks);
+
+        try{
+          rf.classList.add("is-loading");
+          rf.disabled = true;
+          rf.textContent = "Обновляю…";
+        }catch(e){}
 
         try{
           const freshTasks = await fetchAllActiveTasks();
@@ -365,7 +362,7 @@ function openPlannerDoc(section, id){
       }
     }
 
-    if(window.Router && typeof Router.go === "function"){
+    if(typeof Router !== "undefined" && typeof Router.go === "function"){
       Router.go(sec, refId);
       return;
     }
@@ -482,6 +479,12 @@ function applyLockedViewState(){
   });
 }
 
+async function loadDetailSections(task, checklistReadOnly){
+  await loadChecklist(task, checklistReadOnly);
+  await loadDocs(task);
+  await loadComments(task);
+  await loadActivity(task);
+}
 async function loadComments(task){
   if(!PC.loadComments) throw new Error("PlannerComments.loadComments missing");
 
@@ -527,15 +530,7 @@ async function loadComments(task){
       }catch(e){}
     }
 
-    function renderDetails(task){
-
-      // STEP FIX — reset archived/read-only state
-      viewerEl.classList.remove("pl-archived");
-      viewerEl.querySelectorAll("button, input, textarea, select").forEach(x => { try{ x.disabled = false; }catch(e){} });
-
-
-
-
+    function buildDetailViewState(task){
       const metaState = PDH.buildMetaState
         ? PDH.buildMetaState(task, {
             esc,
@@ -557,9 +552,6 @@ async function loadComments(task){
               : ""
           };
 
-      const due = metaState.due;
-      const st = metaState.st;
-
       const actionState = PDH.buildActionState
         ? PDH.buildActionState(task, { role })
         : {
@@ -578,15 +570,69 @@ async function loadComments(task){
             })()
           };
 
-      const cur = actionState.cur;
-      const overduePill = metaState.overduePill;
-      const isAdmin = actionState.isAdmin;
-      const isArchived = actionState.isArchived;
-      const archivedPill = metaState.archivedPill;
-      const next = Array.isArray(actionState.next) ? actionState.next : [];      
-      const urg = metaState.urg;
-      const start = metaState.start;
-      const detailsProblemStyle = metaState.detailsProblemStyle;
+      const isArchived = !!actionState.isArchived;
+      const isLocked = isArchived || task.status === "done" || task.status === "canceled";
+
+      return {
+        metaState,
+        actionState,
+        due: metaState.due,
+        st: metaState.st,
+        overduePill: metaState.overduePill,
+        archivedPill: metaState.archivedPill,
+        urg: metaState.urg,
+        start: metaState.start,
+        detailsProblemStyle: metaState.detailsProblemStyle,
+        cur: actionState.cur,
+        isAdmin: !!actionState.isAdmin,
+        isArchived,
+        next: Array.isArray(actionState.next) ? actionState.next : [],
+        isLocked,
+        checklistReadOnly: !!isLocked
+      };
+    }
+    function runDetailLockFlow(isLocked){
+      if(!isLocked){
+        return false;
+      }
+
+      let __plLockedApplied = false;
+      const reapplyLockedState = () => {
+        if(__plLockedApplied) return;
+        try{ applyLockedViewState(); }catch(e){}
+        __plLockedApplied = true;
+      };
+
+      reapplyLockedState();
+      setTimeout(reapplyLockedState, 0);
+      setTimeout(reapplyLockedState, 80);
+      setTimeout(reapplyLockedState, 220);
+      setTimeout(reapplyLockedState, 500);
+
+      return true;
+    }
+    function renderDetails(task){
+
+      // reset shell state before replacing detail DOM
+      viewerEl.classList.remove("pl-archived");
+
+
+      const detailState = buildDetailViewState(task);
+      const metaState = detailState.metaState;
+      const actionState = detailState.actionState;
+      const due = detailState.due;
+      const st = detailState.st;
+      const cur = detailState.cur;
+      const overduePill = detailState.overduePill;
+      const isAdmin = detailState.isAdmin;
+      const isArchived = detailState.isArchived;
+      const archivedPill = detailState.archivedPill;
+      const next = detailState.next;
+      const urg = detailState.urg;
+      const start = detailState.start;
+      const detailsProblemStyle = detailState.detailsProblemStyle;
+      const isLocked = detailState.isLocked;
+      const checklistReadOnly = detailState.checklistReadOnly;
       
       const editBtnHtml = (!isArchived && isAdmin)
         ? `<button class="btn btn-sm pl-btn-ghost" id="plEditTask" type="button">Редактировать</button>`
@@ -717,6 +763,18 @@ async function loadComments(task){
       `;
       markRenderedTaskId(task.id);
 
+      if(!isArchived && task.status !== "done" && task.status !== "canceled"){
+        viewerEl.querySelectorAll(".pl-readonly-disabled, .is-disabled").forEach(x => {
+          try{ x.classList.remove("pl-readonly-disabled"); }catch(e){}
+          try{ x.classList.remove("is-disabled"); }catch(e){}
+          try{ x.removeAttribute("aria-disabled"); }catch(e){}
+          try{ x.style.pointerEvents = ""; }catch(e){}
+        });
+        viewerEl.querySelectorAll("button, input, textarea, select").forEach(x => {
+          try{ x.disabled = false; }catch(e){}
+          try{ x.readOnly = false; }catch(e){}
+        });
+      }
       const _addDocBtn = document.getElementById("plAddDocBtn");
       if(PDH.bindAddDocButton){
         PDH.bindAddDocButton(task, {
@@ -757,7 +815,7 @@ async function loadComments(task){
           goTask
         });
       }
-      
+
       if(PDH.bindStatusButtons){
         PDH.bindStatusButtons(task, {
           viewerEl,
@@ -791,34 +849,11 @@ async function loadComments(task){
           goTask
         });
       }      
-      
-      // archived/done/canceled task = read-only content, but keep shell actions available
-      const isLocked = isArchived || task.status === "done" || task.status === "canceled";
-
-      if(isLocked){
-        loadChecklist(task, true);
-        loadDocs(task);
-        loadComments(task);
-        loadActivity(task);
-
-        const reapplyLockedState = () => {
-          try{ applyLockedViewState(); }catch(e){}
-        };
-
-        reapplyLockedState();
-        setTimeout(reapplyLockedState, 0);
-        setTimeout(reapplyLockedState, 80);
-        setTimeout(reapplyLockedState, 220);
-        setTimeout(reapplyLockedState, 500);
-
+// archived/done/canceled task = read-only content, but keep shell actions available
+            loadDetailSections(task, checklistReadOnly);
+      if(runDetailLockFlow(isLocked)){
         return;
       }
-      
-
-      loadChecklist(task, false);
-      loadDocs(task);
-      loadComments(task);
-      loadActivity(task);
     }
 
     function renderEmpty(){
@@ -886,7 +921,7 @@ async function loadComments(task){
       else {
         // fetchTaskById fallback (archived by direct link, read-only)
         try{
-          if(window.PlannerAPI && typeof PlannerAPI.fetchTaskById === "function"){
+          if(window.PlannerData && typeof PlannerData.fetchTaskById === "function"){
             const one = await PlannerData.fetchTaskById(selectedId, { role, today });
             if(one && one.archived_at){
               renderDetails(one);
@@ -911,6 +946,30 @@ async function loadComments(task){
 
   return { show };
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

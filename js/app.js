@@ -31,7 +31,7 @@ window.syncRoleUI = function(){
     if(checklistsTab){
       checklistsTab.style.display = isAdmin ? "" : "none";
     }
-  }catch(e){}
+  }catch(e){ console.warn("[app.js] silent catch", e); }
 };
 
 
@@ -145,10 +145,10 @@ window.renderAuthArea = function(){
         if(window.ZRPush && ZRPush.deactivateCurrentSubscription){
           await ZRPush.deactivateCurrentSubscription();
         }
-      }catch(e){}
+      }catch(e){ console.warn("[app.js] silent catch", e); }
 
-      try{ if(window.SB && SB.auth) await SB.auth.signOut(); }catch(e){}
-      try{ delete window.__plannerState; }catch(e){}
+      try{ if(window.SB && SB.auth) await SB.auth.signOut(); }catch(e){ console.warn("[app.js] silent catch", e); }
+      try{ delete window.__plannerState; }catch(e){ console.warn("[app.js] silent catch", e); }
       App.session.user = null;
       App.session.role = null;
       App.session.ready = true;
@@ -173,8 +173,8 @@ window.applySession = async function(user){
 
     // нет роли -> нет доступа
     if(!role){
-      try{ await SB.auth.signOut(); }catch(e){}
-      try{ delete window.__plannerState; }catch(e){}
+      try{ await SB.auth.signOut(); }catch(e){ console.warn("[app.js] silent catch", e); }
+      try{ delete window.__plannerState; }catch(e){ console.warn("[app.js] silent catch", e); }
       App.session.user = null;
       App.session.role = null;
       window.renderAuthArea();
@@ -185,7 +185,7 @@ window.applySession = async function(user){
       try{
         var err = document.querySelector("#loginError");
         if(err) err.textContent = "Нет доступа: ваш email не добавлен в allowlist.";
-      }catch(e){}
+      }catch(e){ console.warn("[app.js] silent catch", e); }
       return;
     }
   }
@@ -202,12 +202,36 @@ window.applySession = async function(user){
   }
 };
 
+// ===== AUTH INIT =====
+// ===== AUTH RECOVERY DETECTION =====
+window.syncAuthRecoveryMode = function(){
+  try{
+    var hash = String(location.hash || "");
+    var isRecoveryHash = /(?:^|[&#])type=recovery(?:&|$)/.test(hash);
+
+    if(isRecoveryHash){
+      window.__authRecoveryMode = true;
+      try{ sessionStorage.setItem("zr_auth_recovery", "1"); }catch(e){}
+      return;
+    }
+
+    var persisted = false;
+    try{
+      persisted = sessionStorage.getItem("zr_auth_recovery") === "1";
+    }catch(e){}
+
+    window.__authRecoveryMode = !!persisted;
+  }catch(e){
+    window.__authRecoveryMode = false;
+    console.warn("[Auth] recovery mode detect failed", e);
+  }
+};
 window.initAuth = async function(){
   try{
     App.session.ready = false;
 
     if(!window.SB || !SB.auth){
-      try{ delete window.__plannerState; }catch(e){}
+      try{ delete window.__plannerState; }catch(e){ console.warn("[app.js] silent catch", e); }
       App.session.user = null;
       App.session.role = null;
       App.session.ready = true;
@@ -252,7 +276,7 @@ window.initAuth = async function(){
     }
   }catch(e){
     console.warn("[Auth] init failed", e);
-    try{ delete window.__plannerState; }catch(e){}
+    try{ delete window.__plannerState; }catch(e){ console.warn("[app.js] silent catch", e); }
       App.session.user = null;
     App.session.role = null;
     App.session.ready = true;
@@ -305,16 +329,24 @@ window.initAuth = async function(){
     if(pill) pill.style.display = "none";
   }
 
-  async function render(){
-    var p = Router.parse();
+  // ===== RENDER ROUTER =====
+async function render(){
+  // ENTRY: render flow (do not duplicate guards here)
 
-    // session not ready → skip render (prevents login flash)
-    if(!App.session || !App.session.ready){
-      return;
-    }
+    var p = Router.parse();
     var section = p.section;
     var param = p.param;
     var q = $("#q");
+    if(window.syncAuthRecoveryMode) window.syncAuthRecoveryMode();
+    if(window.__authRecoveryMode){
+      section = "login";
+      param = "";
+    }
+
+    if(section === "login" && App.session && App.session.user && !window.__authRecoveryMode){
+      Router.go("planner");
+      return;
+    }
 
     // gate: все кроме login требует user
     if(section !== "login" && (!App.session || !App.session.user)){
@@ -323,13 +355,7 @@ window.initAuth = async function(){
       return;
     }
 
-    
-    // authenticated user should not stay on login screen
-    if(section === "login" && App.session && App.session.user){
-      Router.go("planner");
-      return;
-    }
-setActiveTab(section);
+    setActiveTab(section);
     syncTopSearchUI(section);
 
     if(section === "login"){ await Views.Login.show(); return; }
@@ -359,7 +385,8 @@ setActiveTab(section);
     Router.go("planner");
   }
 
-  async function boot(){
+  // ===== APP BOOT =====
+async function boot(){
     $("#tabs").addEventListener("click", function(e){
       var btn = e.target.closest(".tab");
       if(!btn) return;
@@ -372,31 +399,7 @@ setActiveTab(section);
 
     App._render = render;
 
-        // --- [AUTH RECOVERY DETECTION] ---
-    (function(){
-      try{
-        var url = window.location.href || "";
-        var hash = window.location.hash || "";
-
-        var isRecovery =
-          url.includes("type=recovery") ||
-          hash.includes("type=recovery") ||
-          url.includes("access_token") ||
-          hash.includes("access_token");
-
-        if(isRecovery){
-          window.__authRecoveryMode = true;
-
-          // force login screen (password creation mode)
-          if(window.Router){
-            Router.go("login");
-          }
-        }
-      }catch(e){
-        console.warn("[Auth] recovery detect failed", e);
-      }
-    })();
-    // --- [/AUTH RECOVERY DETECTION] ---
+    window.syncAuthRecoveryMode();
 
     await window.initAuth();
 
@@ -406,17 +409,6 @@ setActiveTab(section);
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
-
-
-
-
-
-
-
-
-
-
-
 
 
 

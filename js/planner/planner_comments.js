@@ -65,8 +65,7 @@
           }).join("")}
         </div>`;
 
-    host.innerHTML = `
-      ${list}
+    const compose = ctx.isReadOnly ? `` : `
       <div class="zr-planner-comment-compose">
         <textarea id="plCommentInput" rows="3" class="pl-control pl-textarea" placeholder="Напишите комментарий…"></textarea>
         <div class="zr-planner-comment-footer">
@@ -74,6 +73,11 @@
           <span class="zr-planner-muted" id="plCommentMsg"></span>
         </div>
       </div>
+    `;
+
+    host.innerHTML = `
+      ${list}
+      ${compose}
     `;
 
     const send = document.getElementById("plCommentSend");

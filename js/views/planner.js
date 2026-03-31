@@ -482,10 +482,10 @@ function applyLockedViewState(){
 async function loadDetailSections(task, checklistReadOnly){
   await loadChecklist(task, checklistReadOnly);
   await loadDocs(task);
-  await loadComments(task);
+  await loadComments(task, checklistReadOnly);
   await loadActivity(task);
 }
-async function loadComments(task){
+async function loadComments(task, isReadOnly){
   if(!PC.loadComments) throw new Error("PlannerComments.loadComments missing");
 
   const host = document.getElementById("plComments");
@@ -497,7 +497,8 @@ async function loadComments(task){
     resolvePersonLabel,
     getTaskAssigneeIds,
     fetchComments,
-    loadComments
+    loadComments,
+    isReadOnly: !!isReadOnly
   });
 }
     
@@ -635,10 +636,10 @@ async function loadComments(task){
       const checklistReadOnly = detailState.checklistReadOnly;
       
       const editBtnHtml = (!isArchived && isAdmin)
-        ? `<button class="btn btn-sm pl-btn-ghost" id="plEditTask" type="button">Редактировать</button>`
+        ? `<button class="btn btn-sm btn--secondary" id="plEditTask" type="button">Редактировать</button>`
         : ``;
       const archiveBtnHtml = (!isArchived && isAdmin)
-        ? `<button class="btn btn-sm pl-btn-danger-soft" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
+        ? `<button class="btn btn-sm btn--danger" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
         : ``;
 
       const actionsHtml = (next.length === 0 && !archiveBtnHtml && !editBtnHtml) ? "" : `
@@ -946,6 +947,8 @@ async function loadComments(task){
 
   return { show };
 })();
+
+
 
 
 

@@ -1,0 +1,283 @@
+# ZA RAMKI — Screen Map
+
+Version: based on full audit
+Purpose: navigation + architecture clarity
+
+---
+
+# 1. App Level
+
+## 1.1 App Root
+
+Entry after login
+
+Contains:
+
+* Header (logo, search, push, user)
+* Main navigation
+
+Modes:
+
+* Staff
+* Admin (extended)
+
+---
+
+# 2. Main Navigation (Top Level)
+
+## 2.1 Planner
+
+Primary work module
+
+## 2.2 Instructions (Articles)
+
+Knowledge base
+
+## 2.3 Templates
+
+Reusable forms
+
+## 2.4 Checklists
+
+Operational tools (limited for staff)
+
+## 2.5 Admin (admin only)
+
+System management
+
+---
+
+# 3. Planner Module
+
+## 3.1 Planner — Board (Default)
+
+* Columns: New / In Progress / Done
+* Actions:
+
+  * Open task
+  * Create task (+)
+  * Archive done
+
+## 3.2 Planner — Left List
+
+* Task index
+* Filters (mine / all / archive)
+
+## 3.3 Planner — Task Detail
+
+Opened from:
+
+* board
+* left list
+
+Contains:
+
+* header (status, actions)
+* project
+* assignee
+* description
+* docs
+* checklist
+* comments
+* history
+
+---
+
+## 3.4 Planner — Task Create (Dialog)
+
+Opened via + button
+
+## 3.5 Planner — Task Edit (Dialog)
+
+Opened via "Редактировать"
+
+---
+
+# 4. Knowledge Module
+
+## 4.1 Articles — Left List
+
+* list of instructions
+* tags
+* meta
+
+## 4.2 Articles — Open Article
+
+Opened from:
+
+* left list
+* task
+
+Variants:
+
+* normal
+* with TOC
+* from task (context mode)
+
+Contains:
+
+* header
+* meta
+* content
+* TOC
+* resources
+
+---
+
+## 4.3 Templates — Left List
+
+Same pattern as Articles
+
+## 4.4 Templates — Open Template
+
+Form-like content
+
+---
+
+## 4.5 Checklists — Left List
+
+Admin + limited staff access
+
+## 4.6 Checklists — Execution (inside task)
+
+Rendered in task detail
+
+---
+
+# 5. Favourites
+
+## 5.1 Favourites — Templates
+
+## 5.2 Favourites — Articles
+
+Shortcut access layer
+
+---
+
+# 6. Admin Module
+
+Entry: Admin button
+
+---
+
+## 6.1 Admin — Root
+
+Left panel contains:
+
+* Employees
+* Projects
+* Content
+
+---
+
+## 6.2 Admin — Employees (Allowlist)
+
+Default screen
+
+Contains:
+
+* add/update user
+* role selection
+* enable toggle
+* list of users
+
+---
+
+## 6.3 Admin — Projects
+
+Contains:
+
+* create project
+* project list
+* edit/delete
+
+---
+
+## 6.4 Admin — Content
+
+Sub-navigation:
+
+* Instructions
+* Templates
+* Checklists
+
+---
+
+### 6.4.1 Articles Editor
+
+Left: list
+Right: editor
+
+### 6.4.2 Templates Editor
+
+Same structure
+
+### 6.4.3 Checklists Editor
+
+Same structure (metadata only)
+
+---
+
+# 7. Cross-Screen Patterns
+
+## 7.1 List + Viewer
+
+* Articles
+* Templates
+* Checklists
+
+## 7.2 Board + Detail
+
+* Planner
+
+## 7.3 Editor Workspace
+
+* Admin content
+
+## 7.4 Modal Forms
+
+* Task create/edit
+
+---
+
+# 8. Key Flows
+
+## 8.1 Work Flow (Staff)
+
+Planner → Task → Checklist → Done
+
+## 8.2 Knowledge Flow
+
+Articles → Read → Apply in task
+
+## 8.3 Admin Flow
+
+Admin → Content → Edit → Publish
+
+## 8.4 Project Setup Flow
+
+Admin → Projects → Create → Use in tasks
+
+---
+
+# 9. Structural Issues (from map)
+
+* navigation and data mixed (Planner left panel)
+* admin is embedded, not separated
+* editors are duplicated instead of unified
+* lists share pattern but not system
+
+---
+
+# 10. Final Structure Insight
+
+System can be simplified into:
+
+1. Work (Planner)
+2. Knowledge (Articles/Templates)
+3. Execution (Checklists)
+4. Management (Admin)
+
+This is the real product architecture.
+
+---

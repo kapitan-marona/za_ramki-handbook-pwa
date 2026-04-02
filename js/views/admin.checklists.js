@@ -89,6 +89,7 @@ window.Views.AdminChecklistsFactory = function(deps){
       if(error2) throw error2;
     }
   }
+  
 
   function checklistAdminEditorHtml(row){
     const id = row.id || "";
@@ -100,81 +101,91 @@ window.Views.AdminChecklistsFactory = function(deps){
     const sort = row.sort != null ? String(row.sort) : "1000";
 
     return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">Контент → Чек-листы</h1>
-            <p class="article-sub">Редактирование существующей записи</p>
+      <div class="zr-admin-editor zr-stack-lg">
+        <div class="zr-card zr-card--section zr-admin-editor__hero">
+          <div class="zr-admin-editor__hero-head">
+            <div class="zr-admin-editor__hero-main zr-stack-sm">
+              <div class="zr-viewer-title-row">
+                <h1 class="article-title">Контент → Чек-листы</h1>
+              </div>
+              <p class="article-sub">Редактирование существующей записи</p>
+              <div class="zr-admin-editor__hero-meta">
+                <span class="tag">checklists</span>
+                <span class="tag">edit</span>
+                ${id ? `<span class="tag mono">${esc(id)}</span>` : ""}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Метаданные</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
+        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-md">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Метаданные</div>
+          </div>
 
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">ID</div>
+          <div class="zr-admin-editor__grid">
+            <div class="zr-admin-editor__field zr-admin-editor__field--full">
+              <label class="zr-admin-editor__field-label" for="cl_id">ID</label>
               <input id="cl_id" style="${inpStyle}" value="${esc(id)}" disabled />
             </div>
 
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Название</div>
+            <div class="zr-admin-editor__field zr-admin-editor__field--full">
+              <label class="zr-admin-editor__field-label" for="cl_title">Название</label>
               <input id="cl_title" style="${inpStyle}" value="${esc(title)}" />
             </div>
 
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Описание</div>
-              <textarea id="cl_desc" style="${taStyle}; min-height:90px;" rows="4">${esc(desc)}</textarea>
+            <div class="zr-admin-editor__field zr-admin-editor__field--full">
+              <label class="zr-admin-editor__field-label" for="cl_desc">Описание</label>
+              <textarea id="cl_desc" style="${taStyle}; min-height:96px;" rows="4">${esc(desc)}</textarea>
             </div>
 
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Published</div>
+            <div class="zr-admin-editor__field">
+              <label class="zr-admin-editor__field-label" for="cl_published">Published</label>
               <select id="cl_published" style="${inpStyle}">
                 <option value="1" ${published ? "selected" : ""}>да</option>
                 <option value="0" ${published ? "" : "selected"}>нет</option>
               </select>
             </div>
 
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Sort</div>
+            <div class="zr-admin-editor__field">
+              <label class="zr-admin-editor__field-label" for="cl_sort">Sort</label>
               <input id="cl_sort" type="number" style="${inpStyle}" value="${esc(sort)}" />
             </div>
-
           </div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Теги</div>
-        <div class="item-meta" style="margin-top:10px;">
-          <span class="tag">dictionary</span>
-          <span class="tag">multi-select</span>
-        </div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
+        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Теги</div>
+          </div>
+          <div class="item-meta">
+            <span class="tag">dictionary</span>
+            <span class="tag">multi-select</span>
+          </div>
           <div id="clTagsPalette">${renderTagsPalette(tags)}</div>
-          <div class="muted" style="margin-top:8px;">Выбрано: <span id="clTagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
+          <div class="muted zr-admin-editor__tags-meta">Выбрано: <span id="clTagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Кнопки действий</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
+        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Кнопки действий</div>
+          </div>
           <div id="clActionsBox">${renderActionsBuilder(actions)}</div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Структура</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div class="empty" style="padding:12px;color:var(--muted)">Структура пунктов чек-листа пока не хранится в этой таблице. На этом этапе редактируются только метаданные и ресурсы.</div>
+        <div class="zr-card zr-card--section zr-admin-editor__section zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Структура</div>
+          </div>
+          <div class="empty" style="padding:12px;color:var(--muted)">
+            Структура пунктов чек-листа пока не редактируется в этой safe-phase. Уже прикреплённые к задачам чек-листы не должны меняться от правок базовой записи.
+          </div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default;">
-        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-          <button class="btn" id="cl_save"><span class="dot"></span>Сохранить</button>
+        <div class="zr-card zr-card--subtle zr-admin-editor__section">
+          <div class="zr-admin-editor__actions">
+            <button class="btn btn--primary" id="cl_save"><span class="dot"></span>Сохранить</button>
+          </div>
         </div>
       </div>
     `;

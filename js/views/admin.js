@@ -432,7 +432,7 @@ Views.Admin = (() => {
           </div>
 
           <div style="display:flex; justify-content:flex-end;">
-            <button class="btn btn-sm" data-act-del="${i}"><span class="dot"></span>Удалить</button>
+            <button class="btn btn-sm btn--danger" data-act-del="${i}"><span class="dot"></span>Удалить</button>
           </div>
         </div>
       `;
@@ -441,7 +441,7 @@ Views.Admin = (() => {
     return `
       <div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 10px 0;">
         <div class="muted">Кнопки действий (Actions)</div>
-        <button class="btn btn-sm" id="act_add"><span class="dot"></span>+ Добавить</button>
+        <button class="btn btn-sm btn--primary" id="act_add"><span class="dot"></span>+ Добавить</button>
       </div>
       <div class="muted" style="margin:-6px 0 10px 2px;">Можно добавить внешнюю ссылку или внутреннюю ссылку по ID.</div>
       ${rows || `<div class="empty" style="padding:12px;color:var(--muted)">Нет кнопок.</div>`}

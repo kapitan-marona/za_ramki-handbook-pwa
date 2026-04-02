@@ -227,98 +227,106 @@ window.Views.AdminArticlesFactory = function(deps){
     const tags = Array.isArray(row.tags) ? row.tags : [];
 
     return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">Контент → Инструкции</h1>
-            <p class="article-sub">${isNew ? "Создание новой инструкции (служебный режим)" : ("Редактирование: " + esc(id))}</p>
+      <div class="zr-admin-editor zr-stack-lg">
+        <div class="zr-card zr-card--section zr-admin-editor__hero">
+          <div class="zr-admin-editor__hero-head">
+            <div class="zr-admin-editor__hero-main zr-stack-sm">
+              <div class="zr-viewer-title-row">
+                <h1 class="article-title">Контент → Инструкции</h1>
+              </div>
+              <p class="article-sub">${isNew ? "Создание новой инструкции (служебный режим)" : ("Редактирование: " + esc(id))}</p>
+              <div class="zr-admin-editor__hero-meta">
+                <span class="tag">articles</span>
+                <span class="tag">${isNew ? "new" : "edit"}</span>
+                ${id ? `<span class="tag mono">${esc(id)}</span>` : ""}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Основные поля</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
+        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-md">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Основные поля</div>
+          </div>
 
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">ID (уникальный ключ, латиница, без пробелов)</div>
-              <div style="display:grid; grid-template-columns: 1fr 190px; gap:10px; align-items:end;">
+          <div class="zr-admin-editor__grid">
+            <div class="zr-admin-editor__field zr-admin-editor__field--full">
+              <label class="zr-admin-editor__field-label" for="a_id">ID (уникальный ключ, латиница, без пробелов)</label>
+              <div class="zr-admin-editor__id-row">
                 <input id="a_id" style="${inpStyle}" value="${esc(id)}" ${isNew ? "" : "disabled"} placeholder="a_..." />
                 <button class="btn btn-sm" id="gen_id" ${isNew ? "" : "disabled"}><span class="dot"></span>Сгенерировать ID</button>
               </div>
-              <div class="muted" style="margin-top:6px;">ID используется в URL и в базе как ключ. Лучше не менять после публикации.</div>
+              <div class="muted zr-admin-editor__field-help">ID используется в URL и в базе как ключ. Лучше не менять после публикации.</div>
             </div>
 
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Заголовок</div>
+            <div class="zr-admin-editor__field zr-admin-editor__field--full">
+              <label class="zr-admin-editor__field-label" for="a_title">Заголовок</label>
               <input id="a_title" style="${inpStyle}" value="${esc(title)}" />
             </div>
 
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Раздел (category)</div>
+            <div class="zr-admin-editor__field">
+              <label class="zr-admin-editor__field-label" for="a_category">Раздел (category)</label>
               <input id="a_category" list="cat_list" style="${inpStyle}" value="${esc(category)}" placeholder="например: process" />
               ${renderCategoryDatalist()}
             </div>
 
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Тип (только для админа)</div>
+            <div class="zr-admin-editor__field">
+              <label class="zr-admin-editor__field-label" for="a_type">Тип (только для админа)</label>
               <select id="a_type" style="${inpStyle}">${typeOptions(type)}</select>
             </div>
 
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Статус</div>
+            <div class="zr-admin-editor__field">
+              <label class="zr-admin-editor__field-label" for="a_status">Статус</label>
               <select id="a_status" style="${inpStyle}">
                 ${["draft","published","archived"].map(s => `<option value="${s}" ${s===status?"selected":""}>${s}</option>`).join("")}
               </select>
             </div>
 
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Для кого (roles)</div>
-              <div style="display:flex; gap:12px; flex-wrap:wrap; padding:10px 0 0 2px;">
+            <div class="zr-admin-editor__field">
+              <div class="zr-admin-editor__field-label">Для кого (roles)</div>
+              <div class="zr-admin-editor__choice-row">
                 ${renderRolesPicker(roles)}
               </div>
             </div>
 
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Краткое описание</div>
-              <textarea id="a_excerpt" style="${taStyle}; min-height:70px;" rows="3">${esc(excerpt)}</textarea>
+            <div class="zr-admin-editor__field zr-admin-editor__field--full">
+              <label class="zr-admin-editor__field-label" for="a_excerpt">Краткое описание</label>
+              <textarea id="a_excerpt" style="${taStyle}; min-height:84px;" rows="4">${esc(excerpt)}</textarea>
             </div>
-
           </div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Теги</div>
-        <div class="item-meta" style="margin-top:10px;">
-          <span class="tag">dictionary</span>
-          <span class="tag">multi-select</span>
-        </div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
+        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Теги</div>
+          </div>
+          <div class="item-meta">
+            <span class="tag">dictionary</span>
+            <span class="tag">multi-select</span>
+          </div>
           <div id="tagsPalette">${renderTagsPalette(tags)}</div>
-          <div class="muted" style="margin-top:8px;">Выбрано: <span id="tagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
+          <div class="muted zr-admin-editor__tags-meta">Выбрано: <span id="tagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Кнопки действий</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
+        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Кнопки действий</div>
+          </div>
           <div id="actionsBox">${renderActionsBuilder(actions)}</div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Контент (Markdown)</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <textarea id="a_md" style="${taStyle}; min-height:220px;" rows="14">${esc(md)}</textarea>
+        <div class="zr-card zr-card--section zr-admin-editor__section zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Контент</div>
+          </div>
+          <textarea id="a_md" class="zr-admin-editor__content" style="${taStyle}; min-height:320px;" rows="16">${esc(md)}</textarea>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default;">
-        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-          <button class="btn" id="a_save"><span class="dot"></span>Сохранить</button>
-          ${isNew ? "" : `<button class="btn" id="a_del"><span class="dot"></span>Удалить</button>`}
+        <div class="zr-card zr-card--subtle zr-admin-editor__section">
+          <div class="zr-admin-editor__actions">
+            <button class="btn btn--primary" id="a_save"><span class="dot"></span>Сохранить</button>
+            ${isNew ? "" : `<button class="btn btn--danger" id="a_del"><span class="dot"></span>Удалить</button>`}
+          </div>
         </div>
       </div>
     `;

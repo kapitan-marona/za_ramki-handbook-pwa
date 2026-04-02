@@ -117,78 +117,86 @@ window.Views.AdminTemplatesFactory = function(deps){
     const sort = row.sort != null ? String(row.sort) : "1000";
 
     return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-          <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">Контент → Шаблоны</h1>
-            <p class="article-sub">${isNew ? "Создание нового шаблона" : ("Редактирование: " + esc(id))}</p>
+      <div class="zr-admin-editor zr-stack-lg">
+        <div class="zr-card zr-card--section zr-admin-editor__hero">
+          <div class="zr-admin-editor__hero-head">
+            <div class="zr-admin-editor__hero-main zr-stack-sm">
+              <div class="zr-viewer-title-row">
+                <h1 class="article-title">Контент → Шаблоны</h1>
+              </div>
+              <p class="article-sub">${isNew ? "Создание нового шаблона" : ("Редактирование: " + esc(id))}</p>
+              <div class="zr-admin-editor__hero-meta">
+                <span class="tag">templates</span>
+                <span class="tag">${isNew ? "new" : "edit"}</span>
+                ${id ? `<span class="tag mono">${esc(id)}</span>` : ""}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Основные поля</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end;">
+        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-md">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Основные поля</div>
+          </div>
 
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">ID (уникальный ключ, латиница, без пробелов)</div>
-              <div style="display:grid; grid-template-columns: 1fr 190px; gap:10px; align-items:end;">
+          <div class="zr-admin-editor__grid">
+            <div class="zr-admin-editor__field zr-admin-editor__field--full">
+              <label class="zr-admin-editor__field-label" for="t_id">ID (уникальный ключ, латиница, без пробелов)</label>
+              <div class="zr-admin-editor__id-row">
                 <input id="t_id" style="${inpStyle}" value="${esc(id)}" ${isNew ? "" : "disabled"} placeholder="tpl_..." />
                 <button class="btn btn-sm" id="gen_tpl_id" ${isNew ? "" : "disabled"}><span class="dot"></span>Сгенерировать ID</button>
               </div>
-              <div class="muted" style="margin-top:6px;">ID используется как ключ шаблона. Лучше не менять после сохранения.</div>
+              <div class="muted zr-admin-editor__field-help">ID используется как ключ шаблона. Лучше не менять после сохранения.</div>
             </div>
 
-            <div style="grid-column:1 / -1;">
-              <div class="muted" style="margin:0 0 6px 2px;">Заголовок</div>
+            <div class="zr-admin-editor__field zr-admin-editor__field--full">
+              <label class="zr-admin-editor__field-label" for="t_title">Заголовок</label>
               <input id="t_title" style="${inpStyle}" value="${esc(title)}" />
             </div>
 
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Формат</div>
+            <div class="zr-admin-editor__field">
+              <label class="zr-admin-editor__field-label" for="t_format">Формат</label>
               <input id="t_format" style="${inpStyle}" value="${esc(format)}" placeholder="например: brief / excel / text" />
             </div>
 
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Published</div>
+            <div class="zr-admin-editor__field">
+              <label class="zr-admin-editor__field-label" for="t_published">Published</label>
               <select id="t_published" style="${inpStyle}">
                 <option value="1" ${published ? "selected" : ""}>да</option>
                 <option value="0" ${published ? "" : "selected"}>нет</option>
               </select>
             </div>
 
-            <div>
-              <div class="muted" style="margin:0 0 6px 2px;">Sort</div>
+            <div class="zr-admin-editor__field">
+              <label class="zr-admin-editor__field-label" for="t_sort">Sort</label>
               <input id="t_sort" type="number" style="${inpStyle}" value="${esc(sort)}" />
             </div>
-
           </div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Теги</div>
-        <div class="item-meta" style="margin-top:10px;">
-          <span class="tag">dictionary</span>
-          <span class="tag">multi-select</span>
-        </div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
+        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Теги</div>
+          </div>
+          <div class="item-meta">
+            <span class="tag">dictionary</span>
+            <span class="tag">multi-select</span>
+          </div>
           <div id="tplTagsPalette">${renderTagsPalette(tags)}</div>
-          <div class="muted" style="margin-top:8px;">Выбрано: <span id="tplTagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
+          <div class="muted zr-admin-editor__tags-meta">Выбрано: <span id="tplTagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
-        <div class="item-title">Кнопки действий</div>
-        <div class="markdown" style="padding:0; margin-top:12px;">
+        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-sm">
+          <div class="zr-section-head">
+            <div class="zr-section-title">Кнопки действий</div>
+          </div>
           <div id="tplActionsBox">${renderActionsBuilder(actions)}</div>
         </div>
-      </div>
 
-      <div class="item" style="cursor:default;">
-        <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
-          <button class="btn" id="t_save"><span class="dot"></span>Сохранить</button>
+        <div class="zr-card zr-card--subtle zr-admin-editor__section">
+          <div class="zr-admin-editor__actions">
+            <button class="btn btn--primary" id="t_save"><span class="dot"></span>Сохранить</button>
+          </div>
         </div>
       </div>
     `;

@@ -124,6 +124,14 @@ input, textarea, select{
     box-shadow .16s ease,
     opacity .16s ease;
 }
+
+input[type="checkbox"],
+input[type="radio"]{
+  -webkit-appearance: auto;
+  appearance: auto;
+  accent-color: var(--accent);
+}
+
 input:hover, textarea:hover, select:hover{
   border-color: var(--accent-35);
 }
@@ -143,6 +151,53 @@ select:disabled{
   opacity: .5;
   pointer-events: none;
 }
+
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select{
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input::placeholder,
+textarea::placeholder{
+  color: var(--muted);
+  opacity: 1;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus{
+  -webkit-text-fill-color: var(--text);
+  box-shadow: 0 0 0 1000px rgba(26,23,20,.60) inset;
+  -webkit-box-shadow: 0 0 0 1000px rgba(26,23,20,.60) inset;
+  caret-color: var(--text);
+  border-color: var(--border);
+  transition: background-color 9999s ease-out 0s;
+}
+
+select{
+  background-color: rgba(26,23,20,.60);
+  color: var(--text);
+}
+
+select option{
+  background-color: var(--card);
+  color: var(--text);
+}
+
+select optgroup{
+  background-color: var(--panel);
+  color: var(--headings);
+}
+
+
 
 /* ---------- Compact buttons (BriefPro) ---------- */
 .btn.btn-sm{

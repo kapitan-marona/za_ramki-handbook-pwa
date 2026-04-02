@@ -76,13 +76,13 @@
     ].join("");
 
     overlay.innerHTML = `
-      <div class="item" style="width:min(560px, 96vw); cursor:default; padding:14px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div class="item zr-planner-dialog" style="width:min(560px, 96vw); cursor:default; padding:14px;">
+        <div class="zr-planner-dialog-head">
           <div style="font-weight:700; letter-spacing:.06em;">${dialogTitle}</div>
-          <button class="btn btn-sm" id="plCreateClose" type="button">Закрыть</button>
+          <button class="btn btn-sm btn--ghost" id="plCreateClose" type="button">Закрыть</button>
         </div>
 
-        <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+        <div class="zr-planner-dialog-body">
           <div>
             <div class="muted" style="font-size:12px; margin-bottom:6px;">Название *</div>
             <input class="pl-control" id="plCreateTitle" value="${titleValue}" placeholder="Например: согласовать макет кухни" />
@@ -93,7 +93,7 @@
             <textarea class="pl-control pl-textarea" id="plCreateBody" rows="3" placeholder="Коротко: что сделать, где смотреть, какие критерии…">${bodyValue}</textarea>
           </div>
 
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div class="zr-planner-dialog-grid">
             <div style="flex:1; min-width:160px;">
               <div class="muted" style="font-size:12px; margin-bottom:6px;">Старт</div>
               <input class="pl-control" id="plCreateStart" type="date" value="${startValue}" />
@@ -138,9 +138,9 @@
             </select>
           </div>
 
-          <div style="display:flex; gap:10px; align-items:center; justify-content:flex-end; margin-top:4px;">
+          <div class="zr-planner-dialog-actions">
             <span class="muted" id="plCreateMsg" style="font-size:12px; flex:1;"></span>
-            <button class="btn" id="plCreateDo" type="button">${submitLabel}</button>
+            <button class="btn btn--primary" id="plCreateDo" type="button">${submitLabel}</button>
           </div>
         </div>
       </div>
@@ -409,16 +409,16 @@
     ].join("");
 
     overlay.innerHTML = `
-      <div class="item" style="width:min(620px, 96vw); cursor:default; padding:14px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div class="item zr-planner-dialog" style="width:min(620px, 96vw); cursor:default; padding:14px;">
+        <div class="zr-planner-dialog-head">
           <div style="font-weight:700; letter-spacing:.06em;">${dialogTitle}</div>
-          <button class="btn btn-sm" id="plLinkClose" type="button">Закрыть</button>
+          <button class="btn btn-sm btn--ghost" id="plLinkClose" type="button">Закрыть</button>
         </div>
 
-        <div style="margin-top:12px; display:flex; flex-direction:column; gap:12px;">
+        <div class="zr-planner-dialog-body">
           <div>
             <div class="muted" style="font-size:12px; margin-bottom:8px;">Тип документа</div>
-            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <div class="zr-planner-dialog-choice-row">
               ${allowedTypes.includes("article") ? `
               <label style="display:flex; align-items:center; gap:6px;">
                 <input type="radio" name="plLinkType" value="article" ${defaultType==="article" ? "checked" : ""}>
@@ -493,10 +493,10 @@
             </div>
           </div>
 
-          <div style="display:flex; gap:10px; align-items:center; justify-content:flex-end;">
+          <div class="zr-planner-dialog-actions">
             <span class="muted" id="plLinkMsg" style="font-size:12px; flex:1;"></span>
-            <button class="btn btn-sm" id="plLinkCancel" type="button">Отмена</button>
-            <button class="btn" id="plLinkSubmit" type="button">Добавить</button>
+            <button class="btn btn-sm btn--ghost" id="plLinkCancel" type="button">Отмена</button>
+            <button class="btn btn--primary" id="plLinkSubmit" type="button">Добавить</button>
           </div>
         </div>
       </div>

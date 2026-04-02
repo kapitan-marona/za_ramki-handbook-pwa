@@ -466,7 +466,7 @@ window.PlannerDetailHelpers = (() => {
             </div>
 
             <div>
-              <button class="btn btn-sm pl-btn-ghost" id="plBack" type="button">Назад</button>
+              <button class="btn btn-sm btn--ghost" id="plBack" type="button">Назад</button>
             </div>
           </div>
 
@@ -504,7 +504,7 @@ window.PlannerDetailHelpers = (() => {
               <div class="zr-section-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                 <div class="zr-section-title">Пункты задачи</div>
                 ${(isAdmin && !isArchived) ? `
-                  <button class="btn btn-sm pl-btn-ghost" id="plAddChecklistBtn" type="button">+ Добавить чек-лист</button>
+                  <button class="btn btn-sm btn--ghost" id="plAddChecklistBtn" type="button">+ Добавить чек-лист</button>
                 ` : ``}
               </div>
               <div id="plChecklist"></div>
@@ -517,7 +517,7 @@ window.PlannerDetailHelpers = (() => {
                 <div class="zr-section-title">Документы</div>
 
                 ${(isAdmin && !isArchived) ? `
-                  <button class="btn btn-sm pl-btn-ghost" id="plAddDocBtn" type="button">+ Добавить</button>
+                  <button class="btn btn-sm btn--ghost" id="plAddDocBtn" type="button">+ Добавить</button>
                 ` : ``}
               </div>
 

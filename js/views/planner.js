@@ -175,9 +175,9 @@ viewerEl.innerHTML = `
     </div>
 
     <div class="pl-head-actions">
-      ${(role === "admin" && done > 0) ? `<button class="btn btn-sm pl-btn-ghost" id="plArchiveDone" type="button">В архив: завершённые</button>` : ``}
-      ${role === "admin" ? `<button class="btn btn-sm pl-btn-primary" id="plQuickCreate" type="button">+</button>` : ``}
-      <button class="btn btn-sm pl-btn-ghost ${state.refreshBusy ? "is-loading" : ""}" id="plRefresh" type="button" ${state.refreshBusy ? "disabled" : ""}>${state.refreshBusy ? "Обновляю…" : "Обновить"}</button>
+      ${(role === "admin" && done > 0) ? `<button class="btn btn-sm btn--ghost" id="plArchiveDone" type="button">В архив: завершённые</button>` : ``}
+      ${role === "admin" ? `<button class="btn btn-sm btn--primary" id="plQuickCreate" type="button">+</button>` : ``}
+      <button class="btn btn-sm btn--ghost ${state.refreshBusy ? "is-loading" : ""}" id="plRefresh" type="button" ${state.refreshBusy ? "disabled" : ""}>${state.refreshBusy ? "Обновляю…" : "Обновить"}</button>
     </div>
   </div>
 
@@ -636,7 +636,7 @@ async function loadComments(task, isReadOnly){
       const checklistReadOnly = detailState.checklistReadOnly;
       
       const editBtnHtml = (!isArchived && isAdmin)
-        ? `<button class="btn btn-sm btn--secondary" id="plEditTask" type="button">Редактировать</button>`
+        ? `<button class="btn btn-sm btn--ghost" id="plEditTask" type="button">Редактировать</button>`
         : ``;
       const archiveBtnHtml = (!isArchived && isAdmin)
         ? `<button class="btn btn-sm btn--danger" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
@@ -647,10 +647,10 @@ async function loadComments(task, isReadOnly){
           <div class="zr-planner-actions-main">
             ${next.map(([s,label]) => {
               const cls = (s === "done")
-                ? "btn btn-sm pl-btn-primary pl-status"
+                ? "btn btn-sm btn--primary pl-status"
                 : (s === "problem" || s === "canceled")
-                  ? "btn btn-sm pl-btn-danger-soft pl-status"
-                  : "btn btn-sm pl-btn-ghost pl-status";
+                  ? "btn btn-sm btn--danger pl-status"
+                  : "btn btn-sm btn--ghost pl-status";
               return `<button class="${cls}" data-s="${esc(s)}" type="button">${esc(label)}</button>`;
             }).join("")}
           </div>
@@ -688,7 +688,7 @@ async function loadComments(task, isReadOnly){
               </div>
 
               <div>
-                <button class="btn btn-sm pl-btn-ghost" id="plBack" type="button">Назад</button>
+                <button class="btn btn-sm btn--ghost" id="plBack" type="button">Назад</button>
               </div>
             </div>
 
@@ -736,7 +736,7 @@ async function loadComments(task, isReadOnly){
                   <div class="zr-section-title">Документы</div>
 
                   ${(isAdmin && !isArchived) ? `
-                    <button class="btn btn-sm pl-btn-ghost" id="plAddDocBtn" type="button">+ Добавить</button>
+                    <button class="btn btn-sm btn--ghost" id="plAddDocBtn" type="button">+ Добавить</button>
                   ` : ``}
                 </div>
 
@@ -869,7 +869,7 @@ async function loadComments(task, isReadOnly){
             <p>Чтобы добавить новую задачу, нажмите "+".</p>
             <p>Включи уведомления (колокольчик), чтобы быть в курсе изменений.</p>
             <div style="margin-top:16px;">
-              <button class="btn" id="plCreateTask" type="button">Создать задачу</button>
+              <button class="btn btn--primary" id="plCreateTask" type="button">Создать задачу</button>
             </div>
           </div>
         `;

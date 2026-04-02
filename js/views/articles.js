@@ -845,11 +845,11 @@ Views.Articles = (() => {
             <div class="zr-viewer-header-main zr-stack-sm">
               <div class="zr-viewer-title-row">
                 <h1 class="article-title">${esc(meta.title)}</h1>
-                ${renderArticleFavoriteButton(meta.id)}
               </div>
               <p class="article-sub">${esc(updated)}</p>
             </div>
             <div class="zr-viewer-header-actions">
+              ${renderArticleFavoriteButton(meta.id)}
               <button class="btn btn-sm" id="insTocBtn" type="button" aria-pressed="false">Оглавление</button>
               <button class="btn btn-sm" id="insBackBtn" type="button">Закрыть</button>
             </div>

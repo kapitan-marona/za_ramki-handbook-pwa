@@ -521,7 +521,16 @@ window.Views.AdminArticlesFactory = function(deps){
         }
       };
     }
+
+    setTimeout(() => {
+      try{
+        const el = root.querySelector("#a_title");
+        if(el) el.focus();
+      }catch(e){}
+    }, 30);
   }
+
+
 
   async function loadArticles(openId){
     setPanelTitle("Админка");
@@ -585,3 +594,6 @@ window.Views.AdminArticlesFactory = function(deps){
     load: loadArticles
   };
 };
+
+
+

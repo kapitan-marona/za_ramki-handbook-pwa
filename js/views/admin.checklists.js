@@ -52,7 +52,7 @@ window.Views.AdminChecklistsFactory = function(deps){
 
   async function sbChecklistsGet(id){
     const p = SB.from("kb_checklists")
-      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at")
+      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at,items")
       .eq("id", id).single();
     const { data, error } = await withTimeout(p, 12000, "kb_checklists get");
     if(error) throw error;
@@ -91,12 +91,77 @@ window.Views.AdminChecklistsFactory = function(deps){
   }
   
 
+  function normalizeChecklistEditorItems(items){
+    if(!Array.isArray(items)) return [];
+    return items
+      .map(item => {
+        if(typeof item === "string"){
+          const text = norm(item);
+          return text ? { text } : null;
+        }
+        if(item && typeof item === "object"){
+          const text = norm(item.text);
+          return text ? { text } : null;
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  function renderChecklistItemsEditor(items){
+    const safeItems = normalizeChecklistEditorItems(items);
+
+    if(!safeItems.length){
+      return `
+        <div id="clItemsHost" class="zr-stack-sm">
+          <div class="empty" style="padding:12px;color:var(--muted)">Пока нет пунктов. Можно сохранить пустой список или добавить новый пункт.</div>
+        </div>
+      `;
+    }
+
+    return `
+      <div id="clItemsHost" class="zr-stack-sm">
+        ${safeItems.map((item, index) => `
+          <div class="zr-admin-editor__field zr-admin-editor__field--full" data-cl-item-row="${index}">
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <input
+                data-cl-item-input="${index}"
+                style="${inpStyle}; flex:1 1 auto;"
+                value="${esc(item.text || "")}"
+                placeholder="Текст пункта чек-листа"
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn--ghost"
+                data-cl-item-remove="${index}"
+                aria-label="Удалить пункт"
+              >Удалить</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function readChecklistItemsFromUi(root){
+    const host = root && root.querySelector ? root.querySelector("#clItemsHost") : null;
+    if(!host) return [];
+
+    return Array.from(host.querySelectorAll("[data-cl-item-input]"))
+      .map(input => {
+        const text = norm(input.value);
+        return text ? { text } : null;
+      })
+      .filter(Boolean);
+  }
+
   function checklistAdminEditorHtml(row){
     const id = row.id || "";
     const title = row.title || "";
     const desc = row.desc || "";
     const actions = Array.isArray(row.actions) ? row.actions : [];
     const tags = Array.isArray(row.tags) ? row.tags : [];
+    const items = normalizeChecklistEditorItems(row.items);
     const published = !!row.published;
     const sort = row.sort != null ? String(row.sort) : "1000";
 
@@ -174,12 +239,11 @@ window.Views.AdminChecklistsFactory = function(deps){
         </div>
 
         <div class="zr-card zr-card--section zr-admin-editor__section zr-stack-sm">
-          <div class="zr-section-head">
+          <div class="zr-section-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
             <div class="zr-section-title">Структура</div>
+            <button type="button" class="btn btn-sm btn--ghost" id="cl_add_item">+ Добавить пункт</button>
           </div>
-          <div class="empty" style="padding:12px;color:var(--muted)">
-            Структура пунктов чек-листа пока не редактируется в этой safe-phase. Уже прикреплённые к задачам чек-листы не должны меняться от правок базовой записи.
-          </div>
+          ${renderChecklistItemsEditor(items)}
         </div>
 
         <div class="zr-card zr-card--subtle zr-admin-editor__section">
@@ -241,10 +305,42 @@ window.Views.AdminChecklistsFactory = function(deps){
       if(el) el.textContent = parseSelectedTags(root).join(", ");
     };
 
+    const replaceItemsHost = (items) => {
+      const host = root.querySelector("#clItemsHost");
+      if(!host) return;
+      host.outerHTML = renderChecklistItemsEditor(items);
+    };
+
     root.querySelectorAll("[data-tag]").forEach(btn => {
       btn.addEventListener("click", () => {
         setTimeout(syncClTags, 0);
       });
+    });
+
+    const addItemBtn = root.querySelector("#cl_add_item");
+    if(addItemBtn){
+      addItemBtn.onclick = () => {
+        const nextItems = readChecklistItemsFromUi(root);
+        nextItems.push({ text: "" });
+        replaceItemsHost(nextItems);
+
+        setTimeout(() => {
+          try{
+            const inputs = root.querySelectorAll("[data-cl-item-input]");
+            const last = inputs && inputs.length ? inputs[inputs.length - 1] : null;
+            if(last) last.focus();
+          }catch(e){}
+        }, 0);
+      };
+    }
+
+    root.addEventListener("click", (e) => {
+      const removeBtn = e.target && e.target.closest ? e.target.closest("[data-cl-item-remove]") : null;
+      if(!removeBtn) return;
+
+      const idx = Number(removeBtn.getAttribute("data-cl-item-remove"));
+      const nextItems = readChecklistItemsFromUi(root).filter((_, itemIndex) => itemIndex !== idx);
+      replaceItemsHost(nextItems);
     });
 
     syncClTags();
@@ -269,6 +365,7 @@ window.Views.AdminChecklistsFactory = function(deps){
 
           const existing = await sbChecklistsGet(id);
           const sortRaw = norm($("#cl_sort").value);
+          const items = readChecklistItemsFromUi(root);
 
           const row = {
             id,
@@ -280,7 +377,8 @@ window.Views.AdminChecklistsFactory = function(deps){
             actions: readActionsFromUI(root),
             tags: parseSelectedTags(root),
             published: ($("#cl_published").value || "1") === "1",
-            sort: sortRaw ? Number(sortRaw) : 1000
+            sort: sortRaw ? Number(sortRaw) : 1000,
+            items
           };
 
           if(!row.title){
@@ -315,8 +413,14 @@ window.Views.AdminChecklistsFactory = function(deps){
         }
       };
     }
-  }
 
+    setTimeout(() => {
+      try{
+        const el = root.querySelector("#cl_title");
+        if(el) el.focus();
+      }catch(e){}
+    }, 30);
+  }
   async function loadAdminChecklists(openId){
     setPanelTitle("Админка");
     setStatus("…");

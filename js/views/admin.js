@@ -230,7 +230,7 @@ Views.Admin = (() => {
       `<button class="btn btn-sm ${MODE===id ? "is-active" : ""}" data-adm-tab="${esc(id)}"><span class="dot"></span>${esc(label)}</button>`;
 
     list.innerHTML =
-      `<div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">` +
+      `<div class="actions zr-admin-mode-tabs" style="margin:0 0 10px 0; flex-wrap:wrap;">` +
         tabBtn("employees","Сотрудники") +
         tabBtn("projects","Проекты") +
         tabBtn("content","Контент") +
@@ -250,7 +250,7 @@ Views.Admin = (() => {
     if(!list) return;
 
     list.insertAdjacentHTML("beforeend", `
-      <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
+            <div class="actions zr-admin-content-tabs" style="margin:0 0 10px 0; flex-wrap:wrap;">
         <button class="btn btn-sm ${CONTENT_MODE==="articles"?"is-active":""}" data-cm="articles"><span class="dot"></span>Инструкции</button>
         <button class="btn btn-sm ${CONTENT_MODE==="templates"?"is-active":""}" data-cm="templates"><span class="dot"></span>Шаблоны</button>
         <button class="btn btn-sm ${CONTENT_MODE==="checklists"?"is-active":""}" data-cm="checklists"><span class="dot"></span>Чек-листы</button>

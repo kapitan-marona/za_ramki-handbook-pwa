@@ -706,6 +706,24 @@ select{
   width:100%;
 }
 
+.zr-admin-mode-tabs{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  min-height:56px;
+  padding:10px 8px;
+  border-radius:12px;
+  background:rgba(255,243,234,.04);
+}
+
+.zr-admin-content-tabs{
+  margin-top:-2px;
+  padding:8px 6px 5px 14px;
+  border-radius:0 0 12px 12px;
+  background:rgba(255,243,234,.018);
+}
+
 .zr-admin-editor__hero{
   padding:16px 18px;
 }
@@ -744,6 +762,9 @@ select{
 
 .zr-admin-editor__field{
   min-width:0;
+display:flex;
+  flex-direction:column;
+  gap:4px;
 }
 
 .zr-admin-editor__field--full{
@@ -752,7 +773,7 @@ select{
 
 .zr-admin-editor__field-label{
   display:block;
-  margin:0 0 6px 2px;
+  margin:0 0 4px 2px;
   font-size:12px;
   line-height:1.25;
   font-weight:600;
@@ -1985,6 +2006,11 @@ select:disabled{
    DOMAIN 11 — MOBILE
    (not implemented yet)
    ========================================================= */
+
+
+
+
+
 
 
 

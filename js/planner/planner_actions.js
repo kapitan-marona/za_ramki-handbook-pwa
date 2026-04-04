@@ -824,8 +824,120 @@
             }
           }
 
+          let checklistRows = null;
+
+          if(type === "checklist"){
+            if(msg) msg.textContent = "Проверяю чек-лист…";
+
+            let checklistTemplateRes = null;
+            try{
+              checklistTemplateRes = await SB
+                .from("kb_checklists")
+                .select("items")
+                .eq("id", payload.ref_id)
+                .maybeSingle();
+            }catch(err){
+              console.warn("[PlannerActions] checklist preflight fetch error", err);
+              checklistTemplateRes = { error: err };
+            }
+
+            if(checklistTemplateRes && checklistTemplateRes.error){
+              console.warn("[PlannerActions] checklist preflight failed", checklistTemplateRes.error);
+              submitBtn.disabled = false;
+              if(msg) msg.textContent = "Не удалось прочитать структуру чек-листа.";
+              return;
+            }
+
+            const rawItems = checklistTemplateRes && checklistTemplateRes.data
+              ? checklistTemplateRes.data.items
+              : null;
+
+            if(Array.isArray(rawItems) && rawItems.length > 0){
+              checklistRows = rawItems
+                .map((item, index) => {
+                  const text = item && item.text != null ? String(item.text).trim() : "";
+                  if(!text) return null;
+
+                  return {
+                    task_id: task.id,
+                    text,
+                    pos: index,
+                    done: false,
+                    done_at: null
+                  };
+                })
+                .filter(Boolean);
+
+              if(checklistRows.length === 0){
+                console.warn("[PlannerActions] checklist preflight malformed items", {
+                  taskId: task.id,
+                  checklistId: payload.ref_id,
+                  items: rawItems
+                });
+                checklistRows = [];
+              }
+            }else if(rawItems != null){
+              console.warn("[PlannerActions] checklist preflight malformed items", {
+                taskId: task.id,
+                checklistId: payload.ref_id,
+                items: rawItems
+              });
+              checklistRows = [];
+            }else{
+              checklistRows = [];
+            }
+
+            try{
+              const existingChecklistRows = await SB
+                .from("task_checklist_items")
+                .select("id")
+                .eq("task_id", task.id)
+                .limit(1);
+
+              if(existingChecklistRows && existingChecklistRows.error){
+                throw existingChecklistRows.error;
+              }
+
+              const hasTaskChecklistItems = Array.isArray(existingChecklistRows.data) && existingChecklistRows.data.length > 0;
+              if(hasTaskChecklistItems){
+                checklistRows = null;
+              }
+            }catch(err){
+              console.warn("[PlannerActions] checklist runtime guard error", err);
+              submitBtn.disabled = false;
+              if(msg) msg.textContent = "Не удалось проверить существующий чек-лист задачи.";
+              return;
+            }
+          }
+
           if(msg) msg.textContent = "Сохраняю…";
           const saved = await PlannerAPI.addTaskLink(task.id, payload);
+
+          if(type === "checklist" && Array.isArray(checklistRows) && checklistRows.length > 0){
+            try{
+              const insertRes = await SB
+                .from("task_checklist_items")
+                .insert(checklistRows);
+
+              if(insertRes && insertRes.error){
+                throw insertRes.error;
+              }
+            }catch(snapshotErr){
+              console.warn("[PlannerActions] checklist snapshot insert failed", snapshotErr);
+
+              try{
+                if(saved && saved.id && window.PlannerAPI && typeof PlannerAPI.removeTaskLink === "function"){
+                  await PlannerAPI.removeTaskLink(saved.id);
+                }
+              }catch(rollbackErr){
+                console.warn("[PlannerActions] checklist snapshot rollback failed", rollbackErr);
+              }
+
+              submitBtn.disabled = false;
+              if(msg) msg.textContent = "Не удалось прикрепить чек-лист.";
+              return;
+            }
+          }
 
           close();
 

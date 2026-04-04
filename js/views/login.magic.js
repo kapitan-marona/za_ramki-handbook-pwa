@@ -135,7 +135,7 @@ Views.Login = (() => {
         setErr("");
         setStatus("");
 
-        const email = (($("#loginEmail").value || "") + "").trim();
+        const email = (($("#loginEmail").value || "") + "").trim().toLowerCase();
 
         if(!email){
           setErr("Введите e-mail.");
@@ -152,18 +152,37 @@ Views.Login = (() => {
         if(loginBtn) loginBtn.disabled = true;
         if(magicBtn) magicBtn.disabled = true;
 
+        // DEBUG: очищаем локальный битый refresh token, чтобы он не шумел в консоли
+        try{
+          await SB.auth.signOut({ scope: "local" });
+          console.log("[MAGIC_LINK] local auth cleared before send");
+        }catch(clearErr){
+          console.warn("[MAGIC_LINK] local signOut warning", clearErr);
+        }
+
+        const redirectTo = window.location.origin + "/";
+
         const res = await SB.auth.signInWithOtp({
-          email: email
+          email: email,
+          options: {
+            emailRedirectTo: redirectTo,
+            shouldCreateUser: true
+          }
         });
 
+        console.log("[MAGIC_LINK] request email =", email);
+        console.log("[MAGIC_LINK] redirectTo =", redirectTo);
+        console.log("[MAGIC_LINK] raw response =", res);
+
         if(res && res.error){
+          console.error("[MAGIC_LINK] send failed", res.error);
           setErr(res.error.message || "Не удалось отправить ссылку.");
           return;
         }
 
-        setStatus("Ссылка для входа отправлена на e-mail. Проверьте почту.");
+        setStatus("Ссылка для входа отправлена на e-mail. Проверьте почту и папку Спам.");
       }catch(e){
-        console.warn("[Login] magic link failed", e);
+        console.error("[MAGIC_LINK] unexpected error", e);
         setErr("Ошибка отправки ссылки. Смотри консоль.");
       }finally{
         var loginBtn2 = $("#loginBtn");

@@ -196,6 +196,7 @@ window.Views.AdminTemplatesFactory = function(deps){
         <div class="zr-card zr-card--subtle zr-admin-editor__section">
           <div class="zr-admin-editor__actions">
             <button class="btn btn--primary" id="t_save"><span class="dot"></span>Сохранить</button>
+            ${isNew ? "" : `<button class="btn btn--danger" id="t_del"><span class="dot"></span>Удалить</button>`}
           </div>
         </div>
       </div>
@@ -271,7 +272,6 @@ window.Views.AdminTemplatesFactory = function(deps){
     const saveBtn = $("#t_save");
     if(saveBtn){
       saveBtn.onclick = async () => {
-
         if(window.__adminSaveLock) return;
         if(!window.__adminClickGuard("admin_save")) return;
         if(!window.__adminClickGuard("tpl_save")) return;
@@ -333,6 +333,31 @@ window.Views.AdminTemplatesFactory = function(deps){
           }
 
           return;
+        }catch(e){
+          console.error(e);
+          setBusy(false);
+          window.__adminSaveLock = false;
+          alert(e.message || String(e));
+        }
+      };
+    }
+
+    const delBtn = $("#t_del");
+    if(delBtn){
+      delBtn.onclick = async () => {
+        const id = normLower($("#t_id").value);
+        if(!id) return;
+        if(!confirm("Удалить шаблон?")) return;
+
+        setBusy(true, "Удаляю…");
+        try{
+          await sbTemplatesDelete(id);
+          setBusy(false);
+          window.__adminSaveLock = false;
+
+          alert("Удалено ✅");
+          goAdmin("content:templates");
+          await loadTemplates("");
         }catch(e){
           console.error(e);
           setBusy(false);

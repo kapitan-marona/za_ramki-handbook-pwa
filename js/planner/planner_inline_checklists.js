@@ -197,14 +197,22 @@
       },
 
       async resolveInstance(taskId, checklistId, ownerUserId){
+        // 1. first try to get
         const existing = await this.getInstance(taskId, checklistId, ownerUserId);
         if(existing) return existing;
 
+        // 2. try create
         try{
           return await this.createInstance(taskId, checklistId, ownerUserId);
         }catch(err){
-          const fallback = await this.getInstance(taskId, checklistId, ownerUserId);
-          if(fallback) return fallback;
+          // 3. if duplicate → ALWAYS fallback to get
+          const msg = String(err && (err.message || err.details || err.hint) || "");
+
+          if(msg.includes("duplicate key") || msg.includes("already exists")){
+            const fallback = await this.getInstance(taskId, checklistId, ownerUserId);
+            if(fallback) return fallback;
+          }
+
           throw err;
         }
       },

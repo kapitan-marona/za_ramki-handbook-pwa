@@ -293,13 +293,16 @@ viewerEl.innerHTML = `
 
         if(safeItems.length > 0){
           PlannerChecklistRuntime.renderChecklist(safeItems, !!isReadOnly);
-          await loadInlineChecklists(task, !!isReadOnly, safeItems, { soft:true });
+
+          // TEMP: disable inline checklist rendering to avoid duplicates
+          // await loadInlineChecklists(task, !!isReadOnly, safeItems, { soft:true });
         }else{
           if(host){
             host.innerHTML = "";
           }
 
-          await loadInlineChecklists(task, !!isReadOnly, safeItems, { soft:true });
+          // TEMP: disable inline checklist rendering
+          // await loadInlineChecklists(task, !!isReadOnly, safeItems, { soft:true });
 
           const hasInlineRendered = !!(
             host &&

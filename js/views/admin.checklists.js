@@ -90,6 +90,13 @@ window.Views.AdminChecklistsFactory = function(deps){
     }
   }
   
+  async function sbChecklistsDelete(id){
+    await ensureSession();
+    const p = SB.from("kb_checklists").delete().eq("id", id);
+    const { error } = await withTimeout(p, 20000, "kb_checklists delete");
+    if(error) throw error;
+  }
+  
 
   function normalizeChecklistEditorItems(items){
     if(!Array.isArray(items)) return [];
@@ -109,7 +116,7 @@ window.Views.AdminChecklistsFactory = function(deps){
   }
 
   function renderChecklistItemsEditor(items){
-    const safeItems = normalizeChecklistEditorItems(items);
+    const safeItems = Array.isArray(items) ? items : [];
 
     if(!safeItems.length){
       return `
@@ -121,24 +128,30 @@ window.Views.AdminChecklistsFactory = function(deps){
 
     return `
       <div id="clItemsHost" class="zr-stack-sm">
-        ${safeItems.map((item, index) => `
-          <div class="zr-admin-editor__field zr-admin-editor__field--full" data-cl-item-row="${index}">
-            <div style="display:flex; gap:10px; align-items:flex-start;">
-              <input
-                data-cl-item-input="${index}"
-                style="${inpStyle}; flex:1 1 auto;"
-                value="${esc(item.text || "")}"
-                placeholder="Текст пункта чек-листа"
-              />
-              <button
-                type="button"
-                class="btn btn-sm btn--ghost"
-                data-cl-item-remove="${index}"
-                aria-label="Удалить пункт"
-              >Удалить</button>
+        ${safeItems.map((item, index) => {
+          const text = typeof item === "string"
+            ? String(item)
+            : (item && item.text != null ? String(item.text) : "");
+
+          return `
+            <div class="zr-admin-editor__field zr-admin-editor__field--full" data-cl-item-row="${index}">
+              <div style="display:flex; gap:10px; align-items:flex-start;">
+                <input
+                  data-cl-item-input="${index}"
+                  style="${inpStyle}; flex:1 1 auto;"
+                  value="${esc(text)}"
+                  placeholder="Текст пункта чек-листа"
+                />
+                <button
+                  type="button"
+                  class="btn btn-sm btn--ghost"
+                  data-cl-item-remove="${index}"
+                  aria-label="Удалить пункт"
+                >Удалить</button>
+              </div>
             </div>
-          </div>
-        `).join("")}
+          `;
+        }).join("")}
       </div>
     `;
   }
@@ -249,6 +262,7 @@ window.Views.AdminChecklistsFactory = function(deps){
         <div class="zr-card zr-card--subtle zr-admin-editor__section">
           <div class="zr-admin-editor__actions">
             <button class="btn btn--primary" id="cl_save"><span class="dot"></span>Сохранить</button>
+            <button class="btn btn--danger" id="cl_del"><span class="dot"></span>Удалить</button>
           </div>
         </div>
       </div>
@@ -305,10 +319,24 @@ window.Views.AdminChecklistsFactory = function(deps){
       if(el) el.textContent = parseSelectedTags(root).join(", ");
     };
 
-    const replaceItemsHost = (items) => {
+    let draftItems = normalizeChecklistEditorItems(rowData && rowData.items);
+
+    const renderDraftItems = () => {
       const host = root.querySelector("#clItemsHost");
       if(!host) return;
-      host.outerHTML = renderChecklistItemsEditor(items);
+      host.outerHTML = renderChecklistItemsEditor(draftItems);
+    };
+
+    const syncDraftFromInputs = () => {
+      const inputs = Array.from(root.querySelectorAll("[data-cl-item-input]"));
+      if(!inputs.length){
+        draftItems = [];
+        return;
+      }
+
+      draftItems = inputs.map(input => ({
+        text: input.value != null ? String(input.value) : ""
+      }));
     };
 
     root.querySelectorAll("[data-tag]").forEach(btn => {
@@ -317,12 +345,22 @@ window.Views.AdminChecklistsFactory = function(deps){
       });
     });
 
+    root.addEventListener("input", (e) => {
+      const input = e.target && e.target.matches ? (e.target.matches("[data-cl-item-input]") ? e.target : null) : null;
+      if(!input) return;
+
+      const idx = Number(input.getAttribute("data-cl-item-input"));
+      if(!Number.isFinite(idx) || !draftItems[idx]) return;
+
+      draftItems[idx].text = input.value != null ? String(input.value) : "";
+    });
+
     const addItemBtn = root.querySelector("#cl_add_item");
     if(addItemBtn){
       addItemBtn.onclick = () => {
-        const nextItems = readChecklistItemsFromUi(root);
-        nextItems.push({ text: "" });
-        replaceItemsHost(nextItems);
+        syncDraftFromInputs();
+        draftItems.push({ text: "" });
+        renderDraftItems();
 
         setTimeout(() => {
           try{
@@ -338,9 +376,13 @@ window.Views.AdminChecklistsFactory = function(deps){
       const removeBtn = e.target && e.target.closest ? e.target.closest("[data-cl-item-remove]") : null;
       if(!removeBtn) return;
 
+      syncDraftFromInputs();
+
       const idx = Number(removeBtn.getAttribute("data-cl-item-remove"));
-      const nextItems = readChecklistItemsFromUi(root).filter((_, itemIndex) => itemIndex !== idx);
-      replaceItemsHost(nextItems);
+      if(!Number.isFinite(idx)) return;
+
+      draftItems.splice(idx, 1);
+      renderDraftItems();
     });
 
     syncClTags();
@@ -365,7 +407,9 @@ window.Views.AdminChecklistsFactory = function(deps){
 
           const existing = await sbChecklistsGet(id);
           const sortRaw = norm($("#cl_sort").value);
-          const items = readChecklistItemsFromUi(root);
+
+          syncDraftFromInputs();
+          const items = normalizeChecklistEditorItems(draftItems);
 
           const row = {
             id,
@@ -413,6 +457,31 @@ window.Views.AdminChecklistsFactory = function(deps){
         }
       };
     }
+    
+        const delBtn = $("#cl_del");
+        if(delBtn){
+          delBtn.onclick = async () => {
+            const id = normLower($("#cl_id").value);
+            if(!id) return;
+            if(!confirm("Удалить чек-лист?")) return;
+
+            setBusy(true, "Удаляю…");
+            try{
+              await sbChecklistsDelete(id);
+              setBusy(false);
+              window.__adminSaveLock = false;
+
+              alert("Удалено ✅");
+              goAdmin("content:checklists");
+              await loadAdminChecklists("");
+            }catch(e){
+              console.error(e);
+              setBusy(false);
+              window.__adminSaveLock = false;
+              alert(e.message || String(e));
+            }
+          };
+        }
 
     setTimeout(() => {
       try{

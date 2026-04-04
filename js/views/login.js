@@ -16,7 +16,7 @@ Views.Login = (() => {
       '<p class="article-sub">' +
         (recoveryMode
           ? 'Задайте новый пароль для входа в систему.'
-          : 'Введите e-mail и пароль. Если пароля ещё нет — нажмите "Создать пароль".') +
+          : 'Введите e-mail и пароль для входа в систему.') +
       '</p>' +
       '<div style="max-width:360px;">' +
         (recoveryMode
@@ -28,8 +28,10 @@ Views.Login = (() => {
           : '') +
         '<div style="display:flex; gap:10px; flex-wrap:wrap;">' +
           '<button id="loginBtn" class="btn">' + (recoveryMode ? 'Сохранить пароль' : 'Вход') + '</button>' +
-          (recoveryMode ? '' : '<button id="createPassBtn" class="btn" type="button">Создать пароль</button>') +
         '</div>' +
+        (!recoveryMode
+          ? '<div style="margin-top:10px; color:#9fb0c7; font-size:13px;">Если пароль ещё не создан, администратор должен выдать доступ отдельно.</div>'
+          : '') +
         '<div id="loginStatus" style="margin-top:10px; color:#9fb0c7;"></div>' +
         '<div id="loginError" style="margin-top:10px; color:#ff6b6b;"></div>' +
       '</div>';
@@ -41,7 +43,8 @@ Views.Login = (() => {
       try{
         setErr("");
 
-        const email = (($("#loginEmail").value || "") + "").trim();
+        const emailEl = $("#loginEmail");
+        const email = (((emailEl && emailEl.value) || "") + "").trim();
         const password = ($("#loginPass").value || "");
 
         if(!email || !password){
@@ -60,11 +63,9 @@ Views.Login = (() => {
           return;
         }
 
-        // подтягиваем сессию + роль
         if(typeof window.initAuth === "function") await window.initAuth();
 
         if(window.App && App.session && App.session.user){
-          // роль обязательна, иначе initAuth уже вылогинил
           if(App.session.role === "admin" || App.session.role === "staff"){
             if(window.Router) Router.go("planner");
             return;
@@ -75,49 +76,6 @@ Views.Login = (() => {
       }catch(e){
         console.warn("[Login] failed", e);
         setErr("Ошибка входа. Смотри консоль.");
-      }
-    }
-
-    async function doCreatePassword(){
-      try{
-        setErr("");
-        setStatus("");
-
-        const email = (($("#loginEmail").value || "") + "").trim();
-
-        if(!email){
-          setErr("Введите e-mail.");
-          return;
-        }
-
-        if(!window.SB || !SB.auth){
-          setErr("Supabase не подключён.");
-          return;
-        }
-
-        var loginBtn = $("#loginBtn");
-        var createBtn = $("#createPassBtn");
-        if(loginBtn) loginBtn.disabled = true;
-        if(createBtn) createBtn.disabled = true;
-
-        const res = await SB.auth.resetPasswordForEmail(email, {
-          redirectTo: "https://crm.za-ramki.com/"
-        });
-
-        if(res && res.error){
-          setErr(res.error.message || "Не удалось отправить письмо.");
-          return;
-        }
-
-        setStatus("Письмо для создания пароля отправлено на e-mail.");
-      }catch(e){
-        console.warn("[Login] create password failed", e);
-        setErr("Ошибка отправки письма. Смотри консоль.");
-      }finally{
-        var loginBtn2 = $("#loginBtn");
-        var createBtn2 = $("#createPassBtn");
-        if(loginBtn2) loginBtn2.disabled = false;
-        if(createBtn2) createBtn2.disabled = false;
       }
     }
 
@@ -162,6 +120,8 @@ Views.Login = (() => {
         }
 
         window.__authRecoveryMode = false;
+        try{ sessionStorage.removeItem("zr_auth_recovery"); }catch(e){}
+
         setStatus("Пароль сохранён. Выполняется вход...");
 
         if(typeof window.initAuth === "function") await window.initAuth();
@@ -177,10 +137,6 @@ Views.Login = (() => {
     }
 
     $("#loginBtn").onclick = recoveryMode ? doSavePassword : doLogin;
-
-    if(!recoveryMode && $("#createPassBtn")){
-      $("#createPassBtn").onclick = doCreatePassword;
-    }
 
     $("#loginPass").addEventListener("keydown", (e) => {
       if(e.key === "Enter"){
@@ -198,7 +154,3 @@ Views.Login = (() => {
 
   return { show };
 })();
-
-
-
-

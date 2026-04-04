@@ -38,6 +38,7 @@ window.PlannerChecklistRuntime = (function(){
 
     host.innerHTML = `
       <div class="zr-planner-checklist">
+        <div class="zr-planner-checklist-actions" style="display:flex; justify-content:flex-end; margin-bottom:6px;"></div>
         <div class="zr-planner-checklist-summary">${doneCount}/${total} выполнено</div>
         <div class="zr-planner-checklist-list">
           ${items.map(it => `
@@ -55,6 +56,43 @@ window.PlannerChecklistRuntime = (function(){
         </div>
       </div>
     `;
+    try{
+      if(!isReadOnly && ctx && ctx.getSelectedTaskId){
+        const taskId = ctx.getSelectedTaskId();
+        const actions = host.querySelector(".zr-planner-checklist-actions");
+
+        if(actions && taskId){
+          const btn = document.createElement("button");
+          btn.className = "btn btn--ghost";
+          btn.textContent = "Удалить";
+
+          btn.onclick = async () => {
+            try{
+              if(!confirm("Удалить чек-лист из задачи?")) return;
+
+              await PlannerAPI.clearTaskChecklist(taskId);
+
+              const links = await PlannerAPI.fetchTaskLinks(taskId);
+              const checklistLink = (links || []).find(l => String(l.link_type || "") === "checklist");
+
+              if(checklistLink){
+                await PlannerAPI.removeTaskLink(checklistLink.id);
+              }
+
+              renderChecklist([], false);
+            }catch(err){
+              console.warn("[ChecklistRuntime] remove error", err);
+              alert("Ошибка удаления");
+            }
+          };
+
+          actions.appendChild(btn);
+        }
+      }
+    }catch(e){
+      console.warn("[ChecklistRuntime] action render error", e);
+    }      
+    
   }
 
   function bindChecklist(task){

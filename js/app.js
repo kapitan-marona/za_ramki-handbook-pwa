@@ -206,26 +206,14 @@ window.applySession = async function(user){
 // ===== AUTH RECOVERY DETECTION =====
 window.syncAuthRecoveryMode = function(){
   try{
-    var hash = String(location.hash || "");
-    var isRecoveryHash = /(?:^|[&#])type=recovery(?:&|$)/.test(hash);
-
-    if(isRecoveryHash){
-      window.__authRecoveryMode = true;
-      try{ sessionStorage.setItem("zr_auth_recovery", "1"); }catch(e){}
-      return;
-    }
-
-    var persisted = false;
-    try{
-      persisted = sessionStorage.getItem("zr_auth_recovery") === "1";
-    }catch(e){}
-
-    window.__authRecoveryMode = !!persisted;
+    window.__authRecoveryMode = false;
+    try{ sessionStorage.removeItem("zr_auth_recovery"); }catch(e){}
   }catch(e){
     window.__authRecoveryMode = false;
-    console.warn("[Auth] recovery mode detect failed", e);
+    console.warn("[Auth] recovery mode disable failed", e);
   }
 };
+
 window.initAuth = async function(){
   try{
     App.session.ready = false;

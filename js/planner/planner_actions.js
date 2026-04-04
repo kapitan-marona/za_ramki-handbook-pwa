@@ -855,8 +855,19 @@
             if(Array.isArray(rawItems) && rawItems.length > 0){
               checklistRows = rawItems
                 .map((item, index) => {
-                  const text = item && item.text != null ? String(item.text).trim() : "";
-                  if(!text) return null;
+                  const text = (
+                    typeof item === "string"
+                      ? item
+                      : (item && typeof item.text === "string")
+                        ? item.text
+                        : (item && item.text != null)
+                          ? String(item.text)
+                          : (item != null)
+                            ? String(item)
+                            : ""
+                  ).trim();
+
+                  if(!text || text === "[object Object]") return null;
 
                   return {
                     task_id: task.id,
@@ -867,6 +878,16 @@
                   };
                 })
                 .filter(Boolean);
+
+              if(checklistRows.length === 0){
+                console.warn("[PlannerActions] checklist preflight malformed items", {
+                  taskId: task.id,
+                  checklistId: payload.ref_id,
+                  items: rawItems
+                });
+                checklistRows = [];
+              }
+            }else if(rawItems != null){
 
               if(checklistRows.length === 0){
                 console.warn("[PlannerActions] checklist preflight malformed items", {

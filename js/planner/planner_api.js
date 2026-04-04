@@ -651,6 +651,18 @@
       kind: "checklist"
     }));
   }
+  
+  async function clearTaskChecklist(taskId){
+  const SB = SBx();
+
+  const r = await SB
+    .from("task_checklist_items")
+    .delete()
+    .eq("task_id", taskId);
+
+  if(r && r.error) throw r.error;
+  return true;
+}
 
   window.PlannerAPI = {
     fetchAllActiveTasks,
@@ -678,7 +690,8 @@
     removeTaskLink,
     searchArticlesForLink,
     searchTemplatesForLink,
-    searchChecklistsForLink
+    searchChecklistsForLink,
+    clearTaskChecklist
   };
 })();
 

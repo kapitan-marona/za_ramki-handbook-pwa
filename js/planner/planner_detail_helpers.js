@@ -89,15 +89,8 @@ window.PlannerDetailHelpers = (() => {
                 await loadDocs(task);
               }
 
-              const addedType = payload && payload.link_type ? String(payload.link_type) : "";
-              if(addedType === "checklist"){
-                if(typeof loadInlineChecklists === "function"){
-                  await loadInlineChecklists(task, false, [], { soft:true });
-                }
-              }else{
-                if(typeof loadChecklist === "function"){
-                  await loadChecklist(task, false);
-                }
+              if(typeof loadChecklist === "function"){
+                await loadChecklist(task, false);
               }
             }catch(err){
               console.warn("[PlannerDetailHelpers] soft refresh after add error", err);
@@ -129,44 +122,17 @@ window.PlannerDetailHelpers = (() => {
           defaultType: "checklist",
           onAdded: async () => {
             try{
-              if(typeof loadInlineChecklists === "function"){
-                await loadInlineChecklists(task, false, [], { soft:true });
+              if(!window.PlannerChecklistRuntime){
+                throw new Error("PlannerChecklistRuntime missing");
               }
+
+              const items = await PlannerChecklistRuntime.fetchChecklistItems(task.id);
+              const safeItems = Array.isArray(items) ? items : [];
+
+              PlannerChecklistRuntime.renderChecklist(safeItems, false);
+              PlannerChecklistRuntime.bindChecklist(task);
             }catch(err){
-              console.warn("[PlannerDetailHelpers] soft refresh after checklist add error", err);
-            }
-          }
-        });
-      }catch(err){
-        console.warn("[PlannerDetailHelpers] open checklist dialog error", err);
-        alert("Ошибка открытия окна");
-      }
-    };
-  }
-
-  function bindAddChecklistButton(task, opts){
-    const o = opts || {};
-    const button = o.button;
-    const loadInlineChecklists = o.loadInlineChecklists;
-
-    if(!button) return;
-
-    button.onclick = () => {
-      try{
-        if(!window.PlannerActions || typeof PlannerActions.openLinkDialog !== "function"){
-          throw new Error("openLinkDialog missing");
-        }
-
-        PlannerActions.openLinkDialog(task, {
-          allowedTypes: ["checklist"],
-          defaultType: "checklist",
-          onAdded: async () => {
-            try{
-              if(typeof loadInlineChecklists === "function"){
-                await loadInlineChecklists(task, false, [], { soft:true });
-              }
-            }catch(err){
-              console.warn("[PlannerDetailHelpers] soft refresh after checklist add error", err);
+              console.warn("[PlannerDetailHelpers] runtime refresh after checklist add error", err);
             }
           }
         });

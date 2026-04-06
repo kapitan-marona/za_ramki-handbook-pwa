@@ -91,9 +91,7 @@
     const parseTaskLinkFn = deps.parseTaskLink || parseTaskLink;
     const parseInternalDocFn = deps.parseInternalDoc || parseInternalDoc;
     const openPlannerDoc = deps.openPlannerDoc;
-    const removeInlineChecklistFromTaskView = deps.removeInlineChecklistFromTaskView;
     const removeDocRowFromTaskView = deps.removeDocRowFromTaskView;
-    const getPlannerChecklistApi = deps.getPlannerChecklistApi;
 
     async function loadDocs(task){
       const role = (window.App && App.session) ? String(App.session.role || "") : "";
@@ -177,19 +175,6 @@
 
               await PlannerAPI.removeTaskLink(linkId);
 
-              if(removingDoc && removingDoc.section === "checklists" && removingDoc.id){
-                try{
-                  if(getPlannerChecklistApi){
-                    await getPlannerChecklistApi().deleteInstance(task.id, removingDoc.id);
-                  }
-                }catch(e){
-                  console.warn("[PlannerInlineChecklist] delete instance error", e);
-                }
-
-                if(removeInlineChecklistFromTaskView){
-                  removeInlineChecklistFromTaskView(removingDoc.id);
-                }
-              }
 
               if(removeDocRowFromTaskView){
                 removeDocRowFromTaskView(linkId);
@@ -225,4 +210,5 @@
     removeDocRowFromTaskView
   };
 })();
+
 

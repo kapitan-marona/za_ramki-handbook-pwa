@@ -70,7 +70,6 @@ window.PlannerDetailHelpers = (() => {
     const button = o.button;
     const loadDocs = o.loadDocs;
     const loadChecklist = o.loadChecklist;
-    const loadInlineChecklists = o.loadInlineChecklists;
 
     if(!button) return;
 
@@ -107,7 +106,6 @@ window.PlannerDetailHelpers = (() => {
   function bindAddChecklistButton(task, opts){
     const o = opts || {};
     const button = o.button;
-    const loadInlineChecklists = o.loadInlineChecklists;
 
     if(!button) return;
 
@@ -126,11 +124,16 @@ window.PlannerDetailHelpers = (() => {
                 throw new Error("PlannerChecklistRuntime missing");
               }
 
+
+              const links = await PlannerAPI.fetchTaskLinks(task.id);
+              console.log("[DEBUG links after add]", links);
+
               const items = await PlannerChecklistRuntime.fetchChecklistItems(task.id);
               const safeItems = Array.isArray(items) ? items : [];
 
               PlannerChecklistRuntime.renderChecklist(safeItems, false);
               PlannerChecklistRuntime.bindChecklist(task);
+              // button visibility is controlled by PlannerChecklistRuntime.renderChecklist()
             }catch(err){
               console.warn("[PlannerDetailHelpers] runtime refresh after checklist add error", err);
             }
@@ -336,69 +339,177 @@ window.PlannerDetailHelpers = (() => {
 
     if(!viewerEl) return;
 
-    viewerEl.querySelectorAll(".pl-status").forEach(btn => {
-      btn.onclick = async () => {
-        const s = btn.dataset.s;
-        const msg = viewerEl.querySelector(".pl-status-msg");
+    // keep latest task/options for delegated handler
+    viewerEl.__zrStatusTask = task;
+    viewerEl.__zrStatusOpts = o;
 
-        if(String(s || "") === "canceled"){
-          const ok = confirm("Отменить задачу?");
-          if(!ok) return;
-        }
+    // bind once
+    if(viewerEl.__zrStatusDelegatedBound) return;
+    viewerEl.__zrStatusDelegatedBound = true;
 
-        viewerEl.querySelectorAll(".pl-status").forEach(x => x.disabled = true);
-        if(msg) msg.textContent = "Сохраняю…";
+    viewerEl.addEventListener("click", async (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest(".pl-status") : null;
+      if(!btn || !viewerEl.contains(btn)) return;
 
+      const liveTask = viewerEl.__zrStatusTask;
+      const liveOpts = viewerEl.__zrStatusOpts || {};
+      const liveFetchAllActiveTasks = liveOpts.fetchAllActiveTasks;
+      const liveRenderLeft = liveOpts.renderLeft;
+      const liveRenderDetails = liveOpts.renderDetails;
+      const liveGetSelectedTaskId = liveOpts.getSelectedTaskId;
+      const liveStatusLabel = liveOpts.statusLabel;
+
+      if(!liveTask) return;
+
+      const s = btn.dataset.s;
+      const msg = viewerEl.querySelector(".pl-status-msg");
+
+      if(String(s || "") === "canceled"){
+        const ok = confirm("Отменить задачу?");
+        if(!ok) return;
+      }
+
+      viewerEl.querySelectorAll(".pl-status").forEach(x => x.disabled = true);
+      if(msg) msg.textContent = "Сохраняю…";
+
+      try{
+        const beforeStatus = String(liveTask.status || "");
+
+        await PlannerActions.setStatus(liveTask.id, s);
+        const tasks2 = await liveFetchAllActiveTasks();
+
+        // push (after successful save)
         try{
-          const beforeStatus = String(task.status || "");
+          const updated = tasks2.find(x => String(x.id) === String(liveTask.id));
 
-          await PlannerActions.setStatus(task.id, s);
+          const assignees = updated && Array.isArray(updated.assignees) ? updated.assignees : [];
+          const targetUserId = assignees.length ? String(assignees[0]) : "";
+          const actorId = String(window.App?.session?.user?.id || "");
 
-          // push (after successful save)
-          try{
-            const tasks2 = await fetchAllActiveTasks();
-            const updated = tasks2.find(x => String(x.id) === String(task.id));
-
-            const assignees = updated && Array.isArray(updated.assignees) ? updated.assignees : [];
-            const targetUserId = assignees.length ? String(assignees[0]) : "";
-            const actorId = String(window.App?.session?.user?.id || "");
-
-            if(
-              updated &&
-              beforeStatus !== String(updated.status || "") &&
-              targetUserId &&
-              targetUserId !== actorId &&
-              typeof window.sendPlannerPush === "function"
-            ){
-              sendPlannerPush({
-                userId: targetUserId,
-                title: "ZA RAMKI",
-                body: (updated && updated.title ? updated.title + " — статус: " + statusLabel(updated.status) : "Статус задачи изменён"),
-                url: "./#/planner/" + task.id,
-                tag: "planner-status_changed-" + task.id
-              });
-            }
-          }catch(e){
-            console.warn("[PlannerPush] status_changed error", e);
+          if(
+            updated &&
+            beforeStatus !== String(updated.status || "") &&
+            targetUserId &&
+            targetUserId !== actorId &&
+            typeof window.sendPlannerPush === "function"
+          ){
+            sendPlannerPush({
+              userId: targetUserId,
+              title: "ZA RAMKI",
+              body: (updated && updated.title
+                ? updated.title + " — статус: " + liveStatusLabel(updated.status)
+                : "Статус задачи изменён"),
+              url: "./#/planner/" + liveTask.id,
+              tag: "planner-status_changed-" + liveTask.id
+            });
           }
-
-          if(msg) msg.textContent = "Готово.";
-
-          const tasks2 = await fetchAllActiveTasks();
-          renderLeft(tasks2);
-
-          const sel2 = getSelectedTaskId();
-          if(sel2){
-            const t2 = tasks2.find(x => String(x.id) === String(sel2));
-            if(t2) renderDetails(t2);
-          }
-        }catch(err){
-          console.warn("[PlannerDetailHelpers] set status error", err);
-          const text = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
-          if(msg) msg.textContent = "Ошибка: " + text;
-          viewerEl.querySelectorAll(".pl-status").forEach(x => x.disabled = false);
+        }catch(e){
+          console.warn("[PlannerPush] status_changed error", e);
         }
-      };
+
+        if(msg) msg.textContent = "Готово.";
+
+        liveRenderLeft(tasks2);
+
+        const sel2 = liveGetSelectedTaskId();
+        if(sel2){
+          const t2 = tasks2.find(x => String(x.id) === String(sel2));
+          if(t2){
+            if(typeof updateDetailHeaderOnly === "function"){
+              updateDetailHeaderOnly(t2, {
+                viewerEl,
+                buildMeta: (task) => {
+                  const parts = [];
+
+                  if(task.start_date && typeof liveOpts.startLabel === "function"){
+                    parts.push(`<span class="pill">${liveOpts.startLabel(task.start_date)}</span>`);
+                  }
+
+                  if(task.due_date && typeof liveOpts.dueLabel === "function"){
+                    parts.push(`<span class="pill">${liveOpts.dueLabel(task.due_date)}</span>`);
+                  }
+
+                  if(typeof liveOpts.isOverdue === "function" && liveOpts.isOverdue(task)){
+                    parts.push(`<span class="pill">Срок истёк</span>`);
+                  }
+
+                  if(task.archived_at){
+                    parts.push(`<span class="pill">В архиве</span>`);
+                  }
+
+                  if(typeof liveOpts.urgencyLabel === "function"){
+                    const urg = liveOpts.urgencyLabel(task.urgency);
+                    if(urg) parts.push(`<span class="pill">${urg}</span>`);
+                  }
+
+                  if(task.status && typeof liveStatusLabel === "function"){
+                    parts.push(`<span class="pill">${liveStatusLabel(task.status)}</span>`);
+                  }
+
+                  return parts.join("");
+                },
+                buildActions: (task) => {
+                  const cur = String((task && task.status) || "new");
+                  const isAdmin = (liveOpts.role === "admin");
+                  const isArchived = !!(task && task.archived_at);
+
+                  const next = [];
+                  if(cur === "new") next.push(["taken","Взять в работу"]);
+                  if(cur === "taken") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
+                  if(cur === "in_progress") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
+                  if(cur === "problem") next.push(["in_progress","Проблема решена"], ["done","Успешно завершена"]);
+                  if(isAdmin && cur !== "canceled" && cur !== "done") next.push(["canceled","Отменить задачу"]);
+
+                  const editBtnHtml = (!isArchived && isAdmin)
+                    ? `<button class="btn btn-sm btn--ghost" id="plEditTask" type="button">Редактировать</button>`
+                    : ``;
+
+                  const archiveBtnHtml = (!isArchived && isAdmin)
+                    ? `<button class="btn btn-sm btn--danger" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
+                    : ``;
+
+                  if(next.length === 0 && !archiveBtnHtml && !editBtnHtml) return "";
+
+                  return `
+                    <div class="zr-planner-actions">
+                      <div class="zr-planner-actions-main">
+                        ${next.map(([s,label]) => {
+                          const cls = (s === "done")
+                            ? "btn btn-sm btn--primary pl-status"
+                            : (s === "problem" || s === "canceled")
+                              ? "btn btn-sm btn--danger pl-status"
+                              : "btn btn-sm btn--ghost pl-status";
+                          return `<button class="${cls}" data-s="${s}" type="button">${label}</button>`;
+                        }).join("")}
+                      </div>
+                      <div class="zr-planner-actions-side">
+                        ${editBtnHtml}
+                        ${archiveBtnHtml}
+                      </div>
+                    </div>
+                    ${(next.length > 0 || editBtnHtml) ? `<div class="zr-planner-muted pl-status-msg zr-planner-status-note"></div>` : ``}
+                  `;
+                }
+              });
+
+              // keep latest task snapshot for next delegated click
+              viewerEl.__zrStatusTask = t2;
+            }else{
+              console.warn("[P3.2 TRACE] status flow fallback renderDetails(t2) fired");
+              liveRenderDetails(t2);
+              viewerEl.__zrStatusTask = t2;
+            }
+          }
+        }
+      }catch(err){
+        console.warn("[PlannerDetailHelpers] set status error", err);
+        const text = (err && (err.message || err.details || err.hint))
+          ? (err.message || err.details || err.hint)
+          : String(err);
+
+        if(msg) msg.textContent = "Ошибка: " + text;
+        viewerEl.querySelectorAll(".pl-status").forEach(x => x.disabled = false);
+      }
     });
   }
   
@@ -470,7 +581,10 @@ window.PlannerDetailHelpers = (() => {
               <div class="zr-section-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                 <div class="zr-section-title">Пункты задачи</div>
                 ${(isAdmin && !isArchived) ? `
-                  <button class="btn btn-sm btn--ghost" id="plAddChecklistBtn" type="button">+ Добавить чек-лист</button>
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <button class="btn btn-sm btn--ghost" id="plAddChecklistBtn" type="button">+ Добавить чек-лист</button>
+                    <button class="btn btn-sm btn--ghost" id="plRemoveChecklistBtn" type="button" style="display:none;">Удалить</button>
+                  </div>
                 ` : ``}
               </div>
               <div id="plChecklist"></div>
@@ -511,6 +625,57 @@ window.PlannerDetailHelpers = (() => {
     `;
   }
   
+  function updateDetailHeaderOnly(task, opts){
+    try{
+      const viewerEl = opts.viewerEl;
+      if(!viewerEl) return;
+
+      const root = viewerEl.querySelector(".zr-planner-detail");
+      if(!root) return;
+
+      const hero = root.querySelector(".zr-planner-hero");
+      if(!hero) return;
+
+      const titleEl = hero.querySelector(".zr-planner-title");
+      if(titleEl){
+        titleEl.textContent = task.title || "(без названия)";
+      }
+
+      const metaEl = hero.querySelector(".zr-planner-meta");
+      if(metaEl && typeof opts.buildMeta === "function"){
+        metaEl.innerHTML = opts.buildMeta(task);
+      }
+
+      const isProblem = String(task && task.status || "") === "problem";
+      hero.style.outline = isProblem ? "1px solid rgba(255,80,80,.45)" : "";
+      hero.style.boxShadow = isProblem
+        ? "0 0 0 1px rgba(255,80,80,.18), 0 10px 26px rgba(0,0,0,.35)"
+        : "";
+
+      if(typeof opts.buildActions === "function"){
+        const actionsHost = hero.querySelector(".zr-planner-actions");
+        const noteHost = hero.querySelector(".pl-status-msg") || hero.querySelector(".zr-planner-status-note");
+
+        const tmp = document.createElement("div");
+        tmp.innerHTML = opts.buildActions(task);
+
+        const newActions = tmp.querySelector(".zr-planner-actions");
+        const newNote = tmp.querySelector(".pl-status-msg") || tmp.querySelector(".zr-planner-status-note");
+
+        if(actionsHost && newActions){
+          actionsHost.innerHTML = newActions.innerHTML;
+        }
+
+        if(noteHost && newNote){
+          noteHost.innerHTML = newNote.innerHTML;
+        }
+      }
+
+    }catch(e){
+      console.warn("[PlannerDetailHelpers] header update error", e);
+    }
+  }
+  
   return {
     initAssigneeBlock,
     bindBackButton,
@@ -521,9 +686,28 @@ window.PlannerDetailHelpers = (() => {
     buildActionState,
     buildMetaState,
     bindStatusButtons,
-    buildLayout
+    buildLayout,
+    updateDetailHeaderOnly
   };
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

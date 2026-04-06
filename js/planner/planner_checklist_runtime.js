@@ -11,6 +11,19 @@ window.PlannerChecklistRuntime = (function(){
       : document.getElementById("plChecklist");
   }
 
+  function syncChecklistHeaderButton(hasItems){
+    const addBtn = document.getElementById("plAddChecklistBtn");
+    const removeBtn = document.getElementById("plRemoveChecklistBtn");
+
+    if(addBtn){
+      addBtn.style.display = hasItems ? "none" : "";
+    }
+
+    if(removeBtn){
+      removeBtn.style.display = hasItems ? "" : "none";
+    }
+  }
+
   async function fetchChecklistItems(taskId){
     if(!window.PlannerData) throw new Error("PlannerData missing");
     return await PlannerData.fetchChecklistItems(taskId);
@@ -19,6 +32,9 @@ window.PlannerChecklistRuntime = (function(){
   function renderChecklist(items, isReadOnly){
     const host = getChecklistHost();
     if(!host) return;
+    
+    const hasItems = Array.isArray(items) && items.length > 0;
+    syncChecklistHeaderButton(hasItems);
 
     const esc = (ctx && typeof ctx.esc === "function")
       ? ctx.esc
@@ -38,7 +54,6 @@ window.PlannerChecklistRuntime = (function(){
 
     host.innerHTML = `
       <div class="zr-planner-checklist">
-        <div class="zr-planner-checklist-actions" style="display:flex; justify-content:flex-end; margin-bottom:6px;"></div>
         <div class="zr-planner-checklist-summary">${doneCount}/${total} выполнено</div>
         <div class="zr-planner-checklist-list">
           ${items.map(it => `
@@ -57,40 +72,52 @@ window.PlannerChecklistRuntime = (function(){
       </div>
     `;
     try{
-      if(!isReadOnly && ctx && ctx.getSelectedTaskId){
+      const removeBtn = document.getElementById("plRemoveChecklistBtn");
+
+      if(removeBtn){
+        removeBtn.onclick = null;
+      }
+
+      if(!isReadOnly && ctx && ctx.getSelectedTaskId && removeBtn){
         const taskId = ctx.getSelectedTaskId();
-        const actions = host.querySelector(".zr-planner-checklist-actions");
 
-        if(actions && taskId){
-          const btn = document.createElement("button");
-          btn.className = "btn btn--ghost";
-          btn.textContent = "Удалить";
+        if(taskId){
+          removeBtn.onclick = async () => {
+            if(!confirm("Удалить чек-лист из задачи?")) return;
 
-          btn.onclick = async () => {
             try{
-              if(!confirm("Удалить чек-лист из задачи?")) return;
-
               await PlannerAPI.clearTaskChecklist(taskId);
+            }catch(err){
+              console.warn("[ChecklistRuntime] clear runtime error", err);
+              alert("Ошибка удаления");
+              return;
+            }
 
+            try{
               const links = await PlannerAPI.fetchTaskLinks(taskId);
+              console.log("[DEBUG links after remove]", links);
               const checklistLink = (links || []).find(l => String(l.link_type || "") === "checklist");
 
               if(checklistLink){
                 await PlannerAPI.removeTaskLink(checklistLink.id);
               }
-
-              renderChecklist([], false);
             }catch(err){
-              console.warn("[ChecklistRuntime] remove error", err);
-              alert("Ошибка удаления");
+              console.warn("[ChecklistRuntime] link cleanup warning", err);
+            }
+
+            try{
+              const fresh = await fetchChecklistItems(taskId);
+              renderChecklist(fresh, false);
+              // task is not available in renderChecklist scope; no re-bind needed after remove
+            }catch(err){
+              console.warn("[ChecklistRuntime] refresh after remove warning", err);
+              renderChecklist([], false);
             }
           };
-
-          actions.appendChild(btn);
         }
       }
     }catch(e){
-      console.warn("[ChecklistRuntime] action render error", e);
+      console.warn("[ChecklistRuntime] action bind error", e);
     }      
     
   }
@@ -104,7 +131,7 @@ window.PlannerChecklistRuntime = (function(){
         const id = cb.dataset.id;
         const newDone = !!cb.checked;
 
-        host.querySelectorAll(".pl-ci").forEach(x => x.disabled = true);
+        cb.disabled = true;
 
         try{
           try{
@@ -130,9 +157,23 @@ window.PlannerChecklistRuntime = (function(){
               if(t2) ctx.renderDetails(t2);
             }
           }else{
-            const items = await fetchChecklistItems(task.id);
-            renderChecklist(items);
-            bindChecklist(task);
+            const row = cb.closest(".zr-planner-checklist-row");
+            const textEl = row ? row.querySelector(".zr-planner-checklist-text") : null;
+
+            if(textEl){
+              textEl.classList.toggle("is-done", newDone);
+            }
+
+            const all = Array.from(host.querySelectorAll(".pl-ci"));
+            const doneCount = all.filter(x => x.checked).length;
+            const total = all.length;
+            const summary = host.querySelector(".zr-planner-checklist-summary");
+
+            if(summary){
+              summary.textContent = `${doneCount}/${total} выполнено`;
+            }
+
+            cb.disabled = false;
           }
         }catch(err){
           console.warn("[Planner] checklist toggle error", err);
@@ -150,14 +191,7 @@ window.PlannerChecklistRuntime = (function(){
       const safeItems = Array.isArray(items) ? items : [];
 
       renderChecklist(safeItems, !!isReadOnly);
-
-      if(ctx && typeof ctx.loadInlineChecklists === "function"){
-        await ctx.loadInlineChecklists(task, !!isReadOnly, safeItems);
-      }
-
-      if(!isReadOnly){
-        bindChecklist(task);
-      }
+      bindChecklist(task);
     }catch(err){
       console.warn("[Planner] checklist load error", err);
       const host = getChecklistHost();
@@ -184,4 +218,5 @@ window.PlannerChecklistRuntime = (function(){
     loadChecklist
   };
 })();
+
 

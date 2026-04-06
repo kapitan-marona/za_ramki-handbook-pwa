@@ -814,13 +814,17 @@
             };
           }
 
-          const isDuplicate = await checkDuplicateLink(payload);
-          if(isDuplicate){
-            const ok = confirm("Уже добавлено. Добавить ещё раз?");
-            if(!ok){
-              submitBtn.disabled = false;
-              if(msg) msg.textContent = "Отменено.";
-              return;
+          const isChecklistType = (type === "checklist");
+
+          if(!isChecklistType){
+            const isDuplicate = await checkDuplicateLink(payload);
+            if(isDuplicate){
+              const ok = confirm("Уже добавлено. Добавить ещё раз?");
+              if(!ok){
+                submitBtn.disabled = false;
+                if(msg) msg.textContent = "Отменено.";
+                return;
+              }
             }
           }
 
@@ -888,16 +892,6 @@
                 checklistRows = [];
               }
             }else if(rawItems != null){
-
-              if(checklistRows.length === 0){
-                console.warn("[PlannerActions] checklist preflight malformed items", {
-                  taskId: task.id,
-                  checklistId: payload.ref_id,
-                  items: rawItems
-                });
-                checklistRows = [];
-              }
-            }else if(rawItems != null){
               console.warn("[PlannerActions] checklist preflight malformed items", {
                 taskId: task.id,
                 checklistId: payload.ref_id,
@@ -908,6 +902,7 @@
               checklistRows = [];
             }
 
+            // --- SINGLE CHECKLIST GUARD ---
             try{
               const existingChecklistRows = await SB
                 .from("task_checklist_items")
@@ -919,15 +914,38 @@
                 throw existingChecklistRows.error;
               }
 
-              const hasTaskChecklistItems = Array.isArray(existingChecklistRows.data) && existingChecklistRows.data.length > 0;
+              const hasTaskChecklistItems =
+                Array.isArray(existingChecklistRows.data) &&
+                existingChecklistRows.data.length > 0;
+
               if(hasTaskChecklistItems){
-                checklistRows = null;
+                submitBtn.disabled = false;
+                if(msg) msg.textContent = "У задачи уже есть чек-лист. Сначала удалите текущий.";
+                return;
               }
             }catch(err){
               console.warn("[PlannerActions] checklist runtime guard error", err);
               submitBtn.disabled = false;
               if(msg) msg.textContent = "Не удалось проверить существующий чек-лист задачи.";
               return;
+            }
+
+            // --- CLEANUP OLD CHECKLIST LINKS (FIX) ---
+            try{
+              const existingLinks = await PlannerAPI.fetchTaskLinks(task.id);
+
+              const checklistLinks = (existingLinks || []).filter(l =>
+                String(l.link_type || "") === "checklist"
+              );
+
+              for(const l of checklistLinks){
+                if(l && l.id){
+                  await PlannerAPI.removeTaskLink(l.id);
+                }
+              }
+
+            }catch(err){
+              console.warn("[PlannerActions] checklist link cleanup warning", err);
             }
           }
 
@@ -988,6 +1006,8 @@ window.PlannerActions = {
     ensureInProgress
   };
 })();
+
+
 
 
 

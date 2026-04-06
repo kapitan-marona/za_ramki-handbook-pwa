@@ -44,7 +44,6 @@ console.log("[PLANNER_BUILD] 2026-03-03");
   }
 
   const PA = window.PlannerActivity || {};
-  const PIC = window.PlannerInlineChecklists || {};
   const PPL = window.PlannerPeople || {};
   const PD = window.PlannerDocs || {};
   const PC = window.PlannerComments || {};
@@ -80,6 +79,10 @@ console.log("[PLANNER_BUILD] 2026-03-03");
   }
 
   async function show(){
+    console.warn("[P3.2 TRACE] show() fired", {
+      hash: location.hash,
+      ts: Date.now()
+    });
     const listEl = document.getElementById("list");
     const viewerEl = document.getElementById("viewer");
     const titleEl = document.getElementById("panelTitle");
@@ -95,9 +98,9 @@ console.log("[PLANNER_BUILD] 2026-03-03");
     const ownerKey = ((window.App && App.session && App.session.user) ? App.session.user.id : "anon") + "|" + ((window.App && App.session) ? (App.session.role || "none") : "none");
     if(state.ownerKey !== ownerKey){
       window.__plannerState = { leftFilter: "mine", refreshBusy: false, ownerKey };
-    }else{
-      state.ownerKey = ownerKey;
     }
+    state = window.__plannerState;
+    state.ownerKey = ownerKey;
     // rebind after possible reset
     const today = todayISO();
     const selectedId = getSelectedTaskId();
@@ -109,19 +112,6 @@ async function fetchAllActiveTasks(){
   return await PlannerData.fetchAllActiveTasks({ role, today });
 }
 
-async function loadInlineChecklists(task, isReadOnly, taskItems, opts){
-  return await PIC.loadInlineChecklists(task, isReadOnly, taskItems, opts, {
-    esc,
-    fetchTaskLinks,
-    fetchTaskFiles,
-    parseTaskLink,
-    parseInternalDoc,
-    fetchAllActiveTasks,
-    renderLeft,
-    getSelectedTaskId,
-    renderDetails
-  });
-}
 
 if(window.PlannerChecklistRuntime && typeof PlannerChecklistRuntime.init === "function"){
   PlannerChecklistRuntime.init({
@@ -130,10 +120,10 @@ if(window.PlannerChecklistRuntime && typeof PlannerChecklistRuntime.init === "fu
     fetchAllActiveTasks,
     renderLeft,
     getSelectedTaskId,
-    renderDetails,
-    loadInlineChecklists
+    renderDetails
   });
 }
+
 // ---------- LEFT ----------
   function renderLeft(tasks){
     if(!PL.renderLeft) throw new Error("PlannerLeft.renderLeft missing");
@@ -285,6 +275,13 @@ viewerEl.innerHTML = `
     }
 
     async function loadChecklist(task, isReadOnly){
+      
+     console.warn("[P3.2 TRACE] loadChecklist() fired", {
+      id: task && task.id,
+      status: task && task.status,
+      ts: Date.now()
+    });
+    
       const host = document.getElementById("plChecklist");
 
       try{
@@ -384,13 +381,18 @@ const plannerDocsRuntime = PD.create ? PD.create({
   parseTaskLink,
   parseInternalDoc,
   openPlannerDoc,
-  removeInlineChecklistFromTaskView,
-  removeDocRowFromTaskView,
-  getPlannerChecklistApi
+  removeDocRowFromTaskView
 }) : null;
 
 
 async function loadDocs(task){
+  
+  console.warn("[P3.2 TRACE] loadDocs() fired", {
+    id: task && task.id,
+    status: task && task.status,
+    ts: Date.now()
+  });
+
   if(plannerDocsRuntime && typeof plannerDocsRuntime.loadDocs === "function"){
     return await plannerDocsRuntime.loadDocs(task);
   }
@@ -406,16 +408,8 @@ async function loadDocs(task){
     return await PlannerData.fetchActivity(taskId);
   }
 
-function getPlannerChecklistApi(){
-  return PIC.getPlannerChecklistApi();
-}
-
 function removeDocRowFromTaskView(linkId){
   return PD.removeDocRowFromTaskView(linkId);
-}
-
-function removeInlineChecklistFromTaskView(checklistId){
-  return PIC.removeInlineChecklistFromTaskView(checklistId);
 }
 
 function applyLockedViewState(){
@@ -483,12 +477,38 @@ function applyLockedViewState(){
 }
 
 async function loadDetailSections(task, checklistReadOnly){
+  
+  console.warn("[P3.2 TRACE] loadDetailSections() fired", {
+    id: task && task.id,
+    status: task && task.status,
+    ts: Date.now()
+  });
+  
+  const expectedTaskId = String(task && task.id || "");
+  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
   await loadChecklist(task, checklistReadOnly);
+  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
   await loadDocs(task);
+  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
   await loadComments(task, checklistReadOnly);
+  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
   await loadActivity(task);
+  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
+  return true;
 }
 async function loadComments(task, isReadOnly){
+  
+  console.warn("[P3.2 TRACE] loadComments() fired", {
+    id: task && task.id,
+    status: task && task.status,
+    ts: Date.now()
+  });
+
   if(!PC.loadComments) throw new Error("PlannerComments.loadComments missing");
 
   const host = document.getElementById("plComments");
@@ -506,6 +526,13 @@ async function loadComments(task, isReadOnly){
 }
     
     async function loadActivity(task){
+      
+      console.warn("[P3.2 TRACE] loadActivity() fired", {
+        id: task && task.id,
+        status: task && task.status,
+        ts: Date.now()
+      });
+
       const host = document.getElementById("plActivity");
       return await PA.loadActivity(task, {
         host,
@@ -532,6 +559,10 @@ async function loadComments(task, isReadOnly){
           root.setAttribute("data-task-id", String(taskId || ""));
         }
       }catch(e){}
+    }
+
+    function isCurrentDetailTask(taskId){
+      return String(getRenderedTaskId() || "") === String(taskId || "");
     }
 
     function buildDetailViewState(task){
@@ -595,16 +626,15 @@ async function loadComments(task, isReadOnly){
         checklistReadOnly: !!isLocked
       };
     }
-    function runDetailLockFlow(isLocked){
+    function runDetailLockFlow(isLocked, taskId, detailLoadPromise){
       if(!isLocked){
         return false;
       }
 
-      let __plLockedApplied = false;
+      const expectedTaskId = String(taskId || "");
       const reapplyLockedState = () => {
-        if(__plLockedApplied) return;
+        if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return;
         try{ applyLockedViewState(); }catch(e){}
-        __plLockedApplied = true;
       };
 
       reapplyLockedState();
@@ -613,9 +643,21 @@ async function loadComments(task, isReadOnly){
       setTimeout(reapplyLockedState, 220);
       setTimeout(reapplyLockedState, 500);
 
+      if(detailLoadPromise && typeof detailLoadPromise.then === "function"){
+        detailLoadPromise.then(
+          () => { reapplyLockedState(); },
+          () => { reapplyLockedState(); }
+        );
+      }
+
       return true;
     }
     function renderDetails(task){
+      console.warn("[P3.2 TRACE] renderDetails() fired", {
+        id: task && task.id,
+        status: task && task.status,
+        ts: Date.now()
+      });
 
       // reset shell state before replacing detail DOM
       viewerEl.classList.remove("pl-archived");
@@ -728,6 +770,13 @@ async function loadComments(task, isReadOnly){
               <div class="zr-card zr-card--section zr-planner-section">
                 <div class="zr-section-head">
                   <div class="zr-section-title">Пункты задачи</div>
+
+                  ${(isAdmin && !isArchived) ? `
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                      <button class="btn btn-sm btn--ghost" id="plAddChecklistBtn" type="button">+ Добавить чек-лист</button>
+                      <button class="btn btn-sm btn--ghost" id="plRemoveChecklistBtn" type="button" style="display:none;">Удалить</button>
+                    </div>
+                  ` : ``}
                 </div>
                 <div id="plChecklist"></div>
               </div>
@@ -784,16 +833,14 @@ async function loadComments(task, isReadOnly){
         PDH.bindAddDocButton(task, {
           button: _addDocBtn,
           loadDocs,
-          loadChecklist,
-          loadInlineChecklists
+          loadChecklist
         });
       }
 
       const _addChecklistBtn = document.getElementById("plAddChecklistBtn");
       if(PDH.bindAddChecklistButton){
         PDH.bindAddChecklistButton(task, {
-          button: _addChecklistBtn,
-          loadInlineChecklists
+          button: _addChecklistBtn
         });
       }
 
@@ -825,9 +872,14 @@ async function loadComments(task, isReadOnly){
           viewerEl,
           fetchAllActiveTasks,
           renderLeft,
-          renderDetails,
+          updateDetailHeaderOnly: PDH.updateDetailHeaderOnly,
           getSelectedTaskId,
-          statusLabel
+          statusLabel,
+          startLabel,
+          dueLabel,
+          urgencyLabel,
+          isOverdue,
+          role
         });
       }
 
@@ -854,8 +906,8 @@ async function loadComments(task, isReadOnly){
         });
       }      
 // archived/done/canceled task = read-only content, but keep shell actions available
-            loadDetailSections(task, checklistReadOnly);
-      if(runDetailLockFlow(isLocked)){
+            const detailLoadPromise = loadDetailSections(task, checklistReadOnly);
+      if(runDetailLockFlow(isLocked, task.id, detailLoadPromise)){
         return;
       }
     }
@@ -950,6 +1002,19 @@ async function loadComments(task, isReadOnly){
 
   return { show };
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

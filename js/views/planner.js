@@ -2,7 +2,6 @@ window.Views = window.Views || {};
 
 Views.Planner = (() => {
 
-console.log("[PLANNER_BUILD] 2026-03-03");
 
   function esc(s){
     return (s==null?"":String(s))
@@ -79,10 +78,7 @@ console.log("[PLANNER_BUILD] 2026-03-03");
   }
 
   async function show(){
-    console.warn("[P3.2 TRACE] show() fired", {
-      hash: location.hash,
-      ts: Date.now()
-    });
+
     const listEl = document.getElementById("list");
     const viewerEl = document.getElementById("viewer");
     const titleEl = document.getElementById("panelTitle");
@@ -123,6 +119,19 @@ if(window.PlannerChecklistRuntime && typeof PlannerChecklistRuntime.init === "fu
     renderDetails
   });
 }
+
+const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSections.create === "function")
+  ? PlannerDetailSections.create({
+      esc,
+      uid,
+      getSelectedTaskId,
+      resolvePersonLabel,
+      getTaskAssigneeIds,
+      plannerDocTypeLabel,
+      statusLabel,
+      isCurrentDetailTask
+    })
+  : null;
 
 // ---------- LEFT ----------
   function renderLeft(tasks){
@@ -197,7 +206,6 @@ viewerEl.innerHTML = `
             }
           });
         }catch(err){
-          console.warn("[Planner] openCreateDialog error", err);
           const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
           alert("Ошибка: " + t);
         }
@@ -216,7 +224,6 @@ viewerEl.innerHTML = `
           alert("Готово. В архив перенесено: " + String(n || 0));
           show();
         }catch(err){
-          console.warn("[Planner] archive done error", err);
           const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
           alert("Ошибка: " + t);
           ad.disabled = false;
@@ -239,7 +246,6 @@ viewerEl.innerHTML = `
           renderRightHeader(freshTasks);
           renderBoard(freshTasks);
         }catch(err){
-          console.warn("[Planner] refresh error", err);
         }finally{
           state.refreshBusy = false;
 
@@ -275,273 +281,39 @@ viewerEl.innerHTML = `
     }
 
     async function loadChecklist(task, isReadOnly){
-      
-     console.warn("[P3.2 TRACE] loadChecklist() fired", {
-      id: task && task.id,
-      status: task && task.status,
-      ts: Date.now()
-    });
-    
-      const host = document.getElementById("plChecklist");
-
-      try{
-        const items = await PlannerChecklistRuntime.fetchChecklistItems(task.id);
-        const safeItems = Array.isArray(items) ? items : [];
-
-        if(safeItems.length > 0){
-          PlannerChecklistRuntime.renderChecklist(safeItems, !!isReadOnly);
-
-          // TEMP: disable inline checklist rendering to avoid duplicates
-          // await loadInlineChecklists(task, !!isReadOnly, safeItems, { soft:true });
-        }else{
-          if(host){
-            host.innerHTML = "";
-          }
-
-          // TEMP: disable inline checklist rendering
-          // await loadInlineChecklists(task, !!isReadOnly, safeItems, { soft:true });
-
-          const hasInlineRendered = !!(
-            host &&
-            host.querySelector &&
-            host.querySelector(".zr-planner-inline-cl")
-          );
-
-          if(!hasInlineRendered){
-            PlannerChecklistRuntime.renderChecklist([], !!isReadOnly);
-          }
-        }
-
-        if(!isReadOnly){
-          PlannerChecklistRuntime.bindChecklist(task);
-        }
-      }catch(err){
-        console.warn("[Planner] checklist load error", err);
-        if(host){
-          const text = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
-          host.innerHTML = `<div class="muted" style="font-size:12px;">Ошибка загрузки чекбоксов: ${esc(text)}</div>`;
-        }
+      if(!detailSections || typeof detailSections.loadChecklist !== "function"){
+        throw new Error("PlannerDetailSections.loadChecklist missing");
       }
+      return await detailSections.loadChecklist(task, isReadOnly);
     }
-    async function fetchTaskFiles(taskId){
-  if(!window.PlannerData) throw new Error("PlannerData missing");
-  return await PlannerData.fetchTaskFiles(taskId);
-}
-async function fetchTaskLinks(taskId){
-  if(!window.PlannerData) throw new Error("PlannerData missing");
-  return await PlannerData.fetchTaskLinks(taskId);
-}
 
-function parseInternalDoc(f){
-  if(!PD.parseInternalDoc) throw new Error("PlannerDocs.parseInternalDoc missing");
-  return PD.parseInternalDoc(f);
-}
-function parseTaskLink(link){
-  if(!PD.parseTaskLink) throw new Error("PlannerDocs.parseTaskLink missing");
-  return PD.parseTaskLink(link);
-}
-
-function openPlannerDoc(section, id){
-  const sec = String(section || "").trim();
-  const refId = String(id || "").trim();
-  if(!sec || !refId) return;
-
-  if(!["articles","checklists","templates"].includes(sec)) return;
-
-  try{
-    if(sec === "checklists"){
-      const taskId = getSelectedTaskId();
-      if(taskId){
-        try{
-          sessionStorage.setItem("zr_checklists_open_context", JSON.stringify({
-            source: "planner",
-            taskId: String(taskId),
-            checklistId: String(refId)
-          }));
-        }catch(e){}
+    async function loadDocs(task){
+      if(!detailSections || typeof detailSections.loadDocs !== "function"){
+        throw new Error("PlannerDetailSections.loadDocs missing");
       }
+      return await detailSections.loadDocs(task);
     }
 
-    if(typeof Router !== "undefined" && typeof Router.go === "function"){
-      Router.go(sec, refId);
-      return;
+    async function loadComments(task, isReadOnly){
+      if(!detailSections || typeof detailSections.loadComments !== "function"){
+        throw new Error("PlannerDetailSections.loadComments missing");
+      }
+      return await detailSections.loadComments(task, isReadOnly);
     }
-  }catch(e){
-    console.warn("[Planner] openPlannerDoc Router.go error", e);
-  }
 
-  location.hash = "#/" + encodeURIComponent(sec) + "/" + encodeURIComponent(refId);
-}
-
-const plannerDocsRuntime = PD.create ? PD.create({
-  esc,
-  plannerDocTypeLabel,
-  fetchTaskLinks,
-  fetchTaskFiles,
-  parseTaskLink,
-  parseInternalDoc,
-  openPlannerDoc,
-  removeDocRowFromTaskView
-}) : null;
-
-
-async function loadDocs(task){
-  
-  console.warn("[P3.2 TRACE] loadDocs() fired", {
-    id: task && task.id,
-    status: task && task.status,
-    ts: Date.now()
-  });
-
-  if(plannerDocsRuntime && typeof plannerDocsRuntime.loadDocs === "function"){
-    return await plannerDocsRuntime.loadDocs(task);
-  }
-  throw new Error("plannerDocsRuntime.loadDocs missing");
-}
-
-    async function fetchComments(taskId){
-    if(!window.PlannerData) throw new Error("PlannerData missing");
-    return await PlannerData.fetchComments(taskId);
-  }
-  async function fetchActivity(taskId){
-    if(!window.PlannerData) throw new Error("PlannerData missing");
-    return await PlannerData.fetchActivity(taskId);
-  }
-
-function removeDocRowFromTaskView(linkId){
-  return PD.removeDocRowFromTaskView(linkId);
-}
-
-function applyLockedViewState(){
-  viewerEl.classList.add("pl-archived");
-
-  viewerEl.querySelectorAll("input, textarea, select").forEach(x => {
-    try{
-      x.disabled = true;
-      x.readOnly = true;
-      x.classList.add("is-disabled");
-      x.classList.add("pl-readonly-disabled");
-      x.setAttribute("aria-disabled", "true");
-    }catch(e){}
-  });
-
-  // allow only Back + Archive
-  viewerEl.querySelectorAll("button").forEach(btn => {
-    try{
-      const id = String(btn.id || "");
-      if(id === "plBack" || id === "plArchiveTask") return;
-
-      btn.disabled = true;
-      btn.classList.add("is-disabled");
-      btn.classList.add("pl-readonly-disabled");
-      btn.setAttribute("aria-disabled", "true");
-      btn.style.pointerEvents = "none";
-    }catch(e){}
-  });
-
-  // disable clickable docs / links / checklist labels
-  viewerEl.querySelectorAll(
-    '#plDocs .pl-doc, #plDocs .pl-doc-remove, #plDocs a, #plComments a, #plChecklist label, #plChecklist .zr-planner-inline-cl, #plChecklist .zr-cl-item'
-  ).forEach(x => {
-    try{
-      x.classList.add("pl-readonly-disabled");
-      x.setAttribute("aria-disabled", "true");
-      x.style.pointerEvents = "none";
-    }catch(e){}
-  });
-
-  // hard stop for comment submit if it appears later
-  viewerEl.querySelectorAll('#plComments button, #plComments textarea, #plComments input').forEach(x => {
-    try{
-      x.disabled = true;
-      x.readOnly = true;
-      x.classList.add("is-disabled");
-      x.classList.add("pl-readonly-disabled");
-      x.setAttribute("aria-disabled", "true");
-      x.style.pointerEvents = "none";
-    }catch(e){}
-  });
-
-  // docs add/remove
-  viewerEl.querySelectorAll('#plAddDocBtn, #plDocs button').forEach(x => {
-    try{
-      const id = String(x.id || "");
-      if(id === "plArchiveTask" || id === "plBack") return;
-      x.disabled = true;
-      x.classList.add("is-disabled");
-      x.classList.add("pl-readonly-disabled");
-      x.setAttribute("aria-disabled", "true");
-      x.style.pointerEvents = "none";
-    }catch(e){}
-  });
-}
-
-async function loadDetailSections(task, checklistReadOnly){
-  
-  console.warn("[P3.2 TRACE] loadDetailSections() fired", {
-    id: task && task.id,
-    status: task && task.status,
-    ts: Date.now()
-  });
-  
-  const expectedTaskId = String(task && task.id || "");
-  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
-
-  await loadChecklist(task, checklistReadOnly);
-  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
-
-  await loadDocs(task);
-  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
-
-  await loadComments(task, checklistReadOnly);
-  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
-
-  await loadActivity(task);
-  if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
-
-  return true;
-}
-async function loadComments(task, isReadOnly){
-  
-  console.warn("[P3.2 TRACE] loadComments() fired", {
-    id: task && task.id,
-    status: task && task.status,
-    ts: Date.now()
-  });
-
-  if(!PC.loadComments) throw new Error("PlannerComments.loadComments missing");
-
-  const host = document.getElementById("plComments");
-  return await PC.loadComments({
-    host,
-    task,
-    uid,
-    esc,
-    resolvePersonLabel,
-    getTaskAssigneeIds,
-    fetchComments,
-    loadComments,
-    isReadOnly: !!isReadOnly
-  });
-}
-    
     async function loadActivity(task){
-      
-      console.warn("[P3.2 TRACE] loadActivity() fired", {
-        id: task && task.id,
-        status: task && task.status,
-        ts: Date.now()
-      });
+      if(!detailSections || typeof detailSections.loadActivity !== "function"){
+        throw new Error("PlannerDetailSections.loadActivity missing");
+      }
+      return await detailSections.loadActivity(task);
+    }
 
-      const host = document.getElementById("plActivity");
-      return await PA.loadActivity(task, {
-        host,
-        fetchActivity,
-        statusLabel,
-        resolvePersonLabel,
-        uid
-      });
-    }    
+    async function loadDetailSections(task, checklistReadOnly){
+      if(!detailSections || typeof detailSections.loadDetailSections !== "function"){
+        throw new Error("PlannerDetailSections.loadDetailSections missing");
+      }
+      return await detailSections.loadDetailSections(task, checklistReadOnly);
+    }   
 
     function getRenderedTaskId(){
       try{
@@ -653,11 +425,8 @@ async function loadComments(task, isReadOnly){
       return true;
     }
     function renderDetails(task){
-      console.warn("[P3.2 TRACE] renderDetails() fired", {
-        id: task && task.id,
-        status: task && task.status,
-        ts: Date.now()
-      });
+
+      const incomingId = String(task && task.id || "");
 
       // reset shell state before replacing detail DOM
       viewerEl.classList.remove("pl-archived");
@@ -680,32 +449,14 @@ async function loadComments(task, isReadOnly){
       const isLocked = detailState.isLocked;
       const checklistReadOnly = detailState.checklistReadOnly;
       
-      const editBtnHtml = (!isArchived && isAdmin)
-        ? `<button class="btn btn-sm btn--ghost" id="plEditTask" type="button">Редактировать</button>`
-        : ``;
-      const archiveBtnHtml = (!isArchived && isAdmin)
-        ? `<button class="btn btn-sm btn--danger" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
-        : ``;
-
-      const actionsHtml = (next.length === 0 && !archiveBtnHtml && !editBtnHtml) ? "" : `
-        <div class="zr-planner-actions">
-          <div class="zr-planner-actions-main">
-            ${next.map(([s,label]) => {
-              const cls = (s === "done")
-                ? "btn btn-sm btn--primary pl-status"
-                : (s === "problem" || s === "canceled")
-                  ? "btn btn-sm btn--danger pl-status"
-                  : "btn btn-sm btn--ghost pl-status";
-              return `<button class="${cls}" data-s="${esc(s)}" type="button">${esc(label)}</button>`;
-            }).join("")}
-          </div>
-          <div class="zr-planner-actions-side">
-            ${editBtnHtml}
-            ${archiveBtnHtml}
-          </div>
-        </div>
-        ${(next.length > 0 || editBtnHtml) ? `<div class="zr-planner-muted pl-status-msg zr-planner-status-note"></div>` : ``}
-      `;
+      const actionsHtml = PDH.buildActionsHtml
+        ? PDH.buildActionsHtml(task, {
+            esc,
+            next,
+            isAdmin,
+            isArchived
+          })
+        : "";
 
       viewerEl.innerHTML = PDH.buildLayout
         ? PDH.buildLayout(task, {
@@ -905,8 +656,24 @@ async function loadComments(task, isReadOnly){
           goTask
         });
       }      
-// archived/done/canceled task = read-only content, but keep shell actions available
-            const detailLoadPromise = loadDetailSections(task, checklistReadOnly);
+
+      const clearDetailMinHeights = () => {
+        if(!isCurrentDetailTask(task.id)) return;
+
+        ["plChecklist", "plDocs", "plComments", "plActivity"].forEach(id => {
+          const el = document.getElementById(id);
+          if(el){
+            el.style.minHeight = "";
+          }
+        });
+      };
+
+      // archived/done/canceled task = read-only content, but keep shell actions available
+      const detailLoadPromise = loadDetailSections(task, checklistReadOnly)
+        .finally(() => {
+          clearDetailMinHeights();
+        });
+
       if(runDetailLockFlow(isLocked, task.id, detailLoadPromise)){
         return;
       }
@@ -965,7 +732,6 @@ async function loadComments(task, isReadOnly){
           });
         }
       }catch(e){
-        console.warn("[Planner] wireCreateButton error", e);
       }
 
       return;
@@ -985,7 +751,6 @@ async function loadComments(task, isReadOnly){
             }
           }
         }catch(err){
-          console.warn("[Planner] fetchTaskById fallback error", err);
         }
 
         renderRightHeader(tasks);
@@ -997,11 +762,15 @@ async function loadComments(task, isReadOnly){
       renderBoard(tasks);
     }
 
-    try{ console.log("[Planner] tasks", tasks.length, "leftFilter", state.leftFilter); }catch(e){}
   }
 
   return { show };
 })();
+
+
+
+
+
 
 
 

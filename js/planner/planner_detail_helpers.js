@@ -124,7 +124,6 @@ window.PlannerDetailHelpers = (() => {
                 throw new Error("PlannerChecklistRuntime missing");
               }
 
-
               const links = await PlannerAPI.fetchTaskLinks(task.id);
               console.log("[DEBUG links after add]", links);
 
@@ -133,7 +132,6 @@ window.PlannerDetailHelpers = (() => {
 
               PlannerChecklistRuntime.renderChecklist(safeItems, false);
               PlannerChecklistRuntime.bindChecklist(task);
-              // button visibility is controlled by PlannerChecklistRuntime.renderChecklist()
             }catch(err){
               console.warn("[PlannerDetailHelpers] runtime refresh after checklist add error", err);
             }
@@ -174,10 +172,6 @@ window.PlannerDetailHelpers = (() => {
           },
           onAfterSubmit: async (taskIdAfterSave) => {
             const targetId = taskIdAfterSave || task.id;
-            const tasks2 = (typeof fetchAllActiveTasks === "function")
-              ? await fetchAllActiveTasks()
-              : [];
-
             const fresh = (typeof fetchTaskById === "function")
               ? await fetchTaskById(targetId, { role, today })
               : null;
@@ -191,10 +185,6 @@ window.PlannerDetailHelpers = (() => {
                 status: fresh && fresh.status
               });
             }catch(e){}
-
-            if(typeof renderLeft === "function"){
-              renderLeft(tasks2);
-            }
 
             if(fresh){
               if(typeof renderDetails === "function"){
@@ -249,7 +239,6 @@ window.PlannerDetailHelpers = (() => {
     };
   }
 
-
   function buildActionState(task, opts){
     const o = opts || {};
     const role = o.role;
@@ -272,7 +261,7 @@ window.PlannerDetailHelpers = (() => {
       next
     };
   }
-  
+
   function buildMetaState(task, opts){
     const o = opts || {};
     const esc = o.esc;
@@ -327,7 +316,7 @@ window.PlannerDetailHelpers = (() => {
       detailsProblemStyle
     };
   }
-  
+
   function bindStatusButtons(task, opts){
     const o = opts || {};
     const viewerEl = o.viewerEl;
@@ -339,11 +328,9 @@ window.PlannerDetailHelpers = (() => {
 
     if(!viewerEl) return;
 
-    // keep latest task/options for delegated handler
     viewerEl.__zrStatusTask = task;
     viewerEl.__zrStatusOpts = o;
 
-    // bind once
     if(viewerEl.__zrStatusDelegatedBound) return;
     viewerEl.__zrStatusDelegatedBound = true;
 
@@ -376,11 +363,20 @@ window.PlannerDetailHelpers = (() => {
         const beforeStatus = String(liveTask.status || "");
 
         await PlannerActions.setStatus(liveTask.id, s);
-        const tasks2 = await liveFetchAllActiveTasks();
+        const t2 = Object.assign({}, liveTask, { status: s });
 
-        // push (after successful save)
+        // soft refresh left list so status changes appear immediately there too
         try{
-          const updated = tasks2.find(x => String(x.id) === String(liveTask.id));
+          if(typeof liveFetchAllActiveTasks === "function" && typeof liveRenderLeft === "function"){
+            const tasks2 = await liveFetchAllActiveTasks();
+            liveRenderLeft(tasks2);
+          }
+        }catch(e){
+          console.warn("[PlannerDetailHelpers] left list refresh after status failed", e);
+        }
+
+        try{
+          const updated = t2;
 
           const assignees = updated && Array.isArray(updated.assignees) ? updated.assignees : [];
           const targetUserId = assignees.length ? String(assignees[0]) : "";
@@ -409,96 +405,67 @@ window.PlannerDetailHelpers = (() => {
 
         if(msg) msg.textContent = "Готово.";
 
-        liveRenderLeft(tasks2);
-
         const sel2 = liveGetSelectedTaskId();
-        if(sel2){
-          const t2 = tasks2.find(x => String(x.id) === String(sel2));
-          if(t2){
-            if(typeof updateDetailHeaderOnly === "function"){
-              updateDetailHeaderOnly(t2, {
-                viewerEl,
-                buildMeta: (task) => {
-                  const parts = [];
+        if(sel2 && String(sel2) === String(liveTask.id)){
+          if(typeof liveOpts.updateDetailHeaderOnly === "function"){
+            liveOpts.updateDetailHeaderOnly(t2, {
+              viewerEl,
+              buildMeta: (task) => {
+                const parts = [];
 
-                  if(task.start_date && typeof liveOpts.startLabel === "function"){
-                    parts.push(`<span class="pill">${liveOpts.startLabel(task.start_date)}</span>`);
-                  }
-
-                  if(task.due_date && typeof liveOpts.dueLabel === "function"){
-                    parts.push(`<span class="pill">${liveOpts.dueLabel(task.due_date)}</span>`);
-                  }
-
-                  if(typeof liveOpts.isOverdue === "function" && liveOpts.isOverdue(task)){
-                    parts.push(`<span class="pill">Срок истёк</span>`);
-                  }
-
-                  if(task.archived_at){
-                    parts.push(`<span class="pill">В архиве</span>`);
-                  }
-
-                  if(typeof liveOpts.urgencyLabel === "function"){
-                    const urg = liveOpts.urgencyLabel(task.urgency);
-                    if(urg) parts.push(`<span class="pill">${urg}</span>`);
-                  }
-
-                  if(task.status && typeof liveStatusLabel === "function"){
-                    parts.push(`<span class="pill">${liveStatusLabel(task.status)}</span>`);
-                  }
-
-                  return parts.join("");
-                },
-                buildActions: (task) => {
-                  const cur = String((task && task.status) || "new");
-                  const isAdmin = (liveOpts.role === "admin");
-                  const isArchived = !!(task && task.archived_at);
-
-                  const next = [];
-                  if(cur === "new") next.push(["taken","Взять в работу"]);
-                  if(cur === "taken") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
-                  if(cur === "in_progress") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
-                  if(cur === "problem") next.push(["in_progress","Проблема решена"], ["done","Успешно завершена"]);
-                  if(isAdmin && cur !== "canceled" && cur !== "done") next.push(["canceled","Отменить задачу"]);
-
-                  const editBtnHtml = (!isArchived && isAdmin)
-                    ? `<button class="btn btn-sm btn--ghost" id="plEditTask" type="button">Редактировать</button>`
-                    : ``;
-
-                  const archiveBtnHtml = (!isArchived && isAdmin)
-                    ? `<button class="btn btn-sm btn--danger" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
-                    : ``;
-
-                  if(next.length === 0 && !archiveBtnHtml && !editBtnHtml) return "";
-
-                  return `
-                    <div class="zr-planner-actions">
-                      <div class="zr-planner-actions-main">
-                        ${next.map(([s,label]) => {
-                          const cls = (s === "done")
-                            ? "btn btn-sm btn--primary pl-status"
-                            : (s === "problem" || s === "canceled")
-                              ? "btn btn-sm btn--danger pl-status"
-                              : "btn btn-sm btn--ghost pl-status";
-                          return `<button class="${cls}" data-s="${s}" type="button">${label}</button>`;
-                        }).join("")}
-                      </div>
-                      <div class="zr-planner-actions-side">
-                        ${editBtnHtml}
-                        ${archiveBtnHtml}
-                      </div>
-                    </div>
-                    ${(next.length > 0 || editBtnHtml) ? `<div class="zr-planner-muted pl-status-msg zr-planner-status-note"></div>` : ``}
-                  `;
+                if(task.start_date && typeof liveOpts.startLabel === "function"){
+                  parts.push(`<span class="pill">${liveOpts.startLabel(task.start_date)}</span>`);
                 }
-              });
 
-              // keep latest task snapshot for next delegated click
-              viewerEl.__zrStatusTask = t2;
-            }else{
-              console.warn("[P3.2 TRACE] status flow fallback renderDetails(t2) fired");
-              liveRenderDetails(t2);
-              viewerEl.__zrStatusTask = t2;
-            }
+                if(task.due_date && typeof liveOpts.dueLabel === "function"){
+                  parts.push(`<span class="pill">${liveOpts.dueLabel(task.due_date)}</span>`);
+                }
+
+                if(typeof liveOpts.isOverdue === "function" && liveOpts.isOverdue(task)){
+                  parts.push(`<span class="pill">Срок истёк</span>`);
+                }
+
+                if(task.archived_at){
+                  parts.push(`<span class="pill">В архиве</span>`);
+                }
+
+                if(typeof liveOpts.urgencyLabel === "function"){
+                  const urg = liveOpts.urgencyLabel(task.urgency);
+                  if(urg) parts.push(`<span class="pill">${urg}</span>`);
+                }
+
+                if(task.status && typeof liveStatusLabel === "function"){
+                  parts.push(`<span class="pill">${liveStatusLabel(task.status)}</span>`);
+                }
+
+                return parts.join("");
+              },
+              buildActions: (task) => {
+                const cur = String((task && task.status) || "new");
+                const isAdmin = (liveOpts.role === "admin");
+                const isArchived = !!(task && task.archived_at);
+
+                const next = [];
+                if(cur === "new") next.push(["taken","Взять в работу"]);
+                if(cur === "taken") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
+                if(cur === "in_progress") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
+                if(cur === "problem") next.push(["in_progress","Проблема решена"], ["done","Успешно завершена"]);
+                if(isAdmin && cur !== "canceled" && cur !== "done") next.push(["canceled","Отменить задачу"]);
+
+                return buildActionsHtml(task, {
+                  esc: (v) => String(v == null ? "" : v),
+                  next,
+                  isAdmin,
+                  isArchived
+                });
+              }
+            });
+
+            viewerEl.__zrStatusTask = t2;
+          }else{
+            console.warn("[P3.2 TRACE] status flow fallback renderDetails(t2) fired");
+            liveRenderDetails(t2);
+            viewerEl.__zrStatusTask = t2;
           }
         }
       }catch(err){
@@ -511,6 +478,46 @@ window.PlannerDetailHelpers = (() => {
         viewerEl.querySelectorAll(".pl-status").forEach(x => x.disabled = false);
       }
     });
+  }
+
+  function buildActionsHtml(task, opts){
+    const o = opts || {};
+    const esc = o.esc || (v => String(v == null ? "" : v));
+    const next = Array.isArray(o.next) ? o.next : [];
+    const isAdmin = !!o.isAdmin;
+    const isArchived = !!o.isArchived;
+
+    const editBtnHtml = (!isArchived && isAdmin)
+      ? `<button class="btn btn-sm btn--ghost" id="plEditTask" type="button">Редактировать</button>`
+      : ``;
+
+    const archiveBtnHtml = (!isArchived && isAdmin)
+      ? `<button class="btn btn-sm btn--danger" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
+      : ``;
+
+    if(next.length === 0 && !archiveBtnHtml && !editBtnHtml){
+      return "";
+    }
+
+    return `
+      <div class="zr-planner-actions">
+        <div class="zr-planner-actions-main">
+          ${next.map(([s,label]) => {
+            const cls = (s === "done")
+              ? "btn btn-sm btn--primary pl-status"
+              : (s === "problem" || s === "canceled")
+                ? "btn btn-sm btn--danger pl-status"
+                : "btn btn-sm btn--ghost pl-status";
+            return `<button class="${cls}" data-s="${esc(s)}" type="button">${esc(label)}</button>`;
+          }).join("")}
+        </div>
+        <div class="zr-planner-actions-side">
+          ${editBtnHtml}
+          ${archiveBtnHtml}
+        </div>
+      </div>
+      ${(next.length > 0 || editBtnHtml) ? `<div class="zr-planner-muted pl-status-msg zr-planner-status-note"></div>` : ``}
+    `;
   }
   
   function buildLayout(task, opts){
@@ -624,7 +631,7 @@ window.PlannerDetailHelpers = (() => {
       </div>
     `;
   }
-  
+
   function updateDetailHeaderOnly(task, opts){
     try{
       const viewerEl = opts.viewerEl;
@@ -662,8 +669,11 @@ window.PlannerDetailHelpers = (() => {
         const newActions = tmp.querySelector(".zr-planner-actions");
         const newNote = tmp.querySelector(".pl-status-msg") || tmp.querySelector(".zr-planner-status-note");
 
-        if(actionsHost && newActions){
-          actionsHost.innerHTML = newActions.innerHTML;
+        const currentMain = actionsHost ? actionsHost.querySelector(".zr-planner-actions-main") : null;
+        const newMain = newActions ? newActions.querySelector(".zr-planner-actions-main") : null;
+
+        if(currentMain && newMain){
+          currentMain.innerHTML = newMain.innerHTML;
         }
 
         if(noteHost && newNote){
@@ -675,7 +685,7 @@ window.PlannerDetailHelpers = (() => {
       console.warn("[PlannerDetailHelpers] header update error", e);
     }
   }
-  
+
   return {
     initAssigneeBlock,
     bindBackButton,
@@ -685,30 +695,9 @@ window.PlannerDetailHelpers = (() => {
     bindArchiveButton,
     buildActionState,
     buildMetaState,
+    buildActionsHtml,
     bindStatusButtons,
     buildLayout,
     updateDetailHeaderOnly
   };
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

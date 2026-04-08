@@ -186,6 +186,15 @@ window.PlannerDetailHelpers = (() => {
               });
             }catch(e){}
 
+            try{
+              if(typeof fetchAllActiveTasks === "function" && typeof renderLeft === "function"){
+                const tasks2 = await fetchAllActiveTasks();
+                renderLeft(tasks2);
+              }
+            }catch(e){
+              console.warn("[PlannerDetailHelpers] left list refresh after edit failed", e);
+            }
+
             if(fresh){
               if(typeof renderDetails === "function"){
                 renderDetails(fresh);
@@ -407,7 +416,12 @@ window.PlannerDetailHelpers = (() => {
 
         const sel2 = liveGetSelectedTaskId();
         if(sel2 && String(sel2) === String(liveTask.id)){
-          if(typeof liveOpts.updateDetailHeaderOnly === "function"){
+          const needsFullDetailRefresh = (
+            String(t2 && t2.status || "") === "done" ||
+            String(t2 && t2.status || "") === "canceled"
+          );
+
+          if(!needsFullDetailRefresh && typeof liveOpts.updateDetailHeaderOnly === "function"){
             liveOpts.updateDetailHeaderOnly(t2, {
               viewerEl,
               buildMeta: (task) => {
@@ -463,7 +477,6 @@ window.PlannerDetailHelpers = (() => {
 
             viewerEl.__zrStatusTask = t2;
           }else{
-            console.warn("[P3.2 TRACE] status flow fallback renderDetails(t2) fired");
             liveRenderDetails(t2);
             viewerEl.__zrStatusTask = t2;
           }
@@ -544,8 +557,9 @@ window.PlannerDetailHelpers = (() => {
           <div class="zr-planner-hero-top">
             <div class="zr-planner-hero-main">
               <div class="zr-planner-title">${safeEsc(task.title || "(без названия)")}</div>
-              <div class="zr-planner-meta">
-                ${start}${due}${overduePill}${archivedPill}${urg}${st}
+              <div class="zr-planner-meta" style="display:flex; flex-wrap:wrap; gap:6px;">
+                ${overduePill}${archivedPill}${st}
+                ${start}${due}${urg}
               </div>
             </div>
 
@@ -686,6 +700,162 @@ window.PlannerDetailHelpers = (() => {
     }
   }
 
+  function bindDetailInteractions(task, opts){
+    const o = opts || {};
+    const viewerEl = o.viewerEl;
+    const loadDocs = o.loadDocs;
+    const loadChecklist = o.loadChecklist;
+    const uid = o.uid;
+    const getTaskAssigneeDetails = o.getTaskAssigneeDetails;
+    const goTask = o.goTask;
+    const fetchAllActiveTasks = o.fetchAllActiveTasks;
+    const renderLeft = o.renderLeft;
+    const getSelectedTaskId = o.getSelectedTaskId;
+    const statusLabel = o.statusLabel;
+    const startLabel = o.startLabel;
+    const dueLabel = o.dueLabel;
+    const urgencyLabel = o.urgencyLabel;
+    const isOverdue = o.isOverdue;
+    const role = o.role;
+    const today = o.today;
+    const renderDetails = o.renderDetails;
+    const fetchTaskById = o.fetchTaskById;
+
+    if(!viewerEl) return;
+
+    const byId = (id) => {
+      try{
+        return viewerEl.querySelector(`#${id}`);
+      }catch(e){
+        return null;
+      }
+    };
+
+    if(!o.isArchived && task.status !== "done" && task.status !== "canceled"){
+      viewerEl.querySelectorAll(".pl-readonly-disabled, .is-disabled").forEach(x => {
+        try{ x.classList.remove("pl-readonly-disabled"); }catch(e){}
+        try{ x.classList.remove("is-disabled"); }catch(e){}
+        try{ x.removeAttribute("aria-disabled"); }catch(e){}
+        try{ x.style.pointerEvents = ""; }catch(e){}
+      });
+      viewerEl.querySelectorAll("button, input, textarea, select").forEach(x => {
+        try{ x.disabled = false; }catch(e){}
+        try{ x.readOnly = false; }catch(e){}
+      });
+    }
+
+    const _addDocBtn = byId("plAddDocBtn");
+    if(bindAddDocButton){
+      bindAddDocButton(task, {
+        button: _addDocBtn,
+        loadDocs,
+        loadChecklist
+      });
+    }
+
+    const _addChecklistBtn = byId("plAddChecklistBtn");
+    if(bindAddChecklistButton){
+      bindAddChecklistButton(task, {
+        button: _addChecklistBtn
+      });
+    }
+
+    const assigneeView = byId("plAssigneeView");
+    if(initAssigneeBlock){
+      initAssigneeBlock(task, {
+        assigneeView,
+        uid,
+        getTaskAssigneeDetails,
+        fetchAssignablePeople: () => {
+          if(window.PlannerAPI && typeof PlannerAPI.fetchAssignablePeople === "function"){
+            return PlannerAPI.fetchAssignablePeople();
+          }
+          return [];
+        }
+      });
+    }
+
+    const back = byId("plBack");
+    if(bindBackButton){
+      bindBackButton({
+        back,
+        goTask
+      });
+    }
+
+    if(bindStatusButtons){
+      bindStatusButtons(task, {
+        viewerEl,
+        fetchAllActiveTasks,
+        renderLeft,
+        renderDetails,
+        updateDetailHeaderOnly,
+        getSelectedTaskId,
+        statusLabel,
+        startLabel,
+        dueLabel,
+        urgencyLabel,
+        isOverdue,
+        role
+      });
+    }
+
+    const _plEditBtn = byId("plEditTask");
+    if(bindEditButton){
+      bindEditButton(task, {
+        button: _plEditBtn,
+        role,
+        today,
+        fetchAllActiveTasks,
+        renderLeft,
+        renderDetails,
+        goTask,
+        fetchTaskById
+      });
+    }
+
+    const _plArchiveBtn = byId("plArchiveTask");
+    if(bindArchiveButton){
+      bindArchiveButton(task, {
+        button: _plArchiveBtn,
+        goTask
+      });
+    }
+  }
+
+  function runDetailPostLoad(task, opts){
+    const o = opts || {};
+    const loadDetailSections = o.loadDetailSections;
+    const checklistReadOnly = !!o.checklistReadOnly;
+    const runDetailLockFlow = o.runDetailLockFlow;
+    const isCurrentDetailTask = o.isCurrentDetailTask;
+
+    const clearDetailMinHeights = () => {
+      if(typeof isCurrentDetailTask === "function" && !isCurrentDetailTask(task.id)) return;
+
+      ["plChecklist", "plDocs", "plComments", "plActivity"].forEach(id => {
+        const el = document.getElementById(id);
+        if(el){
+          el.style.minHeight = "";
+        }
+      });
+    };
+
+    const detailLoadPromise = (typeof loadDetailSections === "function")
+      ? loadDetailSections(task, checklistReadOnly).finally(() => {
+          clearDetailMinHeights();
+        })
+      : Promise.resolve(false).finally(() => {
+          clearDetailMinHeights();
+        });
+
+    if(typeof runDetailLockFlow === "function"){
+      return runDetailLockFlow(!!o.isLocked, task.id, detailLoadPromise);
+    }
+
+    return false;
+  }
+
   return {
     initAssigneeBlock,
     bindBackButton,
@@ -698,6 +868,8 @@ window.PlannerDetailHelpers = (() => {
     buildActionsHtml,
     bindStatusButtons,
     buildLayout,
-    updateDetailHeaderOnly
+    updateDetailHeaderOnly,
+    bindDetailInteractions,
+    runDetailPostLoad
   };
 })();

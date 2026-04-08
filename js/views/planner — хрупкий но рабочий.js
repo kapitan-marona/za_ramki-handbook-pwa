@@ -108,13 +108,6 @@ async function fetchAllActiveTasks(){
   return await PlannerData.fetchAllActiveTasks({ role, today });
 }
 
-async function fetchTaskById(taskId, ctx){
-  if(!window.PlannerData || typeof PlannerData.fetchTaskById !== "function"){
-    throw new Error("PlannerData.fetchTaskById missing");
-  }
-  return await PlannerData.fetchTaskById(taskId, ctx);
-}
-
 
 if(window.PlannerChecklistRuntime && typeof PlannerChecklistRuntime.init === "function"){
   PlannerChecklistRuntime.init({
@@ -344,48 +337,6 @@ viewerEl.innerHTML = `
       return String(getRenderedTaskId() || "") === String(taskId || "");
     }
 
-    function applyLockedViewState(){
-      try{
-        const root = viewerEl && viewerEl.querySelector && viewerEl.querySelector(".zr-planner-detail");
-        if(!root) return;
-
-        viewerEl.classList.add("pl-archived");
-
-        const statusValue = String(
-          (viewerEl && viewerEl.__zrStatusTask && viewerEl.__zrStatusTask.status) || ""
-        );
-        const allowArchiveAction = (role === "admin" && statusValue === "canceled");
-
-        root.querySelectorAll(".pl-status, #plEditTask, #plAddDocBtn, #plAddChecklistBtn, #plRemoveChecklistBtn").forEach(el => {
-          try{ el.disabled = true; }catch(e){}
-          try{ el.classList.add("pl-readonly-disabled"); }catch(e){}
-          try{ el.setAttribute("aria-disabled", "true"); }catch(e){}
-        });
-
-        const archiveBtn = root.querySelector("#plArchiveTask");
-        if(archiveBtn){
-          if(allowArchiveAction){
-            try{ archiveBtn.disabled = false; }catch(e){}
-            try{ archiveBtn.classList.remove("pl-readonly-disabled"); }catch(e){}
-            try{ archiveBtn.removeAttribute("aria-disabled"); }catch(e){}
-          }else{
-            try{ archiveBtn.disabled = true; }catch(e){}
-            try{ archiveBtn.classList.add("pl-readonly-disabled"); }catch(e){}
-            try{ archiveBtn.setAttribute("aria-disabled", "true"); }catch(e){}
-          }
-        }
-
-        root.querySelectorAll("input, textarea, select, button").forEach(el => {
-          if(!el) return;
-          if(el.id === "plBack") return;
-          if(allowArchiveAction && el.id === "plArchiveTask") return;
-
-          try{ el.disabled = true; }catch(e){}
-          try{ el.readOnly = true; }catch(e){}
-        });
-      }catch(e){}
-    }
-
     function buildDetailViewState(task){
       const metaState = PDH.buildMetaState
         ? PDH.buildMetaState(task, {
@@ -427,17 +378,7 @@ viewerEl.innerHTML = `
           };
 
       const isArchived = !!actionState.isArchived;
-      let lockType = "none";
-
-      if(isArchived){
-        lockType = "archived";
-      }else if(task.status === "done"){
-        lockType = "done";
-      }else if(task.status === "canceled"){
-        lockType = "canceled";
-      }
-
-      const isLocked = lockType !== "none";
+      const isLocked = isArchived || task.status === "done" || task.status === "canceled";
 
       return {
         metaState,
@@ -545,7 +486,7 @@ viewerEl.innerHTML = `
         role,
         today,
         renderDetails,
-        fetchTaskById
+        fetchTaskById: (taskId, ctx) => PlannerData.fetchTaskById(taskId, ctx)
       };
 
       if(PDH.bindDetailInteractions){
@@ -629,10 +570,12 @@ viewerEl.innerHTML = `
       else {
         // fetchTaskById fallback (archived by direct link, read-only)
         try{
-          const one = await fetchTaskById(selectedId, { role, today });
-          if(one && one.archived_at){
-            renderDetails(one);
-            return;
+          if(window.PlannerData && typeof PlannerData.fetchTaskById === "function"){
+            const one = await PlannerData.fetchTaskById(selectedId, { role, today });
+            if(one && one.archived_at){
+              renderDetails(one);
+              return;
+            }
           }
         }catch(err){
         }

@@ -19,12 +19,6 @@ window.Views.AdminChecklistsFactory = function(deps){
   const renderAdminTabs = deps.renderAdminTabs;
   const renderContentSubTabs = deps.renderContentSubTabs;
   const goAdmin = deps.goAdmin;
-  const renderTagsPalette = deps.renderTagsPalette;
-  const parseSelectedTags = deps.parseSelectedTags;
-  const bindTagsPalette = deps.bindTagsPalette;
-  const renderActionsBuilder = deps.renderActionsBuilder;
-  const bindActionsUI = deps.bindActionsUI;
-  const readActionsFromUI = deps.readActionsFromUI;
   const inpStyle = deps.inpStyle;
   const taStyle = deps.taStyle;
   const setMode = deps.setMode;
@@ -34,9 +28,6 @@ window.Views.AdminChecklistsFactory = function(deps){
   if(!setBusy || !setStatus || !setPanelTitle || !showViewer || !showLoading) throw new Error("Admin checklists module: shared UI helpers missing.");
   if(!withTimeout || !ensureSession || !renderAdminTabs || !renderContentSubTabs || !goAdmin || !inpStyle || !taStyle || !setMode){
     throw new Error("Admin checklists module: shared runtime helpers missing.");
-  }
-  if(!renderTagsPalette || !parseSelectedTags || !bindTagsPalette || !renderActionsBuilder || !bindActionsUI || !readActionsFromUI){
-    throw new Error("Admin checklists module: shared content helpers missing.");
   }
 
   async function loadChecklistsSource(){
@@ -172,8 +163,6 @@ window.Views.AdminChecklistsFactory = function(deps){
     const id = row.id || "";
     const title = row.title || "";
     const desc = row.desc || "";
-    const actions = Array.isArray(row.actions) ? row.actions : [];
-    const tags = Array.isArray(row.tags) ? row.tags : [];
     const items = normalizeChecklistEditorItems(row.items);
     const published = !!row.published;
     const sort = row.sort != null ? String(row.sort) : "1000";
@@ -232,25 +221,6 @@ window.Views.AdminChecklistsFactory = function(deps){
           </div>
         </div>
 
-        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-sm">
-          <div class="zr-section-head">
-            <div class="zr-section-title">Теги</div>
-          </div>
-          <div class="item-meta">
-            <span class="tag">dictionary</span>
-            <span class="tag">multi-select</span>
-          </div>
-          <div id="clTagsPalette">${renderTagsPalette(tags)}</div>
-          <div class="muted zr-admin-editor__tags-meta">Выбрано: <span id="clTagsChosen" class="mono">${esc(tags.join(", "))}</span></div>
-        </div>
-
-        <div class="zr-card zr-card--subtle zr-admin-editor__section zr-stack-sm">
-          <div class="zr-section-head">
-            <div class="zr-section-title">Кнопки действий</div>
-          </div>
-          <div id="clActionsBox">${renderActionsBuilder(actions)}</div>
-        </div>
-
         <div class="zr-card zr-card--section zr-admin-editor__section zr-stack-sm">
           <div class="zr-section-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
             <div class="zr-section-title">Структура</div>
@@ -261,8 +231,8 @@ window.Views.AdminChecklistsFactory = function(deps){
 
         <div class="zr-card zr-card--subtle zr-admin-editor__section">
           <div class="zr-admin-editor__actions">
-            <button class="btn btn--primary" id="cl_save"><span class="dot"></span>Сохранить</button>
-            <button class="btn btn--danger" id="cl_del"><span class="dot"></span>Удалить</button>
+            <button class="btn btn--primary" id="cl_save">Сохранить</button>
+            <button class="btn btn--danger" id="cl_del">Удалить</button>
           </div>
         </div>
       </div>
@@ -277,7 +247,7 @@ window.Views.AdminChecklistsFactory = function(deps){
     list.insertAdjacentHTML("beforeend", `
       <div class="hr"></div>
       <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="cl_reload_admin"><span class="dot"></span>Обновить</button>
+        <button class="btn btn-sm" id="cl_reload_admin">Обновить</button>
       </div>
       <div class="muted" style="margin:0 0 8px 0;">Чек-листов: ${items.length}. Пока из Supabase доступны только метаданные существующих записей.</div>
     `);
@@ -311,14 +281,6 @@ window.Views.AdminChecklistsFactory = function(deps){
     const root = $("#viewer");
     if(!root) return;
 
-    bindTagsPalette();
-    bindActionsUI(Array.isArray(rowData?.actions) ? rowData.actions : [], "clActionsBox");
-
-    const syncClTags = () => {
-      const el = $("#clTagsChosen");
-      if(el) el.textContent = parseSelectedTags(root).join(", ");
-    };
-
     let draftItems = normalizeChecklistEditorItems(rowData && rowData.items);
 
     const renderDraftItems = () => {
@@ -338,12 +300,6 @@ window.Views.AdminChecklistsFactory = function(deps){
         text: input.value != null ? String(input.value) : ""
       }));
     };
-
-    root.querySelectorAll("[data-tag]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        setTimeout(syncClTags, 0);
-      });
-    });
 
     root.addEventListener("input", (e) => {
       const input = e.target && e.target.matches ? (e.target.matches("[data-cl-item-input]") ? e.target : null) : null;
@@ -385,8 +341,6 @@ window.Views.AdminChecklistsFactory = function(deps){
       renderDraftItems();
     });
 
-    syncClTags();
-
     const saveBtn = $("#cl_save");
     if(saveBtn){
       saveBtn.onclick = async () => {
@@ -418,8 +372,6 @@ window.Views.AdminChecklistsFactory = function(deps){
             url: existing && Object.prototype.hasOwnProperty.call(existing, "url")
               ? (existing.url || null)
               : null,
-            actions: readActionsFromUI(root),
-            tags: parseSelectedTags(root),
             published: ($("#cl_published").value || "1") === "1",
             sort: sortRaw ? Number(sortRaw) : 1000,
             items

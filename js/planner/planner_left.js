@@ -25,15 +25,14 @@
 
     const head = `
       <div style="padding:12px 10px 8px 10px;">
-        <div class="zr-panel-topline">PLANNER</div>
-        <div class="zr-panel-subline">Список задач и быстрый переход к деталям.</div>
+        <!-- planner duplicate title removed -->
       </div>
     `;
 
     const pills = (role === "admin")
       ? `
         <div style="padding:0 10px 10px 10px; display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn btn-sm pl-left ${state.leftFilter==="mine" ? "is-active" : ""}" data-f="mine" type="button">Мои</button>
+          <button class="btn btn-sm pl-left ${state.leftFilter==="mine" ? "is-active" : ""}" data-f="mine" type="button">Мои задачи</button>
           <button class="btn btn-sm pl-left ${state.leftFilter==="all" ? "is-active" : ""}" data-f="all" type="button">Все</button>
         </div>
       `
@@ -75,27 +74,27 @@
     }
 
     host.innerHTML = leftTasks.map((t) => {
-      const due = t.due_date
-        ? `<span class="pl-due ${isOverdue(t) ? "is-overdue" : ""}">${esc(dueLabel(t.due_date))}</span>`
-        : "";
-
-      const assigneeLabel = "";
       const isSel = selectedId && String(selectedId) === String(t.id);
-      const projectLine = t.project_title
-        ? `<div class="item-meta" style="margin-top:6px;">${esc(t.project_title)}</div>`
+
+      const dateParts = [];
+      if(t.start_date) dateParts.push(esc(startLabel(t.start_date)));
+      if(t.due_date){
+        dateParts.push(
+          isOverdue(t)
+            ? `<span class="pl-due is-overdue">${esc(dueLabel(t.due_date))}</span>`
+            : esc(dueLabel(t.due_date))
+        );
+      }
+
+      const statusText = t.status
+        ? `<div class="zr-list-row-meta" style="margin-top:4px;">${esc(statusLabel(t.status))}</div>`
         : "";
 
       return `
         <div class="item ${isSel ? 'zr-list-row--active' : ''}" data-id="${esc(t.id)}">
           <div class="zr-list-row-title">${esc(t.title || "(без названия)")}</div>
-          ${projectLine}
-          <div class="zr-list-row-meta">${[
-            assigneeLabel,
-            startLabel(t.start_date),
-            due,
-            urgencyLabel(t.urgency),
-            (t.status ? statusLabel(t.status) : "")
-          ].filter(Boolean).join(" · ")}</div>
+          ${dateParts.length ? `<div class="zr-list-row-meta" style="margin-top:6px;">${dateParts.join(" · ")}</div>` : ""}
+          ${statusText}
         </div>
       `;
     }).join("");

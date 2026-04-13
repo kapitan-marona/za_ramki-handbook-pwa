@@ -325,19 +325,30 @@ async function render(){
     var section = p.section;
     var param = p.param;
     var q = $("#q");
+    var searchValue = q ? (q.value || "") : "";
+
+    async function showSearchView(view, param, searchValue){
+      await view.show(param);
+      applySearch(searchValue);
+    }
+
     if(window.syncAuthRecoveryMode) window.syncAuthRecoveryMode();
     if(window.__authRecoveryMode){
       section = "login";
       param = "";
     }
 
-    if(section === "login" && App.session && App.session.user && !window.__authRecoveryMode){
+    var hasUser = !!(App.session && App.session.user);
+    var isLogin = (section === "login");
+    var isRecovery = !!window.__authRecoveryMode;
+
+    if(isLogin && hasUser && !isRecovery){
       Router.go("planner");
       return;
     }
 
     // gate: все кроме login требует user
-    if(section !== "login" && (!App.session || !App.session.user)){
+    if(!isLogin && !hasUser){
       window.clearMainArea();
       Router.go("login");
       return;
@@ -346,35 +357,55 @@ async function render(){
     setActiveTab(section);
     syncTopSearchUI(section);
 
-    if(section === "login"){ await Views.Login.show(); return; }
-    if(section === "planner"){ await Views.Planner.show(); return; }
-    if(section === "articles"){ await Views.Articles.show(param); applySearch(q ? (q.value||"") : ""); return; }
-    if(section === "templates"){ await Views.Templates.show(param); applySearch(q ? (q.value||"") : ""); return; }
-    if(section === "checklists"){ await Views.Checklists.show(param); applySearch(q ? (q.value||"") : ""); return; }
+    var simpleViewMap = {
+      login: async function(){ await Views.Login.show(); },
+      planner: async function(){ await Views.Planner.show(); },
+      articles: async function(){ await showSearchView(Views.Articles, param, searchValue); },
+      templates: async function(){ await showSearchView(Views.Templates, param, searchValue); },
+      checklists: async function(){ await showSearchView(Views.Checklists, param, searchValue); }
+    };
 
-    // ✅ admin route
-    if(section === "admin"){
-      // если не admin — не пускаем
-      if(!App.session || App.session.role !== "admin"){
+    async function showAdminView(param){
+      var isAdmin = !!(App.session && App.session.role === "admin");
+      var adminView = Views.Admin && Views.Admin.show;
+      var v;
+
+      if(!isAdmin){
         Router.go("planner");
         return;
       }
-      if(Views.Admin && Views.Admin.show){
-        await Views.Admin.show(param);
+
+      if(adminView){
+        await adminView(param);
         return;
       }
-      // если вдруг view не загрузился — покажем ошибку вместо отката/тишины
-      var v = $("#viewer");
+
+      v = $("#viewer");
       if(v) v.innerHTML = '<div class="empty">Админка не загружена (Views.Admin отсутствует).</div>';
+    }
+
+    var routeHandler = simpleViewMap[section];
+
+    if(section === "admin"){
+      routeHandler = function(){
+        return showAdminView(param);
+      };
+    }
+
+    function handleUnknownRoute(){
+      Router.go("planner");
+    }
+
+    if(routeHandler){
+      await routeHandler();
       return;
     }
 
-    // неизвестный роут -> статьи
-    Router.go("planner");
+    handleUnknownRoute();
   }
 
   // ===== APP BOOT =====
-async function boot(){
+  async function boot(){
     $("#tabs").addEventListener("click", function(e){
       var btn = e.target.closest(".tab");
       if(!btn) return;

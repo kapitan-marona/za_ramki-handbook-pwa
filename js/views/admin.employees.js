@@ -62,8 +62,8 @@ window.Views.AdminEmployeesFactory = function(deps){
         </label>
 
         <div style="display:flex; gap:8px; justify-content:flex-end;">
-          <button class="btn btn-sm" data-al-save="${esc(it.email)}"><span class="dot"></span>Сохранить</button>
-          <button class="btn btn-sm" data-al-del="${esc(it.email)}"><span class="dot"></span>Удалить</button>
+          <button class="btn btn-sm" data-al-save="${esc(it.email)}">Сохранить</button>
+          <button class="btn btn-sm" data-al-del="${esc(it.email)}">Удалить</button>
         </div>
       </div>
     `).join("");
@@ -105,8 +105,8 @@ window.Views.AdminEmployeesFactory = function(deps){
               <input id="al_enabled" type="checkbox" checked />
               <span>enabled</span>
             </label>
-            <button class="btn btn-sm" id="al_add"><span class="dot"></span>Добавить / обновить</button>
-            <button class="btn btn-sm" id="al_reload"><span class="dot"></span>Обновить список</button>
+            <button class="btn btn-sm" id="al_add">Добавить / обновить</button>
+            <button class="btn btn-sm" id="al_reload">Обновить список</button>
           </div>
         </div>
       </div>

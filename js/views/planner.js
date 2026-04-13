@@ -171,54 +171,77 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
       const total = Array.isArray(tasks) ? tasks.length : 0;
       const done = total ? tasks.filter(t => t.status === "done").length : 0;
 
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("ru-RU", {
+        day: "numeric",
+        month: "long"
+      });
+
       viewerEl.classList.remove("pl-archived");
 
-viewerEl.innerHTML = `
-  <div class="pl-head">
-    <div class="pl-head-left">
-      <div class="zr-panel-topline">PLANNER</div>
-      <div class="zr-panel-subline">Обзор по статусам · клик по карточке открывает детали</div>
-    </div>
+      viewerEl.innerHTML = `
+        <div class="zr-board-screen">
+          <div class="zr-board-toolbar">
+            <div class="zr-board-toolbar__left">
+              <div class="zr-board-toolbar__date">Сегодня · ${dateStr}</div>
+            </div>
 
-    <div class="pl-head-actions">
-      ${(role === "admin" && done > 0) ? `<button class="btn btn-sm btn--ghost" id="plArchiveDone" type="button">В архив: завершённые</button>` : ``}
-      ${role === "admin" ? `<button class="btn btn-sm btn--primary" id="plQuickCreate" type="button">+</button>` : ``}
-      <button class="btn btn-sm btn--ghost ${state.refreshBusy ? "is-loading" : ""}" id="plRefresh" type="button" ${state.refreshBusy ? "disabled" : ""}>${state.refreshBusy ? "Обновляю…" : "Обновить"}</button>
-    </div>
-  </div>
+            <div class="zr-board-toolbar__right">
+              ${(role === "admin" && done > 0) ? `<button class="btn btn-sm btn--ghost" id="plArchiveDone" type="button">Завершённые → в архив</button>` : ``}
+              ${role === "admin" ? `<button class="btn btn-sm btn--primary" id="plQuickCreate" type="button">Новая задача</button>` : ``}
+              <button class="btn btn-sm btn--ghost ${state.refreshBusy ? "is-loading" : ""}" id="plRefresh" type="button" ${state.refreshBusy ? "disabled" : ""}>${state.refreshBusy ? "Обновляю…" : "Обновить"}</button>
+            </div>
+          </div>
 
-  <div id="plBoard"></div>
-`;
+          <div id="plBoard"></div>
+        </div>
+      `;
 
       const rf = document.getElementById("plRefresh");
       const qc = document.getElementById("plQuickCreate");
+
       if(qc) qc.onclick = () => {
         try{
           if(!window.PlannerActions || typeof PlannerActions.openCreateDialog !== "function"){
             alert("Create UI missing");
             return;
           }
+
           PlannerActions.openCreateDialog({
             onCreate: async (payload) => {
               qc.disabled = true;
+              qc.classList.add("is-loading");
+
               try{
                 const created = await PlannerAPI.createTask(payload);
+
                 if(created && created.id){
                   goTask(created.id);
-                }else { goTask(null); }
+                }else{
+                  goTask(null);
+                }
+
                 return created;
               }finally{
                 qc.disabled = false;
+                qc.classList.remove("is-loading");
               }
             }
           });
+
         }catch(err){
-          const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+          qc.disabled = false;
+          qc.classList.remove("is-loading");
+
+          const t = (err && (err.message || err.details || err.hint))
+            ? (err.message || err.details || err.hint)
+            : String(err);
+
           alert("Ошибка: " + t);
         }
       };
 
-      var ad = document.getElementById("plArchiveDone");
+      const ad = document.getElementById("plArchiveDone");
       if(ad) ad.onclick = async () => {
         if(!confirm("Перенести все завершённые задачи в архив?")) return;
 
@@ -231,11 +254,14 @@ viewerEl.innerHTML = `
           alert("Готово. В архив перенесено: " + String(n || 0));
           show();
         }catch(err){
-          const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
+          const t = (err && (err.message || err.details || err.hint))
+            ? (err.message || err.details || err.hint)
+            : String(err);
           alert("Ошибка: " + t);
           ad.disabled = false;
         }
       };
+
       if(rf) rf.onclick = async () => {
         if(state.refreshBusy) return;
 
@@ -264,8 +290,7 @@ viewerEl.innerHTML = `
           }
         }
       };
-
-}
+    }
 
     function renderBoard(tasks){
       if(!PB.renderBoard) throw new Error("PlannerBoard.renderBoard missing");
@@ -557,7 +582,8 @@ viewerEl.innerHTML = `
         checklistReadOnly,
         runDetailLockFlow,
         isCurrentDetailTask,
-        isLocked
+        isLocked,
+        viewerEl
       };
 
       if(PDH.runDetailPostLoad && PDH.runDetailPostLoad(task, detailPostLoadContext)){
@@ -608,11 +634,21 @@ viewerEl.innerHTML = `
             }
             PlannerActions.openCreateDialog({
               onCreate: async (payload) => {
-                const created = await PlannerAPI.createTask(payload);
-                if(created && created.id){
-                  goTask(created.id);
-                }else { goTask(null); }
-                return created;
+                qc.disabled = true;
+                try{
+                  const created = await PlannerAPI.createTask(payload);
+                  if(created && created.id){
+                    goTask(created.id);
+                  }else{
+                    goTask(null);
+                  }
+                  return created;
+                }finally{
+                  qc.disabled = false;
+                }
+              },
+              onClose: () => {
+                qc.disabled = false;
               }
             });
           });

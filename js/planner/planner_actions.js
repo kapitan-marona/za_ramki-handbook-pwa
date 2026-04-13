@@ -58,6 +58,71 @@
       return "Сотрудник";
     }
 
+    function isoToRuDate(iso){
+      const s = String(iso || "").trim();
+      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(!m) return "";
+      return `${m[3]}.${m[2]}.${m[1]}`;
+    }
+
+    function ruDateToIso(value){
+      const s = String(value || "").trim();
+      const m = s.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+      if(!m) return "";
+      return `${m[3]}-${m[2]}-${m[1]}`;
+    }
+
+    function wireDateField(nativeId, textId, buttonId){
+      const nativeEl = document.getElementById(nativeId);
+      const textEl = document.getElementById(textId);
+      const buttonEl = document.getElementById(buttonId);
+
+      if(!nativeEl || !textEl) return;
+
+      function syncTextFromNative(){
+        textEl.value = isoToRuDate(nativeEl.value || "");
+      }
+
+      function syncNativeFromText(){
+        const iso = ruDateToIso(textEl.value || "");
+        if(iso) nativeEl.value = iso;
+      }
+
+      syncTextFromNative();
+
+      nativeEl.addEventListener("change", () => {
+        syncTextFromNative();
+      });
+
+      textEl.addEventListener("blur", () => {
+        syncNativeFromText();
+        syncTextFromNative();
+      });
+
+      textEl.addEventListener("keydown", (e) => {
+        if(e && e.key === "Enter"){
+          syncNativeFromText();
+          syncTextFromNative();
+        }
+      });
+
+      if(buttonEl){
+        buttonEl.addEventListener("click", () => {
+          try{
+            if(typeof nativeEl.showPicker === "function"){
+              nativeEl.showPicker();
+              return;
+            }
+          }catch(e){}
+
+          try{
+            nativeEl.focus();
+            nativeEl.click();
+          }catch(e){}
+        });
+      }
+    }
+
     const titleValue = isEdit ? esc(task.title || "") : "";
     const bodyValue = isEdit ? esc(task.body || "") : "";
     const startValue = isEdit ? esc(task.start_date || "") : esc(nowIso);
@@ -96,11 +161,23 @@
           <div class="zr-planner-dialog-grid">
             <div style="flex:1; min-width:160px;">
               <div class="muted" style="font-size:12px; margin-bottom:6px;">Старт</div>
-              <input class="pl-control" id="plCreateStart" type="date" value="${startValue}" />
+              <div class="zr-date-field">
+                <input class="pl-control zr-date-field__text" id="plCreateStartText" type="text" inputmode="numeric" placeholder="ДД.ММ.ГГГГ" />
+                <button class="zr-date-field__button" id="plCreateStartBtn" type="button" aria-label="Выбрать дату">
+                  📅
+                </button>
+                <input class="zr-date-field__native" id="plCreateStart" type="date" value="${startValue}" tabindex="-1" />
+              </div>
             </div>
             <div style="flex:1; min-width:160px;">
               <div class="muted" style="font-size:12px; margin-bottom:6px;">Дедлайн</div>
-              <input class="pl-control" id="plCreateDue" type="date" value="${dueValue}" />
+              <div class="zr-date-field">
+                <input class="pl-control zr-date-field__text" id="plCreateDueText" type="text" inputmode="numeric" placeholder="ДД.ММ.ГГГГ" />
+                <button class="zr-date-field__button" id="plCreateDueBtn" type="button" aria-label="Выбрать дату">
+                  📅
+                </button>
+                <input class="zr-date-field__native" id="plCreateDue" type="date" value="${dueValue}" tabindex="-1" />
+              </div>
             </div>
           </div>
 
@@ -126,16 +203,58 @@
 
           <div>
             <div class="muted" style="font-size:12px; margin-bottom:6px;">Проект</div>
-            <select class="pl-control" id="plCreateProject">
-              <option value="">— Без проекта —</option>
-            </select>
+            <input type="hidden" id="plCreateProject" value="">
+            <div style="position:relative;">
+              <input
+                class="pl-control"
+                id="plCreateProjectSearch"
+                placeholder="Начните вводить название проекта"
+                autocomplete="off"
+              />
+              <div id="plCreateProjectResults" style="
+                display:none;
+                position:absolute;
+                top:calc(100% + 6px);
+                left:0;
+                right:0;
+                z-index:20;
+                max-height:220px;
+                overflow:auto;
+                padding:6px;
+                border:1px solid rgba(255,255,255,.10);
+                border-radius:12px;
+                background:rgba(20,16,14,.98);
+                box-shadow:0 14px 30px rgba(0,0,0,.35);
+              "></div>
+            </div>
           </div>
 
           <div>
             <div class="muted" style="font-size:12px; margin-bottom:6px;">Исполнитель</div>
-            <select class="pl-control" id="plCreateAssignee">
-              <option value="">— Не назначен —</option>
-            </select>
+            <input type="hidden" id="plCreateAssignee" value="">
+            <div style="position:relative;">
+              <input
+                class="pl-control"
+                id="plCreateAssigneeSearch"
+                placeholder="Начните вводить имя сотрудника"
+                autocomplete="off"
+              />
+              <div id="plCreateAssigneeResults" style="
+                display:none;
+                position:absolute;
+                top:calc(100% + 6px);
+                left:0;
+                right:0;
+                z-index:20;
+                max-height:220px;
+                overflow:auto;
+                padding:6px;
+                border:1px solid rgba(255,255,255,.10);
+                border-radius:12px;
+                background:rgba(20,16,14,.98);
+                box-shadow:0 14px 30px rgba(0,0,0,.35);
+              "></div>
+            </div>
           </div>
 
           <div class="zr-planner-dialog-actions">
@@ -191,36 +310,219 @@
     document.addEventListener("keydown", onKey);
     document.body.appendChild(overlay);
 
-    (async () => {
-      const sel = document.getElementById("plCreateProject");
-      const assigneeSel = document.getElementById("plCreateAssignee");
+    wireDateField("plCreateStart", "plCreateStartText", "plCreateStartBtn");
+    wireDateField("plCreateDue", "plCreateDueText", "plCreateDueBtn");
 
-      const items = await loadProjects();
-      const selectedProjectId = isEdit && task && task.project_id ? String(task.project_id) : "";
+    let projectItems = [];
 
-      if(sel){
-        sel.innerHTML =
-          `<option value="">— Без проекта —</option>` +
-          items.map(p => {
-            const pid = String(p.id);
-            const isSel = selectedProjectId && selectedProjectId === pid ? " selected" : "";
-            return `<option value="${esc(pid)}"${isSel}>${esc(p.title)}</option>`;
-          }).join("");
+    function renderProjectResults(items){
+      const resultsEl = document.getElementById("plCreateProjectResults");
+      const projectValueEl = document.getElementById("plCreateProject");
+      const projectSearchEl = document.getElementById("plCreateProjectSearch");
+      if(!resultsEl) return;
+
+      if(!Array.isArray(items) || items.length === 0){
+        resultsEl.innerHTML = `<div class="muted" style="font-size:12px; padding:6px 8px;">Ничего не найдено.</div>`;
+        resultsEl.style.display = "block";
+        return;
       }
 
-      if(assigneeSel){
-        const people = await loadAssignablePeople();
-        const currentAssigneeId = (isEdit && task && Array.isArray(task.assignees) && task.assignees.length)
-          ? String(task.assignees[0])
+      resultsEl.innerHTML = items.map(p => `
+        <button
+          type="button"
+          class="pl-link-pick"
+          data-id="${esc(p.id)}"
+          data-title="${esc(p.title || "")}"
+          style="
+            display:block;
+            width:100%;
+            text-align:left;
+            padding:8px 10px;
+            border:none;
+            border-radius:8px;
+            background:transparent;
+            color:inherit;
+            cursor:pointer;
+          "
+        >
+          ${esc(p.title || "(без названия)")}
+        </button>
+      `).join("");
+
+      resultsEl.style.display = "block";
+
+      resultsEl.querySelectorAll(".pl-link-pick").forEach(btn => {
+        btn.onclick = () => {
+          if(projectValueEl) projectValueEl.value = btn.dataset.id || "";
+          if(projectSearchEl) projectSearchEl.value = btn.dataset.title || "";
+          resultsEl.innerHTML = "";
+          resultsEl.style.display = "none";
+        };
+      });
+    }
+
+    (async () => {
+      const projectValueEl = document.getElementById("plCreateProject");
+      const projectSearchEl = document.getElementById("plCreateProjectSearch");
+      const projectResultsEl = document.getElementById("plCreateProjectResults");
+      const assigneeSel = document.getElementById("plCreateAssignee");
+
+      projectItems = await loadProjects();
+      const selectedProjectId = isEdit && task && task.project_id ? String(task.project_id) : "";
+      const selectedProject = selectedProjectId
+        ? (projectItems || []).find(p => String(p.id) === selectedProjectId)
+        : null;
+
+      if(projectValueEl){
+        projectValueEl.value = selectedProjectId || "";
+      }
+
+      if(projectSearchEl){
+        projectSearchEl.value = selectedProject && selectedProject.title
+          ? String(selectedProject.title)
           : "";
 
-        assigneeSel.innerHTML =
-          `<option value="">— Не назначен —</option>` +
-          (people || []).map(p => {
-            const pid = String(p.id);
-            const isSel = currentAssigneeId && currentAssigneeId === pid ? " selected" : "";
-            return `<option value="${esc(pid)}"${isSel}>${esc(personLabel(p))}</option>`;
-          }).join("");
+        projectSearchEl.addEventListener("input", () => {
+          const q = String(projectSearchEl.value || "").trim().toLowerCase();
+
+          if(!q){
+            if(projectValueEl) projectValueEl.value = "";
+            if(projectResultsEl){
+              projectResultsEl.innerHTML = "";
+              projectResultsEl.style.display = "none";
+            }
+            return;
+          }
+
+          const filtered = (projectItems || []).filter(p =>
+            String(p && p.title || "").toLowerCase().includes(q)
+          );
+
+          renderProjectResults(filtered);
+        });
+
+        projectSearchEl.addEventListener("focus", () => {
+          const q = String(projectSearchEl.value || "").trim().toLowerCase();
+          if(!q) return;
+
+          const filtered = (projectItems || []).filter(p =>
+            String(p && p.title || "").toLowerCase().includes(q)
+          );
+
+          renderProjectResults(filtered);
+        });
+      }
+
+      if(projectResultsEl && projectSearchEl){
+        document.addEventListener("click", (e) => {
+          if(!projectResultsEl.contains(e.target) && e.target !== projectSearchEl){
+            projectResultsEl.innerHTML = "";
+            projectResultsEl.style.display = "none";
+          }
+        });
+      }
+
+      const assigneeValueEl = document.getElementById("plCreateAssignee");
+      const assigneeSearchEl = document.getElementById("plCreateAssigneeSearch");
+      const assigneeResultsEl = document.getElementById("plCreateAssigneeResults");
+
+      const people = await loadAssignablePeople();
+      const currentAssigneeId = (isEdit && task && Array.isArray(task.assignees) && task.assignees.length)
+        ? String(task.assignees[0])
+        : "";
+
+      const currentAssignee = currentAssigneeId
+        ? (people || []).find(p => String(p.id) === currentAssigneeId)
+        : null;
+
+      if(assigneeValueEl){
+        assigneeValueEl.value = currentAssigneeId || "";
+      }
+
+      function renderAssigneeResults(items){
+        if(!assigneeResultsEl) return;
+
+        if(!Array.isArray(items) || items.length === 0){
+          assigneeResultsEl.innerHTML = `<div class="muted" style="font-size:12px; padding:6px 8px;">Ничего не найдено.</div>`;
+          assigneeResultsEl.style.display = "block";
+          return;
+        }
+
+        assigneeResultsEl.innerHTML = items.map(p => `
+          <button
+            type="button"
+            class="pl-link-pick"
+            data-id="${esc(p.id)}"
+            data-title="${esc(personLabel(p))}"
+            style="
+              display:block;
+              width:100%;
+              text-align:left;
+              padding:8px 10px;
+              border:none;
+              border-radius:8px;
+              background:transparent;
+              color:inherit;
+              cursor:pointer;
+            "
+          >
+            ${esc(personLabel(p))}
+          </button>
+        `).join("");
+
+        assigneeResultsEl.style.display = "block";
+
+        assigneeResultsEl.querySelectorAll(".pl-link-pick").forEach(btn => {
+          btn.onclick = () => {
+            if(assigneeValueEl) assigneeValueEl.value = btn.dataset.id || "";
+            if(assigneeSearchEl) assigneeSearchEl.value = btn.dataset.title || "";
+            assigneeResultsEl.innerHTML = "";
+            assigneeResultsEl.style.display = "none";
+          };
+        });
+      }
+
+      if(assigneeSearchEl){
+        assigneeSearchEl.value = currentAssignee ? personLabel(currentAssignee) : "";
+
+        assigneeSearchEl.addEventListener("input", () => {
+          const q = String(assigneeSearchEl.value || "").trim().toLowerCase();
+
+          if(!q){
+            if(assigneeValueEl) assigneeValueEl.value = "";
+            if(assigneeResultsEl){
+              assigneeResultsEl.innerHTML = "";
+              assigneeResultsEl.style.display = "none";
+            }
+            return;
+          }
+
+          const filtered = (people || []).filter(p =>
+            String(personLabel(p) || "").toLowerCase().includes(q)
+          );
+
+          renderAssigneeResults(filtered);
+        });
+
+        assigneeSearchEl.addEventListener("focus", () => {
+          const q = String(assigneeSearchEl.value || "").trim().toLowerCase();
+          if(!q) return;
+
+          const filtered = (people || []).filter(p =>
+            String(personLabel(p) || "").toLowerCase().includes(q)
+          );
+
+          renderAssigneeResults(filtered);
+        });
+      }
+
+      if(assigneeResultsEl && assigneeSearchEl){
+        document.addEventListener("click", (e) => {
+          if(!assigneeResultsEl.contains(e.target) && e.target !== assigneeSearchEl){
+            assigneeResultsEl.innerHTML = "";
+            assigneeResultsEl.style.display = "none";
+          }
+        });
       }
     })();
 
@@ -236,10 +538,22 @@
         const bodyEl = document.getElementById("plCreateBody");
         const startEl = document.getElementById("plCreateStart");
         const dueEl = document.getElementById("plCreateDue");
+        const startTextEl = document.getElementById("plCreateStartText");
+        const dueTextEl = document.getElementById("plCreateDueText");
         const roleEl = document.getElementById("plCreateRole");
         const urgEl  = document.getElementById("plCreateUrgency");
         const projectEl = document.getElementById("plCreateProject");
         const assigneeEl = document.getElementById("plCreateAssignee");
+
+        if(startEl && startTextEl){
+          const startIso = ruDateToIso(startTextEl.value || "");
+          if(startIso) startEl.value = startIso;
+        }
+
+        if(dueEl && dueTextEl){
+          const dueIso = ruDateToIso(dueTextEl.value || "");
+          if(dueIso) dueEl.value = dueIso;
+        }
 
         const title = titleEl && titleEl.value ? titleEl.value.trim() : "";
         if(!title){ if(msg) msg.textContent = "Название обязательно."; return; }
@@ -505,6 +819,10 @@
     function close(){
       try{ overlay.remove(); }catch(e){}
       try{ document.removeEventListener("keydown", onKey); }catch(e){}
+
+      if(typeof opts.onClose === "function"){
+        try{ opts.onClose(); }catch(e){}
+      }
     }
 
     function onKey(e){

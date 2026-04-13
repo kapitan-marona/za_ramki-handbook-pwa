@@ -51,26 +51,31 @@
 
       const cards = items.length
         ? items.map((t) => {
-            const due = t.due_date
-              ? `<span class="pl-due ${isOverdue(t) ? "is-overdue" : ""}">${esc(dueLabel(t.due_date))}</span>`
-              : "";
-
             const isProblem = (String(t.status || "") === "problem");
             const isSel = selectedId && String(selectedId) === String(t.id);
+
             const projectLine = t.project_title
-              ? `<div class="item-meta" style="margin-top:6px;">${esc(t.project_title)}</div>`
+              ? `<div class="item-meta pl-project">${esc(t.project_title)}</div>`
+              : "";
+
+            const dateParts = [];
+            if(t.start_date) dateParts.push(esc(startLabel(t.start_date)));
+            if(t.due_date) dateParts.push(esc(dueLabel(t.due_date)));
+
+            const datesLine = dateParts.length
+              ? `<div class="item-meta pl-dates">${dateParts.join(" · ")}</div>`
+              : "";
+
+            const urgencyText = urgencyLabel(t.urgency)
+              ? `<div class="item-meta pl-urgency">⚡ ${esc(urgencyLabel(t.urgency))}</div>`
               : "";
 
             return `
-              <div class="item" data-id="${esc(t.id)}" style="margin-top:10px; ${isProblem ? 'outline:1px solid rgba(255,80,80,.45); box-shadow:0 0 0 1px rgba(255,80,80,.18), 0 12px 30px rgba(0,0,0,.35);' : ''} ${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
+              <div class="item zr-board-card" data-id="${esc(t.id)}" style="margin-top:10px; ${isProblem ? 'outline:1px solid rgba(255,80,80,.45); box-shadow:0 0 0 1px rgba(255,80,80,.18), 0 12px 30px rgba(0,0,0,.35);' : ''} ${isSel ? 'outline:1px solid rgba(255,255,255,.18); box-shadow:0 0 0 1px rgba(196,90,42,.25), 0 12px 30px rgba(0,0,0,.35);' : ''}">
                 <div class="item-title">${esc(t.title || "(без названия)")}</div>
                 ${projectLine}
-                <div class="item-meta">${[
-                  startLabel(t.start_date),
-                  dueLabel(t.due_date),
-                  urgencyLabel(t.urgency),
-                  statusLabel(t.status || "")
-                ].filter(Boolean).map(esc).join(" · ")}</div>
+                ${datesLine}
+                ${urgencyText}
               </div>
             `;
           }).join("")
@@ -88,7 +93,7 @@
     }).join("");
 
     board.innerHTML = `
-      <div style="display:flex; gap:12px; overflow:auto; padding:0 12px 12px 12px;">
+      <div class="zr-board-row">
         ${colHtml}
       </div>
     `;

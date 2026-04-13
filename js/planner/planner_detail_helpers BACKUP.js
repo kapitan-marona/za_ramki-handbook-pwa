@@ -102,162 +102,6 @@ window.PlannerDetailHelpers = (() => {
       }
     };
   }
-  
-  function bindDocsToggle(opts){
-    const o = opts || {};
-    const viewerEl = o.viewerEl;
-    const taskId = o.taskId;
-
-    if(!viewerEl) return;
-
-    const section = viewerEl.querySelector("#plDocsSection");
-    const toggle = viewerEl.querySelector("#plDocsToggle");
-    const docsRoot = viewerEl.querySelector("#plDocs");
-
-    if(!section || !toggle || !docsRoot) return;
-
-    const saved = readDetailUiState(taskId);
-    const countEl = toggle.querySelector(".zr-section-title-toggle__count");
-
-    const applyCollapsedState = (collapsed) => {
-      section.classList.toggle("is-collapsed", !!collapsed);
-      toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-      syncDetailGridLayout(viewerEl);
-    };
-
-    applyCollapsedState(!!saved.docsCollapsed);
-
-    if(countEl){
-      if(typeof saved.docsCount === "number"){
-        countEl.textContent = `(${saved.docsCount})`;
-      }else{
-        countEl.textContent = "(…)";
-      }
-    }
-
-    const updateCount = () => {
-      let count = 0;
-
-      try{
-        count = docsRoot.querySelectorAll(".zr-planner-doc-card, .zr-planner-doc-row").length;
-      }catch(e){
-        count = 0;
-      }
-
-      const currentSaved = readDetailUiState(taskId);
-      const prevCount = (typeof currentSaved.docsCount === "number") ? currentSaved.docsCount : null;
-
-      if(count <= 0){
-        const text = String((docsRoot.textContent || "").trim()).toLowerCase();
-        const looksExplicitlyEmpty =
-          text.includes("нет") ||
-          text.includes("пуст") ||
-          text.includes("не добав");
-
-        if(!looksExplicitlyEmpty && prevCount != null){
-          if(countEl){
-            countEl.textContent = `(${prevCount})`;
-          }
-          return;
-        }
-      }
-
-      if(countEl){
-        countEl.textContent = `(${count})`;
-      }
-
-      writeDetailUiState(taskId, { docsCount: count });
-    };
-
-    updateCount();
-
-    if(section.__zrDocsObserver){
-      try{ section.__zrDocsObserver.disconnect(); }catch(e){}
-      section.__zrDocsObserver = null;
-    }
-
-    if(toggle.__zrDocsToggleHandler){
-      toggle.removeEventListener("click", toggle.__zrDocsToggleHandler);
-    }
-
-    const onClick = (e) => {
-      try{
-        if(e) e.preventDefault();
-      }catch(_){}
-
-      const collapsed = !section.classList.contains("is-collapsed");
-      applyCollapsedState(collapsed);
-
-      writeDetailUiState(taskId, {
-        docsCollapsed: collapsed
-      });
-    };
-
-    toggle.__zrDocsToggleHandler = onClick;
-    toggle.addEventListener("click", onClick);
-
-    const obs = new MutationObserver(() => {
-      updateCount();
-    });
-
-    try{
-      obs.observe(docsRoot, { childList:true, subtree:true });
-    }catch(e){}
-
-    section.__zrDocsObserver = obs;
-  }
-  
-  function bindDetailsToggle(opts){
-    const o = opts || {};
-    const viewerEl = o.viewerEl;
-    const taskId = o.taskId;
-
-    if(!viewerEl) return;
-
-    const section = viewerEl.querySelector("#plDetailsSection");
-    const toggle = viewerEl.querySelector("#plDetailsToggle");
-    const body = viewerEl.querySelector("#plDetailsBody");
-
-    if(!section || !toggle || !body) return;
-
-    const saved = readDetailUiState(taskId);
-
-    const applyState = (collapsed) => {
-      section.classList.toggle("is-collapsed", !!collapsed);
-      body.style.display = collapsed ? "none" : "";
-
-      toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-
-      const labelEl = toggle.querySelector(".zr-section-title-toggle__label");
-      if(labelEl){
-        labelEl.textContent = collapsed ? "Показать детали" : "Скрыть детали";
-      }
-
-      syncDetailGridLayout(viewerEl);
-    };
-
-    applyState(!!saved.detailsCollapsed);
-
-    if(toggle.__zrDetailsToggleHandler){
-      toggle.removeEventListener("click", toggle.__zrDetailsToggleHandler);
-    }
-
-    const onClick = (e) => {
-      try{
-        if(e) e.preventDefault();
-      }catch(_){}
-
-      const collapsed = !section.classList.contains("is-collapsed");
-      applyState(collapsed);
-
-      writeDetailUiState(taskId, {
-        detailsCollapsed: collapsed
-      });
-    };
-
-    toggle.__zrDetailsToggleHandler = onClick;
-    toggle.addEventListener("click", onClick);
-  }
 
   function bindAddChecklistButton(task, opts){
     const o = opts || {};
@@ -298,53 +142,6 @@ window.PlannerDetailHelpers = (() => {
         alert("Ошибка открытия окна");
       }
     };
-  }
-  
-    function getDetailUiStorageKey(taskId){
-    return `zr_planner_detail_ui_${String(taskId || "")}`;
-  }
-
-  function readDetailUiState(taskId){
-    try{
-      if(!taskId || !window.localStorage) return {};
-      const raw = localStorage.getItem(getDetailUiStorageKey(taskId));
-      if(!raw) return {};
-      const parsed = JSON.parse(raw);
-      return (parsed && typeof parsed === "object") ? parsed : {};
-    }catch(e){
-      return {};
-    }
-  }
-
-  function writeDetailUiState(taskId, patch){
-    try{
-      if(!taskId || !window.localStorage) return;
-      const prev = readDetailUiState(taskId);
-      const next = Object.assign({}, prev, patch || {});
-      localStorage.setItem(getDetailUiStorageKey(taskId), JSON.stringify(next));
-    }catch(e){}
-  }
-  
-    function syncDetailGridLayout(viewerEl){
-    try{
-      if(!viewerEl) return;
-
-      const grid = viewerEl.querySelector(".zr-planner-grid");
-      const detailsSection = viewerEl.querySelector("#plDetailsSection");
-      const docsSection = viewerEl.querySelector("#plDocsSection");
-      const checklistSection = viewerEl.querySelector("#plChecklist") && viewerEl.querySelector("#plChecklist").closest(".zr-planner-section");
-
-      if(!grid || !detailsSection || !docsSection || !checklistSection) return;
-
-      const detailsCollapsed = detailsSection.classList.contains("is-collapsed");
-      const docsCollapsed = docsSection.classList.contains("is-collapsed");
-      const bothCollapsed = detailsCollapsed && docsCollapsed;
-
-      grid.classList.toggle("zr-planner-grid--compact-top", bothCollapsed);
-      checklistSection.classList.toggle("zr-planner-section--fullwidth", bothCollapsed);
-    }catch(e){
-      console.warn("[PlannerDetailHelpers] syncDetailGridLayout error", e);
-    }
   }
 
   function bindEditButton(task, opts){
@@ -575,37 +372,6 @@ window.PlannerDetailHelpers = (() => {
     viewerEl.__zrStatusDelegatedBound = true;
 
     viewerEl.addEventListener("click", async (e) => {
-      const archiveBtn = e.target && e.target.closest ? e.target.closest("#plArchiveTask") : null;
-      if(archiveBtn && viewerEl.contains(archiveBtn)){
-        const liveTask = viewerEl.__zrStatusTask;
-        const liveOpts = viewerEl.__zrStatusOpts || {};
-
-        if(!liveTask) return;
-
-        if(!confirm("Перенести задачу в архив?")) return;
-
-        archiveBtn.disabled = true;
-        try{
-          if(!window.PlannerAPI || typeof PlannerAPI.archiveTask !== "function"){
-            throw new Error("archiveTask RPC not wired");
-          }
-
-          await PlannerAPI.archiveTask(liveTask.id);
-
-          if(typeof liveOpts.goTask === "function"){
-            liveOpts.goTask(null);
-          }
-        }catch(err){
-          console.warn("[PlannerDetailHelpers] archive task error", err);
-          const t = (err && (err.message || err.details || err.hint))
-            ? (err.message || err.details || err.hint)
-            : String(err);
-          alert("Ошибка: " + t);
-          archiveBtn.disabled = false;
-        }
-        return;
-      }
-
       const btn = e.target && e.target.closest ? e.target.closest(".pl-status") : null;
       if(!btn || !viewerEl.contains(btn)) return;
 
@@ -687,12 +453,6 @@ window.PlannerDetailHelpers = (() => {
             liveOpts.updateDetailHeaderOnly(t2, {
               viewerEl,
               role: liveOpts.role,
-              today: liveOpts.today,
-              goTask: liveOpts.goTask,
-              fetchTaskById: liveOpts.fetchTaskById,
-              fetchAllActiveTasks: liveOpts.fetchAllActiveTasks,
-              renderLeft: liveOpts.renderLeft,
-              renderDetails: liveOpts.renderDetails,
               buildMeta: (task) => {
                 const parts = [];
 
@@ -848,12 +608,6 @@ window.PlannerDetailHelpers = (() => {
       ? esc
       : (v => String(v == null ? "" : v));
 
-    const hasDetails = !!(
-      task.project_title ||
-      (Array.isArray(task.assignees) && task.assignees.length) ||
-      (task.body && String(task.body).trim())
-    );
-
     return `
       <div class="zr-planner-detail">
         <div class="zr-card zr-card--section zr-planner-hero" style="${detailsProblemStyle}">
@@ -872,53 +626,32 @@ window.PlannerDetailHelpers = (() => {
           ${actionsHtml}
         </div>
 
-        <div class="zr-planner-grid${!hasDetails ? ` zr-planner-grid--no-details` : ``}">
+        <div class="zr-planner-grid">
           <div class="zr-planner-maincol">
-            ${hasDetails ? `
-              <div class="zr-card zr-card--section zr-planner-section zr-planner-details-section" id="plDetailsSection">
-                <div class="zr-section-head zr-section-head--details">
-                  <button
-                    class="zr-section-title zr-section-title--toggle"
-                    id="plDetailsToggle"
-                    type="button"
-                    aria-expanded="true"
-                  >
-                    <span class="zr-section-title-toggle__label">Скрыть детали</span>
-                  </button>
-                </div>
-
-                <div class="zr-planner-details-body" id="plDetailsBody">
-                  <div class="zr-planner-row">
-                    ${task.project_title ? `
-                      <div class="zr-card zr-card--section zr-planner-section">
-                        <div class="zr-section-head">
-                          <div class="zr-section-title">Проект</div>
-                        </div>
-                        <div class="zr-planner-body-text">${safeEsc(task.project_title)}</div>
-                      </div>
-                    ` : ""}
-
-                    ${Array.isArray(task.assignees) && task.assignees.length ? `
-                      <div class="zr-card zr-card--section zr-planner-section">
-                        <div class="zr-section-head">
-                          <div class="zr-section-title">Исполнитель</div>
-                        </div>
-                        <div class="zr-planner-assignee" id="plAssigneeView"></div>
-                      </div>
-                    ` : ""}
+            <div class="zr-planner-row">
+              ${task.project_title ? `
+                <div class="zr-card zr-card--section zr-planner-section">
+                  <div class="zr-section-head">
+                    <div class="zr-section-title">Проект</div>
                   </div>
-
-                  ${task.body ? `
-                    <div class="zr-card zr-card--section zr-planner-section">
-                      <div class="zr-section-head">
-                        <div class="zr-section-title">Описание</div>
-                      </div>
-                      <div class="zr-planner-body-text">${safeEsc(task.body)}</div>
-                    </div>
-                  ` : ""}
+                  <div class="zr-planner-body-text">${safeEsc(task.project_title)}</div>
                 </div>
+              ` : ""}
+
+              <div class="zr-card zr-card--section zr-planner-section">
+                <div class="zr-section-head">
+                  <div class="zr-section-title">Исполнитель</div>
+                </div>
+                <div class="zr-planner-assignee" id="plAssigneeView"></div>
               </div>
-            ` : ""}
+            </div>
+
+            <div class="zr-card zr-card--section zr-planner-section">
+              <div class="zr-section-head">
+                <div class="zr-section-title">Описание</div>
+              </div>
+              <div class="zr-planner-body-text">${task.body ? safeEsc(task.body) : '<span class="zr-planner-muted">Описание пустое.</span>'}</div>
+            </div>
 
             <div class="zr-card zr-card--section zr-planner-section">
               <div class="zr-section-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
@@ -935,23 +668,13 @@ window.PlannerDetailHelpers = (() => {
           </div>
 
           <div class="zr-planner-sidecol">
-            <div class="zr-card zr-card--subtle zr-planner-section zr-planner-docs-section is-collapsed" id="plDocsSection">
-              <div class="zr-section-head zr-section-head--docs">
-                <button
-                  class="zr-section-title zr-section-title--toggle"
-                  id="plDocsToggle"
-                  type="button"
-                  aria-expanded="false"
-                >
-                  <span class="zr-section-title-toggle__label">Документы</span>
-                  <span class="zr-section-title-toggle__count">(…)</span>
-                </button>
+            <div class="zr-card zr-card--subtle zr-planner-section">
+              <div class="zr-section-head">
+                <div class="zr-section-title">Документы</div>
 
-                <div class="zr-planner-docs-head-actions">
-                  ${(isAdmin && !isArchived) ? `
-                    <button class="btn btn-sm btn--ghost" id="plAddDocBtn" type="button">+ Добавить</button>
-                  ` : ``}
-                </div>
+                ${(isAdmin && !isArchived) ? `
+                  <button class="btn btn-sm btn--ghost" id="plAddDocBtn" type="button">+ Добавить</button>
+                ` : ``}
               </div>
 
               <div id="plDocs"></div>
@@ -1041,30 +764,6 @@ window.PlannerDetailHelpers = (() => {
         }
       }
 
-      if(typeof bindBackButton === "function"){
-        const back = hero.querySelector("#plBack");
-        bindBackButton({
-          back,
-          goTask: opts.goTask
-        });
-      }
-
-      if(typeof bindEditButton === "function"){
-        const editBtn = hero.querySelector("#plEditTask");
-        bindEditButton(task, {
-          button: editBtn,
-          role: opts.role,
-          today: opts.today,
-          fetchAllActiveTasks: opts.fetchAllActiveTasks,
-          renderLeft: opts.renderLeft,
-          renderDetails: opts.renderDetails,
-          goTask: opts.goTask,
-          fetchTaskById: opts.fetchTaskById
-        });
-      }
-
-      // archive button is handled by delegated click inside bindStatusButtons
-
     }catch(e){
       console.warn("[PlannerDetailHelpers] header update error", e);
     }
@@ -1123,20 +822,6 @@ window.PlannerDetailHelpers = (() => {
       });
     }
 
-    if(typeof bindDocsToggle === "function"){
-      bindDocsToggle({
-        viewerEl,
-        taskId: task && task.id
-      });
-    }
-
-    if(typeof bindDetailsToggle === "function"){
-      bindDetailsToggle({
-        viewerEl,
-        taskId: task && task.id
-      });
-    }
-
     const _addChecklistBtn = byId("plAddChecklistBtn");
     if(bindAddChecklistButton){
       bindAddChecklistButton(task, {
@@ -1180,10 +865,7 @@ window.PlannerDetailHelpers = (() => {
         dueLabel,
         urgencyLabel,
         isOverdue,
-        role,
-        today,
-        goTask,
-        fetchTaskById
+        role
       });
     }
 
@@ -1201,7 +883,13 @@ window.PlannerDetailHelpers = (() => {
       });
     }
 
-    // archive button is handled by delegated click inside bindStatusButtons
+    const _plArchiveBtn = byId("plArchiveTask");
+    if(bindArchiveButton){
+      bindArchiveButton(task, {
+        button: _plArchiveBtn,
+        goTask
+      });
+    }
   }
 
   function runDetailPostLoad(task, opts){
@@ -1249,8 +937,6 @@ window.PlannerDetailHelpers = (() => {
     initAssigneeBlock,
     bindBackButton,
     bindAddDocButton,
-    bindDocsToggle,
-    bindDetailsToggle,    
     bindAddChecklistButton,
     bindEditButton,
     bindArchiveButton,
@@ -1264,4 +950,3 @@ window.PlannerDetailHelpers = (() => {
     runDetailPostLoad
   };
 })();
-

@@ -227,7 +227,7 @@ Views.Admin = (() => {
     if(!list) return;
 
     const tabBtn = (id, label) =>
-      `<button class="btn btn-sm ${MODE===id ? "is-active" : ""}" data-adm-tab="${esc(id)}"><span class="dot"></span>${esc(label)}</button>`;
+      `<button class="btn btn-sm ${MODE===id ? "is-active" : ""}" data-adm-tab="${esc(id)}">${esc(label)}</button>`;
 
     list.innerHTML =
       `<div class="actions zr-admin-mode-tabs" style="margin:0 0 10px 0; flex-wrap:wrap;">` +
@@ -251,9 +251,9 @@ Views.Admin = (() => {
 
     list.insertAdjacentHTML("beforeend", `
             <div class="actions zr-admin-content-tabs" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm ${CONTENT_MODE==="articles"?"is-active":""}" data-cm="articles"><span class="dot"></span>Инструкции</button>
-        <button class="btn btn-sm ${CONTENT_MODE==="templates"?"is-active":""}" data-cm="templates"><span class="dot"></span>Шаблоны</button>
-        <button class="btn btn-sm ${CONTENT_MODE==="checklists"?"is-active":""}" data-cm="checklists"><span class="dot"></span>Чек-листы</button>
+        <button class="btn btn-sm ${CONTENT_MODE==="articles"?"is-active":""}" data-cm="articles">Инструкции</button>
+        <button class="btn btn-sm ${CONTENT_MODE==="templates"?"is-active":""}" data-cm="templates">Шаблоны</button>
+        <button class="btn btn-sm ${CONTENT_MODE==="checklists"?"is-active":""}" data-cm="checklists">Чек-листы</button>
       </div>
     `);
 
@@ -432,7 +432,7 @@ Views.Admin = (() => {
           </div>
 
           <div style="display:flex; justify-content:flex-end;">
-            <button class="btn btn-sm btn--danger" data-act-del="${i}"><span class="dot"></span>Удалить</button>
+            <button class="btn btn-sm btn--danger" data-act-del="${i}">Удалить</button>
           </div>
         </div>
       `;
@@ -441,7 +441,7 @@ Views.Admin = (() => {
     return `
       <div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 10px 0;">
         <div class="muted">Кнопки действий (Actions)</div>
-        <button class="btn btn-sm btn--primary" id="act_add"><span class="dot"></span>+ Добавить</button>
+        <button class="btn btn-sm btn--primary" id="act_add">+ Добавить</button>
       </div>
       <div class="muted" style="margin:-6px 0 10px 2px;">Можно добавить внешнюю ссылку или внутреннюю ссылку по ID.</div>
       ${rows || `<div class="empty" style="padding:12px;color:var(--muted)">Нет кнопок.</div>`}

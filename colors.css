@@ -13,10 +13,10 @@
 
 :root{
   /* Base surfaces */
-  --brand-bg: #191613;               /* app background */
-  --brand-panel: rgba(34,29,25,.84); /* workspace */
-  --brand-card: rgba(42,36,31,.90);  /* section */
-  --brand-item: rgba(51,44,38,.76);  /* soft */
+  --brand-bg: #1B1A19;               /* app background */
+  --brand-panel: rgba(31,30,29,.84); /* workspace */
+  --brand-card: rgba(39,38,36,.90);  /* section */
+  --brand-item: rgba(49,47,45,.76);  /* soft */
 
   /* Text */
   --brand-headings: #FFF3EA;

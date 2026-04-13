@@ -254,7 +254,7 @@ window.Views.AdminArticlesFactory = function(deps){
               <label class="zr-admin-editor__field-label" for="a_id">ID (уникальный ключ, латиница, без пробелов)</label>
               <div class="zr-admin-editor__id-row">
                 <input id="a_id" style="${inpStyle}" value="${esc(id)}" ${isNew ? "" : "disabled"} placeholder="a_..." />
-                <button class="btn btn-sm" id="gen_id" ${isNew ? "" : "disabled"}><span class="dot"></span>Сгенерировать ID</button>
+                <button class="btn btn-sm" id="gen_id" ${isNew ? "" : "disabled"}>Сгенерировать ID</button>
               </div>
               <div class="muted zr-admin-editor__field-help">ID используется в URL и в базе как ключ. Лучше не менять после публикации.</div>
             </div>
@@ -324,8 +324,8 @@ window.Views.AdminArticlesFactory = function(deps){
 
         <div class="zr-card zr-card--subtle zr-admin-editor__section">
           <div class="zr-admin-editor__actions">
-            <button class="btn btn--primary" id="a_save"><span class="dot"></span>Сохранить</button>
-            ${isNew ? "" : `<button class="btn btn--danger" id="a_del"><span class="dot"></span>Удалить</button>`}
+            <button class="btn btn--primary" id="a_save">Сохранить</button>
+            ${isNew ? "" : `<button class="btn btn--danger" id="a_del">Удалить</button>`}
           </div>
         </div>
       </div>
@@ -340,7 +340,7 @@ window.Views.AdminArticlesFactory = function(deps){
     list.insertAdjacentHTML("beforeend", `
       <div class="hr"></div>
       <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="art_reload"><span class="dot"></span>Обновить</button>
+        <button class="btn btn-sm" id="art_reload">Обновить</button>
       </div>
       <div class="muted" style="margin:0 0 8px 0;">Инструкций: ${items.length}. Создание новых записей вне админки; здесь — редактирование существующих.</div>
     `);

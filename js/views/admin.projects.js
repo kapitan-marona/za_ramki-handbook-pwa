@@ -76,8 +76,8 @@ window.Views.AdminProjectsFactory = function(deps){
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; align-self:flex-start;">
-              <button class="btn btn-sm" data-pr-edit-toggle="${esc(it.id)}"><span class="dot"></span>Редактировать</button>
-              <button class="btn btn-sm" data-pr-del="${esc(it.id)}"><span class="dot"></span>Удалить</button>
+              <button class="btn btn-sm" data-pr-edit-toggle="${esc(it.id)}">Редактировать</button>
+              <button class="btn btn-sm" data-pr-del="${esc(it.id)}">Удалить</button>
             </div>
           </div>
 
@@ -95,8 +95,8 @@ window.Views.AdminProjectsFactory = function(deps){
             </div>
 
             <div style="display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap;">
-              <button class="btn btn-sm" data-pr-save="${esc(it.id)}"><span class="dot"></span>Сохранить</button>
-              <button class="btn btn-sm" data-pr-cancel="${esc(it.id)}"><span class="dot"></span>Отмена</button>
+              <button class="btn btn-sm" data-pr-save="${esc(it.id)}">Сохранить</button>
+              <button class="btn btn-sm" data-pr-cancel="${esc(it.id)}">Отмена</button>
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@ window.Views.AdminProjectsFactory = function(deps){
           </div>
 
           <div style="display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap;">
-            <button class="btn btn-sm" id="pr_add"><span class="dot"></span>Создать проект</button>
+            <button class="btn btn-sm" id="pr_add">Создать проект</button>
           </div>
         </div>
       </div>
@@ -141,7 +141,7 @@ window.Views.AdminProjectsFactory = function(deps){
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
           <div class="item-title">Список проектов</div>
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-sm" id="pr_reload"><span class="dot"></span>Обновить список</button>
+            <button class="btn btn-sm" id="pr_reload">Обновить список</button>
             <div class="item-meta">
               <span class="tag">Всего: ${(items||[]).length}</span>
             </div>

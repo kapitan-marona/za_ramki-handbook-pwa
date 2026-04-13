@@ -7,6 +7,7 @@ Views.Templates = (() => {
 
   let _data = [];
   let _q = "";
+  let _activeTemplateId = "";
 
   function setStatus(t){ $("#status").textContent = t; }
   function setPanelTitle(t){ $("#panelTitle").textContent = t; }
@@ -214,7 +215,7 @@ Views.Templates = (() => {
           const label = esc(r.label || "Открыть");
           const href = esc(r.href || "#");
           const target = r.external ? `target="_blank" rel="noopener"` : "";
-          return `<a class="btn" href="${href}" ${target}><span class="dot"></span>${label}</a>`;
+          return `<a class="btn" href="${href}" ${target}>${label}</a>`;
         }).join("")}
       </div>
     `;
@@ -403,7 +404,7 @@ Views.Templates = (() => {
     ].join("\n");
   }
 
-  function renderList(){
+  function renderList(activeId){
     const list = $("#list");
     list.innerHTML = "";
 
@@ -419,17 +420,16 @@ Views.Templates = (() => {
 
     setStatus(`${filtered.length}`);
 
-    const selectedId = (() => {
-      try{
-        const p = (window.Router && typeof Router.parse === "function") ? Router.parse() : null;
-        return p && p.page === "templates" && p.param ? String(p.param) : "";
-      }catch(e){}
-      return "";
-    })();
+    const selectedId = String(
+      activeId != null && activeId !== ""
+        ? activeId
+        : _activeTemplateId || ""
+    );
 
     filtered.forEach((t) => {
+      const currentId = String(t.id || "");
       const a = document.createElement("a");
-      a.className = `zr-list-row ${selectedId === String(t.id) ? "zr-list-row--active" : ""}`;
+      a.className = `zr-list-row ${selectedId === currentId ? "zr-list-row--active" : ""}`;
       a.href = `#/${encodeURIComponent("templates")}/${encodeURIComponent(t.id)}`;
       const metaParts = [];
       if(t.format) metaParts.push(`<span class="tag">${esc(t.format)}</span>`);
@@ -452,19 +452,24 @@ Views.Templates = (() => {
     const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
 
     _data = await loadTemplatesFromSupabase();
-    renderList();
+    _activeTemplateId = String(param || "");
 
     if(param){
+      renderList();
       await open(param);
       return;
     }
 
+    renderList();
     disableMobileReadingMode();
     viewer.innerHTML = renderFavoriteTemplatesStart();
   }
 
   async function open(templateId){
+    _activeTemplateId = String(templateId || "");
+
     const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
+    renderList();
     const data = Array.isArray(_data) && _data.length ? _data : await loadTemplatesFromSupabase();
     const t = data.find(x => x.id === templateId);
 
@@ -519,9 +524,9 @@ Views.Templates = (() => {
           </div>
 
           <div class="zr-actions-right">
-            <button class="btn" id="btn_save"><span class="dot"></span>Сохранить</button>
-            <button class="btn" id="btn_clear"><span class="dot"></span>Очистить</button>
-            <button class="btn" id="btn_xlsx"><span class="dot"></span>Скачать Excel</button>
+            <button class="btn" id="btn_save">Сохранить</button>
+            <button class="btn" id="btn_clear">Очистить</button>
+            <button class="btn" id="btn_xlsx">Скачать Excel</button>
           </div>
         </div>
       `;
@@ -704,10 +709,10 @@ Views.Templates = (() => {
           </div>
 
           <div class="zr-actions-right">
-            <button class="btn" id="btn_save"><span class="dot"></span>Сохранить</button>
-            <button class="btn" id="btn_clear"><span class="dot"></span>Очистить</button>
-            <button class="btn" id="btn_copy"><span class="dot"></span>Скопировать</button>
-            <button class="btn" id="btn_download"><span class="dot"></span>Скачать .txt</button>
+            <button class="btn" id="btn_save">Сохранить</button>
+            <button class="btn" id="btn_clear">Очистить</button>
+            <button class="btn" id="btn_copy">Скопировать</button>
+            <button class="btn" id="btn_download">Скачать .txt</button>
           </div>
         </div>
       `;

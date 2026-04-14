@@ -59,10 +59,25 @@
     let tasks = res.data || [];
 
     if(role !== "admin"){
+      const currentUserId = (window.App && App.session && App.session.user && App.session.user.id)
+        ? String(App.session.user.id)
+        : null;
+
       tasks = tasks.filter(t => {
         const r = (t && t.role != null) ? String(t.role).trim() : "all";
+
+        // все видят
         if(!r || r === "all") return true;
-        if(r === "staff") return true;
+
+        // только админ → staff не видит
+        if(r === "admin") return false;
+
+        // только исполнитель
+        if(r === "staff"){
+          if(!currentUserId) return false;
+          return String(t.assignee_id || "") === currentUserId;
+        }
+
         return false;
       });
     }

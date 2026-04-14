@@ -181,23 +181,178 @@
             </div>
           </div>
 
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;"> 
             <div style="flex:1; min-width:160px;">
               <div class="muted" style="font-size:12px; margin-bottom:6px;">Видимость</div>
-              <select class="pl-control" id="plCreateRole">
-                <option value="all" ${roleValue==="all" ? "selected" : ""}>all</option>
-                <option value="staff" ${roleValue==="staff" ? "selected" : ""}>staff</option>
-                <option value="admin" ${roleValue==="admin" ? "selected" : ""}>admin</option>
-              </select>
+              <input type="hidden" id="plCreateRole" value="${roleValue}">
+              <div style="position:relative;">
+                <input
+                  class="pl-control"
+                  id="plCreateRoleDisplay"
+                  type="text"
+                  readonly
+                  placeholder="Выберите видимость"
+                />
+                <div id="plCreateRoleResults" style="
+                  display:none;
+                  position:absolute;
+                  top:calc(100% + 6px);
+                  left:0;
+                  right:0;
+                  z-index:20;
+                  max-height:220px;
+                  overflow:auto;
+                  padding:6px;
+                  border:1px solid rgba(255,255,255,.10);
+                  border-radius:12px;
+                  background:rgba(20,16,14,.98);
+                  box-shadow:0 14px 30px rgba(0,0,0,.35);
+                ">
+                  <button
+                    type="button"
+                    class="pl-link-pick"
+                    data-value="all"
+                    data-title="Все"
+                    style="
+                      display:block;
+                      width:100%;
+                      text-align:left;
+                      padding:8px 10px;
+                      border:none;
+                      border-radius:8px;
+                      background:transparent;
+                      color:inherit;
+                      cursor:pointer;
+                    "
+                  >
+                    Все
+                  </button>
+                  <button
+                    type="button"
+                    class="pl-link-pick"
+                    data-value="admin"
+                    data-title="Только админ"
+                    style="
+                      display:block;
+                      width:100%;
+                      text-align:left;
+                      padding:8px 10px;
+                      border:none;
+                      border-radius:8px;
+                      background:transparent;
+                      color:inherit;
+                      cursor:pointer;
+                    "
+                  >
+                    Только админ
+                  </button>
+                  <button
+                    type="button"
+                    class="pl-link-pick"
+                    data-value="staff"
+                    data-title="Только исполнитель"
+                    style="
+                      display:block;
+                      width:100%;
+                      text-align:left;
+                      padding:8px 10px;
+                      border:none;
+                      border-radius:8px;
+                      background:transparent;
+                      color:inherit;
+                      cursor:pointer;
+                    "
+                  >
+                    Только исполнитель
+                  </button>
+                </div>
+              </div>
             </div>
             <div style="flex:1; min-width:160px;">
               <div class="muted" style="font-size:12px; margin-bottom:6px;">Срочность</div>
-              <select class="pl-control" id="plCreateUrgency">
-                <option value="normal" ${urgencyValue==="normal" ? "selected" : ""}>normal</option>
-                <option value="urgent" ${urgencyValue==="urgent" ? "selected" : ""}>urgent</option>
-                <option value="high" ${urgencyValue==="high" ? "selected" : ""}>high</option>
-                <option value="low" ${urgencyValue==="low" ? "selected" : ""}>low</option>
-              </select>
+              <input type="hidden" id="plCreateUrgency" value="${urgencyValue}">
+              <div style="position:relative;">
+                <input
+                  class="pl-control"
+                  id="plCreateUrgencyDisplay"
+                  type="text"
+                  readonly
+                  placeholder="Выберите срочность"
+                />
+                <div id="plCreateUrgencyResults" style="
+                  display:none;
+                  position:absolute;
+                  top:calc(100% + 6px);
+                  left:0;
+                  right:0;
+                  z-index:20;
+                  max-height:220px;
+                  overflow:auto;
+                  padding:6px;
+                  border:1px solid rgba(255,255,255,.10);
+                  border-radius:12px;
+                  background:rgba(20,16,14,.98);
+                  box-shadow:0 14px 30px rgba(0,0,0,.35);
+                ">
+                  <button
+                    type="button"
+                    class="pl-link-pick"
+                    data-value="urgent"
+                    data-title="Срочно"
+                    style="
+                      display:block;
+                      width:100%;
+                      text-align:left;
+                      padding:8px 10px;
+                      border:none;
+                      border-radius:8px;
+                      background:transparent;
+                      color:inherit;
+                      cursor:pointer;
+                    "
+                  >
+                    Срочно
+                  </button>
+                  <button
+                    type="button"
+                    class="pl-link-pick"
+                    data-value="normal"
+                    data-title="Обычная"
+                    style="
+                      display:block;
+                      width:100%;
+                      text-align:left;
+                      padding:8px 10px;
+                      border:none;
+                      border-radius:8px;
+                      background:transparent;
+                      color:inherit;
+                      cursor:pointer;
+                    "
+                  >
+                    Обычная
+                  </button>
+                  <button
+                    type="button"
+                    class="pl-link-pick"
+                    data-value="low"
+                    data-title="Низкая"
+                    style="
+                      display:block;
+                      width:100%;
+                      text-align:left;
+                      padding:8px 10px;
+                      border:none;
+                      border-radius:8px;
+                      background:transparent;
+                      color:inherit;
+                      cursor:pointer;
+                    "
+                  >
+                    Низкая
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -529,8 +684,90 @@
     const closeBtn = document.getElementById("plCreateClose");
     if(closeBtn) closeBtn.onclick = close;
 
+    const roleValueEl = document.getElementById("plCreateRole");
+    const roleDisplayEl = document.getElementById("plCreateRoleDisplay");
+    const roleResultsEl = document.getElementById("plCreateRoleResults");
+
+    function roleDisplayLabel(value){
+      if(String(value || "") === "admin") return "Только админ";
+      if(String(value || "") === "staff") return "Только исполнитель";
+      return "Все";
+    }
+
+    if(roleValueEl && roleDisplayEl){
+      roleDisplayEl.value = roleDisplayLabel(roleValueEl.value);
+
+      roleDisplayEl.addEventListener("click", () => {
+        if(!roleResultsEl) return;
+        roleResultsEl.style.display = roleResultsEl.style.display === "block" ? "none" : "block";
+      });
+    }
+
     const doBtn = document.getElementById("plCreateDo");
     const msg = document.getElementById("plCreateMsg");
+
+    if(roleResultsEl){
+      roleResultsEl.querySelectorAll(".pl-link-pick").forEach(btn => {
+        btn.onclick = () => {
+          const nextValue = btn.dataset.value || "all";
+          const nextTitle = btn.dataset.title || roleDisplayLabel(nextValue);
+
+          if(roleValueEl) roleValueEl.value = nextValue;
+          if(roleDisplayEl) roleDisplayEl.value = nextTitle;
+
+          roleResultsEl.style.display = "none";
+          if(msg) msg.textContent = "";
+        };
+      });
+
+      document.addEventListener("click", (e) => {
+        if(!roleResultsEl || !roleDisplayEl) return;
+        if(!roleResultsEl.contains(e.target) && e.target !== roleDisplayEl){
+          roleResultsEl.style.display = "none";
+        }
+      });
+    }
+
+    const urgencyValueEl = document.getElementById("plCreateUrgency");
+    const urgencyDisplayEl = document.getElementById("plCreateUrgencyDisplay");
+    const urgencyResultsEl = document.getElementById("plCreateUrgencyResults");
+
+    function urgencyDisplayLabel(value){
+      if(String(value || "") === "urgent") return "Срочно";
+      if(String(value || "") === "low") return "Низкая";
+      return "Обычная";
+    }
+
+    if(urgencyValueEl && urgencyDisplayEl){
+      urgencyDisplayEl.value = urgencyDisplayLabel(urgencyValueEl.value);
+
+      urgencyDisplayEl.addEventListener("click", () => {
+        if(!urgencyResultsEl) return;
+        urgencyResultsEl.style.display = urgencyResultsEl.style.display === "block" ? "none" : "block";
+      });
+    }
+
+    if(urgencyResultsEl){
+      urgencyResultsEl.querySelectorAll(".pl-link-pick").forEach(btn => {
+        btn.onclick = () => {
+          const nextValue = btn.dataset.value || "normal";
+          const nextTitle = btn.dataset.title || urgencyDisplayLabel(nextValue);
+
+          if(urgencyValueEl) urgencyValueEl.value = nextValue;
+          if(urgencyDisplayEl) urgencyDisplayEl.value = nextTitle;
+
+          urgencyResultsEl.style.display = "none";
+          if(msg) msg.textContent = "";
+        };
+      });
+
+      document.addEventListener("click", (e) => {
+        if(!urgencyResultsEl || !urgencyDisplayEl) return;
+        if(!urgencyResultsEl.contains(e.target) && e.target !== urgencyDisplayEl){
+          urgencyResultsEl.style.display = "none";
+        }
+      });
+    }
 
     if(doBtn){
       doBtn.onclick = async () => {
@@ -558,6 +795,16 @@
         const title = titleEl && titleEl.value ? titleEl.value.trim() : "";
         if(!title){ if(msg) msg.textContent = "Название обязательно."; return; }
 
+        const selectedRole = roleEl && roleEl.value ? String(roleEl.value) : "all";
+        const selectedAssigneeId = (assigneeEl && assigneeEl.value) ? String(assigneeEl.value) : "";
+
+        if(selectedRole === "staff" && !selectedAssigneeId){
+          if(msg) msg.textContent = "Нельзя выбрать «Только исполнитель» без назначенного исполнителя.";
+          return;
+        }
+
+        const nextAssignees = selectedAssigneeId ? [selectedAssigneeId] : [];
+
         doBtn.disabled = true;
         if(msg) msg.textContent = isEdit ? "Сохраняю…" : "Создаю…";
 
@@ -571,9 +818,6 @@
             urgency: urgEl && urgEl.value ? String(urgEl.value) : "normal",
             project_id: (projectEl && projectEl.value) ? projectEl.value : null
           };
-
-          const selectedAssigneeId = (assigneeEl && assigneeEl.value) ? String(assigneeEl.value) : "";
-          const nextAssignees = selectedAssigneeId ? [selectedAssigneeId] : [];
 
           if(typeof onSubmit !== "function"){
             throw new Error(isEdit ? "onSave handler missing" : "onCreate handler missing");
@@ -907,10 +1151,14 @@
           btn.onclick = () => {
             const refEl = document.getElementById("plLinkRefId");
             const labelEl = document.getElementById("plLinkInternalLabel");
+            const searchEl = document.getElementById("plLinkArticleSearch");
 
-            if(refEl) refEl.value = btn.dataset.id || "";
-            if(labelEl) labelEl.value = btn.dataset.title || "";
-            if(searchEl) searchEl.value = btn.dataset.title || "";
+            const nextId = btn.dataset.id || "";
+            const nextTitle = btn.dataset.title || "";
+
+            if(refEl) refEl.value = nextId;
+            if(labelEl) labelEl.value = nextTitle;
+            if(searchEl) searchEl.value = nextTitle;
 
             resultsHost.innerHTML = "";
             resultsHost.style.display = "none";

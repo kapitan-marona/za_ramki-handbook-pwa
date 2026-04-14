@@ -854,6 +854,14 @@ window.PlannerDetailHelpers = (() => {
       (task.body && String(task.body).trim())
     );
 
+    const hasChecklistContent = !!(
+      Array.isArray(task.checklist_items) && task.checklist_items.length
+    );
+
+    const hasDocsContent = !!(
+      Array.isArray(task.links) && task.links.length
+    );
+
     return `
       <div class="zr-planner-detail">
         <div class="zr-card zr-card--section zr-planner-hero" style="${detailsProblemStyle}">
@@ -920,7 +928,11 @@ window.PlannerDetailHelpers = (() => {
               </div>
             ` : ""}
 
-            <div class="zr-card zr-card--section zr-planner-section">
+            <div
+              class="zr-card zr-card--section zr-planner-section"
+              id="plChecklistSection"
+              data-initial-has-content="${hasChecklistContent ? "1" : "0"}"
+            >
               <div class="zr-section-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                 <div class="zr-section-title">Пункты задачи</div>
                 ${(isAdmin && !isArchived) ? `
@@ -935,17 +947,25 @@ window.PlannerDetailHelpers = (() => {
           </div>
 
           <div class="zr-planner-sidecol">
-            <div class="zr-card zr-card--subtle zr-planner-section zr-planner-docs-section is-collapsed" id="plDocsSection">
+            <div
+              class="zr-card zr-card--subtle zr-planner-section zr-planner-docs-section${hasDocsContent ? ` is-collapsed` : ``}"
+              id="plDocsSection"
+              data-initial-has-content="${hasDocsContent ? "1" : "0"}"
+            >
               <div class="zr-section-head zr-section-head--docs">
-                <button
-                  class="zr-section-title zr-section-title--toggle"
-                  id="plDocsToggle"
-                  type="button"
-                  aria-expanded="false"
-                >
-                  <span class="zr-section-title-toggle__label">Документы</span>
-                  <span class="zr-section-title-toggle__count">(…)</span>
-                </button>
+                ${hasDocsContent ? `
+                  <button
+                    class="zr-section-title zr-section-title--toggle"
+                    id="plDocsToggle"
+                    type="button"
+                    aria-expanded="false"
+                  >
+                    <span class="zr-section-title-toggle__label">Документы</span>
+                    <span class="zr-section-title-toggle__count">(…)</span>
+                  </button>
+                ` : `
+                  <div class="zr-section-title" id="plDocsStaticTitle">Документы</div>
+                `}
 
                 <div class="zr-planner-docs-head-actions">
                   ${(isAdmin && !isArchived) ? `

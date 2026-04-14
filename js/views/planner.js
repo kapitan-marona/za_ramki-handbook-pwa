@@ -119,7 +119,10 @@ async function fetchTaskById(taskId, ctx){
 if(window.PlannerChecklistRuntime && typeof PlannerChecklistRuntime.init === "function"){
   PlannerChecklistRuntime.init({
     esc,
-    getChecklistHost: () => document.getElementById("plChecklist"),
+    getChecklistHost: () => {
+      const host = document.getElementById("plChecklist");
+      return host || null;
+    },
     fetchAllActiveTasks,
     renderLeft,
     getSelectedTaskId,

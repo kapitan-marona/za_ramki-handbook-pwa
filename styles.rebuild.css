@@ -157,6 +157,15 @@ body{
   flex:0 0 auto;
 }
 
+.push-icon-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.push-icon-btn.is-ready {
+  opacity: 1;
+}
+
 .auth-push svg,
 #pushBtn.push-icon-btn svg{
   width:14px;
@@ -206,6 +215,21 @@ body{
 #authArea .btn,
 #authArea button{
   padding:7px 10px;
+}
+
+#pushBtn.push-icon-btn{
+  opacity:0;
+  transition:
+    opacity .14s ease,
+    border-color .16s ease,
+    background-color .16s ease,
+    color .16s ease,
+    box-shadow .16s ease,
+    filter .16s ease;
+}
+
+#pushBtn.push-icon-btn.is-ready{
+  opacity:1;
 }
 
 .footer{
@@ -1565,8 +1589,8 @@ display:flex;
   align-items:flex-start;
   justify-content:space-between;
   gap:12px;
-  padding-bottom:8px;
-  margin-bottom:12px;
+  padding-bottom:10px;
+  margin-bottom:14px;
   border-bottom:1px solid rgba(255,243,234,.06);
 }
 
@@ -1593,7 +1617,8 @@ display:flex;
   align-items:center;
   justify-content:flex-end;
   gap:10px;
-  margin-top:4px;
+  margin-top:8px;
+  padding-top:2px;
 }
 
 .zr-planner-dialog-actions .muted{
@@ -1605,6 +1630,21 @@ display:flex;
   min-height:38px;
   padding:8px 11px;
   border-radius:12px;
+  transition:
+    border-color .16s ease,
+    box-shadow .16s ease,
+    background-color .16s ease;
+}
+
+.zr-planner-dialog .pl-control:hover{
+  border-color:rgba(255,243,234,.14);
+}
+
+.zr-planner-dialog .pl-control:focus,
+.zr-planner-dialog .pl-control:focus-visible{
+  outline:none;
+  border-color:var(--accent-35);
+  box-shadow:0 0 0 2px rgba(192,58,20,.10);
 }
 
 .zr-planner-dialog textarea.pl-control,
@@ -2878,3 +2918,4 @@ select:disabled{
 .zr-planner-grid.zr-planner-grid--no-details .zr-planner-sidecol{
   width:100%;
 }
+

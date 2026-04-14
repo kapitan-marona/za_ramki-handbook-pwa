@@ -53,31 +53,55 @@ window.handlePushToggleClick = async function(){
       return;
     }
 
-    var perm = ZRPush.getPermissionState();
-    var hasActive = false;
+    var state = null;
 
     try{
-      hasActive = !!(ZRPush.hasActiveCurrentSubscription && await ZRPush.hasActiveCurrentSubscription());
+      if(typeof ZRPush.getCurrentSubscriptionState !== "function"){
+        throw new Error("getCurrentSubscriptionState missing");
+      }
+      state = await ZRPush.getCurrentSubscriptionState();
     }catch(e){
-      console.warn("[Push] active state check failed", e);
-    }
-
-    if(hasActive){
-      await ZRPush.deactivateCurrentSubscription();
-      alert("Push отключены для текущего устройства / браузера.");
+      console.warn("[Push] state read failed", e);
+      alert("Не удалось прочитать текущее состояние push.");
       return;
     }
+
+    if(!state || state.supported === false){
+      alert("Push не поддерживается в этом браузере.");
+      return;
+    }
+
+    if(state.permission === "denied"){
+      alert("Уведомления заблокированы в браузере.");
+      return;
+    }
+
+    if(state.hasSubscription){
+      var targetActive = !state.isActive;
+      var toggleRes = await ZRPush.setCurrentSubscriptionActive(targetActive);
+
+      if(!toggleRes || !toggleRes.ok){
+        alert("Не удалось переключить уведомления. Проверь консоль.");
+        return;
+      }
+
+      return;
+    }
+
+    var perm = state.permission;
 
     if(perm === "default"){
       perm = await ZRPush.requestPermissionInteractive();
     }
 
     if(perm !== "granted"){
-      alert("Разрешение на push не выдано.");
+      if(perm === "denied"){
+        alert("Уведомления заблокированы в браузере.");
+      }
       return;
     }
 
-    var res = await ZRPush.subscribeCurrentUser();
+    var res = await ZRPush.subscribeCurrentUser({ activate: true });
 
     if(!res || !res.ok){
       if(res && res.reason === "missing-vapid-key"){
@@ -85,16 +109,9 @@ window.handlePushToggleClick = async function(){
         return;
       }
 
-      alert("Push foundation включена, но подписка/регистрация не завершилась. Проверь консоль.");
+      alert("Не удалось включить уведомления. Проверь консоль.");
       return;
     }
-
-    if(res.backend && res.backend.ok){
-      alert("Push уведомления активированы ✅");
-      return;
-    }
-
-    alert("Push подписка создана, но backend registration пока не завершилась. Проверь table/policies.");
   }catch(e){
     console.warn("[Push] toggle flow failed", e);
     alert("Ошибка переключения push. Смотри консоль.");
@@ -127,7 +144,7 @@ window.renderAuthArea = function(){
   el.innerHTML =
     '<div class="auth-group">' +
       '<span class="pill auth-role">' + (App.session.role || '—') + '</span>' +
-      '<button type="button" class="btn btn-sm auth-push" id="pushBtn" aria-pressed="false">🔔</button>' +
+      '<button type="button" class="btn btn-sm auth-push push-icon-btn is-off" id="pushBtn" aria-pressed="false"></button>' +
     '</div>' +
     '<button type="button" class="btn btn-sm auth-logout" id="logoutBtn">Выйти</button>';
 
@@ -143,7 +160,7 @@ window.renderAuthArea = function(){
     btn.onclick = async function(){
       try{
         if(window.ZRPush && ZRPush.deactivateCurrentSubscription){
-          await ZRPush.deactivateCurrentSubscription();
+          await ZRPush.deactivateCurrentSubscription({ unsubscribe: true });
         }
       }catch(e){ console.warn("[app.js] silent catch", e); }
 
@@ -160,7 +177,6 @@ window.renderAuthArea = function(){
   }
 
   window.syncRoleUI();
-  window.syncPushUI();
 };
 
 window.applySession = async function(user){
@@ -186,6 +202,13 @@ window.applySession = async function(user){
         var err = document.querySelector("#loginError");
         if(err) err.textContent = "Нет доступа: ваш email не добавлен в allowlist.";
       }catch(e){ console.warn("[app.js] silent catch", e); }
+
+      try{
+        await window.syncPushUI();
+      }catch(e){
+        console.warn("[Push] sync UI after no-role branch failed", e);
+      }
+
       return;
     }
   }
@@ -199,6 +222,12 @@ window.applySession = async function(user){
     }catch(e){
       console.warn("[Push] sync existing subscription skipped", e);
     }
+  }
+
+  try{
+    await window.syncPushUI();
+  }catch(e){
+    console.warn("[Push] sync UI after session apply failed", e);
   }
 };
 

@@ -257,14 +257,30 @@ Views.Articles = (() => {
     const v = meta?.updatedAt || meta?.updated_at || "";
     if(!v) return null;
 
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v).trim());
+    const raw = String(v).trim();
+    if(!raw) return null;
+
+    // YYYY-MM-DD
+    let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
     if(m){
-      const y = parseInt(m[1],10), mo = parseInt(m[2],10)-1, d = parseInt(m[3],10);
+      const y = parseInt(m[1], 10);
+      const mo = parseInt(m[2], 10) - 1;
+      const d = parseInt(m[3], 10);
       return new Date(y, mo, d, 0, 0, 0, 0);
     }
 
-    const t = Date.parse(String(v));
+    // DD.MM.YYYY
+    m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(raw);
+    if(m){
+      const d = parseInt(m[1], 10);
+      const mo = parseInt(m[2], 10) - 1;
+      const y = parseInt(m[3], 10);
+      return new Date(y, mo, d, 0, 0, 0, 0);
+    }
+
+    const t = Date.parse(raw);
     if(Number.isFinite(t)) return new Date(t);
+
     return null;
   }
 
@@ -327,7 +343,7 @@ Views.Articles = (() => {
 
     for(const it of items){
       const isNew = !!it.hasInlineNew && isNewWindowActive(it, 7);
-      const badge = isNew ? `<span class="kb-updated-badge">обновлено</span>` : "";
+      const badge = isNew ? `<span class="kb-updated-badge">ОБНОВЛЕНО</span>` : "";
       const catTitle = CATMAP[it.category] || it.category || "";
       const cat = catTitle ? `<span class="tag accent">${esc(catTitle)}</span>` : "";
       const tags = (it.tags||[]).slice(0,4).map(t => `<span class="tag">${esc(t)}</span>`).join("");
@@ -352,28 +368,41 @@ Views.Articles = (() => {
     return md;
   }
 
-  function decorateCallouts(html){
-    if(!html) return html;
+  function decorateCallouts(md){
+    md = (md ?? "").toString();
 
-    const rules = [
-      { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*Важно:\s*(?:<\/strong>)?\s*/gi,
-        cls: "kb-important", title: "☝️ ВАЖНО" },
+    const lines = md.split("\n");
+    const out = [];
 
-      { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*(Нельзя|Осторожно):\s*(?:<\/strong>)?\s*/gi,
-        cls: "kb-caution", title: "❌ ОСТОРОЖНО" },
-
-      { re: /<blockquote>\s*<p>\s*(?:<strong>)?\s*Не забудь:\s*(?:<\/strong>)?\s*/gi,
-        cls: "kb-remember", title: "✨ НЕ ЗАБУДЬ" },
+    const defs = [
+      { key: "Важно:", cls: "kb-important", title: "ВАЖНО" },
+      { key: "Не забудь:", cls: "kb-remember", title: "НЕ ЗАБУДЬ" },
+      { key: "Нельзя:", cls: "kb-caution", title: "НЕЛЬЗЯ" },
+      { key: "Осторожно:", cls: "kb-caution", title: "ОСТОРОЖНО" }
     ];
 
-    for(const r of rules){
-      html = html.replace(
-        r.re,
-        `<blockquote class="kb-callout ${r.cls}"><p><span class="kb-callout-title">${r.title}</span> `
+    for(let i = 0; i < lines.length; i++){
+      const raw = lines[i];
+      const line = String(raw || "");
+      const trimmed = line.trim();
+
+      const match = defs.find(d => trimmed.startsWith(">" + d.key));
+      if(!match){
+        out.push(raw);
+        continue;
+      }
+
+      const body = trimmed.slice((">" + match.key).length).trim();
+
+      out.push(
+        `<div class="kb-callout ${match.cls}">` +
+          `<div class="kb-callout-title">${esc(match.title)}</div>` +
+          `<div class="kb-callout-body">${esc(body)}</div>` +
+        `</div>`
       );
     }
 
-    return html;
+    return out.join("\n");
   }
 
   function slugify(s){
@@ -832,8 +861,8 @@ Views.Articles = (() => {
     const roles = (meta.roles||[]).map(r => `<span class="tag">${esc(r)}</span>`).join("");
     const updated = meta.updatedAt ? `Обновлено: ${esc(formatMetaDate(meta.updatedAt))}` : "";
 
-    const html0 = window.marked ? window.marked.parse(md) : `<pre>${esc(md)}</pre>`;
-    const html = decorateCallouts(html0);
+    md = decorateCallouts(md);
+    const html = window.marked ? window.marked.parse(md) : `<pre>${esc(md)}</pre>`;
     viewer.innerHTML = `
       <div class="zr-stack-lg zr-viewer-shell">
         <div class="zr-inline-sm">

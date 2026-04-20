@@ -253,7 +253,7 @@ window.Views.AdminChecklistsFactory = function(deps){
       const tags = Array.isArray(it.tags) && it.tags.length
         ? it.tags.map(tag => `<span class="tag" data-tag-filter="${esc(String(tag))}">${esc(String(tag))}</span>`).join("")
         : "";
-      const desc = it.desc ? `<div class="muted" style="margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(it.desc)}</div>` : "";
+      const desc = it.desc ? `<div class="muted" style="margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">(it.desc)}</div>` : "";
 
       const a = document.createElement("a");
       a.className = "item";

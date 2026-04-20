@@ -1180,6 +1180,64 @@ select{
   font-weight:500;
 }
 
+/* === ARTICLES: inline updates + updated badge === */
+
+.kb-newmark{
+  padding:0 .14em;
+  border-radius:.18em;
+
+  background:linear-gradient(
+    to top,
+    rgba(255,243,234,.15) 0%,
+    rgba(255,243,234,.15) 58%,
+    transparent 58%,
+    transparent 100%
+  );
+
+  color:inherit;
+  box-shadow:none;
+}
+
+.markdown mark.kb-newmark{
+  padding:0 .14em;
+  border-radius:.18em;
+
+  background:linear-gradient(
+    to top,
+    rgba(255,243,234,.15) 0%,
+    rgba(255,243,234,.15) 58%,
+    transparent 58%,
+    transparent 100%
+  );
+
+  color:inherit;
+  box-shadow:none;
+}
+
+.item-title .kb-updated-badge,
+.zr-list-row-title .kb-updated-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+
+  min-height:18px;
+  padding:2px 8px;
+  border-radius:999px;
+  margin-left:8px;
+
+  border:1px solid var(--border);
+  background:rgba(255,243,234,.06);
+
+  color:var(--muted);
+  font-size:10px;
+  line-height:1;
+  font-weight:500;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+
+  vertical-align:middle;
+}
+
 .item-meta,
 .zr-list-row-meta{
   display:flex;
@@ -3197,3 +3255,305 @@ button.zr-admin-home__card{
   }
 }
 
+/* === ARTICLES: CALLOUTS === */
+
+.kb-callout{
+  margin:14px 0;
+  padding:12px 14px;
+  border-left:2px solid var(--border);
+  border-radius:0 12px 12px 0;
+  background:rgba(255,243,234,.04);
+}
+
+.kb-callout-title{
+  display:block;
+  margin-bottom:6px;
+  font-size:11px;
+  line-height:1.2;
+  font-weight:700;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--headings);
+}
+
+.kb-callout-body{
+  font-size:14px;
+  line-height:1.55;
+  color:var(--text);
+}
+
+.kb-callout.kb-important{
+  border-left-color:var(--accent-35);
+  background:rgba(255,243,234,.045);
+}
+
+.kb-callout.kb-remember{
+  border-left-color:rgba(255,243,234,.22);
+  background:rgba(255,243,234,.035);
+}
+
+.kb-callout.kb-caution{
+  border-left-color:rgba(var(--accent-rgb), .45);
+  background:rgba(var(--accent-rgb), .08);
+}
+
+/* =========================================================
+   MOBILE SHELL — SAFE P0
+   ========================================================= */
+
+@media (max-width: 900px){
+
+  .header-inner{
+    flex-wrap:wrap;
+    align-items:flex-start;
+    gap:10px;
+    padding:12px;
+  }
+
+  .brand{
+    width:100%;
+    align-items:flex-start;
+  }
+
+  .brand > div{
+    min-width:0;
+  }
+
+  .brand small{
+    line-height:1.2;
+  }
+
+  .search{
+    order:3;
+    width:100%;
+    max-width:none;
+    flex:1 1 100%;
+  }
+
+  #authArea{
+    gap:6px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  .main{
+    grid-template-columns:1fr;
+    gap:12px;
+    padding:12px;
+    height:auto;
+    max-width:100%;
+  }
+
+  .panel,
+  .viewer{
+    min-width:0;
+    width:100%;
+    max-width:100%;
+  }
+
+  .viewer{
+    padding:14px;
+    overflow:visible;
+  }
+
+  #viewer{
+    height:auto;
+    min-height:420px;
+  }
+
+  #tabs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  #tabs > .tab{
+    width:100%;
+    margin:0;
+  }
+
+  #list{
+    overflow:visible;
+  }
+
+  body:has(#viewer .zr-board-screen) #list,
+  body:has(#viewer .zr-planner-detail) #list{
+    display:none;
+  }
+
+  .zr-board-toolbar{
+    position:static;
+    top:auto;
+    grid-template-columns:1fr;
+    gap:10px;
+    padding:0 0 10px 0;
+    background:transparent;
+    border-bottom:0;
+    box-shadow:none;
+  }
+
+  .zr-board-toolbar__right{
+    justify-content:flex-start;
+  }
+
+  #plBoard{
+    overflow:visible;
+  }
+
+  #plBoard > .zr-board-row{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:12px !important;
+  }
+
+  #plBoard > .zr-board-row > .zr-board-col{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    flex:none !important;
+    min-height:0;
+  }
+
+  .zr-planner-grid,
+  .zr-planner-grid.zr-planner-grid--compact-top,
+  .zr-planner-grid.zr-planner-grid--no-details,
+  .zr-planner-grid.zr-planner-grid--no-sidecol{
+    grid-template-columns:1fr;
+  }
+
+  .zr-planner-row,
+  .zr-row-2,
+  .zr-form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .zr-planner-hero{
+    padding:12px;
+  }
+
+  .zr-planner-hero-top{
+    display:flex;
+    flex-direction:row;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+
+  .zr-planner-hero-main{
+    flex:1;
+    min-width:0;
+  }
+
+  #plBack{
+    flex:0 0 auto;
+    align-self:flex-start;
+  }
+
+  .zr-planner-hero-top-actions,
+  .zr-planner-actions-main,
+  .zr-planner-actions-side,
+  .zr-viewer-header-actions,
+  .zr-actions-right{
+    width:100%;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-start;
+    gap:8px;
+  }
+
+  .zr-planner-hero-top-actions #plBack{
+    margin-left:auto;
+    order:-1;
+  }
+
+  .zr-viewer-header-row{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+  }
+
+  .zr-viewer-header-main{
+    width:100%;
+  }
+
+  .article-layout{
+    grid-template-columns:1fr !important;
+  }
+
+  .article-toc{
+    position:relative;
+    top:auto;
+    width:100%;
+  }
+
+  .zr-admin-home__content-list{
+    grid-template-columns:1fr;
+  }
+
+  .zr-admin-mode-tabs,
+  .zr-admin-content-tabs,
+  #list > .actions.zr-admin-mode-tabs{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    min-height:0;
+  }
+
+  .zr-admin-editor__grid,
+  .zr-admin-editor__row{
+    grid-template-columns:1fr;
+  }
+
+  .zr-planner-hero-top-actions{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:10px;
+    align-items:start;
+    width:100%;
+  }
+
+  .zr-planner-hero-top-nav{
+    grid-column:2;
+    grid-row:1;
+    justify-self:end;
+  }
+
+  .zr-planner-hero-top-admin{
+    grid-column:1 / span 2;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  .zr-planner-hero-top-status{
+    grid-column:1 / span 2;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+  }
+
+  .zr-planner-actions-main,
+  .zr-planner-actions-side{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  .zr-planner-actions{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  #plBack{
+    margin-left:0;
+    align-self:auto;
+  }
+
+  input,
+  select,
+  textarea{
+    max-width:100%;
+  }
+}

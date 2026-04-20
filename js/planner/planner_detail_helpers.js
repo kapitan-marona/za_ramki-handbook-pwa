@@ -782,13 +782,12 @@ window.PlannerDetailHelpers = (() => {
         <div class="zr-planner-actions-main">
           ${next.map(([s,label]) => {
             if(s === "problem") return "";
+            if(s === "done") return "";
             if(s === "in_progress" && String(task.status || "") === "problem") return "";
 
-            const cls = (s === "done")
-              ? "btn btn-sm btn--primary pl-status"
-              : (s === "problem" || s === "canceled")
-                ? "btn btn-sm btn--danger pl-status"
-                : "btn btn-sm btn--ghost pl-status";
+            const cls = (s === "canceled")
+              ? "btn btn-sm btn--danger pl-status"
+              : "btn btn-sm btn--ghost pl-status";
             return `<button class="${cls}" data-s="${esc(s)}" type="button">${esc(label)}</button>`;
           }).join("")}
         </div>
@@ -800,7 +799,7 @@ window.PlannerDetailHelpers = (() => {
     `;
   }
   
-    function buildHeroTopActionsHtml(task, opts){
+  function buildHeroTopActionsHtml(task, opts){
     const o = opts || {};
     const isAdmin = !!o.isAdmin;
     const isArchived = !!o.isArchived;
@@ -808,13 +807,16 @@ window.PlannerDetailHelpers = (() => {
     const cur = String((task && task.status) || "");
 
     let problemBtnHtml = "";
+    let resolvedBtnHtml = "";
 
     if(cur === "taken" || cur === "in_progress"){
       problemBtnHtml = `<button class="btn btn-sm btn--danger pl-status" data-s="problem" type="button">⚠ Возникла проблема</button>`;
+      resolvedBtnHtml = `<button class="btn btn-sm btn--primary pl-status" data-s="done" type="button">Успешно завершена</button>`;
     }
 
     if(cur === "problem"){
       problemBtnHtml = `<button class="btn btn-sm btn--primary pl-status" data-s="in_progress" type="button">✓ Проблема решена</button>`;
+      resolvedBtnHtml = `<button class="btn btn-sm btn--primary pl-status" data-s="done" type="button">Успешно завершена</button>`;
     }
 
     const editBtnHtml = (isAdmin && !isArchived)
@@ -823,9 +825,22 @@ window.PlannerDetailHelpers = (() => {
 
     return `
       <div class="zr-planner-hero-top-actions">
-        ${problemBtnHtml}
-        ${editBtnHtml}
-        <button class="btn btn-sm btn--ghost" id="plBack" type="button">Назад</button>
+        <div class="zr-planner-hero-top-nav">
+          <button class="btn btn-sm btn--ghost" id="plBack" type="button">Назад</button>
+        </div>
+
+        ${isAdmin && !isArchived ? `
+          <div class="zr-planner-hero-top-admin">
+            ${editBtnHtml}
+          </div>
+        ` : ``}
+
+        ${(problemBtnHtml || resolvedBtnHtml) ? `
+          <div class="zr-planner-hero-top-status">
+            ${problemBtnHtml}
+            ${resolvedBtnHtml}
+          </div>
+        ` : ``}
       </div>
     `;
   }

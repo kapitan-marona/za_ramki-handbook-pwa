@@ -347,7 +347,7 @@ window.Views.AdminArticlesFactory = function(deps){
       const typeTitle = TYPE_LABELS[it.type] || (it.type || "");
       const tp = typeTitle ? `<span class="tag">${esc(typeTitle)}</span>` : "";
       const cat = it.category ? `<span class="tag">${esc(it.category)}</span>` : "";
-      const ex = it.excerpt ? `<div class="muted" style="margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(it.excerpt)}</div>` : "";
+      const ex = it.excerpt ? `<div class="muted" style="margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">(it.excerpt)}</div>` : "";
 
       const a = document.createElement("a");
       a.className = "item";

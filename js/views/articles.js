@@ -914,21 +914,7 @@ Views.Articles = (() => {
   }
 
   async function loadFileIndex(){
-    const raw = await API.json("./content/index.json");
-    const items = Array.isArray(raw?.items) ? raw.items : [];
-    return items.map(it => ({
-      id: it.id,
-      title: it.title,
-      category: it.category,
-      tags: it.tags || [],
-      roles: it.roles || [],
-      updatedAt: it.updatedAt,
-      hasInlineNew: !!it.hasInlineNew,
-      pinned: !!it.pinned,
-      path: it.path,
-      actions: it.actions || [],
-      source: "file"
-    }));
+    return [];
   }
 
   async function loadSbIndex(){
@@ -958,10 +944,7 @@ Views.Articles = (() => {
   }
 
   async function init(){
-    try{
-      const cats = await API.json("./content/ui/categories.json");
-      CATMAP = Object.fromEntries(cats.map(c => [c.id, c.title]));
-    }catch(e){ CATMAP = {}; }
+    CATMAP = {};
 
     let fileItems = [];
     try{

@@ -33,15 +33,23 @@ Views.Admin = (() => {
 
   const inpStyle = [
     "width:100%",
-    "padding:10px 12px",
-    "border-radius:12px",
+    "min-height:34px",
+    "padding:7px 10px",
+    "border-radius:10px",
     "border:1px solid rgba(255,255,255,.12)",
     "background:rgba(0,0,0,.18)",
     "color:var(--text)",
-    "outline:none"
+    "outline:none",
+    "font-size:13px",
+    "line-height:1.25"
   ].join(";");
 
-  const taStyle = [inpStyle,"resize:vertical","line-height:1.35"].join(";");
+  const taStyle = [
+    inpStyle,
+    "min-height:72px",
+    "resize:vertical",
+    "line-height:1.35"
+  ].join(";");
 
   function esc(str){
     return (str ?? "").toString().replace(/[&<>"']/g, c => ({
@@ -206,15 +214,27 @@ Views.Admin = (() => {
 
   function parseParam(param){
     const p = (param || "").trim();
-    if(!p) return { mode:"employees" };
+    if(!p) return { mode:"home" };
+
     const parts = p.split(":");
-    if(parts[0] === "employees") return { mode:"employees" };
-    if(parts[0] === "tasks") return { mode:"tasks" };
-    if(parts[0] === "projects") return { mode:"projects" };
-    if(parts[0] === "content"){
-      return { mode:"content", contentMode: parts[1] || "articles", id: parts[2] || "" };
+    const head = parts[0] || "";
+
+    if(head === "home") return { mode:"home" };
+    if(head === "employees") return { mode:"employees" };
+    if(head === "tasks") return { mode:"tasks" };
+    if(head === "projects") return { mode:"projects" };
+    if(head === "articles") return { mode:"articles", id: parts[1] || "" };
+    if(head === "templates") return { mode:"templates", id: parts[1] || "" };
+    if(head === "checklists") return { mode:"checklists", id: parts[1] || "" };
+
+    if(head === "content"){
+      const sub = parts[1] || "articles";
+      if(sub === "articles") return { mode:"articles", id: parts[2] || "" };
+      if(sub === "templates") return { mode:"templates", id: parts[2] || "" };
+      if(sub === "checklists") return { mode:"checklists", id: parts[2] || "" };
     }
-    return { mode:"employees" };
+
+    return { mode:"home" };
   }
 
   function goAdmin(param){
@@ -226,43 +246,30 @@ Views.Admin = (() => {
     const list = $("#list");
     if(!list) return;
 
-    const tabBtn = (id, label) =>
-      `<button class="btn btn-sm ${MODE===id ? "is-active" : ""}" data-adm-tab="${esc(id)}">${esc(label)}</button>`;
+    const isActive = (id) => MODE === id;
+    const tabBtn = (id, label, target) =>
+      `<button class="btn btn-sm ${isActive(id) ? "is-active" : ""}" data-adm-tab="${esc(target || id)}">${esc(label)}</button>`;
 
     list.innerHTML =
-      `<div class="actions zr-admin-mode-tabs" style="margin:0 0 10px 0; flex-wrap:wrap;">` +
-        tabBtn("employees","Сотрудники") +
-        tabBtn("projects","Проекты") +
-        tabBtn("content","Контент") +
+        `<div class="actions zr-admin-mode-tabs">` +
+        tabBtn("employees","Сотрудники","employees") +
+        tabBtn("projects","Проекты","projects") +
+        tabBtn("articles","Инструкции","articles") +
+        tabBtn("templates","Шаблоны","templates") +
+        tabBtn("checklists","Чек-листы","checklists") +
       `</div>`;
 
     list.querySelectorAll("[data-adm-tab]").forEach(b => {
       b.onclick = () => {
-        MODE = b.getAttribute("data-adm-tab");
-        if(MODE === "content") goAdmin("content:" + CONTENT_MODE);
-        else goAdmin(MODE);
+        const target = b.getAttribute("data-adm-tab") || "home";
+        goAdmin(target);
       };
     });
   }
 
   function renderContentSubTabs(){
-    const list = $("#list");
-    if(!list) return;
-
-    list.insertAdjacentHTML("beforeend", `
-            <div class="actions zr-admin-content-tabs" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm ${CONTENT_MODE==="articles"?"is-active":""}" data-cm="articles">Инструкции</button>
-        <button class="btn btn-sm ${CONTENT_MODE==="templates"?"is-active":""}" data-cm="templates">Шаблоны</button>
-        <button class="btn btn-sm ${CONTENT_MODE==="checklists"?"is-active":""}" data-cm="checklists">Чек-листы</button>
-      </div>
-    `);
-
-    list.querySelectorAll("[data-cm]").forEach(b => {
-      b.onclick = () => {
-        CONTENT_MODE = b.getAttribute("data-cm");
-        goAdmin("content:" + CONTENT_MODE);
-      };
-    });
+    // legacy no-op:
+    // content navigation is now flattened into main admin tabs
   }
 
   // =============================
@@ -564,13 +571,74 @@ Views.Admin = (() => {
       });
     });
   }
+  
+  async function loadHome(){
+    MODE = "home";
+    setPanelTitle("Админка");
+    setStatus("—");
+    renderAdminTabs();
+
+    showViewer(`
+      <div class="zr-admin-home">
+        <div class="item zr-admin-home__hero">
+          <div class="zr-admin-home__hero-title">Админка</div>
+          <div class="zr-admin-home__hero-sub">
+            Центральная точка управления системой. Выбери раздел для настройки сотрудников, проектов и внутреннего контента.
+          </div>
+        </div>
+
+        <div class="item zr-admin-home__card zr-admin-home__card--content">
+          <div class="zr-admin-home__card-title">Разделы админки</div>
+          <div class="zr-admin-home__card-sub">
+            Быстрый переход к основным зонам управления системы.
+          </div>
+
+          <div class="zr-admin-home__content-list">
+            <button class="btn btn-sm" type="button" data-admin-home-go="employees">Сотрудники</button>
+            <div class="zr-admin-home__content-note">
+              Управление доступом, allowlist и составом команды.
+            </div>
+
+            <button class="btn btn-sm" type="button" data-admin-home-go="projects">Проекты</button>
+            <div class="zr-admin-home__content-note">
+              Список проектов, структура и базовое администрирование.
+            </div>
+
+            <button class="btn btn-sm" type="button" data-admin-home-go="articles">Инструкции</button>
+            <div class="zr-admin-home__content-note">
+              Пошаговые и справочные материалы для команды.
+            </div>
+
+            <button class="btn btn-sm" type="button" data-admin-home-go="templates">Шаблоны</button>
+            <div class="zr-admin-home__content-note">
+              Готовые заготовки документов, брифов и рабочих форм.
+            </div>
+
+            <button class="btn btn-sm" type="button" data-admin-home-go="checklists">Чек-листы</button>
+            <div class="zr-admin-home__content-note">
+              Проверочные списки для повторяющихся процессов и контроля качества.
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    const viewer = $("#viewer");
+    if(!viewer) return;
+
+    viewer.querySelectorAll("[data-admin-home-go]").forEach(btn => {
+      btn.onclick = () => {
+        const target = btn.getAttribute("data-admin-home-go") || "home";
+        goAdmin(target);
+      };
+    });
+  }
 
   async function loadContent(mode, openId){
-    MODE = "content";
     CONTENT_MODE = mode || "articles";
+    MODE = CONTENT_MODE;
     setPanelTitle("Админка");
     renderAdminTabs();
-    renderContentSubTabs();
 
     if(CONTENT_MODE === "articles"){
       await Articles.load(openId || "");
@@ -603,11 +671,14 @@ Views.Admin = (() => {
 
       try{
         const p = parseParam(param);
+        if(p.mode === "home"){ await loadHome(); return; }
         if(p.mode === "employees"){ await Employees.load(); return; }
         if(p.mode === "tasks"){ await loadTasks(); return; }
         if(p.mode === "projects"){ await Projects.load(); return; }
-        if(p.mode === "content"){ await loadContent(p.contentMode, p.id); return; }
-        await Employees.load();
+        if(p.mode === "articles"){ await loadContent("articles", p.id); return; }
+        if(p.mode === "templates"){ await loadContent("templates", p.id); return; }
+        if(p.mode === "checklists"){ await loadContent("checklists", p.id); return; }
+        await loadHome();
       }catch(e){
         console.error(e);
         setPanelTitle("Админка");

@@ -244,16 +244,6 @@ window.Views.AdminChecklistsFactory = function(deps){
     renderAdminTabs();
     renderContentSubTabs();
 
-    list.insertAdjacentHTML("beforeend", `
-      <div class="hr"></div>
-      <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="cl_reload_admin">Обновить</button>
-      </div>
-      <div class="muted" style="margin:0 0 8px 0;">Чек-листов: ${items.length}. Пока из Supabase доступны только метаданные существующих записей.</div>
-    `);
-
-    $("#cl_reload_admin").onclick = () => loadAdminChecklists("");
-
     if(!items.length){
       list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">Пока нет записей в kb_checklists.</div>`);
       return;
@@ -467,7 +457,7 @@ window.Views.AdminChecklistsFactory = function(deps){
           <div class="item" style="cursor:default; margin-bottom:12px;">
             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
               <div style="flex:1; min-width:240px;">
-                <h1 class="article-title">Контент → Чек-листы</h1>
+                <h1 class="article-title" style="font-size:18px; line-height:1.15;">Контент → Чек-листы</h1>
                 <p class="article-sub">Создание новых чек-листов через админку отключено.</p>
               </div>
             </div>

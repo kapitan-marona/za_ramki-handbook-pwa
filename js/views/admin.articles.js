@@ -337,16 +337,6 @@ window.Views.AdminArticlesFactory = function(deps){
     renderAdminTabs();
     renderContentSubTabs();
 
-    list.insertAdjacentHTML("beforeend", `
-      <div class="hr"></div>
-      <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="art_reload">Обновить</button>
-      </div>
-      <div class="muted" style="margin:0 0 8px 0;">Инструкций: ${items.length}. Создание новых записей вне админки; здесь — редактирование существующих.</div>
-    `);
-
-    $("#art_reload").onclick = () => loadArticles("");
-
     if(!items.length){
       list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">Пока нет записей в kb_articles.</div>`);
       return;
@@ -558,7 +548,7 @@ window.Views.AdminArticlesFactory = function(deps){
           <div class="item" style="cursor:default; margin-bottom:12px;">
             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
               <div style="flex:1; min-width:240px;">
-                <h1 class="article-title">Контент → Инструкции</h1>
+                <h1 class="article-title" style="font-size:18px; line-height:1.15;">Контент → Инструкции</h1>
                 <p class="article-sub">Создание новых инструкций через админку отключено.</p>
               </div>
             </div>

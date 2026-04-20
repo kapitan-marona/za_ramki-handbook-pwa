@@ -48,7 +48,7 @@ window.Views.AdminEmployeesFactory = function(deps){
 
   function employeesHtml(items){
     const rows = (items || []).map(it => `
-      <div class="item" style="display:grid; grid-template-columns: 1fr 120px 90px 170px; gap:10px; align-items:center;">
+      <div class="item" style="display:grid; grid-template-columns: 1fr 110px 86px 156px; gap:8px; align-items:center; padding:10px 12px;">
         <div class="mono" style="overflow:hidden; text-overflow:ellipsis;">${esc(it.email)}</div>
 
         <select data-al-role="${esc(it.email)}" style="${inpStyle}">
@@ -69,10 +69,10 @@ window.Views.AdminEmployeesFactory = function(deps){
     `).join("");
 
     return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
+      <div class="item" style="cursor:default; margin-bottom:8px;">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
           <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">Админка → Сотрудники</h1>
+            <h1 class="article-title" style="font-size:18px; line-height:1.15;">Админка → Сотрудники</h1>
             <p class="article-sub">Управление доступами (allowlist). Только admin.</p>
           </div>
         </div>
@@ -100,7 +100,7 @@ window.Views.AdminEmployeesFactory = function(deps){
             </div>
           </div>
 
-          <div style="display:flex; gap:12px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+          <div style="display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;">
             <label style="display:flex; gap:8px; align-items:center; user-select:none;">
               <input id="al_enabled" type="checkbox" checked />
               <span>enabled</span>

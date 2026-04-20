@@ -862,6 +862,9 @@ window.PlannerDetailHelpers = (() => {
       Array.isArray(task.links) && task.links.length
     );
 
+    const hideChecklistInitially = (!isAdmin && !hasChecklistContent);
+    const hideDocsInitially = (!isAdmin && !hasDocsContent);
+
     return `
       <div class="zr-planner-detail">
         <div class="zr-card zr-card--section zr-planner-hero" style="${detailsProblemStyle}">
@@ -880,7 +883,7 @@ window.PlannerDetailHelpers = (() => {
           ${actionsHtml}
         </div>
 
-        <div class="zr-planner-grid${!hasDetails ? ` zr-planner-grid--no-details` : ``}">
+        <div class="zr-planner-grid${!hasDetails ? ` zr-planner-grid--no-details` : ``}${hideDocsInitially ? ` zr-planner-grid--no-sidecol` : ``}">
           <div class="zr-planner-maincol">
             ${hasDetails ? `
               <div class="zr-card zr-card--section zr-planner-section zr-planner-details-section" id="plDetailsSection">
@@ -932,6 +935,7 @@ window.PlannerDetailHelpers = (() => {
               class="zr-card zr-card--section zr-planner-section"
               id="plChecklistSection"
               data-initial-has-content="${hasChecklistContent ? "1" : "0"}"
+              ${hideChecklistInitially ? `style="display:none;"` : ``}
             >
               <div class="zr-section-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                 <div class="zr-section-title">Пункты задачи</div>
@@ -946,7 +950,7 @@ window.PlannerDetailHelpers = (() => {
             </div>
           </div>
 
-          <div class="zr-planner-sidecol">
+          <div class="zr-planner-sidecol"${hideDocsInitially ? ` style="display:none;"` : ``}>
             <div
               class="zr-card zr-card--subtle zr-planner-section zr-planner-docs-section${hasDocsContent ? ` is-collapsed` : ``}"
               id="plDocsSection"
@@ -1112,6 +1116,12 @@ window.PlannerDetailHelpers = (() => {
     const fetchTaskById = o.fetchTaskById;
 
     if(!viewerEl) return;
+    
+    // 🔒 SINGLE BIND GUARD (safe)
+    if (viewerEl.__zrBoundTaskId === task.id) {
+      return;
+    }
+    viewerEl.__zrBound = true;
 
     const byId = (id) => {
       try{
@@ -1284,4 +1294,6 @@ window.PlannerDetailHelpers = (() => {
     runDetailPostLoad
   };
 })();
+
+
 

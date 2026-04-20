@@ -36,9 +36,7 @@
           <button class="btn btn-sm pl-left ${state.leftFilter==="all" ? "is-active" : ""}" data-f="all" type="button">Все</button>
         </div>
       `
-      : `
-        <div style="padding:0 10px 10px 10px;"></div>
-      `;
+      : "";
 
     listEl.innerHTML = head + pills + `<div id="plLeftList"></div>`;
 

@@ -89,12 +89,12 @@ window.Views.AdminProjectsFactory = function(deps){
               <input data-pr-title="${esc(it.id)}" style="${inpStyle}" value="${esc(it.title || "")}" />
             </div>
 
-            <div style="margin-top:10px;">
-              <div class="muted" style="margin:0 0 6px 2px;">Заметки</div>
-              <textarea data-pr-notes="${esc(it.id)}" style="${taStyle}; min-height:90px;" rows="4">${esc(it.notes || "")}</textarea>
+            <div style="margin-top:8px;">
+              <div class="muted" style="margin:0 0 4px 2px;">Заметки</div>
+              <textarea data-pr-notes="${esc(it.id)}" style="${taStyle}; min-height:64px;" rows="3">${esc(it.notes || "")}</textarea>
             </div>
 
-            <div style="display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap;">
+            <div style="display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;">
               <button class="btn btn-sm" data-pr-save="${esc(it.id)}">Сохранить</button>
               <button class="btn btn-sm" data-pr-cancel="${esc(it.id)}">Отмена</button>
             </div>
@@ -104,16 +104,16 @@ window.Views.AdminProjectsFactory = function(deps){
     `).join("");
 
     return `
-      <div class="item" style="cursor:default; margin-bottom:12px;">
+      <div class="item" style="cursor:default; margin-bottom:8px;">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
           <div style="flex:1; min-width:240px;">
-            <h1 class="article-title">Админка → Проекты</h1>
+            <h1 class="article-title" style="font-size:18px; line-height:1.15;">Админка → Проекты</h1>
             <p class="article-sub">Минимальное создание проектов.</p>
           </div>
         </div>
       </div>
 
-      <div class="item" style="cursor:default; margin-bottom:12px;">
+      <div class="item" style="cursor:default; margin-bottom:8px;">
         <div class="item-title">Создать проект</div>
         <div class="item-meta" style="margin-top:10px;">
           <span class="tag">projects</span>
@@ -126,12 +126,12 @@ window.Views.AdminProjectsFactory = function(deps){
             <input id="pr_title" style="${inpStyle}" />
           </div>
 
-          <div style="margin-top:10px;">
-            <div class="muted" style="margin:0 0 6px 2px;">Заметки (опционально)</div>
-            <textarea id="pr_notes" style="${taStyle}; min-height:90px;" rows="4"></textarea>
+          <div style="margin-top:8px;">
+            <div class="muted" style="margin:0 0 4px 2px;">Заметки (опционально)</div>
+            <textarea id="pr_notes" style="${taStyle}; min-height:64px;" rows="3"></textarea>
           </div>
 
-          <div style="display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap;">
+          <div style="display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap;">
             <button class="btn btn-sm" id="pr_add">Создать проект</button>
           </div>
         </div>

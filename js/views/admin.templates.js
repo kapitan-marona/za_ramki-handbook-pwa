@@ -208,16 +208,6 @@ window.Views.AdminTemplatesFactory = function(deps){
     renderAdminTabs();
     renderContentSubTabs();
 
-    list.insertAdjacentHTML("beforeend", `
-      <div class="hr"></div>
-      <div class="actions" style="margin:0 0 10px 0; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="tpl_reload">Обновить</button>
-      </div>
-      <div class="muted" style="margin:0 0 8px 0;">Шаблонов: ${items.length}. В админке доступно только редактирование существующих записей.</div>
-    `);
-
-    $("#tpl_reload").onclick = () => loadTemplates("");
-
     if(!items.length){
       list.insertAdjacentHTML("beforeend", `<div class="empty" style="padding:12px;color:var(--muted)">Пока нет записей в kb_templates.</div>`);
       return;
@@ -380,9 +370,7 @@ window.Views.AdminTemplatesFactory = function(deps){
     try{
       const items = await sbTemplatesListAll();
 
-      if(!openId || !(window.__tplReopenSafe)){
-        renderTemplatesList(items);
-      }
+      renderTemplatesList(items);
       setStatus(String(items.length));
 
       if(!openId){
@@ -395,7 +383,7 @@ window.Views.AdminTemplatesFactory = function(deps){
           <div class="item" style="cursor:default; margin-bottom:12px;">
             <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
               <div style="flex:1; min-width:240px;">
-                <h1 class="article-title">Контент → Шаблоны</h1>
+                <h1 class="article-title" style="font-size:18px; line-height:1.15;">Контент → Шаблоны</h1>
                 <p class="article-sub">Создание новых шаблонов через админку отключено.</p>
               </div>
             </div>

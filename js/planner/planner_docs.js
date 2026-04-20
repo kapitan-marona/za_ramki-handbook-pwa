@@ -98,9 +98,31 @@
       const isAdmin = role === "admin";
       const isArchived = !!(task && task.archived_at);
       const host = document.getElementById("plDocs");
+      const section = document.getElementById("plDocsSection");
+      const sidecol = section ? section.closest(".zr-planner-sidecol") : null;
+      const grid = sidecol ? sidecol.closest(".zr-planner-grid") : null;
+      const shouldKeepEmptySection = !!(isAdmin && !isArchived);
+
+      const applyDocsVisibility = (showSection) => {
+        if(section){
+          section.style.display = showSection ? "" : "none";
+        }
+        if(sidecol){
+          sidecol.style.display = showSection ? "" : "none";
+        }
+        if(grid){
+          grid.classList.toggle("zr-planner-grid--no-sidecol", !showSection);
+        }
+      };
+
       if(!host) return;
 
-      host.innerHTML = `<div class="muted" style="font-size:12px;">Загружаю…</div>`;
+      if(shouldKeepEmptySection){
+        applyDocsVisibility(true);
+        host.innerHTML = `<div class="muted" style="font-size:12px;">Загружаю…</div>`;
+      }else{
+        host.innerHTML = "";
+      }
 
       try{
         const [links, files] = await Promise.all([
@@ -113,8 +135,15 @@
         const docs = [...docsFromLinks, ...docsFromFiles]
   .filter(d => d && d.section !== "checklists");
 
+        const shouldShowSection = docs.length > 0 || shouldKeepEmptySection;
+        applyDocsVisibility(shouldShowSection);
+
         if(docs.length === 0){
-          host.innerHTML = `<div class="muted" style="font-size:12px;">Связанных документов нет.</div>`;
+          if(shouldKeepEmptySection){
+            host.innerHTML = `<div class="muted" style="font-size:12px;">Связанных документов нет.</div>`;
+          }else{
+            host.innerHTML = "";
+          }
           return;
         }
 
@@ -210,5 +239,6 @@
     removeDocRowFromTaskView
   };
 })();
+
 
 

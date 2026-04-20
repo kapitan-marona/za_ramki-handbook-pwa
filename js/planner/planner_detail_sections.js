@@ -103,14 +103,34 @@ window.PlannerDetailSections = (() => {
 
     async function loadChecklist(task, isReadOnly){
       const host = document.getElementById("plChecklist");
+      const section = document.getElementById("plChecklistSection");
+      const role = (window.App && App.session) ? String(App.session.role || "") : "";
+      const isAdmin = role === "admin";
+      const isArchived = !!(task && task.archived_at);
+      const shouldKeepEmptySection = !!(isAdmin && !isArchived);
 
       try{
         if(!window.PlannerChecklistRuntime){
           throw new Error("PlannerChecklistRuntime missing");
         }
 
+        if(!shouldKeepEmptySection && host){
+          host.innerHTML = "";
+        }
+
         const items = await PlannerChecklistRuntime.fetchChecklistItems(task.id);
         const safeItems = Array.isArray(items) ? items : [];
+        
+        // 🔒 ASYNC GUARD (task switched)
+        if (!isCurrentDetailTask(task.id)) {
+          return;
+        }
+        
+        const shouldShowSection = safeItems.length > 0 || shouldKeepEmptySection;
+
+        if(section){
+          section.style.display = shouldShowSection ? "" : "none";
+        }
 
         if(safeItems.length > 0){
           PlannerChecklistRuntime.renderChecklist(safeItems, !!isReadOnly);
@@ -119,21 +139,26 @@ window.PlannerDetailSections = (() => {
             host.innerHTML = "";
           }
 
-          const hasInlineRendered = !!(
-            host &&
-            host.querySelector &&
-            host.querySelector(".zr-planner-inline-cl")
-          );
+          if(shouldKeepEmptySection){
+            const hasInlineRendered = !!(
+              host &&
+              host.querySelector &&
+              host.querySelector(".zr-planner-inline-cl")
+            );
 
-          if(!hasInlineRendered){
-            PlannerChecklistRuntime.renderChecklist([], !!isReadOnly);
+            if(!hasInlineRendered){
+              PlannerChecklistRuntime.renderChecklist([], !!isReadOnly);
+            }
           }
         }
 
-        if(!isReadOnly){
+        if(!isReadOnly && shouldShowSection){
           PlannerChecklistRuntime.bindChecklist(task);
         }
       }catch(err){
+        if(section){
+          section.style.display = "";
+        }
         if(host){
           const text = (err && (err.message || err.details || err.hint))
             ? (err.message || err.details || err.hint)
@@ -156,7 +181,8 @@ window.PlannerDetailSections = (() => {
       }
 
       const host = document.getElementById("plComments");
-      return await PlannerComments.loadComments({
+
+      const result = await PlannerComments.loadComments({
         host,
         task,
         uid,
@@ -167,6 +193,13 @@ window.PlannerDetailSections = (() => {
         loadComments,
         isReadOnly: !!isReadOnly
       });
+
+      // 🔒 ASYNC GUARD (task switched)
+      if (!isCurrentDetailTask(task.id)) {
+        return;
+      }
+
+      return result;
     }
 
     async function loadActivity(task){
@@ -222,3 +255,5 @@ window.PlannerDetailSections = (() => {
 
   return { create };
 })();
+
+

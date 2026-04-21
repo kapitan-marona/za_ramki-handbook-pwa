@@ -512,17 +512,32 @@ Views.Articles = (() => {
       const target = document.getElementById(id);
       if(!target) return;
 
-      try{
+      const viewerStyle = window.getComputedStyle(viewer);
+      const viewerIsScrollable =
+        viewer &&
+        viewerStyle &&
+        viewerStyle.overflowY !== "visible" &&
+        viewer.scrollHeight > viewer.clientHeight;
+
+      if(viewerIsScrollable){
         const viewerRect = viewer.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
         const top = viewer.scrollTop + (targetRect.top - viewerRect.top) - 16;
 
-        viewer.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-      }catch(e){
-        try{
-          target.scrollIntoView({ block:"start", behavior:"smooth" });
-        }catch(_e){}
+        viewer.scrollTo({
+          top: Math.max(0, top),
+          behavior: "smooth"
+        });
+        return;
       }
+
+      const targetRect = target.getBoundingClientRect();
+      const absoluteTop = window.scrollY + targetRect.top - 16;
+
+      window.scrollTo({
+        top: Math.max(0, absoluteTop),
+        behavior: "smooth"
+      });
     };
 
     toc.querySelectorAll("[data-toc]").forEach(a => {

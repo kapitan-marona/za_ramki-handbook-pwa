@@ -437,7 +437,7 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
           };
 
       const actionState = PDH.buildActionState
-        ? PDH.buildActionState(task, { role })
+        ? PDH.buildActionState(task, { role, uid })
         : {
             cur: String(task.status || "new"),
             isAdmin: (role === "admin"),
@@ -478,6 +478,7 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
         start: metaState.start,
         detailsProblemStyle: metaState.detailsProblemStyle,
         cur: actionState.cur,
+        canEdit: !!actionState.canEdit,
         isAdmin: !!actionState.isAdmin,
         isArchived,
         next: Array.isArray(actionState.next) ? actionState.next : [],
@@ -518,16 +519,20 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
       // reset shell state before replacing detail DOM
       viewerEl.classList.remove("pl-archived");
 
-
       const detailState = buildDetailViewState(task);
       const isArchived = detailState.isArchived;
       const isLocked = detailState.isLocked;
       const checklistReadOnly = detailState.checklistReadOnly;
-      
+
+      const canEdit = (PDH && typeof PDH.canUserEditTask === "function")
+        ? PDH.canUserEditTask(task, role, uid)
+        : false;
+
       const actionsHtml = PDH.buildActionsHtml
         ? PDH.buildActionsHtml(task, {
             esc,
             next: detailState.next,
+            canEdit: detailState.canEdit,
             isAdmin: detailState.isAdmin,
             isArchived: detailState.isArchived
           })
@@ -536,7 +541,7 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
       if(!PDH.buildLayout){
         throw new Error("PlannerDetailHelpers.buildLayout missing");
       }
-      
+
       const detailLayoutContext = {
         esc,
         isAdmin: detailState.isAdmin,
@@ -578,7 +583,7 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
 
       if(PDH.bindDetailInteractions){
         PDH.bindDetailInteractions(task, detailInteractionContext);
-      }  
+      }
 
       const detailPostLoadContext = {
         loadDetailSections,
@@ -622,7 +627,6 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
 
     // ---------- FLOW ----------
     const tasks = await fetchAllActiveTasks();
-
     renderLeft(tasks);
 
     if(!tasks || tasks.length === 0){
@@ -669,6 +673,16 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
         // fetchTaskById fallback (archived by direct link, read-only)
         try{
           const one = await fetchTaskById(selectedId, { role, today });
+          // ACCESS CONTROL FIX (correct placement)
+          const canSee = PlannerPeople.canRoleSeeTask(one, role);
+
+          const assignees = PlannerPeople.getTaskAssigneeIds(one);
+          const isAssignee = assignees.includes(String(uid));
+
+          if(!canSee || (one.role === "staff" && !isAssignee && role !== "admin")){
+            viewerEl.innerHTML = `<div class="empty"><span class="muted">Нет доступа</span></div>`;
+            return;
+          }
           if(one && one.archived_at){
             renderDetails(one);
             return;

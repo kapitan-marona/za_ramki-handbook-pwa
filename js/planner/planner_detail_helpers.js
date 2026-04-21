@@ -456,6 +456,7 @@ window.PlannerDetailHelpers = (() => {
     const role = String(o.role || "");
 
     const cur = String((task && task.status) || "new");
+    const canEdit = canUserEditTask(task, role, opts.uid);
     const isAdmin = (role === "admin");
     const isArchived = !!(task && task.archived_at);
     const next = [];
@@ -480,6 +481,7 @@ window.PlannerDetailHelpers = (() => {
 
     return {
       cur,
+      canEdit,
       isAdmin,
       isArchived,
       next
@@ -678,77 +680,8 @@ window.PlannerDetailHelpers = (() => {
 
         const sel2 = liveGetSelectedTaskId();
         if(sel2 && String(sel2) === String(liveTask.id)){
-          const needsFullDetailRefresh = (
-            String(t2 && t2.status || "") === "done" ||
-            String(t2 && t2.status || "") === "canceled"
-          );
-
-          if(!needsFullDetailRefresh && typeof liveOpts.updateDetailHeaderOnly === "function"){
-            liveOpts.updateDetailHeaderOnly(t2, {
-              viewerEl,
-              role: liveOpts.role,
-              today: liveOpts.today,
-              goTask: liveOpts.goTask,
-              fetchTaskById: liveOpts.fetchTaskById,
-              fetchAllActiveTasks: liveOpts.fetchAllActiveTasks,
-              renderLeft: liveOpts.renderLeft,
-              renderDetails: liveOpts.renderDetails,
-              buildMeta: (task) => {
-                const parts = [];
-
-                if(task.start_date && typeof liveOpts.startLabel === "function"){
-                  parts.push(`<span class="pill">${liveOpts.startLabel(task.start_date)}</span>`);
-                }
-
-                if(task.due_date && typeof liveOpts.dueLabel === "function"){
-                  parts.push(`<span class="pill">${liveOpts.dueLabel(task.due_date)}</span>`);
-                }
-
-                if(typeof liveOpts.isOverdue === "function" && liveOpts.isOverdue(task)){
-                  parts.push(`<span class="pill">Срок истёк</span>`);
-                }
-
-                if(task.archived_at){
-                  parts.push(`<span class="pill">В архиве</span>`);
-                }
-
-                if(typeof liveOpts.urgencyLabel === "function"){
-                  const urg = liveOpts.urgencyLabel(task.urgency);
-                  if(urg) parts.push(`<span class="pill">${urg}</span>`);
-                }
-
-                if(task.status && typeof liveStatusLabel === "function"){
-                  parts.push(`<span class="pill">${liveStatusLabel(task.status)}</span>`);
-                }
-
-                return parts.join("");
-              },
-              buildActions: (task) => {
-                const cur = String((task && task.status) || "new");
-                const isAdmin = (liveOpts.role === "admin");
-                const isArchived = !!(task && task.archived_at);
-
-                const next = [];
-                if(cur === "new") next.push(["taken","Взять в работу"]);
-                if(cur === "taken") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
-                if(cur === "in_progress") next.push(["problem","Возникла проблема"], ["done","Успешно завершена"]);
-                if(cur === "problem") next.push(["in_progress","Проблема решена"], ["done","Успешно завершена"]);
-                if(isAdmin && cur !== "canceled" && cur !== "done") next.push(["canceled","Отменить задачу"]);
-
-                return buildActionsHtml(task, {
-                  esc: (v) => String(v == null ? "" : v),
-                  next,
-                  isAdmin,
-                  isArchived
-                });
-              }
-            });
-
-            viewerEl.__zrStatusTask = t2;
-          }else{
-            liveRenderDetails(t2);
-            viewerEl.__zrStatusTask = t2;
-          }
+          liveRenderDetails(t2);
+          viewerEl.__zrStatusTask = t2;
         }
       }catch(err){
         console.warn("[PlannerDetailHelpers] set status error", err);
@@ -768,34 +701,71 @@ window.PlannerDetailHelpers = (() => {
     const next = Array.isArray(o.next) ? o.next : [];
     const isAdmin = !!o.isAdmin;
     const isArchived = !!o.isArchived;
+    const canEdit = !!o.canEdit;
 
-    const archiveBtnHtml = (!isArchived && isAdmin)
-      ? `<button class="btn btn-sm btn--danger" id="plArchiveTask" type="button">Перенести задачу в архив</button>`
-      : ``;
+    const cur = String((task && task.status) || "");
 
-    if(next.length === 0 && !archiveBtnHtml){
-      return "";
+    let statusBtns = "";
+    let adminBtns = "";
+
+    // --- STATUS BUTTONS (assignee/admin with edit rights) ---
+    if(cur === "new" && canEdit && !isArchived){
+      statusBtns = `
+        <button class="btn btn-sm btn--ghost pl-status" data-s="taken">Взять в работу</button>
+      `;
+    }
+
+    if((cur === "taken" || cur === "in_progress") && canEdit && !isArchived){
+      statusBtns = `
+        <button class="btn btn-sm btn--danger pl-status" data-s="problem">⚠ Возникла проблема</button>
+        <button class="btn btn-sm btn--primary pl-status" data-s="done">Успешно завершена</button>
+      `;
+    }
+
+    if(cur === "problem" && canEdit && !isArchived){
+      statusBtns = `
+        <button class="btn btn-sm btn--primary pl-status" data-s="in_progress">✓ Проблема решена</button>
+        <button class="btn btn-sm btn--primary pl-status" data-s="done">Успешно завершена</button>
+      `;
+    }
+
+    // --- ADMIN BUTTONS ONLY ---
+    if(isAdmin && !isArchived){
+      const adminOnlyNext = next.filter(([s]) => {
+        return s !== "problem" && s !== "done" && s !== "taken";
+      });
+
+      adminBtns = `
+        ${adminOnlyNext.map(([s,label]) => {
+          const cls = (s === "canceled")
+            ? "btn btn-sm btn--danger pl-status"
+            : "btn btn-sm btn--ghost pl-status";
+
+          return `<button class="${cls}" data-s="${esc(s)}">${esc(label)}</button>`;
+        }).join("")}
+
+        <button class="btn btn-sm btn--danger" id="plArchiveTask">
+          Перенести задачу в архив
+        </button>
+      `;
     }
 
     return `
       <div class="zr-planner-actions">
-        <div class="zr-planner-actions-main">
-          ${next.map(([s,label]) => {
-            if(s === "problem") return "";
-            if(s === "done") return "";
-            if(s === "in_progress" && String(task.status || "") === "problem") return "";
+        ${adminBtns ? `
+          <div class="zr-planner-actions-admin">
+            ${adminBtns}
+          </div>
+        ` : ``}
 
-            const cls = (s === "canceled")
-              ? "btn btn-sm btn--danger pl-status"
-              : "btn btn-sm btn--ghost pl-status";
-            return `<button class="${cls}" data-s="${esc(s)}" type="button">${esc(label)}</button>`;
-          }).join("")}
-        </div>
-        <div class="zr-planner-actions-side">
-          ${archiveBtnHtml}
-        </div>
+        ${statusBtns ? `
+          <div class="zr-planner-actions-status">
+            ${statusBtns}
+          </div>
+        ` : ``}
+
+        <div class="zr-planner-muted pl-status-msg zr-planner-status-note"></div>
       </div>
-      ${(next.length > 0 || archiveBtnHtml) ? `<div class="zr-planner-muted pl-status-msg zr-planner-status-note"></div>` : ``}
     `;
   }
   
@@ -803,21 +773,6 @@ window.PlannerDetailHelpers = (() => {
     const o = opts || {};
     const isAdmin = !!o.isAdmin;
     const isArchived = !!o.isArchived;
-
-    const cur = String((task && task.status) || "");
-
-    let problemBtnHtml = "";
-    let resolvedBtnHtml = "";
-
-    if(cur === "taken" || cur === "in_progress"){
-      problemBtnHtml = `<button class="btn btn-sm btn--danger pl-status" data-s="problem" type="button">⚠ Возникла проблема</button>`;
-      resolvedBtnHtml = `<button class="btn btn-sm btn--primary pl-status" data-s="done" type="button">Успешно завершена</button>`;
-    }
-
-    if(cur === "problem"){
-      problemBtnHtml = `<button class="btn btn-sm btn--primary pl-status" data-s="in_progress" type="button">✓ Проблема решена</button>`;
-      resolvedBtnHtml = `<button class="btn btn-sm btn--primary pl-status" data-s="done" type="button">Успешно завершена</button>`;
-    }
 
     const editBtnHtml = (isAdmin && !isArchived)
       ? `<button class="btn btn-sm btn--ghost" id="plEditTask" type="button">Редактировать</button>`
@@ -829,16 +784,9 @@ window.PlannerDetailHelpers = (() => {
           <button class="btn btn-sm btn--ghost" id="plBack" type="button">Назад</button>
         </div>
 
-        ${isAdmin && !isArchived ? `
+        ${editBtnHtml ? `
           <div class="zr-planner-hero-top-admin">
             ${editBtnHtml}
-          </div>
-        ` : ``}
-
-        ${(problemBtnHtml || resolvedBtnHtml) ? `
-          <div class="zr-planner-hero-top-status">
-            ${problemBtnHtml}
-            ${resolvedBtnHtml}
           </div>
         ` : ``}
       </div>
@@ -1016,6 +964,27 @@ window.PlannerDetailHelpers = (() => {
       </div>
     `;
   }
+  
+  function canUserEditTask(task, role, uid){
+    if(role === "admin") return true;
+
+    const assignees = Array.isArray(task.assignees) ? task.assignees : [];
+    const isAssignee = assignees.includes(String(uid));
+    const scope = String(task.role || "all");
+
+    if(scope === "admin") return false;
+
+    if(scope === "all"){
+      if(assignees.length === 0) return true; // свободная задача
+      return isAssignee;
+    }
+
+    if(scope === "staff"){ // ← позже переименуем в assignee-only
+      return isAssignee;
+    }
+
+    return false;
+  }
 
   function updateDetailHeaderOnly(task, opts){
     try{
@@ -1062,17 +1031,8 @@ window.PlannerDetailHelpers = (() => {
         const newActions = tmp.querySelector(".zr-planner-actions");
         const newNote = tmp.querySelector(".pl-status-msg") || tmp.querySelector(".zr-planner-status-note");
 
-        const currentMain = actionsHost ? actionsHost.querySelector(".zr-planner-actions-main") : null;
-        const newMain = newActions ? newActions.querySelector(".zr-planner-actions-main") : null;
-        const currentSide = actionsHost ? actionsHost.querySelector(".zr-planner-actions-side") : null;
-        const newSide = newActions ? newActions.querySelector(".zr-planner-actions-side") : null;
-
-        if(currentMain && newMain){
-          currentMain.innerHTML = newMain.innerHTML;
-        }
-
-        if(currentSide && newSide){
-          currentSide.innerHTML = newSide.innerHTML;
+        if(actionsHost && newActions){
+          actionsHost.innerHTML = newActions.innerHTML;
         }
 
         if(noteHost && newNote){
@@ -1133,10 +1093,10 @@ window.PlannerDetailHelpers = (() => {
     if(!viewerEl) return;
     
     // 🔒 SINGLE BIND GUARD (safe)
-    if (viewerEl.__zrBoundTaskId === task.id) {
+    if(viewerEl.__zrBoundTaskId === task.id){
       return;
     }
-    viewerEl.__zrBound = true;
+    viewerEl.__zrBoundTaskId = task.id;
 
     const byId = (id) => {
       try{

@@ -3545,6 +3545,19 @@ button.zr-admin-home__card{
     flex-direction:column;
     gap:8px;
   }
+  
+  .zr-planner-actions-admin{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:10px;
+  }
+
+  .zr-planner-actions-status{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
 
   #plBack{
     margin-left:0;
@@ -3557,3 +3570,4 @@ button.zr-admin-home__card{
     max-width:100%;
   }
 }
+

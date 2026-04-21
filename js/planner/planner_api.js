@@ -59,26 +59,15 @@
     let tasks = res.data || [];
 
     if(role !== "admin"){
-      const currentUserId = (window.App && App.session && App.session.user && App.session.user.id)
-        ? String(App.session.user.id)
-        : null;
-
       tasks = tasks.filter(t => {
         const r = (t && t.role != null) ? String(t.role).trim() : "all";
 
-        // все видят
-        if(!r || r === "all") return true;
-
-        // только админ → staff не видит
+        // staff never sees admin-only tasks
         if(r === "admin") return false;
 
-        // только исполнитель
-        if(r === "staff"){
-          if(!currentUserId) return false;
-          return String(t.assignee_id || "") === currentUserId;
-        }
-
-        return false;
+        // keep "all" and "staff" tasks here;
+        // assignee-based filtering happens later on normalized/enriched data
+        return !r || r === "all" || r === "staff";
       });
     }
 

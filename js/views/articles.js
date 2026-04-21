@@ -508,19 +508,44 @@ Views.Articles = (() => {
       syncToggleState();
     }
 
-    toc.querySelectorAll("[data-toc]").forEach(a => {
-      a.addEventListener("click", (e) => {
-        e.preventDefault();
-        const id = a.getAttribute("data-toc");
-        const target = document.getElementById(id);
-        if(!target) return;
+    const goToTocSection = (id) => {
+      const target = document.getElementById(id);
+      if(!target) return;
 
+      try{
         const viewerRect = viewer.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
         const top = viewer.scrollTop + (targetRect.top - viewerRect.top) - 16;
 
         viewer.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-      });
+      }catch(e){
+        try{
+          target.scrollIntoView({ block:"start", behavior:"smooth" });
+        }catch(_e){}
+      }
+    };
+
+    toc.querySelectorAll("[data-toc]").forEach(a => {
+      const onActivate = (e) => {
+        try{
+          if(e) e.preventDefault();
+        }catch(_){}
+
+        try{
+          if(e && typeof e.stopPropagation === "function") e.stopPropagation();
+        }catch(_){}
+
+        const id = a.getAttribute("data-toc");
+        if(!id) return;
+
+        goToTocSection(id);
+      };
+
+      a.addEventListener("click", onActivate);
+
+      a.addEventListener("touchend", (e) => {
+        onActivate(e);
+      }, { passive:false });
     });
 
     const links = new Map();

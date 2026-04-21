@@ -1092,10 +1092,8 @@ window.PlannerDetailHelpers = (() => {
 
     if(!viewerEl) return;
     
-    // 🔒 SINGLE BIND GUARD (safe)
-    if(viewerEl.__zrBoundTaskId === task.id){
-      return;
-    }
+    // detail DOM may be re-rendered for the same task after status/edit updates,
+    // so per-task early return is unsafe here
     viewerEl.__zrBoundTaskId = task.id;
 
     const byId = (id) => {

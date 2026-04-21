@@ -540,6 +540,37 @@ Views.Articles = (() => {
       });
     };
 
+    toc.querySelectorAll("[data-toc]").forEach((a) => {
+      let pointerHandled = false;
+
+      const activate = (e) => {
+        try{
+          if(e) e.preventDefault();
+        }catch(_){}
+
+        const id = a.getAttribute("data-toc");
+        if(!id) return;
+
+        goToTocSection(id);
+      };
+
+      a.addEventListener("pointerup", (e) => {
+        pointerHandled = true;
+        activate(e);
+        setTimeout(() => {
+          pointerHandled = false;
+        }, 80);
+      });
+
+      a.addEventListener("click", (e) => {
+        if(pointerHandled){
+          e.preventDefault();
+          return;
+        }
+        activate(e);
+      });
+    });
+
     toc.querySelectorAll("[data-toc]").forEach(a => {
       const onActivate = (e) => {
         try{

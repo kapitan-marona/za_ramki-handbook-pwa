@@ -3372,6 +3372,7 @@ button.zr-admin-home__card{
   #tabs > .tab{
     width:100%;
     margin:0;
+    max-width:none;
   }
 
   #tabs > .tab:first-child{
@@ -3510,86 +3511,91 @@ button.zr-admin-home__card{
     grid-template-columns:1fr;
   }
 
-  .zr-planner-hero-top-actions{
+  /* === PLANNER DETAIL MOBILE: ACTIONS LAYOUT === */
+
+  .zr-planner-hero-top{
     display:grid;
-    grid-template-columns:1fr auto;
-    gap:10px;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:
+      "title back"
+      "admin admin";
+    gap:8px 10px;
     align-items:start;
-    width:100%;
+  }
+
+  .zr-planner-hero-main{
+    grid-area:title;
+    min-width:0;
+  }
+
+  .zr-planner-hero-top-actions{
+    display:contents;
   }
 
   .zr-planner-hero-top-nav{
-    grid-column:2;
-    grid-row:1;
-    justify-self:end;
+    grid-area:back;
+    display:flex;
+    justify-content:flex-end;
+    align-self:start;
   }
 
   .zr-planner-hero-top-admin{
-    grid-column:1 / span 2;
+    grid-area:admin;
     display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-  }
-
-  .zr-planner-hero-top-status{
-    grid-column:1 / span 2;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:8px;
-  }
-
-  .zr-planner-actions{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-  
-  .zr-planner-actions-admin{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:10px;
-  }
-
-  /* первый элемент (Редактировать) — отдельной строкой */
-  .zr-planner-actions-admin .btn:first-child{
-    flex:0 0 100%;
-  }
-
-  /* остальные кнопки — в строку */
-  .zr-planner-actions-admin .btn:not(:first-child){
-    flex:0 1 auto;
-  }
-
-  .zr-planner-actions-status{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-
-  /* каждая кнопка как отдельная строка */
-  .zr-planner-actions-status .btn{
-    width:fit-content;
-  }
-  
-  /* визуальный отступ между группами */
-.zr-planner-actions-admin{
-  padding-bottom:4px;
-  border-bottom:1px solid rgba(255,243,234,.05);
-}
-
-.zr-planner-actions-status{
-  padding-top:4px;
-}
-
-  .zr-planner-actions-status .btn{
-    align-self:flex-start;
+    justify-content:flex-start;
+    width:100%;
   }
 
   #plBack{
     margin-left:0;
-    align-self:auto;
+    width:auto;
+  }
+
+  #plEditTask{
+    width:auto;
+  }
+
+  /* общая вертикальная колонка блоков */
+  .zr-planner-actions{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    width:100%;
+  }
+
+  /* статусные кнопки всегда выше */
+  .zr-planner-actions-status{
+    order:1;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    width:100%;
+  }
+
+  .zr-planner-actions-status .btn{
+    width:100%;
+    min-width:0;
+    justify-content:center;
+  }
+
+  /* админские кнопки ниже, в 2 колонки */
+  .zr-planner-actions-admin{
+    order:2;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    width:100%;
+  }
+
+  .zr-planner-actions-admin .btn{
+    width:100%;
+    min-width:0;
+    justify-content:center;
+  }
+
+  /* если в админском блоке внезапно останется одна кнопка */
+  .zr-planner-actions-admin .btn:only-child{
+    grid-column:1 / -1;
   }
 
   input,

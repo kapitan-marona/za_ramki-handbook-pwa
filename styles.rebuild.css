@@ -3401,6 +3401,14 @@ button.zr-admin-home__card{
   #plBoard{
     overflow:visible;
   }
+  
+  .zr-planner-actions-status{
+    align-items:flex-start;
+  }
+
+  .zr-planner-actions-status .btn{
+    align-self:flex-start;
+  }
 
   #plBoard > .zr-board-row{
     display:flex;

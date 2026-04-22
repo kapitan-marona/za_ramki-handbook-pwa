@@ -2502,8 +2502,8 @@ select:disabled{
 
 /* ghost: navigation / helper actions */
 .zr-planner-hero-top-actions .btn--ghost,
-.zr-planner-actions-main .btn--ghost,
-.zr-planner-actions-side .btn--ghost,
+.zr-planner-actions-admin .btn--ghost,
+.zr-planner-actions-status .btn--ghost,
 #plAddDocBtn,
 #plAddChecklistBtn,
 #plRemoveChecklistBtn,
@@ -2515,8 +2515,8 @@ select:disabled{
 }
 
 .zr-planner-hero-top-actions .btn--ghost:hover,
-.zr-planner-actions-main .btn--ghost:hover,
-.zr-planner-actions-side .btn--ghost:hover,
+.zr-planner-actions-admin .btn--ghost:hover,
+.zr-planner-actions-status .btn--ghost:hover,
 #plAddDocBtn:hover,
 #plAddChecklistBtn:hover,
 #plRemoveChecklistBtn:hover,
@@ -2529,46 +2529,46 @@ select:disabled{
 
 /* primary: main positive action */
 .zr-planner-hero-top-actions .btn--primary,
-.zr-planner-actions-main .btn--primary,
-.zr-planner-actions-side .btn--primary{
+.zr-planner-actions-admin .btn--primary,
+.zr-planner-actions-status .btn--primary{
   background:rgba(255,243,234,.16);
   color:var(--headings);
   opacity:1;
 }
 
 .zr-planner-hero-top-actions .btn--primary:hover,
-.zr-planner-actions-main .btn--primary:hover,
-.zr-planner-actions-side .btn--primary:hover{
+.zr-planner-actions-admin .btn--primary:hover,
+.zr-planner-actions-status .btn--primary:hover{
   background:rgba(255,243,234,.22);
 }
 
 /* danger: archive / cancel only */
 .zr-planner-hero-top-actions .btn--danger,
-.zr-planner-actions-main .btn--danger,
-.zr-planner-actions-side .btn--danger{
+.zr-planner-actions-admin .btn--danger,
+.zr-planner-actions-status .btn--danger{
   background:rgba(160,88,70,.20);
   color:rgba(255,243,234,.94);
   opacity:1;
 }
 
 .zr-planner-hero-top-actions .btn--danger:hover,
-.zr-planner-actions-main .btn--danger:hover,
-.zr-planner-actions-side .btn--danger:hover{
+.zr-planner-actions-admin .btn--danger:hover,
+.zr-planner-actions-status .btn--danger:hover{
   background:rgba(160,88,70,.28);
 }
 
 /* warning: problem-state action */
 .zr-planner-hero-top-actions .btn--warning,
-.zr-planner-actions-main .btn--warning,
-.zr-planner-actions-side .btn--warning{
+.zr-planner-actions-admin .btn--warning,
+.zr-planner-actions-status .btn--warning{
   background:rgba(196,126,86,.18);
   color:rgba(255,243,234,.96);
   opacity:1;
 }
 
 .zr-planner-hero-top-actions .btn--warning:hover,
-.zr-planner-actions-main .btn--warning:hover,
-.zr-planner-actions-side .btn--warning:hover{
+.zr-planner-actions-admin .btn--warning:hover,
+.zr-planner-actions-status .btn--warning:hover{
   background:rgba(196,126,86,.24);
 }
 
@@ -3401,14 +3401,6 @@ button.zr-admin-home__card{
   #plBoard{
     overflow:visible;
   }
-  
-  .zr-planner-actions-status{
-    align-items:flex-start;
-  }
-
-  .zr-planner-actions-status .btn{
-    align-self:flex-start;
-  }
 
   #plBoard > .zr-board-row{
     display:flex;
@@ -3552,6 +3544,7 @@ button.zr-admin-home__card{
   .zr-planner-actions-admin{
     display:flex;
     flex-wrap:wrap;
+    align-items:flex-start;
     gap:8px;
     margin-bottom:10px;
   }
@@ -3559,7 +3552,12 @@ button.zr-admin-home__card{
   .zr-planner-actions-status{
     display:flex;
     flex-direction:column;
+    align-items:flex-start;
     gap:8px;
+  }
+
+  .zr-planner-actions-status .btn{
+    align-self:flex-start;
   }
 
   #plBack{

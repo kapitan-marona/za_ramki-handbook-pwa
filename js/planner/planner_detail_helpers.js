@@ -732,7 +732,12 @@ window.PlannerDetailHelpers = (() => {
     // --- ADMIN BUTTONS ONLY ---
     if(isAdmin && !isArchived){
       const adminOnlyNext = next.filter(([s]) => {
-        return s !== "problem" && s !== "done" && s !== "taken";
+        return (
+          s !== "taken" &&
+          s !== "problem" &&
+          s !== "done" &&
+          s !== "in_progress"
+        );
       });
 
       adminBtns = `

@@ -1562,22 +1562,7 @@ select{
 }
 
 /* Planner detail — action hierarchy by container */
-.zr-planner-actions-main .btn{
-  background: rgba(255,243,234,.11);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.03),
-    0 6px 16px rgba(0,0,0,.20);
-  font-weight:600;
-}
-
-.zr-planner-actions-main .btn:hover{
-  background: rgba(255,243,234,.14);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.035),
-    0 8px 18px rgba(0,0,0,.22);
-}
-
-.zr-planner-actions-side .btn{
+.zr-planner-actions-admin .btn{
   background: rgba(255,243,234,.06);
   box-shadow:
     0 1px 0 rgba(255,243,234,.02),
@@ -1585,11 +1570,26 @@ select{
   font-weight:500;
 }
 
-.zr-planner-actions-side .btn:hover{
+.zr-planner-actions-admin .btn:hover{
   background: rgba(255,243,234,.08);
   box-shadow:
     0 1px 0 rgba(255,243,234,.025),
     0 5px 12px rgba(0,0,0,.16);
+}
+
+.zr-planner-actions-status .btn{
+  background: rgba(255,243,234,.11);
+  box-shadow:
+    0 1px 0 rgba(255,243,234,.03),
+    0 6px 16px rgba(0,0,0,.20);
+  font-weight:600;
+}
+
+.zr-planner-actions-status .btn:hover{
+  background: rgba(255,243,234,.14);
+  box-shadow:
+    0 1px 0 rgba(255,243,234,.035),
+    0 8px 18px rgba(0,0,0,.22);
 }
 
 #plBack{
@@ -2461,8 +2461,8 @@ select:disabled{
 }
 
 .zr-planner-hero-top-actions,
-.zr-planner-actions-main,
-.zr-planner-actions-side{
+.zr-planner-actions-admin,
+.zr-planner-actions-status{
   display:flex;
   align-items:center;
   gap:6px;
@@ -2470,8 +2470,8 @@ select:disabled{
 }
 
 .zr-planner-hero-top-actions .btn,
-.zr-planner-actions-main .btn,
-.zr-planner-actions-side .btn,
+.zr-planner-actions-admin .btn,
+.zr-planner-actions-status .btn,
 #plAddDocBtn,
 #plAddChecklistBtn,
 #plRemoveChecklistBtn{
@@ -3005,7 +3005,7 @@ select:disabled{
 
 /* === Planner: no side column (auto-collapse docs) === */
 .zr-planner-grid.zr-planner-grid--no-sidecol{
-  grid-template-columns:1fr !important;
+  grid-template-columns:1fr;
 }
 
 .zr-planner-grid.zr-planner-grid--no-sidecol .zr-planner-maincol{
@@ -3403,9 +3403,9 @@ button.zr-admin-home__card{
   }
 
   #plBoard > .zr-board-row{
-    display:flex !important;
-    flex-direction:column !important;
-    gap:12px !important;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
   }
 
   #plBoard > .zr-board-row > .zr-board-col{
@@ -3452,8 +3452,8 @@ button.zr-admin-home__card{
   }
 
   .zr-planner-hero-top-actions,
-  .zr-planner-actions-main,
-  .zr-planner-actions-side,
+  .zr-planner-actions-admin,
+  .zr-planner-actions-status,
   .zr-viewer-header-actions,
   .zr-actions-right{
     width:100%;
@@ -3532,13 +3532,6 @@ button.zr-admin-home__card{
     display:flex;
     flex-direction:column;
     align-items:flex-start;
-    gap:8px;
-  }
-
-  .zr-planner-actions-main,
-  .zr-planner-actions-side{
-    display:flex;
-    flex-wrap:wrap;
     gap:8px;
   }
 

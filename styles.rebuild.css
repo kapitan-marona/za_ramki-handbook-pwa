@@ -3374,6 +3374,10 @@ button.zr-admin-home__card{
     margin:0;
   }
 
+  #tabs > .tab:first-child{
+    grid-column:1 / -1;
+  }
+
   #list{
     overflow:visible;
   }
@@ -3544,17 +3548,40 @@ button.zr-admin-home__card{
   .zr-planner-actions-admin{
     display:flex;
     flex-wrap:wrap;
-    align-items:flex-start;
     gap:8px;
     margin-bottom:10px;
+  }
+
+  /* первый элемент (Редактировать) — отдельной строкой */
+  .zr-planner-actions-admin .btn:first-child{
+    flex:0 0 100%;
+  }
+
+  /* остальные кнопки — в строку */
+  .zr-planner-actions-admin .btn:not(:first-child){
+    flex:0 1 auto;
   }
 
   .zr-planner-actions-status{
     display:flex;
     flex-direction:column;
-    align-items:flex-start;
     gap:8px;
   }
+
+  /* каждая кнопка как отдельная строка */
+  .zr-planner-actions-status .btn{
+    width:fit-content;
+  }
+  
+  /* визуальный отступ между группами */
+.zr-planner-actions-admin{
+  padding-bottom:4px;
+  border-bottom:1px solid rgba(255,243,234,.05);
+}
+
+.zr-planner-actions-status{
+  padding-top:4px;
+}
 
   .zr-planner-actions-status .btn{
     align-self:flex-start;

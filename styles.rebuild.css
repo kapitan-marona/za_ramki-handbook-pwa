@@ -1052,6 +1052,18 @@ select{
   }
 }
 
+/* === ADMIN: article excerpt clamp === */
+
+.zr-excerpt{
+  margin-top:4px;
+
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+
+  overflow:hidden;
+}
+
 /* =========================================================
    DOMAIN 6 — PLANNER LEFT
    ========================================================= */

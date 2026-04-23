@@ -21,19 +21,25 @@ body{
    DOMAIN 2 — SHELL
    ========================================================= */
 
+.header{
+  position: sticky;
+  top:0;
+  z-index: 100;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
 .header-inner{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  grid-template-areas:
-    "brand auth"
-    "search search";
+  max-width: 1200px;
+  margin: 0 auto;
+  display:flex;
   align-items:center;
-  gap:10px;
-  padding:10px 12px;
+  justify-content:space-between;
+  gap:14px;
+  padding:16px;
 }
 
 .brand{
-  grid-area:brand;
   display:flex;
   align-items:center;
   gap:10px;
@@ -41,7 +47,7 @@ body{
 }
 
 .logo-img{
-  height:52px;
+  height:34px;
   width:auto;
   object-fit:contain;
   display:block;
@@ -50,22 +56,25 @@ body{
 
 .brand h1{
   margin:0;
-  font-size:18px;
-  line-height:1;
-  letter-spacing:.04em;
-  color:rgba(255,243,234,.72);
+  font-size:14px;
+  line-height:1.1;
+  letter-spacing:.4px;
+  min-width:0;
+  color: var(--text);
 }
 
 .brand small{
-  display:none;
+  display:block;
+  margin-top:2px;
+  font-size:12px;
+  line-height:1.3;
+  color:var(--muted);
 }
 
 .header-inner > div:last-child{
-  grid-area:auth;
   display:flex;
+  gap:10px;
   align-items:center;
-  gap:6px;
-  justify-content:flex-end;
 }
 
 .search{
@@ -3341,7 +3350,7 @@ button.zr-admin-home__card{
 
   .header-inner{
     display:grid;
-    grid-template-columns: minmax(0,1fr) auto;
+    grid-template-columns:minmax(0,1fr) auto;
     grid-template-areas:
       "brand auth"
       "search search";
@@ -3350,16 +3359,38 @@ button.zr-admin-home__card{
     padding:10px 12px;
   }
 
-  /* BRAND */
   .brand{
     grid-area:brand;
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:10px;
     min-width:0;
   }
 
-  /* AUTH */
+  .brand > div{
+    min-width:0;
+  }
+
+  .logo-img{
+    height:64px;
+    width:auto;
+    object-fit:contain;
+    display:block;
+    flex:0 0 auto;
+  }
+
+  .brand h1{
+    margin:0;
+    font-size:18px;
+    line-height:1;
+    letter-spacing:.04em;
+    color:rgba(255,243,234,.72);
+  }
+
+  .brand small{
+    display:none;
+  }
+
   .header-inner > div:last-child{
     grid-area:auth;
     display:flex;
@@ -3368,23 +3399,8 @@ button.zr-admin-home__card{
     justify-content:flex-end;
   }
 
-  /* SEARCH */
   .search{
     grid-area:search;
-    width:100%;
-    max-width:none;
-  }
-
-  .brand > div{
-    min-width:0;
-  }
-
-  .brand small{
-    line-height:1.2;
-  }
-
-  .search{
-    order:3;
     width:100%;
     max-width:none;
     flex:1 1 100%;

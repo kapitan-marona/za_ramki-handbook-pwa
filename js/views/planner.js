@@ -210,31 +210,35 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
             return;
           }
 
+          qc.disabled = true;
+          qc.classList.add("is-loading");
+
           PlannerActions.openCreateDialog({
             onCreate: async (payload) => {
-              qc.disabled = true;
-              qc.classList.add("is-loading");
+              const created = await PlannerAPI.createTask(payload);
 
+              if(created && created.id){
+                goTask(created.id);
+              }else{
+                goTask(null);
+              }
+
+              return created;
+            },
+            onAfterSubmit: async () => {},
+            onClose: () => {
               try{
-                const created = await PlannerAPI.createTask(payload);
-
-                if(created && created.id){
-                  goTask(created.id);
-                }else{
-                  goTask(null);
-                }
-
-                return created;
-              }finally{
                 qc.disabled = false;
                 qc.classList.remove("is-loading");
-              }
+              }catch(e){}
             }
           });
 
         }catch(err){
-          qc.disabled = false;
-          qc.classList.remove("is-loading");
+          try{
+            qc.disabled = false;
+            qc.classList.remove("is-loading");
+          }catch(e){}
 
           const t = (err && (err.message || err.details || err.hint))
             ? (err.message || err.details || err.hint)

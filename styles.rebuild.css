@@ -3342,15 +3342,39 @@ button.zr-admin-home__card{
 @media (max-width: 900px){
 
   .header-inner{
-    flex-wrap:wrap;
-    align-items:flex-start;
+    display:grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    grid-template-areas:
+      "brand auth"
+      "search search";
+    align-items:center;
     gap:10px;
-    padding:12px;
+    padding:10px 12px;
   }
 
+  /* BRAND */
   .brand{
+    grid-area:brand;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+  }
+
+  /* AUTH */
+  .header-inner > div:last-child{
+    grid-area:auth;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    justify-content:flex-end;
+  }
+
+  /* SEARCH */
+  .search{
+    grid-area:search;
     width:100%;
-    align-items:flex-start;
+    max-width:none;
   }
 
   .brand > div{

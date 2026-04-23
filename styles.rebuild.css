@@ -3372,7 +3372,7 @@ button.zr-admin-home__card{
   }
 
   .logo-img{
-    height:64px;
+    height:72px;
     width:auto;
     object-fit:contain;
     display:block;
@@ -3384,7 +3384,7 @@ button.zr-admin-home__card{
     font-size:18px;
     line-height:1;
     letter-spacing:.04em;
-    color:rgba(255,243,234,.72);
+    color:rgba(255,243,234,.64);
   }
 
   .brand small{

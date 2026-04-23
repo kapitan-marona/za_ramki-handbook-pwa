@@ -21,25 +21,19 @@ body{
    DOMAIN 2 — SHELL
    ========================================================= */
 
-.header{
-  position: sticky;
-  top:0;
-  z-index: 100;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-}
-
 .header-inner{
-  max-width: 1200px;
-  margin: 0 auto;
-  display:flex;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:
+    "brand auth"
+    "search search";
   align-items:center;
-  justify-content:space-between;
-  gap:14px;
-  padding:16px;
+  gap:10px;
+  padding:10px 12px;
 }
 
 .brand{
+  grid-area:brand;
   display:flex;
   align-items:center;
   gap:10px;
@@ -47,7 +41,7 @@ body{
 }
 
 .logo-img{
-  height:34px;
+  height:52px;
   width:auto;
   object-fit:contain;
   display:block;
@@ -56,18 +50,22 @@ body{
 
 .brand h1{
   margin:0;
-  font-size:14px;
-  line-height:1.1;
-  letter-spacing:.4px;
-  min-width:0;
+  font-size:18px;
+  line-height:1;
+  letter-spacing:.04em;
+  color:rgba(255,243,234,.72);
 }
 
 .brand small{
-  display:block;
-  margin-top:2px;
-  font-size:12px;
-  line-height:1.3;
-  color:var(--muted);
+  display:none;
+}
+
+.header-inner > div:last-child{
+  grid-area:auth;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  justify-content:flex-end;
 }
 
 .search{

@@ -386,7 +386,10 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
         const statusValue = String(
           (viewerEl && viewerEl.__zrStatusTask && viewerEl.__zrStatusTask.status) || ""
         );
-        const allowArchiveAction = (role === "admin" && statusValue === "canceled");
+        const allowArchiveAction = (
+          role === "admin" &&
+          (statusValue === "canceled" || statusValue === "done")
+        );
 
         root.querySelectorAll(".pl-status, #plEditTask, #plAddDocBtn, #plAddChecklistBtn, #plRemoveChecklistBtn").forEach(el => {
           try{ el.disabled = true; }catch(e){}
@@ -611,9 +614,9 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
       if(role === "admin"){
         board.innerHTML = `
           <div class="empty" style="text-align:center;">
-            <h2>Новых задач пока нет.</h2>
-            <p>Чтобы добавить новую задачу, нажмите "+".</p>
-            <p>Включи уведомления (колокольчик), чтобы быть в курсе изменений.</p>
+            <h2>Пока тихо 🙂</h2>
+            <p>Сейчас в работе нет активных задач.</p>
+            <p>Можно создать новую задачу или просто держать уведомления 🔔 включёнными.</p>
             <div style="margin-top:16px;">
               <button class="btn btn--primary" id="plCreateTask" type="button">Создать задачу</button>
             </div>
@@ -622,8 +625,9 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
       }else{
         board.innerHTML = `
           <div class="empty" style="text-align:center;">
-            <h2>Новых задач пока нет.</h2>
-            <p>Включи уведомления (колокольчик), чтобы быть в курсе изменений.</p>
+            <h2>Пока тихо 🙂</h2>
+            <p>На данный момент для тебя нет активных задач.</p>
+            <p>Включи уведомления 🔔, чтобы сразу увидеть новые назначения и обновления.</p>
           </div>
         `;
       }
@@ -643,23 +647,18 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
               alert("Create UI missing");
               return;
             }
+
             PlannerActions.openCreateDialog({
               onCreate: async (payload) => {
-                qc.disabled = true;
-                try{
-                  const created = await PlannerAPI.createTask(payload);
-                  if(created && created.id){
-                    goTask(created.id);
-                  }else{
-                    goTask(null);
-                  }
-                  return created;
-                }finally{
-                  qc.disabled = false;
+                const created = await PlannerAPI.createTask(payload);
+
+                if(created && created.id){
+                  goTask(created.id);
+                }else{
+                  goTask(null);
                 }
-              },
-              onClose: () => {
-                qc.disabled = false;
+
+                return created;
               }
             });
           });

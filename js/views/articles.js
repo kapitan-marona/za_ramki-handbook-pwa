@@ -1,6 +1,5 @@
 window.Views = window.Views || {};
 Views.Articles = (() => {
-  console.log("[ARTICLES_BUILD] 2026-03-10 STEP1-2");
   const $ = (s) => document.querySelector(s);
 
   let INDEX = [];

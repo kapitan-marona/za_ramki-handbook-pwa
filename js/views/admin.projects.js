@@ -60,9 +60,22 @@ window.Views.AdminProjectsFactory = function(deps){
 
   async function sbProjectsDelete(id){
     await ensureSession();
-    const p = SB.from("projects").delete().eq("id", id);
-    const { error } = await withTimeout(p, 20000, "projects delete");
+
+    const p = SB
+      .from("projects")
+      .delete()
+      .eq("id", id)
+      .select("id");
+
+    const { data, error } = await withTimeout(p, 20000, "projects delete");
+
     if(error) throw error;
+
+    if(!Array.isArray(data) || data.length === 0){
+      throw new Error("Проект не удалён. Скорее всего, нет DELETE-политики в Supabase для таблицы projects.");
+    }
+
+    return true;
   }
 
   function projectsHtml(items){

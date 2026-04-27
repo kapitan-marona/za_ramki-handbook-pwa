@@ -202,16 +202,12 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
 
       const rf = document.getElementById("plRefresh");
       const qc = document.getElementById("plQuickCreate");
-
       if(qc) qc.onclick = () => {
         try{
           if(!window.PlannerActions || typeof PlannerActions.openCreateDialog !== "function"){
             alert("Create UI missing");
             return;
           }
-
-          qc.disabled = true;
-          qc.classList.add("is-loading");
 
           PlannerActions.openCreateDialog({
             onCreate: async (payload) => {
@@ -226,20 +222,10 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
               return created;
             },
             onAfterSubmit: async () => {},
-            onClose: () => {
-              try{
-                qc.disabled = false;
-                qc.classList.remove("is-loading");
-              }catch(e){}
-            }
+            onClose: () => {}
           });
 
         }catch(err){
-          try{
-            qc.disabled = false;
-            qc.classList.remove("is-loading");
-          }catch(e){}
-
           const t = (err && (err.message || err.details || err.hint))
             ? (err.message || err.details || err.hint)
             : String(err);
@@ -659,7 +645,9 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
                 }
 
                 return created;
-              }
+              },
+              onAfterSubmit: async () => {},
+              onClose: () => {}
             });
           });
         }

@@ -1,5 +1,5 @@
 (function(){
-  const CHECK_INTERVAL_MS = 60 * 1000;
+  const CHECK_INTERVAL_MS = 30 * 60 * 1000; 
 
   function getCurrentVersion(){
     return String(window.ZR_APP_VERSION || "");
@@ -51,4 +51,18 @@
 
   checkVersion();
   setInterval(checkVersion, CHECK_INTERVAL_MS);
+
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible"){
+      checkVersion();
+    }
+  });
+
+  window.addEventListener("focus", () => {
+    checkVersion();
+  });
+
+  window.addEventListener("pageshow", () => {
+    checkVersion();
+  });
 })();

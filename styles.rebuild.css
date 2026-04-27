@@ -3679,3 +3679,91 @@ button.zr-admin-home__card{
   }
 }
 
+/* =========================================================
+   Update notice — app version refresh
+   ========================================================= */
+
+#zrUpdateNotice{
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 99999;
+
+  width: min(360px, calc(100vw - 32px));
+  padding: 14px 14px 14px 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.015)),
+    var(--brand-panel);
+  border: 1px solid var(--brand-border-accent);
+  border-radius: 18px;
+
+  color: var(--text);
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.42),
+    0 0 0 1px rgba(255,255,255,.035) inset;
+
+  backdrop-filter: blur(14px);
+}
+
+.zr-update-notice__text{
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--brand-text);
+}
+
+.zr-update-notice__btn{
+  border: 0;
+  outline: 0;
+  flex: 0 0 auto;
+
+  padding: 9px 13px;
+  border-radius: 999px;
+
+  background: var(--brand-accent);
+  color: #fff;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+
+  cursor: pointer;
+  transition:
+    transform .14s ease,
+    filter .14s ease,
+    background-color .14s ease;
+}
+
+.zr-update-notice__btn:hover{
+  filter: brightness(1.08);
+}
+
+.zr-update-notice__btn:active{
+  transform: translateY(1px);
+}
+
+@media (max-width: 640px){
+  #zrUpdateNotice{
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    padding: 13px;
+    border-radius: 16px;
+  }
+
+  .zr-update-notice__text{
+    font-size: 12px;
+  }
+
+  .zr-update-notice__btn{
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+

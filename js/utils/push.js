@@ -427,16 +427,22 @@ window.syncPushUI = async function(){
     }
 
     function applyBell(state, pressed, disabled, label){
-      btn.disabled = !!disabled;
-      btn.innerHTML = bellIcon();
-      btn.setAttribute("aria-pressed", pressed ? "true" : "false");
-      btn.setAttribute("aria-label", label);
-      btn.setAttribute("title", label);
-      btn.classList.add("push-icon-btn");
-      btn.classList.add("is-ready");
-      btn.classList.toggle("is-on", state === "on");
-      btn.classList.toggle("is-off", state === "off");
-      btn.classList.toggle("is-disabled", !!disabled);
+      var liveBtn = document.querySelector("#pushBtn");
+      if(!liveBtn) return;
+
+      liveBtn.disabled = !!disabled;
+      liveBtn.innerHTML = bellIcon();
+
+      liveBtn.setAttribute("aria-pressed", pressed ? "true" : "false");
+      liveBtn.setAttribute("aria-label", label);
+      liveBtn.setAttribute("title", label);
+
+      liveBtn.classList.add("push-icon-btn");
+      liveBtn.classList.add("is-ready");
+
+      liveBtn.classList.toggle("is-on", state === "on");
+      liveBtn.classList.toggle("is-off", state === "off");
+      liveBtn.classList.toggle("is-disabled", !!disabled);
     }
 
     if(!window.ZRPush || !ZRPush.isSupported()){

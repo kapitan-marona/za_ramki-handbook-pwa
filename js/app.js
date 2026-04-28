@@ -371,9 +371,36 @@ async function render(){
     var isLogin = (section === "login");
     var isRecovery = !!window.__authRecoveryMode;
 
+    if(App.session && App.session.ready === false){
+      return;
+    }
+
     if(isLogin && hasUser && !isRecovery){
       Router.go("planner");
       return;
+    }
+
+    // gate: все кроме login требует user
+    if(!isLogin && !hasUser){
+      try{
+        var sres = await SB.auth.getSession();
+        var sessionUser = (sres && sres.data && sres.data.session)
+          ? sres.data.session.user
+          : null;
+
+        if(sessionUser){
+          await window.applySession(sessionUser);
+          hasUser = !!(App.session && App.session.user);
+        }
+      }catch(e){
+        console.warn("[Auth] route session recheck failed", e);
+      }
+
+      if(!hasUser){
+        window.clearMainArea();
+        Router.go("login");
+        return;
+      }
     }
 
     // gate: все кроме login требует user

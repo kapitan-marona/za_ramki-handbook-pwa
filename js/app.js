@@ -8,9 +8,9 @@ window.clearMainArea = function(){
 };
 
 window.fetchRole = async function(){
-  if(!window.SB) return null;
+  if(!window.ZRBackend || !ZRBackend.db) return null;
   try{
-    var r = await SB.rpc("get_role");
+    var r = await ZRBackend.db.rpc("get_role");
     if(r && !r.error && (r.data === "admin" || r.data === "staff")) return r.data;
   }catch(e){
     console.warn("[Auth] get_role failed", e);
@@ -164,7 +164,7 @@ window.renderAuthArea = function(){
         }
       }catch(e){ console.warn("[app.js] silent catch", e); }
 
-      try{ if(window.SB && SB.auth) await SB.auth.signOut(); }catch(e){ console.warn("[app.js] silent catch", e); }
+      try{ if(window.ZRBackend && ZRBackend.auth) await ZRBackend.auth.signOut(); }catch(e){ console.warn("[app.js] silent catch", e); }
       try{ delete window.__plannerState; }catch(e){ console.warn("[app.js] silent catch", e); }
       App.session.user = null;
       App.session.role = null;
@@ -189,7 +189,7 @@ window.applySession = async function(user){
 
     // нет роли -> нет доступа
     if(!role){
-      try{ await SB.auth.signOut(); }catch(e){ console.warn("[app.js] silent catch", e); }
+      try{ await ZRBackend.auth.signOut(); }catch(e){ console.warn("[app.js] silent catch", e); }
       try{ delete window.__plannerState; }catch(e){ console.warn("[app.js] silent catch", e); }
       App.session.user = null;
       App.session.role = null;
@@ -247,7 +247,7 @@ window.initAuth = async function(){
   try{
     App.session.ready = false;
 
-    if(!window.SB || !SB.auth){
+    if(!window.ZRBackend || !ZRBackend.auth){
       try{ delete window.__plannerState; }catch(e){ console.warn("[app.js] silent catch", e); }
       App.session.user = null;
       App.session.role = null;
@@ -258,7 +258,7 @@ window.initAuth = async function(){
     }
 
     // initial
-    var sres = await SB.auth.getSession();
+    var sres = await ZRBackend.auth.getSession();
     var user = (sres && sres.data && sres.data.session) ? sres.data.session.user : null;
     await window.applySession(user);
 
@@ -266,7 +266,7 @@ window.initAuth = async function(){
 
     // subscribe once
     if(!App._authSub){
-      App._authSub = SB.auth.onAuthStateChange(function(evt, session){
+      App._authSub = ZRBackend.auth.onAuthStateChange(function(evt, session){
         var u = (session && session.user) ? session.user : null;
         var prevUserId = (window.App && App.session && App.session.user && App.session.user.id) ? String(App.session.user.id) : "";
         var nextUserId = (u && u.id) ? String(u.id) : "";
@@ -383,7 +383,7 @@ async function render(){
     // gate: все кроме login требует user
     if(!isLogin && !hasUser){
       try{
-        var sres = await SB.auth.getSession();
+        var sres = await ZRBackend.auth.getSession();
         var sessionUser = (sres && sres.data && sres.data.session)
           ? sres.data.session.user
           : null;

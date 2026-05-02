@@ -4,7 +4,7 @@ window.Views.AdminProjectsFactory = function(deps){
   deps = deps || {};
 
   const $ = deps.$ || function(s){ return document.querySelector(s); };
-  const SB = deps.SB;
+  const Backend = deps.Backend || window.ZRBackend;
 
   const esc = deps.esc;
   const norm = deps.norm;
@@ -20,13 +20,13 @@ window.Views.AdminProjectsFactory = function(deps){
   const taStyle = deps.taStyle;
   const setMode = deps.setMode;
 
-  if(!SB) throw new Error("Admin projects module: SB missing.");
+  if(!Backend || !Backend.projects) throw new Error("Admin projects module: ZRBackend.projects missing.");
   if(!esc || !norm) throw new Error("Admin projects module: shared text helpers missing.");
   if(!setBusy || !setStatus || !setPanelTitle || !showViewer || !showLoading) throw new Error("Admin projects module: shared UI helpers missing.");
   if(!withTimeout || !ensureSession || !renderAdminTabs || !inpStyle || !taStyle || !setMode) throw new Error("Admin projects module: shared runtime helpers missing.");
 
   async function sbProjectsList(){
-    const p = SB.from("projects")
+    const p = Backend.db.from("projects")
       .select("id,title,notes,created_at")
       .order("created_at", { ascending:false });
     const { data, error } = await withTimeout(p, 12000, "projects list");
@@ -36,7 +36,7 @@ window.Views.AdminProjectsFactory = function(deps){
 
   async function sbProjectsInsert(row){
     await ensureSession();
-    const p = SB.from("projects").insert(row);
+    const p = Backend.db.from("projects").insert(row);
     const { error } = await withTimeout(p, 20000, "projects insert");
     if(error) throw error;
   }
@@ -44,16 +44,20 @@ window.Views.AdminProjectsFactory = function(deps){
   async function sbProjectTaskCount(projectId){
     const p = SB.from("tasks")
       .select("id", { count:"exact", head:true })
-      .eq("project_id", projectId);
+      .eq("project_id", projectId)
+      .is("archived_at", null)
+      .neq("status", "canceled");
 
     const { count, error } = await withTimeout(p, 12000, "project task count");
+
     if(error) throw error;
+
     return Number(count || 0);
   }
 
   async function sbProjectsUpdate(id, row){
     await ensureSession();
-    const p = SB.from("projects").update(row).eq("id", id);
+    const p = Backend.db.from("projects").update(row).eq("id", id);
     const { error } = await withTimeout(p, 20000, "projects update");
     if(error) throw error;
   }
@@ -321,4 +325,6 @@ window.Views.AdminProjectsFactory = function(deps){
 
   return api;
 };
+
+
 

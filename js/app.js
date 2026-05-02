@@ -143,7 +143,7 @@ window.renderAuthArea = function(){
 
   el.innerHTML =
     '<div class="auth-group">' +
-      '<span class="pill auth-role">' + (App.session.role || '—') + '</span>' +
+      '<span class="auth-role">' + (App.session.role || '—') + '</span>' +
       '<button type="button" class="btn btn-sm auth-push push-icon-btn is-off" id="pushBtn" aria-pressed="false"></button>' +
     '</div>' +
     '<button type="button" class="btn btn-sm auth-logout" id="logoutBtn">Выйти</button>';

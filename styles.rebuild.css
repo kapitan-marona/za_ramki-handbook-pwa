@@ -224,6 +224,19 @@ body{
   padding:7px 10px;
 }
 
+.header-meta{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.header-meta .auth-role,
+#authArea .auth-role{
+  border:none;
+  background:none;
+  box-shadow:none;
+}
+
 #pushBtn.push-icon-btn{
   opacity:0;
   transition:

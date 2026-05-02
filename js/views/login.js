@@ -52,12 +52,12 @@ Views.Login = (() => {
           return;
         }
 
-        if(!window.SB || !SB.auth){
-          setErr("Supabase не подключён.");
+        if(!window.ZRBackend || !ZRBackend.auth){
+          setErr("Backend не подключён.");
           return;
         }
 
-        const res = await SB.auth.signInWithPassword({ email: email, password: password });
+        const res = await ZRBackend.auth.signInWithPassword({ email: email, password: password });
         if(res && res.error){
           setErr(res.error.message);
           return;
@@ -102,15 +102,15 @@ Views.Login = (() => {
           return;
         }
 
-        if(!window.SB || !SB.auth){
-          setErr("Supabase не подключён.");
+        if(!window.ZRBackend || !ZRBackend.auth){
+          setErr("Backend не подключён.");
           return;
         }
 
         var btn = $("#loginBtn");
         if(btn) btn.disabled = true;
 
-        const res = await SB.auth.updateUser({
+        const res = await ZRBackend.auth.updateUser({
           password: p1
         });
 

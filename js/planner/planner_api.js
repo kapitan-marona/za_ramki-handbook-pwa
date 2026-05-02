@@ -43,6 +43,9 @@
     const SB = SBx();
     const role = opts && opts.role ? String(opts.role) : null;
     const today = opts && opts.today ? String(opts.today) : null;
+    const currentUserId = opts && opts.userId
+      ? String(opts.userId)
+      : String(window.App?.session?.user?.id || "");
 
     const res = await SB
       .from("tasks")
@@ -59,15 +62,42 @@
     let tasks = res.data || [];
 
     if(role !== "admin"){
+      const staffTaskIds = tasks
+        .filter(t => String((t && t.role) || "all").trim() === "staff")
+        .map(t => t && t.id ? String(t.id) : "")
+        .filter(Boolean);
+
+      let assigneesByTask = {};
+      if(staffTaskIds.length > 0){
+        try{
+          assigneesByTask = await fetchTasksAssigneesBatch(staffTaskIds);
+        }catch(err){
+          console.warn("[PlannerAPI] assignee visibility filter error", err);
+          assigneesByTask = {};
+        }
+      }
+
       tasks = tasks.filter(t => {
         const r = (t && t.role != null) ? String(t.role).trim() : "all";
 
-        // staff never sees admin-only tasks
         if(r === "admin") return false;
+        if(!r || r === "all") return true;
 
-        // keep "all" and "staff" tasks here;
-        // assignee-based filtering happens later on normalized/enriched data
-        return !r || r === "all" || r === "staff";
+        if(r === "staff"){
+          const taskId = t && t.id ? String(t.id) : "";
+          const assigneeIds = taskId && assigneesByTask[taskId]
+            ? assigneesByTask[taskId].map(x => String(x))
+            : [];
+
+          const legacyAssigneeId = t && t.assignee_id ? String(t.assignee_id) : "";
+
+          return !!currentUserId && (
+            assigneeIds.includes(currentUserId) ||
+            legacyAssigneeId === currentUserId
+          );
+        }
+
+        return false;
       });
     }
 
@@ -231,14 +261,7 @@
   }
 
   async function fetchProjects(){
-    const SB = SBx();
-    const r = await SB
-      .from("projects")
-      .select("id,title")
-      .order("created_at", { ascending:false });
-
-    if(r && r.error) throw r.error;
-    return r.data || [];
+    return await ZRBackend.projects.list();
   }
 
   async function logTaskActivity(taskId, type, body, payload){
@@ -375,6 +398,20 @@
     const vis = row.role ? String(row.role) : "all";
     if(vis === "admin") return null;
 
+    if(vis === "staff"){
+      const currentUserId = ctx && ctx.userId
+        ? String(ctx.userId)
+        : String(window.App?.session?.user?.id || "");
+
+      const assignees = await fetchTaskAssignees(taskId);
+      const assigneeIds = (assignees || []).map(x => String(x.user_id || "")).filter(Boolean);
+      const legacyAssigneeId = row.assignee_id ? String(row.assignee_id) : "";
+
+      if(!currentUserId || (!assigneeIds.includes(currentUserId) && legacyAssigneeId !== currentUserId)){
+        return null;
+      }
+    }
+
     if(today && row.start_date && String(row.start_date) > today) return null;
 
     return row;
@@ -428,15 +465,7 @@
   }
 
   async function fetchAssignablePeople(){
-    const SB = SBx();
-    const r = await SB
-      .from("profiles")
-      .select("id,email,name,role,is_admin")
-      .order("name", { ascending:true })
-      .order("email", { ascending:true });
-
-    if(r && r.error) throw r.error;
-    return r.data || [];
+    return await ZRBackend.profiles.listBasic();
   }
 
   async function setTaskAssignees(taskId, userIds){
@@ -457,6 +486,13 @@
     const beforeIds = Array.isArray(beforeRes.data)
       ? beforeRes.data.map(x => String(x.user_id)).filter(Boolean)
       : [];
+
+    const beforeKey = beforeIds.slice().sort().join("|");
+    const nextKey = ids.slice().sort().join("|");
+
+    if(beforeKey === nextKey){
+      return true;
+    }
 
     const del = await SB
       .from("task_assignees")
@@ -585,88 +621,28 @@
   }
 
   async function searchArticlesForLink(query){
-    const SB = SBx();
-    const q = query ? String(query).trim() : "";
-
-    let req = SB
-      .from("kb_articles")
-      .select("id,title,category,updated_at")
-      .eq("status", "published")
-      .order("updated_at", { ascending:false })
-      .limit(12);
-
-    if(q){
-      req = req.ilike("title", "%" + q + "%");
-    }
-
-    const r = await req;
-    if(r && r.error) throw r.error;
-    return (r.data || []).map(x => ({
-      id: x.id,
-      title: x.title,
-      kind: "article"
-    }));
+    return await ZRBackend.kb.searchArticles(query);
   }
 
   async function searchTemplatesForLink(query){
-    const SB = SBx();
-    const q = query ? String(query).trim() : "";
-
-    let req = SB
-      .from("kb_templates")
-      .select("id,title,updated_at")
-      .eq("published", true)
-      .order("updated_at", { ascending:false })
-      .limit(12);
-
-    if(q){
-      req = req.ilike("title", "%" + q + "%");
-    }
-
-    const r = await req;
-    if(r && r.error) throw r.error;
-    return (r.data || []).map(x => ({
-      id: x.id,
-      title: x.title,
-      kind: "template"
-    }));
+    return await ZRBackend.kb.searchTemplates(query);
   }
 
   async function searchChecklistsForLink(query){
-    const SB = SBx();
-    const q = query ? String(query).trim() : "";
-
-    let req = SB
-      .from("kb_checklists")
-      .select("id,title,updated_at")
-      .eq("published", true)
-      .order("updated_at", { ascending:false })
-      .limit(12);
-
-    if(q){
-      req = req.ilike("title", "%" + q + "%");
-    }
-
-    const r = await req;
-    if(r && r.error) throw r.error;
-    return (r.data || []).map(x => ({
-      id: x.id,
-      title: x.title,
-      kind: "checklist"
-    }));
+    return await ZRBackend.kb.searchChecklists(query);
   }
   
   async function clearTaskChecklist(taskId){
-  const SB = SBx();
+    const SB = SBx();
 
-  const r = await SB
-    .from("task_checklist_items")
-    .delete()
-    .eq("task_id", taskId);
+    const r = await SB
+      .from("task_checklist_items")
+      .delete()
+      .eq("task_id", taskId);
 
-  if(r && r.error) throw r.error;
-  return true;
-}
+    if(r && r.error) throw r.error;
+    return true;
+  }
 
   window.PlannerAPI = {
     fetchAllActiveTasks,

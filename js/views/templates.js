@@ -222,21 +222,13 @@ Views.Templates = (() => {
   }
 
   async function loadTemplatesFromSupabase(){
-    if(!window.SB) return [];
-
-    const { data, error } = await SB
-      .from("kb_templates")
-      .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
-      .eq("published", true)
-      .order("sort", { ascending:true })
-      .order("title", { ascending:true });
-
-    if(error){
-      console.error("[Templates] Supabase load error:", error);
+    try{
+      if(!window.ZRBackend || !ZRBackend.kb || !ZRBackend.kb.templates) return [];
+      return await ZRBackend.kb.templates.listPublished();
+    }catch(error){
+      console.error("[Templates] load error:", error);
       return [];
     }
-
-    return Array.isArray(data) ? data : [];
   }
 
   function getTemplateResources(template){

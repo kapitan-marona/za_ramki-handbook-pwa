@@ -84,6 +84,295 @@
 
         if(r && r.error) throw r.error;
         return r.data || [];
+      },
+
+      async getBasic(id){
+        if(!id) return null;
+
+        const r = await requireSB()
+          .from("projects")
+          .select("id,title")
+          .eq("id", id)
+          .maybeSingle();
+
+        if(r && r.error && r.error.code !== "PGRST116") throw r.error;
+        return r.data || null;
+      },
+
+      async listAdmin(){
+        const r = await requireSB()
+          .from("projects")
+          .select("id,title,notes,created_at")
+          .order("created_at", { ascending:false });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
+      },
+
+      async create(row){
+        const r = await requireSB()
+          .from("projects")
+          .insert(row);
+
+        if(r && r.error) throw r.error;
+        return true;
+      },
+
+      async activeTaskCount(projectId){
+        const r = await requireSB()
+          .from("tasks")
+          .select("id", { count:"exact", head:true })
+          .eq("project_id", projectId)
+          .is("archived_at", null)
+          .neq("status", "canceled");
+
+        if(r && r.error) throw r.error;
+        return Number(r.count || 0);
+      },
+
+      async update(id, row){
+        const r = await requireSB()
+          .from("projects")
+          .update(row)
+          .eq("id", id);
+
+        if(r && r.error) throw r.error;
+        return true;
+      },
+
+      async delete(id){
+        const r = await requireSB()
+          .from("projects")
+          .delete()
+          .eq("id", id)
+          .select("id");
+
+        if(r && r.error) throw r.error;
+
+        if(!Array.isArray(r.data) || r.data.length === 0){
+          throw new Error("Проект не удалён. Скорее всего, нет DELETE-политики в Supabase для таблицы projects.");
+        }
+
+        return true;
+      }
+    },
+
+    tasks: {
+      async create(row){
+        const r = await requireSB()
+          .from("tasks")
+          .insert(row)
+          .select("id")
+          .single();
+
+        if(r && r.error) throw r.error;
+        return r.data || null;
+      },
+
+      async getById(id){
+        if(!id) return null;
+
+        const r = await requireSB()
+          .from("tasks")
+          .select("*, projects(title)")
+          .eq("id", id)
+          .maybeSingle();
+
+        if(r && r.error) throw r.error;
+        return r.data || null;
+      },
+
+      async archive(taskId){
+        const r = await requireSB()
+          .rpc("archive_task", { p_task_id: taskId });
+
+        if(r && r.error) throw r.error;
+        return true;
+      },
+
+      async archiveDone(){
+        const r = await requireSB()
+          .rpc("archive_done_tasks");
+
+        if(r && r.error) throw r.error;
+        return (r && r.data != null) ? r.data : 0;
+      }
+    },
+
+    taskActivity: {
+      async listByTask(taskId){
+        const r = await requireSB()
+          .from("task_activity")
+          .select("id,task_id,actor_id,type,body,payload,created_at")
+          .eq("task_id", taskId)
+          .order("created_at", { ascending:false });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
+      },
+
+      async log(taskId, type, body, payload){
+        const r = await requireSB().rpc("log_task_activity", {
+          p_task_id: taskId,
+          p_type: String(type || "system"),
+          p_body: body != null ? String(body) : null,
+          p_payload: payload || {}
+        });
+
+        if(r && r.error) throw r.error;
+        return true;
+      }
+    },
+
+    taskChecklistItems: {
+      async listByTask(taskId){
+        const r = await requireSB()
+          .from("task_checklist_items")
+          .select("id,task_id,pos,text,done,done_at")
+          .eq("task_id", taskId)
+          .order("pos", { ascending:true });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
+      },
+
+      async setDone(itemId, done){
+        const r = await requireSB()
+          .rpc("set_task_checklist_done", {
+            p_item_id: itemId,
+            p_done: !!done
+          });
+
+        if(r && r.error) throw r.error;
+        return true;
+      }
+    },
+
+    taskComments: {
+      async listByTask(taskId){
+        const r = await requireSB()
+          .from("task_comments")
+          .select(`
+            id,
+            task_id,
+            author_id,
+            body,
+            created_at,
+            deleted_at,
+            author:profiles!task_comments_author_id_fkey(
+              id,
+              name,
+              email
+            )
+          `)
+          .eq("task_id", taskId)
+          .is("deleted_at", null)
+          .order("created_at", { ascending:true });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
+      },
+
+      async softDelete(commentId){
+        const r = await requireSB()
+          .from("task_comments")
+          .update({
+            deleted_at: new Date().toISOString()
+          })
+          .eq("id", commentId)
+          .is("deleted_at", null);
+
+        if(r && r.error) throw r.error;
+        return true;
+      },
+
+      async add(taskId, body){
+        const r = await requireSB()
+          .rpc("add_task_comment", {
+            p_task_id: taskId,
+            p_body: body
+          });
+
+        if(r && r.error) throw r.error;
+        return true;
+      }
+    },
+
+    taskFiles: {
+      async listByTask(taskId){
+        const r = await requireSB()
+          .from("task_files")
+          .select("id,task_id,bucket_id,object_path,file_name,mime_type,created_at")
+          .eq("task_id", taskId)
+          .order("created_at", { ascending:true });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
+      }
+    },
+
+    taskLinks: {
+      async listByTask(taskId){
+        const r = await requireSB()
+          .from("task_links")
+          .select("id,task_id,link_type,ref_id,url,label,created_at")
+          .eq("task_id", taskId)
+          .order("created_at", { ascending:true });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
+      },
+
+      async create(row){
+        const r = await requireSB()
+          .from("task_links")
+          .insert(row)
+          .select("id,task_id,link_type,ref_id,url,label,created_at")
+          .single();
+
+        if(r && r.error) throw r.error;
+        return (r && r.data) ? r.data : null;
+      },
+
+      async remove(id){
+        const r = await requireSB()
+          .from("task_links")
+          .delete()
+          .eq("id", id);
+
+        if(r && r.error) throw r.error;
+        return true;
+      }
+    },
+
+    allowlist: {
+      async list(){
+        const r = await requireSB()
+          .from("allowlist")
+          .select("email,role,enabled")
+          .order("email", { ascending:true });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
+      },
+
+      async upsert(row){
+        const r = await requireSB()
+          .from("allowlist")
+          .upsert(row, { onConflict:"email" });
+
+        if(r && r.error) throw r.error;
+        return true;
+      },
+
+      async delete(email){
+        const r = await requireSB()
+          .from("allowlist")
+          .delete()
+          .eq("email", email);
+
+        if(r && r.error) throw r.error;
+        return true;
       }
     },
 
@@ -97,10 +386,231 @@
 
         if(r && r.error) throw r.error;
         return r.data || [];
+      },
+
+      async listByIds(ids){
+        const cleanIds = (ids || []).filter(Boolean).map(String);
+        if(cleanIds.length === 0) return [];
+
+        const r = await requireSB()
+          .from("profiles")
+          .select("id,name,email")
+          .in("id", cleanIds);
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
       }
     },
     
     kb: {
+      articles: {
+        async listAll(){
+          const r = await requireSB()
+            .from("kb_articles")
+            .select("id,title,category,type,tags,roles,status,updated_at,excerpt,has_inline_new")
+            .order("updated_at", { ascending:false });
+
+          if(r && r.error) throw r.error;
+          return r.data || [];
+        },
+
+        async get(id){
+          const r = await requireSB()
+            .from("kb_articles")
+            .select("id,title,category,type,tags,roles,status,updated_at,excerpt,content_md,actions,has_inline_new")
+            .eq("id", id)
+            .single();
+
+          if(r && r.error) throw r.error;
+          return r.data;
+        },
+
+        async listPublishedIndex(){
+          const r = await requireSB()
+            .from("kb_articles")
+            .select("id,title,category,tags,roles,updated_at,pinned,actions,status,has_inline_new")
+            .eq("status","published")
+            .order("pinned",{ ascending:false })
+            .order("updated_at",{ ascending:false });
+
+          if(r && r.error) throw r.error;
+
+          return (r.data || []).map(row => ({
+            id: row.id,
+            title: row.title,
+            category: row.category,
+            tags: row.tags || [],
+            roles: row.roles || [],
+            updatedAt: row.updated_at,
+            pinned: !!row.pinned,
+            actions: row.actions || [],
+            hasInlineNew: !!row.has_inline_new,
+            source: "sb"
+          }));
+        },
+
+        async getPublishedContent(id){
+          const r = await requireSB()
+            .from("kb_articles")
+            .select("content_md,actions,updated_at,category,tags,roles,title")
+            .eq("id", id)
+            .single();
+
+          if(r && r.error) throw r.error;
+          return r.data;
+        },
+
+        async upsert(row){
+          const r = await requireSB()
+            .from("kb_articles")
+            .upsert(row, { onConflict:"id" })
+            .select("id");
+
+          if(r && r.error) throw r.error;
+          return true;
+        },
+
+        async delete(id){
+          const r = await requireSB()
+            .from("kb_articles")
+            .delete()
+            .eq("id", id)
+            .select("id");
+
+          if(r && r.error) throw r.error;
+
+          if(!Array.isArray(r.data) || r.data.length === 0){
+            throw new Error("Инструкция не удалена. Возможно, нет DELETE-политики для таблицы kb_articles или id не найден.");
+          }
+
+          return true;
+        }
+      },
+
+      templates: {
+        async listAll(){
+          const r = await requireSB()
+            .from("kb_templates")
+            .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
+            .order("sort", { ascending:true })
+            .order("title", { ascending:true });
+
+          if(r && r.error) throw r.error;
+          return r.data || [];
+        },
+
+        async get(id){
+          const r = await requireSB()
+            .from("kb_templates")
+            .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
+            .eq("id", id)
+            .single();
+
+          if(r && r.error) throw r.error;
+          return r.data;
+        },
+
+        async listPublished(){
+          const r = await requireSB()
+            .from("kb_templates")
+            .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
+            .eq("published", true)
+            .order("sort", { ascending:true })
+            .order("title", { ascending:true });
+
+          if(r && r.error) throw r.error;
+          return r.data || [];
+        },
+
+        async upsert(row){
+          const r = await requireSB()
+            .from("kb_templates")
+            .upsert(row, { onConflict:"id" })
+            .select("id");
+
+          if(r && r.error) throw r.error;
+          return true;
+        },
+
+        async delete(id){
+          const r = await requireSB()
+            .from("kb_templates")
+            .delete()
+            .eq("id", id)
+            .select("id");
+
+          if(r && r.error) throw r.error;
+
+          if(!Array.isArray(r.data) || r.data.length === 0){
+            throw new Error("Шаблон не удалён. Возможно, нет DELETE-политики для таблицы kb_templates или id не найден.");
+          }
+
+          return true;
+        }
+      },
+
+      checklists: {
+        async listAll(){
+          const r = await requireSB()
+            .from("kb_checklists")
+            .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at")
+            .order("sort", { ascending:true })
+            .order("title", { ascending:true });
+
+          if(r && r.error) throw r.error;
+          return r.data || [];
+        },
+
+        async get(id){
+          const r = await requireSB()
+            .from("kb_checklists")
+            .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at,items")
+            .eq("id", id)
+            .single();
+
+          if(r && r.error) throw r.error;
+          return r.data;
+        },
+
+        async listPublished(){
+          const r = await requireSB()
+            .from("kb_checklists")
+            .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at,items")
+            .eq("published", true)
+            .order("sort", { ascending:true })
+            .order("title", { ascending:true });
+
+          if(r && r.error) throw r.error;
+          return r.data || [];
+        },
+
+        async upsert(row){
+          const r = await requireSB()
+            .from("kb_checklists")
+            .upsert(row, { onConflict:"id" })
+            .select("id");
+
+          if(r && r.error) throw r.error;
+          return true;
+        },
+
+        async delete(id){
+          const r = await requireSB()
+            .from("kb_checklists")
+            .delete()
+            .eq("id", id)
+            .select("id");
+
+          if(r && r.error) throw r.error;
+
+          if(!Array.isArray(r.data) || r.data.length === 0){
+            throw new Error("Чек-лист не удалён. Возможно, нет DELETE-политики для таблицы kb_checklists или id не найден.");
+          }
+
+          return true;
+        }
+      },
+
       async searchArticles(query){
         const q = query ? String(query).trim() : "";
 

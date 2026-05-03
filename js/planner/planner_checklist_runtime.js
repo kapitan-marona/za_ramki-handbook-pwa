@@ -86,16 +86,7 @@ window.PlannerChecklistRuntime = (function(){
             if(!confirm("Удалить чек-лист из задачи?")) return;
 
             try{
-              await PlannerAPI.clearTaskChecklist(taskId);
-            }catch(err){
-              console.warn("[ChecklistRuntime] clear runtime error", err);
-              alert("Ошибка удаления");
-              return;
-            }
-
-            try{
               const links = await PlannerAPI.fetchTaskLinks(taskId);
-              console.log("[DEBUG links after remove]", links);
               const checklistLink = (links || []).find(l => String(l.link_type || "") === "checklist");
 
               if(checklistLink){
@@ -103,6 +94,14 @@ window.PlannerChecklistRuntime = (function(){
               }
             }catch(err){
               console.warn("[ChecklistRuntime] link cleanup warning", err);
+            }
+
+            try{
+              await PlannerAPI.clearTaskChecklist(taskId);
+            }catch(err){
+              console.warn("[ChecklistRuntime] clear runtime error", err);
+              alert("Ошибка удаления");
+              return;
             }
 
             try{

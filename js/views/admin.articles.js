@@ -4,7 +4,7 @@ window.Views.AdminArticlesFactory = function(deps){
   deps = deps || {};
 
   const $ = deps.$ || function(s){ return document.querySelector(s); };
-  const SB = deps.SB;
+  const Backend = window.ZRBackend;
 
   const esc = deps.esc;
   const norm = deps.norm;
@@ -30,7 +30,7 @@ window.Views.AdminArticlesFactory = function(deps){
   const setMode = deps.setMode;
   const TYPE_LABELS = deps.TYPE_LABELS || {};
 
-  if(!SB) throw new Error("Admin articles module: SB missing.");
+  if(!Backend || !Backend.kb || !Backend.kb.articles) throw new Error("Admin articles module: ZRBackend.kb.articles missing.");
   if(!esc || !norm || !normLower) throw new Error("Admin articles module: shared text helpers missing.");
   if(!setBusy || !setStatus || !setPanelTitle || !showViewer || !showLoading) throw new Error("Admin articles module: shared UI helpers missing.");
   if(!withTimeout || !ensureSession || !renderAdminTabs || !renderContentSubTabs || !goAdmin || !inpStyle || !taStyle || !setMode){
@@ -118,30 +118,18 @@ window.Views.AdminArticlesFactory = function(deps){
   }
 
   async function sbArticlesListAll(){
-    const p = SB.from("kb_articles")
-      .select("id,title,category,type,tags,roles,status,updated_at,excerpt,has_inline_new")
-      .order("updated_at", { ascending:false });
-    const { data, error } = await withTimeout(p, 12000, "kb_articles list");
-    if(error) throw error;
-    return data || [];
+    return await withTimeout(Backend.kb.articles.listAll(), 12000, "kb_articles list");
   }
 
   async function sbArticlesGet(id){
-    const p = SB.from("kb_articles")
-      .select("id,title,category,type,tags,roles,status,updated_at,excerpt,content_md,actions,has_inline_new")
-      .eq("id", id).single();
-    const { data, error } = await withTimeout(p, 12000, "kb_articles get");
-    if(error) throw error;
-    return data;
+    return await withTimeout(Backend.kb.articles.get(id), 12000, "kb_articles get");
   }
 
   async function sbArticlesUpsert(row){
     await ensureSession();
 
     try{
-      const p = SB.from("kb_articles").upsert(row, { onConflict:"id" }).select("id");
-      const { error } = await withTimeout(p, 45000, "kb_articles upsert");
-      if(error) throw error;
+      await withTimeout(Backend.kb.articles.upsert(row), 45000, "kb_articles upsert");
       return;
     }catch(e){
       const msg = (e && e.message) ? String(e.message) : String(e);
@@ -160,17 +148,13 @@ window.Views.AdminArticlesFactory = function(deps){
         await ensureSession();
       }catch(_e){}
 
-      const p2 = SB.from("kb_articles").upsert(row, { onConflict:"id" }).select("id");
-      const { error: error2 } = await withTimeout(p2, 45000, "kb_articles upsert retry");
-      if(error2) throw error2;
+      await withTimeout(Backend.kb.articles.upsert(row), 45000, "kb_articles upsert retry");
     }
   }
 
   async function sbArticlesDelete(id){
     await ensureSession();
-    const p = SB.from("kb_articles").delete().eq("id", id);
-    const { error } = await withTimeout(p, 20000, "kb_articles delete");
-    if(error) throw error;
+    return await withTimeout(Backend.kb.articles.delete(id), 20000, "kb_articles delete");
   }
 
   function buildCatDict(items){

@@ -24,13 +24,8 @@
 
     async function loadProjects(){
       try{
-        if(!window.SB) return [];
-        const r = await SB.from("projects")
-          .select("id,title")
-          .order("created_at",{ ascending:false });
-
-        if(r && r.error) throw r.error;
-        return r.data || [];
+        if(!window.ZRBackend || !ZRBackend.projects || typeof ZRBackend.projects.list !== "function") return [];
+        return await ZRBackend.projects.list();
       }catch(e){
         console.warn("[Planner] loadProjects error", e);
         return [];
@@ -582,8 +577,16 @@
       const assigneeResultsEl = document.getElementById("plCreateAssigneeResults");
 
       const people = await loadAssignablePeople();
-      const currentAssigneeId = (isEdit && task && Array.isArray(task.assignees) && task.assignees.length)
-        ? String(task.assignees[0])
+      const currentAssigneeId = (isEdit && task)
+        ? (
+            Array.isArray(task.assignees) && task.assignees.length
+              ? String(task.assignees[0])
+              : (
+                  task.assignee_id
+                    ? String(task.assignee_id)
+                    : ""
+                )
+          )
         : "";
 
       const currentAssignee = currentAssigneeId
@@ -854,8 +857,8 @@
                 if(afterOne && afterOne !== actorId){
                   const eventType = beforeOne ? "reassigned" : "assigned";
 
-                  if(typeof window.sendPlannerPush === "function"){
-                    await sendPlannerPush({
+                  if(false && typeof window.sendPlannerPush === "function"){
+                    sendPlannerPush({
                       userId: afterOne,
                       title: "ZA RAMKI",
                       body: eventType === "assigned"
@@ -863,6 +866,8 @@
                         : (payload.title ? payload.title + " — переназначена вам" : "Задача переназначена"),
                       url: "./#/planner/" + taskIdForAssignee,
                       tag: "planner-" + eventType + "-" + taskIdForAssignee
+                    }).catch(e => {
+                      console.warn("[PlannerPush] assignment send failed", e);
                     });
                   }
                 }

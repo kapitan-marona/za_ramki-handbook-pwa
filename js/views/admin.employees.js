@@ -4,7 +4,7 @@ window.Views.AdminEmployeesFactory = function(deps){
   deps = deps || {};
 
   const $ = deps.$ || function(s){ return document.querySelector(s); };
-  const SB = deps.SB;
+  const Backend = window.ZRBackend;
 
   const esc = deps.esc;
   const norm = deps.norm;
@@ -20,30 +20,23 @@ window.Views.AdminEmployeesFactory = function(deps){
   const inpStyle = deps.inpStyle;
   const setMode = deps.setMode;
 
-  if(!SB) throw new Error("Admin employees module: SB missing.");
+  if(!Backend || !Backend.allowlist) throw new Error("Admin employees module: ZRBackend.allowlist missing.");
   if(!esc || !norm || !normLower) throw new Error("Admin employees module: shared text helpers missing.");
   if(!setBusy || !setStatus || !setPanelTitle || !showViewer || !showLoading) throw new Error("Admin employees module: shared UI helpers missing.");
   if(!withTimeout || !ensureSession || !renderAdminTabs || !inpStyle || !setMode) throw new Error("Admin employees module: shared runtime helpers missing.");
 
   async function sbAllowlistList(){
-    const p = SB.from("allowlist").select("email,role,enabled").order("email", { ascending:true });
-    const { data, error } = await withTimeout(p, 12000, "allowlist select");
-    if(error) throw error;
-    return data || [];
+    return await withTimeout(Backend.allowlist.list(), 12000, "allowlist select");
   }
 
   async function sbAllowlistUpsert(row){
     await ensureSession();
-    const p = SB.from("allowlist").upsert(row, { onConflict:"email" });
-    const { error } = await withTimeout(p, 20000, "allowlist upsert");
-    if(error) throw error;
+    return await withTimeout(Backend.allowlist.upsert(row), 20000, "allowlist upsert");
   }
 
   async function sbAllowlistDelete(email){
     await ensureSession();
-    const p = SB.from("allowlist").delete().eq("email", email);
-    const { error } = await withTimeout(p, 20000, "allowlist delete");
-    if(error) throw error;
+    return await withTimeout(Backend.allowlist.delete(email), 20000, "allowlist delete");
   }
 
   function employeesHtml(items){

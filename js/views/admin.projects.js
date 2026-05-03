@@ -26,60 +26,26 @@ window.Views.AdminProjectsFactory = function(deps){
   if(!withTimeout || !ensureSession || !renderAdminTabs || !inpStyle || !taStyle || !setMode) throw new Error("Admin projects module: shared runtime helpers missing.");
 
   async function sbProjectsList(){
-    const p = Backend.db.from("projects")
-      .select("id,title,notes,created_at")
-      .order("created_at", { ascending:false });
-    const { data, error } = await withTimeout(p, 12000, "projects list");
-    if(error) throw error;
-    return data || [];
+    return await withTimeout(Backend.projects.listAdmin(), 12000, "projects list");
   }
 
   async function sbProjectsInsert(row){
     await ensureSession();
-    const p = Backend.db.from("projects").insert(row);
-    const { error } = await withTimeout(p, 20000, "projects insert");
-    if(error) throw error;
+    return await withTimeout(Backend.projects.create(row), 20000, "projects insert");
   }
 
   async function sbProjectTaskCount(projectId){
-    const p = SB.from("tasks")
-      .select("id", { count:"exact", head:true })
-      .eq("project_id", projectId)
-      .is("archived_at", null)
-      .neq("status", "canceled");
-
-    const { count, error } = await withTimeout(p, 12000, "project task count");
-
-    if(error) throw error;
-
-    return Number(count || 0);
+    return await withTimeout(Backend.projects.activeTaskCount(projectId), 12000, "project task count");
   }
 
   async function sbProjectsUpdate(id, row){
     await ensureSession();
-    const p = Backend.db.from("projects").update(row).eq("id", id);
-    const { error } = await withTimeout(p, 20000, "projects update");
-    if(error) throw error;
+    return await withTimeout(Backend.projects.update(id, row), 20000, "projects update");
   }
 
   async function sbProjectsDelete(id){
     await ensureSession();
-
-    const p = SB
-      .from("projects")
-      .delete()
-      .eq("id", id)
-      .select("id");
-
-    const { data, error } = await withTimeout(p, 20000, "projects delete");
-
-    if(error) throw error;
-
-    if(!Array.isArray(data) || data.length === 0){
-      throw new Error("Проект не удалён. Скорее всего, нет DELETE-политики в Supabase для таблицы projects.");
-    }
-
-    return true;
+    return await withTimeout(Backend.projects.delete(id), 20000, "projects delete");
   }
 
   function projectsHtml(items){

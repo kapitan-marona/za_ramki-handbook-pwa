@@ -4,7 +4,7 @@ window.Views.AdminChecklistsFactory = function(deps){
   deps = deps || {};
 
   const $ = deps.$ || function(s){ return document.querySelector(s); };
-  const SB = deps.SB;
+  const Backend = window.ZRBackend;
 
   const esc = deps.esc;
   const norm = deps.norm;
@@ -23,7 +23,7 @@ window.Views.AdminChecklistsFactory = function(deps){
   const taStyle = deps.taStyle;
   const setMode = deps.setMode;
 
-  if(!SB) throw new Error("Admin checklists module: SB missing.");
+  if(!Backend || !Backend.kb || !Backend.kb.checklists) throw new Error("Admin checklists module: ZRBackend.kb.checklists missing.");
   if(!esc || !norm || !normLower) throw new Error("Admin checklists module: shared text helpers missing.");
   if(!setBusy || !setStatus || !setPanelTitle || !showViewer || !showLoading) throw new Error("Admin checklists module: shared UI helpers missing.");
   if(!withTimeout || !ensureSession || !renderAdminTabs || !renderContentSubTabs || !goAdmin || !inpStyle || !taStyle || !setMode){
@@ -31,32 +31,18 @@ window.Views.AdminChecklistsFactory = function(deps){
   }
 
   async function loadChecklistsSource(){
-    const p = SB.from("kb_checklists")
-      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at")
-      .order("sort", { ascending:true })
-      .order("title", { ascending:true });
-
-    const { data, error } = await withTimeout(p, 12000, "kb_checklists list");
-    if(error) throw error;
-    return Array.isArray(data) ? data : [];
+    return await withTimeout(Backend.kb.checklists.listAll(), 12000, "kb_checklists list");
   }
 
   async function sbChecklistsGet(id){
-    const p = SB.from("kb_checklists")
-      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at,items")
-      .eq("id", id).single();
-    const { data, error } = await withTimeout(p, 12000, "kb_checklists get");
-    if(error) throw error;
-    return data;
+    return await withTimeout(Backend.kb.checklists.get(id), 12000, "kb_checklists get");
   }
 
   async function sbChecklistsUpsert(row){
     await ensureSession();
 
     try{
-      const p = SB.from("kb_checklists").upsert(row, { onConflict:"id" }).select("id");
-      const { error } = await withTimeout(p, 45000, "kb_checklists upsert");
-      if(error) throw error;
+      await withTimeout(Backend.kb.checklists.upsert(row), 45000, "kb_checklists upsert");
       return;
     }catch(e){
       const msg = (e && e.message) ? String(e.message) : String(e);
@@ -75,17 +61,13 @@ window.Views.AdminChecklistsFactory = function(deps){
         await ensureSession();
       }catch(_e){}
 
-      const p2 = SB.from("kb_checklists").upsert(row, { onConflict:"id" }).select("id");
-      const { error: error2 } = await withTimeout(p2, 45000, "kb_checklists upsert retry");
-      if(error2) throw error2;
+      await withTimeout(Backend.kb.checklists.upsert(row), 45000, "kb_checklists upsert retry");
     }
   }
   
   async function sbChecklistsDelete(id){
     await ensureSession();
-    const p = SB.from("kb_checklists").delete().eq("id", id);
-    const { error } = await withTimeout(p, 20000, "kb_checklists delete");
-    if(error) throw error;
+    return await withTimeout(Backend.kb.checklists.delete(id), 20000, "kb_checklists delete");
   }
   
 

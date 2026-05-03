@@ -379,24 +379,10 @@ window.PlannerDetailHelpers = (() => {
               ? await fetchTaskById(targetId, { role, today })
               : null;
 
-            try{
-              console.log("[PlannerEdit] fresh task after save", {
-                id: fresh && fresh.id,
-                assignees: fresh && fresh.assignees,
-                assignee_id: fresh && fresh.assignee_id,
-                role: fresh && fresh.role,
-                status: fresh && fresh.status
-              });
-            }catch(e){}
-
-            try{
-              if(typeof fetchAllActiveTasks === "function" && typeof renderLeft === "function"){
-                const tasks2 = await fetchAllActiveTasks();
-                renderLeft(tasks2);
-              }
-            }catch(e){
-              console.warn("[PlannerDetailHelpers] left list refresh after edit failed", e);
-            }
+            // debug log removed: keep edit save path lightweight
+            // Skip full left-list refresh after edit.
+            // Detail will re-render from fresh task below.
+            // Full task list refresh is intentionally avoided here to keep edit save path responsive.
 
             if(fresh){
               if(typeof renderDetails === "function"){

@@ -4,7 +4,7 @@ window.Views.AdminTemplatesFactory = function(deps){
   deps = deps || {};
 
   const $ = deps.$ || function(s){ return document.querySelector(s); };
-  const SB = deps.SB;
+  const Backend = window.ZRBackend;
 
   const esc = deps.esc;
   const norm = deps.norm;
@@ -29,7 +29,7 @@ window.Views.AdminTemplatesFactory = function(deps){
   const bindActionsUI = deps.bindActionsUI;
   const readActionsFromUI = deps.readActionsFromUI;
 
-  if(!SB) throw new Error("Admin templates module: SB missing.");
+  if(!Backend || !Backend.kb || !Backend.kb.templates) throw new Error("Admin templates module: ZRBackend.kb.templates missing.");
   if(!esc || !norm || !normLower) throw new Error("Admin templates module: shared text helpers missing.");
   if(!setBusy || !setStatus || !setPanelTitle || !showViewer || !showLoading) throw new Error("Admin templates module: shared UI helpers missing.");
   if(!withTimeout || !ensureSession || !renderAdminTabs || !renderContentSubTabs || !inpStyle || !setMode || !goAdmin) {
@@ -40,31 +40,18 @@ window.Views.AdminTemplatesFactory = function(deps){
   }
 
   async function sbTemplatesListAll(){
-    const p = SB.from("kb_templates")
-      .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
-      .order("sort", { ascending:true })
-      .order("title", { ascending:true });
-    const { data, error } = await withTimeout(p, 12000, "kb_templates list");
-    if(error) throw error;
-    return data || [];
+    return await withTimeout(Backend.kb.templates.listAll(), 12000, "kb_templates list");
   }
 
   async function sbTemplatesGet(id){
-    const p = SB.from("kb_templates")
-      .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
-      .eq("id", id).single();
-    const { data, error } = await withTimeout(p, 12000, "kb_templates get");
-    if(error) throw error;
-    return data;
+    return await withTimeout(Backend.kb.templates.get(id), 12000, "kb_templates get");
   }
 
   async function sbTemplatesUpsert(row){
     await ensureSession();
 
     try{
-      const p = SB.from("kb_templates").upsert(row, { onConflict:"id" }).select("id");
-      const { error } = await withTimeout(p, 45000, "kb_templates upsert");
-      if(error) throw error;
+      await withTimeout(Backend.kb.templates.upsert(row), 45000, "kb_templates upsert");
       return;
     }catch(e){
       const msg = (e && e.message) ? String(e.message) : String(e);
@@ -83,17 +70,13 @@ window.Views.AdminTemplatesFactory = function(deps){
         await ensureSession();
       }catch(_e){}
 
-      const p2 = SB.from("kb_templates").upsert(row, { onConflict:"id" }).select("id");
-      const { error: error2 } = await withTimeout(p2, 45000, "kb_templates upsert retry");
-      if(error2) throw error2;
+      await withTimeout(Backend.kb.templates.upsert(row), 45000, "kb_templates upsert retry");
     }
   }
 
   async function sbTemplatesDelete(id){
     await ensureSession();
-    const p = SB.from("kb_templates").delete().eq("id", id);
-    const { error } = await withTimeout(p, 20000, "kb_templates delete");
-    if(error) throw error;
+    return await withTimeout(Backend.kb.templates.delete(id), 20000, "kb_templates delete");
   }
 
   function genTemplateId(){ return "tpl_" + Date.now().toString(36); }
@@ -111,6 +94,7 @@ window.Views.AdminTemplatesFactory = function(deps){
     const id = row.id || "";
     const title = row.title || "";
     const format = row.format || "";
+    const link = row.link || "";
     const actions = Array.isArray(row.actions) ? row.actions : [];
     const tags = Array.isArray(row.tags) ? row.tags : [];
     const published = row.published !== false;
@@ -157,6 +141,12 @@ window.Views.AdminTemplatesFactory = function(deps){
             <div class="zr-admin-editor__field">
               <label class="zr-admin-editor__field-label" for="t_format">Формат</label>
               <input id="t_format" style="${inpStyle}" value="${esc(format)}" placeholder="например: brief / excel / text" />
+            </div>
+
+            <div class="zr-admin-editor__field zr-admin-editor__field--full">
+              <label class="zr-admin-editor__field-label" for="t_link">Ссылка / полезный инструмент</label>
+              <input id="t_link" style="${inpStyle}" value="${esc(link)}" placeholder="#/articles/... или https://..." />
+              <div class="muted zr-admin-editor__field-help">Если поле пустое, кнопка-ссылка в шаблоне не показывается.</div>
             </div>
 
             <div class="zr-admin-editor__field">
@@ -286,9 +276,7 @@ window.Views.AdminTemplatesFactory = function(deps){
             id: currentId,
             title: norm($("#t_title").value),
             format: normLower($("#t_format").value),
-            link: existing && Object.prototype.hasOwnProperty.call(existing, "link")
-              ? (existing.link || null)
-              : null,
+            link: norm($("#t_link").value) || null,
             actions: actionsVal,
             tags: parseSelectedTags(root),
             published: ($("#t_published").value || "1") === "1",

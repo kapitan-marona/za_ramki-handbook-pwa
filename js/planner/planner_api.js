@@ -129,56 +129,19 @@
   }
 
   async function fetchChecklistItems(taskId){
-    const SB = SBx();
-    const r = await SB
-      .from("task_checklist_items")
-      .select("id,task_id,pos,text,done,done_at")
-      .eq("task_id", taskId)
-      .order("pos", { ascending:true });
-    if(r && r.error) throw r.error;
-    return r.data || [];
+    return await ZRBackend.taskChecklistItems.listByTask(taskId);
   }
 
   async function setChecklistDone(itemId, done){
-    const SB = SBx();
-    const r = await SB.rpc("set_task_checklist_done", { p_item_id: itemId, p_done: !!done });
-    if(r && r.error) throw r.error;
-    return true;
+    return await ZRBackend.taskChecklistItems.setDone(itemId, done);
   }
 
   async function fetchTaskFiles(taskId){
-    const SB = SBx();
-    const r = await SB
-      .from("task_files")
-      .select("id,task_id,bucket_id,object_path,file_name,mime_type,created_at")
-      .eq("task_id", taskId)
-      .order("created_at", { ascending:true });
-    if(r && r.error) throw r.error;
-    return r.data || [];
+    return await ZRBackend.taskFiles.listByTask(taskId);
   }
 
   async function fetchComments(taskId){
-    const SB = SBx();
-    const r = await SB
-      .from("task_comments")
-      .select(`
-        id,
-        task_id,
-        author_id,
-        body,
-        created_at,
-        deleted_at,
-        author:profiles!task_comments_author_id_fkey(
-          id,
-          name,
-          email
-        )
-      `)
-      .eq("task_id", taskId)
-      .is("deleted_at", null)
-      .order("created_at", { ascending:true });
-    if(r && r.error) throw r.error;
-    return r.data || [];
+    return await ZRBackend.taskComments.listByTask(taskId);
   }
 
   async function addTaskComment(taskId, body){
@@ -200,8 +163,7 @@
 
     const actorId = String(window.App?.session?.user?.id || "");
 
-    const r = await SB.rpc("add_task_comment", { p_task_id: taskId, p_body: body });
-    if(r && r.error) throw r.error;
+    await ZRBackend.taskComments.add(taskId, body);
 
     // push moved to PlannerActions layer
 
@@ -209,33 +171,16 @@
   }
 
   async function deleteTaskComment(commentId){
-    const SB = SBx();
     if(!commentId) throw new Error("commentId required");
-
-    const r = await SB
-      .from("task_comments")
-      .update({
-        deleted_at: new Date().toISOString()
-      })
-      .eq("id", commentId)
-      .is("deleted_at", null);
-
-    if(r && r.error) throw r.error;
-    return true;
+    return await ZRBackend.taskComments.softDelete(commentId);
   }
 
   async function archiveTask(taskId){
-    const SB = SBx();
-    const r = await SB.rpc("archive_task", { p_task_id: taskId });
-    if(r && r.error) throw r.error;
-    return true;
+    return await ZRBackend.tasks.archive(taskId);
   }
 
   async function archiveDoneTasks(){
-    const SB = SBx();
-    const r = await SB.rpc("archive_done_tasks");
-    if(r && r.error) throw r.error;
-    return (r && r.data != null) ? r.data : 0;
+    return await ZRBackend.tasks.archiveDone();
   }
 
   async function createTask(payload){
@@ -255,9 +200,7 @@
       urgency: payload && payload.urgency ? String(payload.urgency) : "normal"
     };
 
-    const r = await SB.from("tasks").insert(row).select("id").single();
-    if(r && r.error) throw r.error;
-    return r.data || null;
+    return await ZRBackend.tasks.create(row);
   }
 
   async function fetchProjects(){
@@ -265,17 +208,7 @@
   }
 
   async function logTaskActivity(taskId, type, body, payload){
-    const SB = SBx();
-
-    const r = await SB.rpc("log_task_activity", {
-      p_task_id: taskId,
-      p_type: String(type || "system"),
-      p_body: body != null ? String(body) : null,
-      p_payload: payload || {}
-    });
-
-    if(r && r.error) throw r.error;
-    return true;
+    return await ZRBackend.taskActivity.log(taskId, type, body, payload);
   }
 
   async function updateTask(taskId, payload){
@@ -338,21 +271,8 @@
       let newTitle = "";
 
       if(newProjectId){
-        const projRes = await SB
-          .from("projects")
-          .select("id,title")
-          .eq("id", newProjectId)
-          .maybeSingle();
-
-        if(projRes && projRes.error && projRes.error.code !== "PGRST116") throw projRes.error;
-        if(projRes && projRes.error && projRes.error.code === "PGRST116"){
-          console.warn("[PlannerAPI] updateTask project lookup empty", {
-            taskId,
-            newProjectId,
-            error: projRes.error
-          });
-        }
-        newTitle = (projRes.data && projRes.data.title) ? String(projRes.data.title) : "";
+        const project = await ZRBackend.projects.getBasic(newProjectId);
+        newTitle = (project && project.title) ? String(project.title) : "";
       }
 
       const oldTitle = (before && before.projects && before.projects.title)
@@ -383,11 +303,7 @@
   }
 
   async function fetchTaskById(taskId, ctx){
-    const SB = SBx();
-    const r = await SB.from("tasks").select("*, projects(title)").eq("id", taskId).maybeSingle();
-    if(r && r.error) throw r.error;
-
-    const row = r.data || null;
+    const row = await ZRBackend.tasks.getById(taskId);
     if(!row) return null;
 
     const role = ctx && ctx.role ? String(ctx.role) : null;
@@ -418,15 +334,7 @@
   }
 
   async function fetchTaskActivity(taskId){
-    const SB = SBx();
-    const r = await SB
-      .from("task_activity")
-      .select("id,task_id,actor_id,type,body,payload,created_at")
-      .eq("task_id", taskId)
-      .order("created_at", { ascending:false });
-
-    if(r && r.error) throw r.error;
-    return r.data || [];
+    return await ZRBackend.taskActivity.listByTask(taskId);
   }
 
   async function fetchTasksAssigneesBatch(taskIds){
@@ -522,14 +430,9 @@
 
       let profilesMap = {};
       if(allIds.length > 0){
-        const profRes = await SB
-          .from("profiles")
-          .select("id,name,email")
-          .in("id", allIds);
+        const profiles = await ZRBackend.profiles.listByIds(allIds);
 
-        if(profRes && profRes.error) throw profRes.error;
-
-        (profRes.data || []).forEach(p => {
+        (profiles || []).forEach(p => {
           profilesMap[String(p.id)] = p;
         });
       }
@@ -553,15 +456,7 @@
   }
 
   async function fetchTaskLinks(taskId){
-    const SB = SBx();
-    const r = await SB
-      .from("task_links")
-      .select("id,task_id,link_type,ref_id,url,label,created_at")
-      .eq("task_id", taskId)
-      .order("created_at", { ascending:true });
-
-    if(r && r.error) throw r.error;
-    return r.data || [];
+    return await ZRBackend.taskLinks.listByTask(taskId);
   }
 
   async function addTaskLink(taskId, payload){
@@ -597,27 +492,12 @@
       label: label || null
     };
 
-    const r = await SB
-      .from("task_links")
-      .insert(row)
-      .select("id,task_id,link_type,ref_id,url,label,created_at")
-      .single();
-
-    if(r && r.error) throw r.error;
-    return (r && r.data) ? r.data : null;
+    return await ZRBackend.taskLinks.create(row);
   }
 
   async function removeTaskLink(linkId){
-    const SB = SBx();
     if(!linkId) throw new Error("linkId required");
-
-    const r = await SB
-      .from("task_links")
-      .delete()
-      .eq("id", linkId);
-
-    if(r && r.error) throw r.error;
-    return true;
+    return await ZRBackend.taskLinks.remove(linkId);
   }
 
   async function searchArticlesForLink(query){
@@ -638,9 +518,15 @@
     const r = await SB
       .from("task_checklist_items")
       .delete()
-      .eq("task_id", taskId);
+      .eq("task_id", taskId)
+      .select("id");
 
     if(r && r.error) throw r.error;
+
+    if(!Array.isArray(r.data) || r.data.length === 0){
+      throw new Error("Чек-лист не удалён из задачи. Возможно, нет DELETE-политики для task_checklist_items или task_id не найден.");
+    }
+
     return true;
   }
 

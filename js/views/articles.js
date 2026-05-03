@@ -885,24 +885,22 @@ Views.Articles = (() => {
     let md = "";
 
     if(meta.source === "sb"){
-      if(window.SB){
-        const { data, error } = await SB
-          .from("kb_articles")
-          .select("content_md,actions,updated_at,category,tags,roles,title")
-          .eq("id", id)
-          .single();
+      try{
+        if(window.ZRBackend && ZRBackend.kb && ZRBackend.kb.articles){
+          const data = await ZRBackend.kb.articles.getPublishedContent(id);
 
-        if(!error && data){
-          md = data.content_md || "";
-          meta.title = meta.title || data.title;
-          meta.category = meta.category || data.category;
-          meta.tags = (meta.tags && meta.tags.length) ? meta.tags : (data.tags || []);
-          meta.roles = (meta.roles && meta.roles.length) ? meta.roles : (data.roles || []);
-          meta.updatedAt = meta.updatedAt || data.updated_at;
-          meta.actions = (meta.actions && meta.actions.length) ? meta.actions : (data.actions || []);
-        } else {
-          console.error("KB open error:", error);
+          if(data){
+            md = data.content_md || "";
+            meta.title = meta.title || data.title;
+            meta.category = meta.category || data.category;
+            meta.tags = (meta.tags && meta.tags.length) ? meta.tags : (data.tags || []);
+            meta.roles = (meta.roles && meta.roles.length) ? meta.roles : (data.roles || []);
+            meta.updatedAt = meta.updatedAt || data.updated_at;
+            meta.actions = (meta.actions && meta.actions.length) ? meta.actions : (data.actions || []);
+          }
         }
+      }catch(error){
+        console.error("KB open error:", error);
       }
     }
 
@@ -1017,29 +1015,11 @@ Views.Articles = (() => {
   }
 
   async function loadSbIndex(){
-    if(!window.SB) throw new Error("Supabase not ready");
+    if(!window.ZRBackend || !ZRBackend.kb || !ZRBackend.kb.articles){
+      throw new Error("ZRBackend.kb.articles not ready");
+    }
 
-    const { data, error } = await SB
-      .from("kb_articles")
-      .select("id,title,category,tags,roles,updated_at,pinned,actions,status,has_inline_new")
-      .eq("status","published")
-      .order("pinned",{ ascending:false })
-      .order("updated_at",{ ascending:false });
-
-    if(error) throw error;
-
-    return (data || []).map(r => ({
-      id: r.id,
-      title: r.title,
-      category: r.category,
-      tags: r.tags || [],
-      roles: r.roles || [],
-      updatedAt: r.updated_at,
-      pinned: !!r.pinned,
-      actions: r.actions || [],
-      hasInlineNew: !!r.has_inline_new,
-      source: "sb"
-    }));
+    return await ZRBackend.kb.articles.listPublishedIndex();
   }
 
   async function init(){

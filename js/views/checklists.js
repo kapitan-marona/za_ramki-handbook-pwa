@@ -864,21 +864,13 @@ Views.Checklists = (() => {
   }
 
   async function loadChecklistsFromSupabase(){
-    if(!window.SB) return [];
-
-    const { data, error } = await SB
-      .from("kb_checklists")
-      .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at,items")
-      .eq("published", true)
-      .order("sort", { ascending:true })
-      .order("title", { ascending:true });
-
-    if(error){
-      console.error("[Checklists] Supabase load error:", error);
+    try{
+      if(!window.ZRBackend || !ZRBackend.kb || !ZRBackend.kb.checklists) return [];
+      return await ZRBackend.kb.checklists.listPublished();
+    }catch(error){
+      console.error("[Checklists] load error:", error);
       return [];
     }
-
-    return Array.isArray(data) ? data : [];
   }
 
   async function show(param){

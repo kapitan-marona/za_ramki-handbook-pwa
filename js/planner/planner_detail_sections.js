@@ -15,6 +15,20 @@ window.PlannerDetailSections = (() => {
     const statusLabel = deps.statusLabel || function(x){ return String(x || ""); };
     const uid = deps.uid || "";
     const isCurrentDetailTask = deps.isCurrentDetailTask || function(){ return true; };
+    
+    function abortIfTaskChanged(taskId, returnValue){
+      const expectedTaskId = String(taskId || "");
+
+      if(!expectedTaskId){
+        return false;
+      }
+
+      if(!isCurrentDetailTask(expectedTaskId)){
+        return returnValue === undefined ? true : returnValue;
+      }
+
+      return false;
+    }
 
     async function fetchTaskFiles(taskId){
       if(!window.PlannerData) throw new Error("PlannerData missing");
@@ -121,8 +135,7 @@ window.PlannerDetailSections = (() => {
         const items = await PlannerChecklistRuntime.fetchChecklistItems(task.id);
         const safeItems = Array.isArray(items) ? items : [];
         
-        // 🔒 ASYNC GUARD (task switched)
-        if (!isCurrentDetailTask(task.id)) {
+        if(abortIfTaskChanged(task.id)){
           return;
         }
         
@@ -194,8 +207,7 @@ window.PlannerDetailSections = (() => {
         isReadOnly: !!isReadOnly
       });
 
-      // 🔒 ASYNC GUARD (task switched)
-      if (!isCurrentDetailTask(task.id)) {
+      if(abortIfTaskChanged(task.id)){
         return;
       }
 
@@ -219,19 +231,34 @@ window.PlannerDetailSections = (() => {
 
     async function loadDetailSections(task, checklistReadOnly){
       const expectedTaskId = String(task && task.id || "");
-      if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
+      if(abortIfTaskChanged(expectedTaskId, false)){
+        return false;
+      }
 
       await loadChecklist(task, checklistReadOnly);
-      if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
+      if(abortIfTaskChanged(expectedTaskId, false)){
+        return false;
+      }
 
       await loadDocs(task);
-      if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
+      if(abortIfTaskChanged(expectedTaskId, false)){
+        return false;
+      }
 
       await loadComments(task, checklistReadOnly);
-      if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
+      if(abortIfTaskChanged(expectedTaskId, false)){
+        return false;
+      }
 
       await loadActivity(task);
-      if(expectedTaskId && !isCurrentDetailTask(expectedTaskId)) return false;
+
+      if(abortIfTaskChanged(expectedTaskId, false)){
+        return false;
+      }
 
       return true;
     }

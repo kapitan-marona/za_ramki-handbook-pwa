@@ -154,7 +154,110 @@
         }
 
         return true;
+      },
+
+      async listTasks(projectId){
+        if(!projectId) return [];
+
+        const r = await requireSB()
+          .from("tasks")
+          .select("id,title,body,status,urgency,start_date,due_date,project_id,archived_at,created_at,updated_at")
+          .eq("project_id", projectId)
+          .is("archived_at", null)
+          .order("created_at", { ascending:false });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
       }
+    },
+    
+    projectLinks: {
+
+      async listByProject(projectId){
+        if(!projectId) return [];
+
+        const r = await requireSB()
+          .from("project_links")
+          .select("*")
+          .eq("project_id", projectId)
+          .order("created_at", { ascending:true });
+
+        if(r.error) throw r.error;
+        return r.data || [];
+      },
+
+      async create(payload){
+        const r = await requireSB()
+          .from("project_links")
+          .insert(payload)
+          .select()
+          .single();
+
+        if(r.error) throw r.error;
+        return r.data;
+      },
+
+      async remove(id){
+        const r = await requireSB()
+          .from("project_links")
+          .delete()
+          .eq("id", id);
+
+        if(r.error) throw r.error;
+        return true;
+      }
+    },
+
+    projectComments: {
+
+      async listByProject(projectId){
+        if(!projectId) return [];
+
+        const r = await requireSB()
+          .from("project_comments")
+          .select(`
+            id,
+            body,
+            created_at,
+            author_id,
+            author:profiles!project_comments_author_id_fkey(
+              id,
+              name,
+              email
+            )
+          `)
+          .eq("project_id", projectId)
+          .is("deleted_at", null)
+          .order("created_at", { ascending:true });
+
+        if(r.error) throw r.error;
+        return r.data || [];
+      },
+
+      async create(payload){
+        const r = await requireSB()
+          .from("project_comments")
+          .insert(payload)
+          .select()
+          .single();
+
+        if(r.error) throw r.error;
+        return r.data;
+      },
+
+      async remove(commentId){
+
+        const r = await requireSB()
+          .from("project_comments")
+          .update({
+            deleted_at: new Date().toISOString()
+          })
+          .eq("id", commentId);
+
+        if(r.error) throw r.error;
+
+        return true;
+      },  
     },
 
     tasks: {
@@ -224,6 +327,79 @@
       }
     },
 
+    taskAssignees: {
+      async listByTask(taskId){
+        const r = await requireSB()
+          .from("task_assignees")
+          .select("user_id,created_at")
+          .eq("task_id", taskId)
+          .order("created_at", { ascending:true });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
+      },
+
+      async listIdsByTask(taskId){
+        const rows = await this.listByTask(taskId);
+
+        return Array.isArray(rows)
+          ? rows.map(x => String(x.user_id)).filter(Boolean)
+          : [];
+      },
+
+      async listByTasks(taskIds){
+        if(!Array.isArray(taskIds) || taskIds.length === 0) return {};
+
+        const r = await requireSB()
+          .from("task_assignees")
+          .select("task_id,user_id")
+          .in("task_id", taskIds);
+
+        if(r && r.error) throw r.error;
+
+        const map = {};
+        (r.data || []).forEach(row => {
+          const tid = String(row.task_id);
+          const uid = String(row.user_id);
+
+          if(!map[tid]) map[tid] = [];
+          map[tid].push(uid);
+        });
+
+        return map;
+      },
+
+      async replaceForTask(taskId, userIds){
+        if(!taskId) throw new Error("taskId required");
+
+        const ids = Array.isArray(userIds)
+          ? Array.from(new Set(userIds.map(x => String(x).trim()).filter(Boolean)))
+          : [];
+
+        const del = await requireSB()
+          .from("task_assignees")
+          .delete()
+          .eq("task_id", taskId);
+
+        if(del && del.error) throw del.error;
+
+        if(ids.length > 0){
+          const rows = ids.map(uid => ({
+            task_id: taskId,
+            user_id: uid
+          }));
+
+          const ins = await requireSB()
+            .from("task_assignees")
+            .insert(rows);
+
+          if(ins && ins.error) throw ins.error;
+        }
+
+        return true;
+      }
+    },
+
     taskChecklistItems: {
       async listByTask(taskId){
         const r = await requireSB()
@@ -244,6 +420,22 @@
           });
 
         if(r && r.error) throw r.error;
+        return true;
+      },
+
+      async clearByTask(taskId){
+        const r = await requireSB()
+          .from("task_checklist_items")
+          .delete()
+          .eq("task_id", taskId)
+          .select("id");
+
+        if(r && r.error) throw r.error;
+
+        if(!Array.isArray(r.data) || r.data.length === 0){
+          throw new Error("Чек-лист не удалён из задачи. Возможно, нет DELETE-политики для task_checklist_items или task_id не найден.");
+        }
+
         return true;
       }
     },

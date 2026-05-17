@@ -64,13 +64,33 @@
             `;
           }).join("")}
         </div>`;
+        
+    const inputId = ctx.inputId || "plCommentInput";
+    const sendBtnId = ctx.sendBtnId || "plCommentSend";
+    const msgId = ctx.msgId || "plCommentMsg";
 
     const compose = ctx.isReadOnly ? `` : `
       <div class="zr-planner-comment-compose">
-        <textarea id="plCommentInput" rows="3" class="pl-control pl-textarea" placeholder="Напишите комментарий…"></textarea>
+        <textarea
+          id="${esc(inputId)}"
+          rows="3"
+          class="pl-control pl-textarea"
+          placeholder="Напишите комментарий…"
+        ></textarea>
+
         <div class="zr-planner-comment-footer">
-          <button class="btn btn-sm pl-btn-primary" id="plCommentSend" type="button">Отправить</button>
-          <span class="zr-planner-muted" id="plCommentMsg"></span>
+          <button
+            class="btn btn-sm pl-btn-primary"
+            id="${esc(sendBtnId)}"
+            type="button"
+          >
+            Отправить
+          </button>
+
+          <span
+            class="zr-planner-muted"
+            id="${esc(msgId)}"
+          ></span>
         </div>
       </div>
     `;
@@ -80,9 +100,9 @@
       ${compose}
     `;
 
-    const send = document.getElementById("plCommentSend");
-    const inp = document.getElementById("plCommentInput");
-    const msg = document.getElementById("plCommentMsg");
+    const send = document.getElementById(sendBtnId);
+    const inp = document.getElementById(inputId);
+    const msg = document.getElementById(msgId);
 
     host.querySelectorAll(".pl-comment-delete").forEach((btn) => {
       btn.onclick = async () => {
@@ -97,7 +117,11 @@
             throw new Error("deleteTaskComment missing");
           }
 
-          await PlannerAPI.deleteTaskComment(commentId);
+          if(typeof ctx.deleteComment === "function"){
+            await ctx.deleteComment(commentId);
+          }else{
+            await PlannerAPI.deleteTaskComment(commentId);
+          }
 
           const row = btn.closest(".zr-planner-comment-row");
           if(row){
@@ -141,8 +165,16 @@
             console.warn("[Planner] auto-progress error", e);
           }
 
+          const createComment = (
+            typeof ctx.createComment === "function"
+              ? ctx.createComment
+              : async function(taskId, body){
+                  return await window.PlannerAPI.addTaskComment(taskId, body);
+                }
+          );
+
           const r = await (
-            window.PlannerAPI.addTaskComment(task.id, text)
+            createComment(task.id, text)
               .then(() => ({ error: null }))
               .catch(error => ({ error }))
           );
@@ -155,7 +187,7 @@
             if(
               targetUserId &&
               targetUserId !== actorId &&
-              typeof window.sendPlannerPush === "function"
+              false && typeof window.sendPlannerPush === "function"
             ){
               window.sendPlannerPush({
                 userId: targetUserId,

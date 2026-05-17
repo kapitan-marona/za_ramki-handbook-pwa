@@ -41,7 +41,7 @@ window.Views.AdminEmployeesFactory = function(deps){
 
   function employeesHtml(items){
     const rows = (items || []).map(it => `
-      <div class="item" style="display:grid; grid-template-columns: 1fr 110px 86px 156px; gap:8px; align-items:center; padding:10px 12px;">
+      <div class="item" style="display:grid; grid-template-columns: minmax(0,1fr); gap:8px; align-items:center; padding:10px 12px;">
         <div class="mono" style="overflow:hidden; text-overflow:ellipsis;">${esc(it.email)}</div>
 
         <select data-al-role="${esc(it.email)}" style="${inpStyle}">
@@ -54,7 +54,7 @@ window.Views.AdminEmployeesFactory = function(deps){
           <span>enabled</span>
         </label>
 
-        <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <div style="display:flex; gap:8px; justify-content:flex-start; flex-wrap:wrap;">
           <button class="btn btn-sm" data-al-save="${esc(it.email)}">Сохранить</button>
           <button class="btn btn-sm" data-al-del="${esc(it.email)}">Удалить</button>
         </div>

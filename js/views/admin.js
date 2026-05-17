@@ -349,7 +349,7 @@ Views.Admin = (() => {
   function renderTagsPalette(selected){
     const sel = new Set(selected || []);
     return `
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <div class="zr-actions">
         ${TAG_DICT.map(t => `
           <button type="button"
             class="btn btn-sm ${sel.has(t) ? "is-active" : ""}"
@@ -438,7 +438,7 @@ Views.Admin = (() => {
 
           </div>
 
-          <div style="display:flex; justify-content:flex-end;">
+          <div class="zr-actions" style="justify-content:flex-end;">
             <button class="btn btn-sm btn--danger" data-act-del="${i}">Удалить</button>
           </div>
         </div>
@@ -446,7 +446,7 @@ Views.Admin = (() => {
     }).join("");
 
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 10px 0;">
+      <div class="zr-actions-between" style="margin:0 0 10px 0;">
         <div class="muted">Кнопки действий (Actions)</div>
         <button class="btn btn-sm btn--primary" id="act_add">+ Добавить</button>
       </div>
@@ -581,21 +581,21 @@ Views.Admin = (() => {
     showViewer(`
       <div class="zr-admin-home">
         <div class="item zr-admin-home__hero">
-          <div class="zr-admin-home__hero-title">Админка</div>
-          <div class="zr-admin-home__hero-sub">
+          <div class="zr-admin-home__hero-title zr-text-title">Админка</div>
+          <div class="zr-admin-home__hero-sub zr-text-subtitle">
             Центральная точка управления системой. Выбери раздел для настройки сотрудников, проектов и внутреннего контента.
           </div>
         </div>
 
         <div class="item zr-admin-home__card zr-admin-home__card--content">
-          <div class="zr-admin-home__card-title">Разделы админки</div>
-          <div class="zr-admin-home__card-sub">
+          <div class="zr-admin-home__card-title zr-text-section">Разделы админки</div>
+          <div class="zr-admin-home__card-sub zr-text-muted">
             Быстрый переход к основным зонам управления системы.
           </div>
 
           <div class="zr-admin-home__content-list">
             <button class="btn btn-sm" type="button" data-admin-home-go="employees">Сотрудники</button>
-            <div class="zr-admin-home__content-note">
+            <div class="zr-admin-home__content-note zr-text-muted">
               Управление доступом, allowlist и составом команды.
             </div>
 

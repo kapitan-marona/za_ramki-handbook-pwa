@@ -624,15 +624,9 @@ window.PlannerDetailHelpers = (() => {
         await PlannerActions.setStatus(liveTask.id, s);
         const t2 = Object.assign({}, liveTask, { status: s });
 
-        // soft refresh left list so status changes appear immediately there too
-        try{
-          if(typeof liveFetchAllActiveTasks === "function" && typeof liveRenderLeft === "function"){
-            const tasks2 = await liveFetchAllActiveTasks();
-            liveRenderLeft(tasks2);
-          }
-        }catch(e){
-          console.warn("[PlannerDetailHelpers] left list refresh after status failed", e);
-        }
+        // Skip full left-list refresh after status change.
+        // Detail/header update below keeps the current task responsive.
+        // Full task list refresh is intentionally avoided here to reduce save latency.
 
         try{
           const updated = t2;
@@ -646,7 +640,7 @@ window.PlannerDetailHelpers = (() => {
             beforeStatus !== String(updated.status || "") &&
             targetUserId &&
             targetUserId !== actorId &&
-            typeof window.sendPlannerPush === "function"
+            false && typeof window.sendPlannerPush === "function"
           ){
             sendPlannerPush({
               userId: targetUserId,
@@ -736,7 +730,7 @@ window.PlannerDetailHelpers = (() => {
         }).join("")}
 
         <button class="btn btn-sm btn--danger" id="plArchiveTask">
-          Перенести задачу в архив
+          Перенести в архив
         </button>
       `;
     }
@@ -942,7 +936,7 @@ window.PlannerDetailHelpers = (() => {
             <div class="zr-section-head">
               <div class="zr-section-title">Комментарии</div>
             </div>
-            <div id="plComments"></div>
+            <div id="plComments" class="zr-comments-surface"></div>
           </div>
 
           <div class="zr-card zr-card--subtle zr-planner-section">

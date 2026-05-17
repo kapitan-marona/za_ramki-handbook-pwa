@@ -338,38 +338,11 @@
   }
 
   async function fetchTasksAssigneesBatch(taskIds){
-    const SB = SBx();
-    if(!Array.isArray(taskIds) || taskIds.length === 0) return {};
-
-    const r = await SB
-      .from("task_assignees")
-      .select("task_id,user_id")
-      .in("task_id", taskIds);
-
-    if(r && r.error) throw r.error;
-
-    const map = {};
-    (r.data || []).forEach(row => {
-      const tid = String(row.task_id);
-      const uid = String(row.user_id);
-
-      if(!map[tid]) map[tid] = [];
-      map[tid].push(uid);
-    });
-
-    return map;
+    return await ZRBackend.taskAssignees.listByTasks(taskIds);
   }
 
   async function fetchTaskAssignees(taskId){
-    const SB = SBx();
-    const r = await SB
-      .from("task_assignees")
-      .select("user_id,created_at")
-      .eq("task_id", taskId)
-      .order("created_at", { ascending:true });
-
-    if(r && r.error) throw r.error;
-    return r.data || [];
+    return await ZRBackend.taskAssignees.listByTask(taskId);
   }
 
   async function fetchAssignablePeople(){
@@ -384,16 +357,7 @@
       ? Array.from(new Set(userIds.map(x => String(x).trim()).filter(Boolean)))
       : [];
 
-    const beforeRes = await SB
-      .from("task_assignees")
-      .select("user_id")
-      .eq("task_id", taskId);
-
-    if(beforeRes && beforeRes.error) throw beforeRes.error;
-
-    const beforeIds = Array.isArray(beforeRes.data)
-      ? beforeRes.data.map(x => String(x.user_id)).filter(Boolean)
-      : [];
+    const beforeIds = await ZRBackend.taskAssignees.listIdsByTask(taskId);
 
     const beforeKey = beforeIds.slice().sort().join("|");
     const nextKey = ids.slice().sort().join("|");
@@ -402,25 +366,7 @@
       return true;
     }
 
-    const del = await SB
-      .from("task_assignees")
-      .delete()
-      .eq("task_id", taskId);
-
-    if(del && del.error) throw del.error;
-
-    if(ids.length > 0){
-      const rows = ids.map(uid => ({
-        task_id: taskId,
-        user_id: uid
-      }));
-
-      const ins = await SB
-        .from("task_assignees")
-        .insert(rows);
-
-      if(ins && ins.error) throw ins.error;
-    }
+    await ZRBackend.taskAssignees.replaceForTask(taskId, ids);
 
     const beforeOne = beforeIds.length ? String(beforeIds[0]) : null;
     const afterOne = ids.length ? String(ids[0]) : null;
@@ -513,21 +459,7 @@
   }
   
   async function clearTaskChecklist(taskId){
-    const SB = SBx();
-
-    const r = await SB
-      .from("task_checklist_items")
-      .delete()
-      .eq("task_id", taskId)
-      .select("id");
-
-    if(r && r.error) throw r.error;
-
-    if(!Array.isArray(r.data) || r.data.length === 0){
-      throw new Error("Чек-лист не удалён из задачи. Возможно, нет DELETE-политики для task_checklist_items или task_id не найден.");
-    }
-
-    return true;
+    return await ZRBackend.taskChecklistItems.clearByTask(taskId);
   }
 
   window.PlannerAPI = {

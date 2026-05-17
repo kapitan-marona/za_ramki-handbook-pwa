@@ -340,7 +340,9 @@ window.initAuth = async function(){
     q.value = "";
     q.placeholder = (section === "planner")
       ? "Поиск в Planner пока недоступен"
-      : "Поиск недоступен в этом разделе";
+      : (section === "projects")
+        ? "Поиск в проектах пока недоступен"
+        : "Поиск недоступен в этом разделе";
 
     if(status) status.textContent = "";
     if(pill) pill.style.display = "none";
@@ -416,6 +418,7 @@ async function render(){
     var simpleViewMap = {
       login: async function(){ await Views.Login.show(); },
       planner: async function(){ await Views.Planner.show(); },
+      projects: async function(){ await Views.Projects.show(param); },
       articles: async function(){ await showSearchView(Views.Articles, param, searchValue); },
       templates: async function(){ await showSearchView(Views.Templates, param, searchValue); },
       checklists: async function(){ await showSearchView(Views.Checklists, param, searchValue); }

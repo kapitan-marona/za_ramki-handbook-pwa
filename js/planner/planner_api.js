@@ -120,7 +120,10 @@
     if(beforeRes && beforeRes.error) throw beforeRes.error;
     const before = beforeRes.data || null;
 
-    const r = await SB.rpc("set_task_status", { p_new_status: newStatus, p_task_id: taskId });
+    const r = await ZRBackend.db.rpc("set_task_status", {
+      p_new_status: newStatus,
+      p_task_id: taskId
+    });
     if(r && r.error) throw r.error;
 
     // push moved to PlannerActions layer
@@ -145,24 +148,6 @@
   }
 
   async function addTaskComment(taskId, body){
-    const SB = SBx();
-
-    const taskRes = await SB
-      .from("tasks")
-      .select("id,title")
-      .eq("id", taskId)
-      .single();
-
-    if(taskRes && taskRes.error) throw taskRes.error;
-    const task = taskRes.data || null;
-
-    const assigneesBefore = await fetchTaskAssignees(taskId);
-    const targetUserId = Array.isArray(assigneesBefore) && assigneesBefore.length
-      ? String(assigneesBefore[0].user_id || "")
-      : "";
-
-    const actorId = String(window.App?.session?.user?.id || "");
-
     await ZRBackend.taskComments.add(taskId, body);
 
     // push moved to PlannerActions layer
@@ -245,24 +230,7 @@
       urgency: payload && payload.urgency ? String(payload.urgency) : "normal"
     };
 
-    const r = await SB
-      .from("tasks")
-      .update(row)
-      .eq("id", taskId)
-      .select("id")
-      .maybeSingle();
-
-    if(r && r.error && r.error.code !== "PGRST116") throw r.error;
-    if(r && r.error && r.error.code === "PGRST116"){
-      console.warn("[PlannerAPI] updateTask returning read empty, fallback to original taskId", {
-        taskId,
-        error: r.error
-      });
-    }
-
-    const updatedRow = (r && r.data && r.data.id)
-      ? r.data
-      : { id: taskId };
+    const updatedRow = await ZRBackend.tasks.update(taskId, row);
 
     const oldProjectId = before && before.project_id ? String(before.project_id) : "";
     const newProjectId = row.project_id ? String(row.project_id) : "";
@@ -350,7 +318,6 @@
   }
 
   async function setTaskAssignees(taskId, userIds){
-    const SB = SBx();
     if(!taskId) throw new Error("taskId required");
 
     const ids = Array.isArray(userIds)

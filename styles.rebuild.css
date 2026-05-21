@@ -338,9 +338,9 @@ body{
   padding:8px 14px;
 
   border-radius:12px;
-  border:1px solid var(--border);
+  border:1px solid rgba(255,243,234,.06);
 
-  background: var(--card);
+  background: rgba(255,243,234,.035);
   color: var(--text);
 
   font-size:13px;
@@ -1261,11 +1261,10 @@ select{
 
 .item:hover,
 .zr-list-row:hover{
-  background: rgba(48,46,43,.92);
-  border-color: rgba(255,243,234,.04);
+  background: rgba(48,46,43,.90);
+  border-color: rgba(255,243,234,.03);
   box-shadow:
-    0 1px 0 rgba(255,243,234,.018),
-    0 12px 28px rgba(0,0,0,.22);
+    0 1px 0 rgba(255,243,234,.012);
 }
 
 .item:focus,
@@ -1828,7 +1827,7 @@ select{
 .zr-planner-dialog:hover{
   background:var(--card);
   border:1px solid var(--border);
-  box-shadow:0 18px 40px rgba(0,0,0,.32);
+  box-shadow:0 14px 32px rgba(0,0,0,.28);
   transform:none;
 }
 
@@ -2030,6 +2029,27 @@ select{
 .zr-planner-inline-cl-row:hover{
   background:rgba(255,243,234,.04);
   border-color:rgba(255,243,234,.08);
+}
+
+.pl-archived #plChecklist .zr-planner-checklist-row:hover,
+.pl-archived #plChecklist .zr-planner-inline-cl-row:hover{
+  background:rgba(255,243,234,.03);
+  border-color:transparent;
+  transform:none;
+  box-shadow:none;
+}
+
+.pl-archived #plChecklist .zr-planner-inline-cl-row,
+.pl-archived #plChecklist .zr-planner-checklist-row{
+  transition:none;
+}
+
+.pl-archived #plChecklist input[type="checkbox"]{
+  cursor:default;
+}
+
+.pl-archived #plChecklist .zr-planner-inline-cl-toggle{
+  cursor:default;
 }
 
 .zr-planner-checklist-row:has(input[type="checkbox"]:checked){
@@ -2275,6 +2295,7 @@ select{
 }
 
 /* Comments: row ownership */
+/*
 #plComments .zr-planner-comment-meta .zr-planner-comment-author{
   display:none;
 }
@@ -2376,6 +2397,7 @@ select{
   padding:12px 14px;
   border-radius:14px;
 }
+*/
 
 /* Documents: narrow parity baseline */
 .zr-planner-docs-list{
@@ -2483,6 +2505,27 @@ select:disabled{
 .pl-archived #plChecklist input{
   opacity:.55;
   pointer-events:none;
+}
+
+.pl-archived #plComments .pl-comment-delete{
+  display:none;
+}
+
+.pl-archived #plComments .zr-planner-comment-compose{
+  opacity:.5;
+}
+
+.pl-archived #plComments .zr-planner-comment-compose textarea{
+  cursor:default;
+}
+
+.pl-archived #plComments .zr-planner-comment-row{
+  transition:none;
+}
+
+.pl-archived #plComments .zr-planner-comment-row:hover{
+  transform:none;
+  box-shadow:none;
 }
 
 .pl-archived #plBack,
@@ -3030,14 +3073,19 @@ select:disabled{
 
 #zrProjectLinks{
   display:flex;
-  flex-direction:column;
+  flex-wrap:wrap;
   align-items:flex-start;
   gap:10px;
 }
 
 .zr-project-link-chip-wrap{
   position:relative;
+
+  display:flex;
+  flex:0 0 auto;
+
   min-width:0;
+  max-width:100%;
 }
 
 .zr-project-link-chip{

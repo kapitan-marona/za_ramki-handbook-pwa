@@ -6,29 +6,53 @@
 (function(){
   "use strict";
 
-  function requireSB(){
-    if(!window.SB){
+  function getProvider(){
+    return window.SB || null;
+  }
+
+  function requireProvider(){
+    const provider = getProvider();
+
+    if(!provider){
       throw new Error("Supabase client is not ready");
     }
-    return window.SB;
+
+    return provider;
+  }
+
+  /* temporary compatibility layer
+     Phase: provider quarantine
+  */
+  function requireSB(){
+    return requireProvider();
   }
 
   window.ZRBackend = {
     mode: "supabase",
 
+    /* transitional provider accessor
+       future-safe provider boundary
+    */
+    raw(){
+      return requireProvider();
+    },
+
+    /* legacy compatibility alias
+       remove later after full quarantine
+    */
     rawSupabase(){
-      return requireSB();
+      return this.raw();
     },
 
     auth: {
       async getSession(){
         try{
-          return await requireSB().auth.getSession();
+          return await requireProvider().auth.getSession();
         }catch(e){
           var msg = String((e && e.message) || e || "");
           if(msg.indexOf("Invalid Refresh Token") !== -1 || msg.indexOf("Refresh Token Not Found") !== -1){
             try{
-              await requireSB().auth.signOut({ scope: "local" });
+              await requireProvider().auth.signOut({ scope: "local" });
             }catch(_e){}
             return { data: { session: null }, error: null };
           }
@@ -37,47 +61,47 @@
       },
 
       refreshSession(){
-        return requireSB().auth.refreshSession();
+        return requireProvider().auth.refreshSession();
       },
 
       onAuthStateChange(cb){
-        return requireSB().auth.onAuthStateChange(cb);
+        return requireProvider().auth.onAuthStateChange(cb);
       },
 
       signOut(options){
-        return requireSB().auth.signOut(options);
+        return requireProvider().auth.signOut(options);
       },
 
       signInWithPassword(payload){
-        return requireSB().auth.signInWithPassword(payload);
+        return requireProvider().auth.signInWithPassword(payload);
       },
 
       signInWithOtp(payload){
-        return requireSB().auth.signInWithOtp(payload);
+        return requireProvider().auth.signInWithOtp(payload);
       },
 
       updateUser(payload){
-        return requireSB().auth.updateUser(payload);
+        return requireProvider().auth.updateUser(payload);
       },
 
       resetPasswordForEmail(email, options){
-        return requireSB().auth.resetPasswordForEmail(email, options);
+        return requireProvider().auth.resetPasswordForEmail(email, options);
       }
     },
 
     db: {
       from(table){
-        return requireSB().from(table);
+        return requireProvider().from(table);
       },
 
       rpc(name, params){
-        return requireSB().rpc(name, params);
+        return requireProvider().rpc(name, params);
       }
     },
 
     projects: {
       async list(){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("projects")
           .select("id,title")
           .order("created_at", { ascending:false });
@@ -89,7 +113,7 @@
       async getBasic(id){
         if(!id) return null;
 
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("projects")
           .select("id,title")
           .eq("id", id)
@@ -100,7 +124,7 @@
       },
 
       async listAdmin(){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("projects")
           .select("id,title,notes,created_at")
           .order("created_at", { ascending:false });
@@ -110,7 +134,7 @@
       },
 
       async create(row){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("projects")
           .insert(row);
 
@@ -119,7 +143,7 @@
       },
 
       async activeTaskCount(projectId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("tasks")
           .select("id", { count:"exact", head:true })
           .eq("project_id", projectId)
@@ -131,7 +155,7 @@
       },
 
       async update(id, row){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("projects")
           .update(row)
           .eq("id", id);
@@ -141,7 +165,7 @@
       },
 
       async delete(id){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("projects")
           .delete()
           .eq("id", id)
@@ -159,7 +183,7 @@
       async listTasks(projectId){
         if(!projectId) return [];
 
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("tasks")
           .select("id,title,body,status,urgency,start_date,due_date,project_id,archived_at,created_at,updated_at")
           .eq("project_id", projectId)
@@ -176,7 +200,7 @@
       async listByProject(projectId){
         if(!projectId) return [];
 
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("project_links")
           .select("*")
           .eq("project_id", projectId)
@@ -187,7 +211,7 @@
       },
 
       async create(payload){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("project_links")
           .insert(payload)
           .select()
@@ -198,7 +222,7 @@
       },
 
       async remove(id){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("project_links")
           .delete()
           .eq("id", id);
@@ -213,7 +237,7 @@
       async listByProject(projectId){
         if(!projectId) return [];
 
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("project_comments")
           .select(`
             id,
@@ -235,7 +259,7 @@
       },
 
       async create(payload){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("project_comments")
           .insert(payload)
           .select()
@@ -247,7 +271,7 @@
 
       async remove(commentId){
 
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("project_comments")
           .update({
             deleted_at: new Date().toISOString()
@@ -262,7 +286,7 @@
 
     tasks: {
       async create(row){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("tasks")
           .insert(row)
           .select("id")
@@ -271,11 +295,28 @@
         if(r && r.error) throw r.error;
         return r.data || null;
       },
+      
+      async update(id, row){
+        const r = await window.ZRBackend.db
+          .from("tasks")
+          .update(row)
+          .eq("id", id)
+          .select("id")
+          .maybeSingle();
+
+        if(r && r.error && r.error.code !== "PGRST116"){
+          throw r.error;
+        }
+
+        return (r && r.data)
+          ? r.data
+          : { id };
+      },
 
       async getById(id){
         if(!id) return null;
 
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("tasks")
           .select("*, projects(title)")
           .eq("id", id)
@@ -286,7 +327,7 @@
       },
 
       async archive(taskId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .rpc("archive_task", { p_task_id: taskId });
 
         if(r && r.error) throw r.error;
@@ -294,7 +335,7 @@
       },
 
       async archiveDone(){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .rpc("archive_done_tasks");
 
         if(r && r.error) throw r.error;
@@ -304,7 +345,7 @@
 
     taskActivity: {
       async listByTask(taskId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_activity")
           .select("id,task_id,actor_id,type,body,payload,created_at")
           .eq("task_id", taskId)
@@ -315,7 +356,7 @@
       },
 
       async log(taskId, type, body, payload){
-        const r = await requireSB().rpc("log_task_activity", {
+        const r = await window.ZRBackend.db.rpc("log_task_activity", {
           p_task_id: taskId,
           p_type: String(type || "system"),
           p_body: body != null ? String(body) : null,
@@ -329,7 +370,7 @@
 
     taskAssignees: {
       async listByTask(taskId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_assignees")
           .select("user_id,created_at")
           .eq("task_id", taskId)
@@ -350,7 +391,7 @@
       async listByTasks(taskIds){
         if(!Array.isArray(taskIds) || taskIds.length === 0) return {};
 
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_assignees")
           .select("task_id,user_id")
           .in("task_id", taskIds);
@@ -376,7 +417,7 @@
           ? Array.from(new Set(userIds.map(x => String(x).trim()).filter(Boolean)))
           : [];
 
-        const del = await requireSB()
+        const del = await window.ZRBackend.db
           .from("task_assignees")
           .delete()
           .eq("task_id", taskId);
@@ -389,7 +430,7 @@
             user_id: uid
           }));
 
-          const ins = await requireSB()
+          const ins = await window.ZRBackend.db
             .from("task_assignees")
             .insert(rows);
 
@@ -402,7 +443,7 @@
 
     taskChecklistItems: {
       async listByTask(taskId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_checklist_items")
           .select("id,task_id,pos,text,done,done_at")
           .eq("task_id", taskId)
@@ -413,7 +454,7 @@
       },
 
       async setDone(itemId, done){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .rpc("set_task_checklist_done", {
             p_item_id: itemId,
             p_done: !!done
@@ -424,7 +465,7 @@
       },
 
       async clearByTask(taskId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_checklist_items")
           .delete()
           .eq("task_id", taskId)
@@ -442,7 +483,7 @@
 
     taskComments: {
       async listByTask(taskId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_comments")
           .select(`
             id,
@@ -466,7 +507,7 @@
       },
 
       async softDelete(commentId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_comments")
           .update({
             deleted_at: new Date().toISOString()
@@ -479,7 +520,7 @@
       },
 
       async add(taskId, body){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .rpc("add_task_comment", {
             p_task_id: taskId,
             p_body: body
@@ -492,7 +533,7 @@
 
     taskFiles: {
       async listByTask(taskId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_files")
           .select("id,task_id,bucket_id,object_path,file_name,mime_type,created_at")
           .eq("task_id", taskId)
@@ -505,7 +546,7 @@
 
     taskLinks: {
       async listByTask(taskId){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_links")
           .select("id,task_id,link_type,ref_id,url,label,created_at")
           .eq("task_id", taskId)
@@ -516,7 +557,7 @@
       },
 
       async create(row){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_links")
           .insert(row)
           .select("id,task_id,link_type,ref_id,url,label,created_at")
@@ -527,7 +568,7 @@
       },
 
       async remove(id){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("task_links")
           .delete()
           .eq("id", id);
@@ -539,7 +580,7 @@
 
     allowlist: {
       async list(){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("allowlist")
           .select("email,role,enabled")
           .order("email", { ascending:true });
@@ -549,7 +590,7 @@
       },
 
       async upsert(row){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("allowlist")
           .upsert(row, { onConflict:"email" });
 
@@ -558,7 +599,7 @@
       },
 
       async delete(email){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("allowlist")
           .delete()
           .eq("email", email);
@@ -570,7 +611,7 @@
 
     profiles: {
       async listBasic(){
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("profiles")
           .select("id,email,name,role,is_admin")
           .order("name", { ascending:true })
@@ -584,7 +625,7 @@
         const cleanIds = (ids || []).filter(Boolean).map(String);
         if(cleanIds.length === 0) return [];
 
-        const r = await requireSB()
+        const r = await window.ZRBackend.db
           .from("profiles")
           .select("id,name,email")
           .in("id", cleanIds);
@@ -597,7 +638,7 @@
     kb: {
       articles: {
         async listAll(){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_articles")
             .select("id,title,category,type,tags,roles,status,updated_at,excerpt,has_inline_new")
             .order("updated_at", { ascending:false });
@@ -607,7 +648,7 @@
         },
 
         async get(id){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_articles")
             .select("id,title,category,type,tags,roles,status,updated_at,excerpt,content_md,actions,has_inline_new")
             .eq("id", id)
@@ -618,7 +659,7 @@
         },
 
         async listPublishedIndex(){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_articles")
             .select("id,title,category,tags,roles,updated_at,pinned,actions,status,has_inline_new")
             .eq("status","published")
@@ -642,7 +683,7 @@
         },
 
         async getPublishedContent(id){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_articles")
             .select("content_md,actions,updated_at,category,tags,roles,title")
             .eq("id", id)
@@ -653,7 +694,7 @@
         },
 
         async upsert(row){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_articles")
             .upsert(row, { onConflict:"id" })
             .select("id");
@@ -663,7 +704,7 @@
         },
 
         async delete(id){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_articles")
             .delete()
             .eq("id", id)
@@ -681,7 +722,7 @@
 
       templates: {
         async listAll(){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_templates")
             .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
             .order("sort", { ascending:true })
@@ -692,7 +733,7 @@
         },
 
         async get(id){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_templates")
             .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
             .eq("id", id)
@@ -703,7 +744,7 @@
         },
 
         async listPublished(){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_templates")
             .select("id,title,format,link,actions,tags,published,sort,created_at,updated_at")
             .eq("published", true)
@@ -715,7 +756,7 @@
         },
 
         async upsert(row){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_templates")
             .upsert(row, { onConflict:"id" })
             .select("id");
@@ -725,7 +766,7 @@
         },
 
         async delete(id){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_templates")
             .delete()
             .eq("id", id)
@@ -743,7 +784,7 @@
 
       checklists: {
         async listAll(){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_checklists")
             .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at")
             .order("sort", { ascending:true })
@@ -754,7 +795,7 @@
         },
 
         async get(id){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_checklists")
             .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at,items")
             .eq("id", id)
@@ -765,7 +806,7 @@
         },
 
         async listPublished(){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_checklists")
             .select("id,title,desc,url,actions,tags,published,sort,created_at,updated_at,items")
             .eq("published", true)
@@ -777,7 +818,7 @@
         },
 
         async upsert(row){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_checklists")
             .upsert(row, { onConflict:"id" })
             .select("id");
@@ -787,7 +828,7 @@
         },
 
         async delete(id){
-          const r = await requireSB()
+          const r = await window.ZRBackend.db
             .from("kb_checklists")
             .delete()
             .eq("id", id)
@@ -806,7 +847,7 @@
       async searchArticles(query){
         const q = query ? String(query).trim() : "";
 
-        let req = requireSB()
+        let req = window.ZRBackend.db
           .from("kb_articles")
           .select("id,title,category,updated_at")
           .eq("status", "published")
@@ -830,7 +871,7 @@
       async searchTemplates(query){
         const q = query ? String(query).trim() : "";
 
-        let req = requireSB()
+        let req = window.ZRBackend.db
           .from("kb_templates")
           .select("id,title,updated_at")
           .eq("published", true)
@@ -854,7 +895,7 @@
       async searchChecklists(query){
         const q = query ? String(query).trim() : "";
 
-        let req = requireSB()
+        let req = window.ZRBackend.db
           .from("kb_checklists")
           .select("id,title,updated_at")
           .eq("published", true)

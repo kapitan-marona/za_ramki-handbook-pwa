@@ -231,34 +231,55 @@ window.PlannerDetailSections = (() => {
 
     async function loadDetailSections(task, checklistReadOnly){
       const expectedTaskId = String(task && task.id || "");
+      
+      const perfKey = `[PlannerDetail] ${expectedTaskId}`;
+
+      console.time(`${perfKey} TOTAL`);
 
       if(abortIfTaskChanged(expectedTaskId, false)){
+        console.timeEnd(`${perfKey} TOTAL`);        
         return false;
       }
 
+      console.time(`${perfKey} checklist`);
       await loadChecklist(task, checklistReadOnly);
+      console.timeEnd(`${perfKey} checklist`);
 
       if(abortIfTaskChanged(expectedTaskId, false)){
+        console.timeEnd(`${perfKey} TOTAL`);
         return false;
       }
 
-      await loadDocs(task);
+      console.time(`${perfKey} docs`);
+      const docsPromise = loadDocs(task)
+        .finally(() => {
+          console.timeEnd(`${perfKey} docs`);
+        });
+
+      console.time(`${perfKey} comments`);
+      const commentsPromise = loadComments(task, checklistReadOnly)
+        .finally(() => {
+          console.timeEnd(`${perfKey} comments`);
+        });
+
+      console.time(`${perfKey} activity`);
+      const activityPromise = loadActivity(task)
+        .finally(() => {
+          console.timeEnd(`${perfKey} activity`);
+        });
+
+      await Promise.all([
+        docsPromise,
+        commentsPromise,
+        activityPromise
+      ]);
 
       if(abortIfTaskChanged(expectedTaskId, false)){
+        console.timeEnd(`${perfKey} TOTAL`);
         return false;
       }
-
-      await loadComments(task, checklistReadOnly);
-
-      if(abortIfTaskChanged(expectedTaskId, false)){
-        return false;
-      }
-
-      await loadActivity(task);
-
-      if(abortIfTaskChanged(expectedTaskId, false)){
-        return false;
-      }
+      
+      console.timeEnd(`${perfKey} TOTAL`);
 
       return true;
     }

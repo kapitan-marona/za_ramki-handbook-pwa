@@ -658,7 +658,7 @@ Views.Admin = (() => {
 
   return {
     async show(param){
-      if(!window.SB){
+      if(!window.ZRBackend || !ZRBackend.isReady()){
         setPanelTitle("Админка");
         setStatus("—");
         renderAdminTabs();

@@ -28,6 +28,10 @@
   }
 
   window.ZRBackend = {
+    isReady(){
+      return !!window.SB;
+    },
+
     mode: "supabase",
 
     /* transitional provider accessor
@@ -285,6 +289,18 @@
     },
 
     tasks: {
+      async listActiveBasic(){
+        const r = await window.ZRBackend.db
+          .from("tasks")
+          .select("id,title,body,status,urgency,role,project_id,assignee_id,start_date,due_date,archived_at,created_at,updated_at,projects(title)")
+          .is("archived_at", null)
+          .order("due_date", { ascending:true, nullsFirst:false })
+          .order("updated_at", { ascending:false });
+
+        if(r && r.error) throw r.error;
+        return r.data || [];
+      },
+
       async create(row){
         const r = await window.ZRBackend.db
           .from("tasks")
@@ -323,6 +339,53 @@
           .maybeSingle();
 
         if(r && r.error) throw r.error;
+        return r.data || null;
+      },
+      
+      async setStatus(taskId, newStatus){
+        const r = await window.ZRBackend.db.rpc("set_task_status", {
+          p_new_status: newStatus,
+          p_task_id: taskId
+        });
+
+        if(r && r.error) throw r.error;
+        return true;
+      },
+
+      
+      async getStatusSnapshot(id){
+        if(!id) return null;
+
+        const r = await window.ZRBackend.db
+          .from("tasks")
+          .select("id,title,status")
+          .eq("id", id)
+          .single();
+
+        if(r && r.error) throw r.error;
+        return r.data || null;
+      },
+      
+      async getProjectSnapshot(id){
+        if(!id) return null;
+
+        const r = await window.ZRBackend.db
+          .from("tasks")
+          .select("id,project_id,projects(title)")
+          .eq("id", id)
+          .maybeSingle();
+
+        if(r && r.error && r.error.code !== "PGRST116"){
+          throw r.error;
+        }
+
+        if(r && r.error && r.error.code === "PGRST116"){
+          console.warn("[ZRBackend] getProjectSnapshot: task not visible or not found", {
+            taskId: id,
+            error: r.error
+          });
+        }
+
         return r.data || null;
       },
 
@@ -440,6 +503,89 @@
         return true;
       }
     },
+    
+    checklistInstances: {
+      async getTaskScoped(taskId, checklistId){
+        if(!taskId) return null;
+
+        const r = await window.ZRBackend.db
+          .from("checklist_instances")
+          .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
+          .eq("task_id", String(taskId))
+          .eq("checklist_id", String(checklistId))
+          .order("created_at", { ascending:true })
+          .limit(2);
+
+        if(r && r.error) throw r.error;
+
+        const rows = Array.isArray(r.data) ? r.data : [];
+
+        if(rows.length > 1){
+          console.warn("[Checklists] Duplicate task-scoped instances detected", {
+            task_id: String(taskId),
+            checklist_id: String(checklistId),
+            count: rows.length
+          });
+        }
+
+        return rows.length ? rows[0] : null;
+      },
+
+      async getLegacyUserScoped(userId, checklistId){
+        if(!userId) return null;
+
+        const r = await window.ZRBackend.db
+          .from("checklist_instances")
+          .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
+          .eq("user_id", String(userId))
+          .is("task_id", null)
+          .eq("checklist_id", String(checklistId))
+          .order("created_at", { ascending:true })
+          .limit(2);
+
+        if(r && r.error) throw r.error;
+
+        const rows = Array.isArray(r.data) ? r.data : [];
+
+        if(rows.length > 1){
+          console.warn("[Checklists] Duplicate legacy user-scoped instances detected", {
+            user_id: String(userId),
+            checklist_id: String(checklistId),
+            count: rows.length
+          });
+        }
+
+        return rows.length ? rows[0] : null;
+      },
+
+      async create(payload){
+        const r = await window.ZRBackend.db
+          .from("checklist_instances")
+          .insert(payload)
+          .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
+          .single();
+
+        if(r && r.error) throw r.error;
+
+        return r.data || null;
+      },
+
+      async updateItemsState(instanceId, itemsState){
+        const r = await window.ZRBackend.db
+          .from("checklist_instances")
+          .update({
+            items_state: itemsState,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", String(instanceId))
+          .select("id,task_id,items_state,updated_at")
+          .single();
+
+        if(r && r.error) throw r.error;
+
+        return r.data || null;
+      }
+    },
 
     taskChecklistItems: {
       async listByTask(taskId){
@@ -478,7 +624,55 @@
         }
 
         return true;
-      }
+      },
+      
+      async getTemplateItems(templateId){
+        if(!templateId) return [];
+
+        const r = await window.ZRBackend.db
+          .from("kb_checklists")
+          .select("items")
+          .eq("id", templateId)
+          .maybeSingle();
+
+        if(r && r.error) throw r.error;
+
+        const items = r && r.data
+          ? r.data.items
+          : null;
+
+        return Array.isArray(items)
+          ? items
+          : [];
+      },
+
+      async hasTaskItems(taskId){
+        if(!taskId) return false;
+
+        const r = await window.ZRBackend.db
+          .from("task_checklist_items")
+          .select("id")
+          .eq("task_id", taskId)
+          .limit(1);
+
+        if(r && r.error) throw r.error;
+
+        return Array.isArray(r.data) && r.data.length > 0;
+      },
+
+      async insertRuntimeItems(rows){
+        if(!Array.isArray(rows) || rows.length === 0){
+          return true;
+        }
+
+        const r = await window.ZRBackend.db
+          .from("task_checklist_items")
+          .insert(rows);
+
+        if(r && r.error) throw r.error;
+
+        return true;
+      },
     },
 
     taskComments: {
@@ -574,6 +768,32 @@
           .eq("id", id);
 
         if(r && r.error) throw r.error;
+        return true;
+      }
+    },
+    
+    pushSubscriptions: {
+      async getByEndpoint(endpoint){
+        if(!endpoint) return null;
+
+        const r = await window.ZRBackend.db
+          .from("push_subscriptions")
+          .select("endpoint,is_active,user_id,user_role,updated_at")
+          .eq("endpoint", endpoint)
+          .maybeSingle();
+
+        if(r && r.error) throw r.error;
+
+        return r.data || null;
+      },
+
+      async upsert(row){
+        const r = await window.ZRBackend.db
+          .from("push_subscriptions")
+          .upsert([row], { onConflict:"endpoint" });
+
+        if(r && r.error) throw r.error;
+
         return true;
       }
     },

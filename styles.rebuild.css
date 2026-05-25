@@ -360,8 +360,8 @@ body{
 
 /* hover */
 .btn:hover{
-  border-color: var(--accent-35);
-  background: color-mix(in srgb, var(--card) 82%, var(--accent-08));
+  border-color: transparent;
+  background: color-mix(in srgb, var(--card) 88%, var(--accent-08));
 }
 
 /* active
@@ -394,21 +394,25 @@ body{
   background: transparent;
   border-color: transparent;
   color: var(--muted);
+  opacity:.9;
 }
 
 .btn--ghost:hover{
   color: var(--text);
-  background: var(--accent-08);
+  background: rgba(255,243,234,.055);
+  opacity:1;
 }
 
 /* DANGER */
 .btn--danger{
-  background: rgba(255,120,80,.12);
-  border-color: rgba(255,120,80,.28);
+  background: rgba(160,88,70,.16);
+  border-color: transparent;
+  color: rgba(255,243,234,.92);
 }
 
 .btn--danger:hover{
-  background: rgba(255,120,80,.18);
+  background: rgba(160,88,70,.24);
+  color: rgba(255,243,234,.98);
 }
 
 .tab{
@@ -1671,128 +1675,14 @@ select{
   line-height:1.45;
 }
 
-.zr-planner-detail .btn{
-  border:0;
-  background: rgba(255,243,234,.07);
-  color: var(--text);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.02),
-    0 4px 10px rgba(0,0,0,.18);
-}
+/* legacy planner-detail global button tint retired.
+   Shared planner action hierarchy owns interactive buttons.
+*/
 
-.zr-planner-detail .btn:hover{
-  background: rgba(255,243,234,.10);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.025),
-    0 6px 14px rgba(0,0,0,.20);
-}
-
-/* === BUTTON HIERARCHY — PLANNER ONLY === */
-
-/* Primary */
-.zr-planner-detail .btn--primary{
-  background: rgba(255,243,234,.16);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.04),
-    0 8px 22px rgba(0,0,0,.26);
-  font-weight:600;
-}
-
-.zr-planner-detail .btn--primary:hover{
-  background: rgba(255,243,234,.20);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.05),
-    0 10px 26px rgba(0,0,0,.28);
-}
-
-/* Secondary */
-.zr-planner-detail .btn--secondary{
-  background: rgba(255,243,234,.07);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.02),
-    0 4px 10px rgba(0,0,0,.18);
-}
-
-/* Danger soft */
-.zr-planner-detail .btn--danger{
-  background: rgba(255,120,80,.10);
-  color: var(--text);
-  box-shadow:
-    0 1px 0 rgba(255,120,80,.12),
-    0 4px 10px rgba(0,0,0,.18);
-}
-
-.zr-planner-detail .btn--danger:hover{
-  background: rgba(255,120,80,.16);
-}
-
-/* Minor */
-.zr-planner-detail .btn--ghost{
-  background: rgba(255,243,234,.04);
-  opacity:.8;
-  box-shadow:none;
-}
-
-/* Planner detail — action hierarchy by container */
-.zr-planner-actions-admin .btn{
-  background: rgba(255,243,234,.06);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.02),
-    0 3px 10px rgba(0,0,0,.14);
-  font-weight:500;
-}
-
-.zr-planner-actions-admin .btn:hover{
-  background: rgba(255,243,234,.08);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.025),
-    0 5px 12px rgba(0,0,0,.16);
-}
-
-.zr-planner-actions-status .btn{
-  background: rgba(255,243,234,.11);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.03),
-    0 6px 16px rgba(0,0,0,.20);
-  font-weight:600;
-}
-
-.zr-planner-actions-status .btn:hover{
-  background: rgba(255,243,234,.14);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.035),
-    0 8px 18px rgba(0,0,0,.22);
-}
-
-#plBack{
-  background: rgba(255,243,234,.04);
-  box-shadow:none;
-  opacity:.82;
-}
-
-#plBack:hover{
-  background: rgba(255,243,234,.06);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.02),
-    0 3px 8px rgba(0,0,0,.12);
-  opacity:1;
-}
-
-#plAddDocBtn,
-#plAddChecklistBtn{
-  background: rgba(255,243,234,.04);
-  box-shadow:none;
-  opacity:.84;
-}
-
-#plAddDocBtn:hover,
-#plAddChecklistBtn:hover{
-  background: rgba(255,243,234,.06);
-  box-shadow:
-    0 1px 0 rgba(255,243,234,.02),
-    0 3px 8px rgba(0,0,0,.12);
-  opacity:1;
-}
+/* legacy planner button hierarchy retired.
+   Canonical planner action hierarchy now lives
+   in SAFE VISUAL CLEANUP layer below.
+*/
 
 /* =========================================================
    DOMAIN 9 — PLANNER SUB-SURFACES
@@ -2760,19 +2650,18 @@ select:disabled{
   opacity:1;
 }
 
-/* primary: main positive action */
 .zr-planner-hero-top-actions .btn--primary,
 .zr-planner-actions-admin .btn--primary,
 .zr-planner-actions-status .btn--primary{
-  background:rgba(255,243,234,.16);
-  color:var(--headings);
+  background:var(--accent);
+  color:#fff;
   opacity:1;
 }
 
 .zr-planner-hero-top-actions .btn--primary:hover,
 .zr-planner-actions-admin .btn--primary:hover,
 .zr-planner-actions-status .btn--primary:hover{
-  background:rgba(255,243,234,.22);
+  filter:brightness(1.06);
 }
 
 /* danger: archive / cancel only */
@@ -2863,6 +2752,18 @@ select:disabled{
   align-items:flex-start;
   justify-content:center;
   text-align:left;
+  border:0;
+  background:rgba(255,243,234,.055);
+  color:var(--text);
+  box-shadow:
+    0 6px 16px rgba(0,0,0,.16);
+}
+
+.zr-planner-doc-link:hover{
+  border:0;
+  background:rgba(255,243,234,.075);
+  box-shadow:
+    0 7px 18px rgba(0,0,0,.18);
 }
 
 #plDocs .zr-planner-doc-meta{
@@ -3225,29 +3126,9 @@ select:disabled{
     0 0 0 2px rgba(192,58,20,.10);
 }
 
-.zr-project-detail .zr-planner-actions-admin .btn{
-  min-height:30px;
-
-  padding:0 10px;
-
-  border-radius:10px;
-
-  font-size:12px;
-  line-height:1;
-
-  font-weight:500;
-
-  background:rgba(255,243,234,.055);
-
-  color:rgba(255,243,234,.82);
-
-  box-shadow:none;
-}
-
-.zr-project-detail .zr-planner-actions-admin .btn:hover{
-  background:rgba(255,243,234,.085);
-  color:rgba(255,243,234,.96);
-}
+/* project planner-action button duplicate retired.
+   .zr-planner-actions-admin .btn is owned by shared planner action layer.
+*/
 
 .zr-planner-docs-section .zr-section-head--docs{
   display:flex;

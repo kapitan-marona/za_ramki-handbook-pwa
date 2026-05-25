@@ -97,12 +97,9 @@ body{
   color: var(--muted);
 }
 
-.btn{
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-}
-.btn:hover{ border-color: var(--accent-35); }
+/* button ownership retired from theme.css
+   Canonical .btn system lives in styles.rebuild.css.
+*/
 .btn .dot{ background: var(--accent-95); }
 
 .markdown a{
@@ -200,14 +197,9 @@ select optgroup{
 }
 
 
-
-/* ---------- Compact buttons (BriefPro) ---------- */
-.btn.btn-sm{
-  font-size: 12px;
-  padding: 6px 10px;
-  line-height: 1.1;
-}
-.btn.btn-sm:hover{ opacity: .95; }
+/* compact button ownership retired.
+   Canonical .btn-sm lives in styles.rebuild.css.
+*/
 
 /* ---------- MultiField link label select ---------- */
 .mf-label-select{
@@ -386,81 +378,7 @@ select optgroup{
 .mf-muted{ color: var(--muted); }
 .mf-textview{ white-space:pre-wrap; }
 
-/* === BUTTON SYSTEM CLEAN (no borders) === */
-/*
-.btn {
-  border: none;
-  outline: none;
-  box-shadow: none;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-
-  padding: 8px 14px;
-  border-radius: 10px;
-
-  font-size: 14px;
-  font-weight: 500;
-
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  background: rgba(255,255,255,0.04);
-  color: var(--text);
-}
-
-/* hover */
-/*
-.btn:hover {
-  background: rgba(255,255,255,0.08);
-}
-
-/* active */
-/*
-.btn:active {
-  transform: translateY(1px);
-}
-
-/* sizes */
-/*
-.btn-sm {
-  padding: 6px 10px;
-  font-size: 13px;
-}
-
-/* primary */
-/*
-.btn--primary {
-  background: var(--brand-accent);
-  color: #fff;
-}
-
-.btn--primary:hover {
-  filter: brightness(1.05);
-}
-
-/* danger */
-/*
-.btn--danger {
-  background: rgba(220, 60, 60, 0.15);
-  color: #ff6b6b;
-}
-
-.btn--danger:hover {
-  background: rgba(220, 60, 60, 0.25);
-}
-
-/* ghost (самая лёгкая) */
-/*
-.btn--ghost {
-  background: transparent;
-  color: var(--muted);
-}
-
-.btn--ghost:hover {
-  background: rgba(255,255,255,0.06);
-  color: var(--text);
-}
+/* legacy BUTTON SYSTEM CLEAN retired.
+   Canonical .btn / .btn-sm / .btn--primary / .btn--danger / .btn--ghost
+   ownership now lives in styles.rebuild.css.
 */

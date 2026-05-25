@@ -5,11 +5,6 @@
 (function(){
   if(window.PlannerAPI) return;
 
-  function SBx(){
-    if(!window.SB) throw new Error("SB not available");
-    return window.SB;
-  }
-
   function plannerPushDedupeKey(userId, event, taskId){
     return [
       String(userId || ""),
@@ -40,26 +35,20 @@
   }
 
   async function fetchAllActiveTasks(opts){
-    const SB = SBx();
     const role = opts && opts.role ? String(opts.role) : null;
     const today = opts && opts.today ? String(opts.today) : null;
     const currentUserId = opts && opts.userId
       ? String(opts.userId)
       : String(window.App?.session?.user?.id || "");
 
-    const res = await SB
-      .from("tasks")
-      .select("id,title,body,status,urgency,role,project_id,assignee_id,start_date,due_date,archived_at,created_at,updated_at,projects(title)")
-      .is("archived_at", null)
-      .order("due_date", { ascending:true, nullsFirst:false })
-      .order("updated_at", { ascending:false });
+    let tasks = [];
 
-    if(res && res.error){
-      console.warn("[PlannerAPI] fetchAllActiveTasks error", res.error);
+    try{
+      tasks = await ZRBackend.tasks.listActiveBasic();
+    }catch(err){
+      console.warn("[PlannerAPI] fetchAllActiveTasks error", err);
       return [];
     }
-
-    let tasks = res.data || [];
 
     if(role !== "admin"){
       const staffTaskIds = tasks
@@ -109,22 +98,9 @@
   }
 
   async function setTaskStatus(taskId, newStatus){
-    const SB = SBx();
+    const before = await ZRBackend.tasks.getStatusSnapshot(taskId);
 
-    const beforeRes = await SB
-      .from("tasks")
-      .select("id,title,status")
-      .eq("id", taskId)
-      .single();
-
-    if(beforeRes && beforeRes.error) throw beforeRes.error;
-    const before = beforeRes.data || null;
-
-    const r = await ZRBackend.db.rpc("set_task_status", {
-      p_new_status: newStatus,
-      p_task_id: taskId
-    });
-    if(r && r.error) throw r.error;
+    await ZRBackend.tasks.setStatus(taskId, newStatus);
 
     // push moved to PlannerActions layer
 
@@ -169,7 +145,6 @@
   }
 
   async function createTask(payload){
-    const SB = SBx();
     const title = payload && payload.title ? String(payload.title).trim() : "";
     if(!title) throw new Error("Введите название задачи.");
 
@@ -197,28 +172,12 @@
   }
 
   async function updateTask(taskId, payload){
-    const SB = SBx();
     if(!taskId) throw new Error("taskId required");
 
     const title = payload && payload.title ? String(payload.title).trim() : "";
     if(!title) throw new Error("Введите название задачи.");
 
-    const beforeRes = await SB
-      .from("tasks")
-      .select("id,project_id,projects(title)")
-      .eq("id", taskId)
-      .maybeSingle();
-
-    if(beforeRes && beforeRes.error && beforeRes.error.code !== "PGRST116"){
-      throw beforeRes.error;
-    }
-    if(beforeRes && beforeRes.error && beforeRes.error.code === "PGRST116"){
-      console.warn("[PlannerAPI] updateTask before-read: task not visible or not found", {
-        taskId,
-        error: beforeRes.error
-      });
-    }
-    const before = beforeRes.data || null;
+    const before = await ZRBackend.tasks.getProjectSnapshot(taskId);
 
     const row = {
       title,
@@ -373,7 +332,6 @@
   }
 
   async function addTaskLink(taskId, payload){
-    const SB = SBx();
     if(!taskId) throw new Error("taskId required");
     if(!payload || typeof payload !== "object") throw new Error("payload required");
 

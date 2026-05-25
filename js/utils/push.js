@@ -127,17 +127,10 @@ window.ZRPush = (function(){
   }
 
   async function fetchSubscriptionRowByEndpoint(endpoint){
-    if(!window.SB || !endpoint) return null;
+    if(!window.ZRBackend || !ZRBackend.pushSubscriptions || !endpoint) return null;
 
     try{
-      const { data, error } = await SB
-        .from("push_subscriptions")
-        .select("endpoint,is_active,user_id,user_role,updated_at")
-        .eq("endpoint", endpoint)
-        .maybeSingle();
-
-      if(error) throw error;
-      return data || null;
+      return await ZRBackend.pushSubscriptions.getByEndpoint(endpoint);
     }catch(e){
       console.warn("[Push] backend state fetch failed", e);
       return null;
@@ -146,7 +139,7 @@ window.ZRPush = (function(){
 
   async function registerSubscriptionWithBackend(sub, opts){
     if(!sub) return { ok:false, reason:"no-subscription" };
-    if(!window.SB) return { ok:false, reason:"no-supabase" };
+    if(!window.ZRBackend || !ZRBackend.pushSubscriptions) return { ok:false, reason:"no-backend" };
 
     try{
       const o = opts || {};
@@ -163,11 +156,7 @@ window.ZRPush = (function(){
       const row = serializeSubscription(sub, { is_active: desiredActive });
       if(!row || !row.endpoint) return { ok:false, reason:"bad-subscription" };
 
-      const { error } = await SB
-        .from("push_subscriptions")
-        .upsert([row], { onConflict: "endpoint" });
-
-      if(error) throw error;
+      await ZRBackend.pushSubscriptions.upsert(row);
 
       return {
         ok:true,
@@ -239,7 +228,7 @@ window.ZRPush = (function(){
   }
 
   async function setCurrentSubscriptionActive(isActive){
-    if(!window.SB) return { ok:false, reason:"no-supabase" };
+    if(!window.ZRBackend || !ZRBackend.pushSubscriptions) return { ok:false, reason:"no-backend" };
     if(!isSupported()) return { ok:false, reason:"unsupported" };
 
     try{
@@ -272,7 +261,7 @@ window.ZRPush = (function(){
   }
 
   async function deactivateCurrentSubscription(opts){
-    if(!window.SB) return { ok:false, reason:"no-supabase" };
+    if(!window.ZRBackend || !ZRBackend.pushSubscriptions) return { ok:false, reason:"no-backend" };
     if(!isSupported()) return { ok:false, reason:"unsupported" };
 
     const o = opts || {};

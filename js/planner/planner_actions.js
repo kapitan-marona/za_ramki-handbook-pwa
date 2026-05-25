@@ -1406,11 +1406,11 @@
 
             let checklistTemplateRes = null;
             try{
-              checklistTemplateRes = await SB
-                .from("kb_checklists")
-                .select("items")
-                .eq("id", payload.ref_id)
-                .maybeSingle();
+              const templateItems = await ZRBackend.taskChecklistItems.getTemplateItems(payload.ref_id);
+              checklistTemplateRes = {
+                error: null,
+                data: { items: templateItems }
+              };
             }catch(err){
               console.warn("[PlannerActions] checklist preflight fetch error", err);
               checklistTemplateRes = { error: err };
@@ -1475,19 +1475,7 @@
 
             // --- SINGLE CHECKLIST GUARD ---
             try{
-              const existingChecklistRows = await SB
-                .from("task_checklist_items")
-                .select("id")
-                .eq("task_id", task.id)
-                .limit(1);
-
-              if(existingChecklistRows && existingChecklistRows.error){
-                throw existingChecklistRows.error;
-              }
-
-              const hasTaskChecklistItems =
-                Array.isArray(existingChecklistRows.data) &&
-                existingChecklistRows.data.length > 0;
+              const hasTaskChecklistItems = await ZRBackend.taskChecklistItems.hasTaskItems(task.id);
 
               if(hasTaskChecklistItems){
                 submitBtn.disabled = false;
@@ -1525,13 +1513,7 @@
 
           if(type === "checklist" && Array.isArray(checklistRows) && checklistRows.length > 0){
             try{
-              const insertRes = await SB
-                .from("task_checklist_items")
-                .insert(checklistRows);
-
-              if(insertRes && insertRes.error){
-                throw insertRes.error;
-              }
+              await ZRBackend.taskChecklistItems.insertRuntimeItems(checklistRows);
             }catch(snapshotErr){
               console.warn("[PlannerActions] checklist snapshot insert failed", snapshotErr);
 

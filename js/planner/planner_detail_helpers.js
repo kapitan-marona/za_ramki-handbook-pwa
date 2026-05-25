@@ -281,7 +281,6 @@ window.PlannerDetailHelpers = (() => {
               }
 
               const links = await PlannerAPI.fetchTaskLinks(task.id);
-              console.log("[DEBUG links after add]", links);
 
               const items = await PlannerChecklistRuntime.fetchChecklistItems(task.id);
               const safeItems = Array.isArray(items) ? items : [];
@@ -385,7 +384,24 @@ window.PlannerDetailHelpers = (() => {
             // Full task list refresh is intentionally avoided here to keep edit save path responsive.
 
             if(fresh){
-              if(typeof renderDetails === "function"){
+              if(
+                typeof updateDetailHeaderOnly === "function" &&
+                typeof o.buildMeta === "function" &&
+                typeof o.buildActions === "function"
+              ){
+                updateDetailHeaderOnly(fresh, {
+                  viewerEl: document.getElementById("viewer"),
+                  role,
+                  today,
+                  fetchAllActiveTasks,
+                  renderLeft,
+                  renderDetails,
+                  goTask,
+                  fetchTaskById,
+                  buildMeta: o.buildMeta,
+                  buildActions: o.buildActions
+                });
+              }else if(typeof renderDetails === "function"){
                 renderDetails(fresh);
               }
             }else{

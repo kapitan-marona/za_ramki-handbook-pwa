@@ -144,7 +144,7 @@ window.PlannerChecklistRuntime = (function(){
           const rpc = await (PlannerAPI.setChecklistDone(id, newDone).then(() => ({ error: null })).catch(error => ({ error })));
           if(rpc && rpc.error) throw rpc.error;
 
-          const needFull = (String(task.status || "") === "taken");
+          const needFull = false;
 
           if(needFull){
             const tasks2 = await ctx.fetchAllActiveTasks();

@@ -34,7 +34,6 @@ Views.Checklists = (() => {
       getCurrentUserId(){
         const userId =
           window?.App?.session?.user?.id ||
-          window?.SB?.auth?.user?.()?.id ||
           "";
 
         if(!userId){
@@ -45,57 +44,12 @@ Views.Checklists = (() => {
       },
 
       async getTaskScopedInstance(taskId, checklistId){
-        if(!window.SB) throw new Error("Supabase client is not available.");
-        if(!taskId) return null;
-
-        const { data, error } = await SB
-          .from("checklist_instances")
-          .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
-          .eq("task_id", String(taskId))
-          .eq("checklist_id", String(checklistId))
-          .order("created_at", { ascending:true })
-          .limit(2);
-
-        if(error) throw error;
-
-        const rows = Array.isArray(data) ? data : [];
-        if(rows.length > 1){
-          console.warn("[Checklists] Duplicate task-scoped instances detected", {
-            task_id: String(taskId),
-            checklist_id: String(checklistId),
-            count: rows.length
-          });
-        }
-
-        return rows.length ? rows[0] : null;
+        return await ZRBackend.checklistInstances.getTaskScoped(taskId, checklistId);
       },
 
       async getLegacyUserScopedInstance(checklistId){
-        if(!window.SB) throw new Error("Supabase client is not available.");
-
         const userId = this.getCurrentUserId();
-
-        const { data, error } = await SB
-          .from("checklist_instances")
-          .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
-          .eq("user_id", userId)
-          .is("task_id", null)
-          .eq("checklist_id", String(checklistId))
-          .order("created_at", { ascending:true })
-          .limit(2);
-
-        if(error) throw error;
-
-        const rows = Array.isArray(data) ? data : [];
-        if(rows.length > 1){
-          console.warn("[Checklists] Duplicate legacy user-scoped instances detected", {
-            user_id: userId,
-            checklist_id: String(checklistId),
-            count: rows.length
-          });
-        }
-
-        return rows.length ? rows[0] : null;
+        return await ZRBackend.checklistInstances.getLegacyUserScoped(userId, checklistId);
       },
 
       async getInstance(taskId, checklistId){
@@ -106,8 +60,6 @@ Views.Checklists = (() => {
       },
 
       async createInstance(taskId, checklistId){
-        if(!window.SB) throw new Error("Supabase client is not available.");
-
         const userId = this.getCurrentUserId();
 
         const payload = {
@@ -120,14 +72,7 @@ Views.Checklists = (() => {
           payload.task_id = String(taskId);
         }
 
-        const { data, error } = await SB
-          .from("checklist_instances")
-          .insert(payload)
-          .select("id,task_id,user_id,checklist_id,items_state,status,created_at,updated_at")
-          .single();
-
-        if(error) throw error;
-        return data || null;
+        return await ZRBackend.checklistInstances.create(payload);
       },
 
       async resolveInstance(taskId, checklistId){
@@ -144,22 +89,8 @@ Views.Checklists = (() => {
       },
 
       async updateItemsState(instanceId, itemsState){
-        if(!window.SB) throw new Error("Supabase client is not available.");
-
         const safeState = normalizeItemsState(itemsState);
-
-        const { data, error } = await SB
-          .from("checklist_instances")
-          .update({
-            items_state: safeState,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", String(instanceId))
-          .select("id,task_id,items_state,updated_at")
-          .single();
-
-        if(error) throw error;
-        return data || null;
+        return await ZRBackend.checklistInstances.updateItemsState(instanceId, safeState);
       }
     };
 

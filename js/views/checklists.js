@@ -395,7 +395,7 @@ Views.Checklists = (() => {
     const items = getFavoriteChecklistItems();
 
     if(!items.length){
-      return `<div class="zr-empty-shell">Выберите чек-лист слева.</div>`;
+      return `<div class="zr-empty-shell">Выбери чек-лист из списка</div>`;
     }
 
     return `

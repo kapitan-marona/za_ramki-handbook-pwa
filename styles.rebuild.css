@@ -3852,6 +3852,10 @@ button.zr-admin-home__card{
   body:has(#viewer .zr-planner-detail) #list{
     display:none;
   }
+  
+  body.zr-projects-list-open:has(#viewer .zr-project-detail) #list{
+    display:flex;
+  }
 
   .zr-board-toolbar{
     position:static;

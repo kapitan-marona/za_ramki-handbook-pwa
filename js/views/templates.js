@@ -810,7 +810,7 @@ Views.Templates = (() => {
     const items = getFavoriteTemplateItems();
 
     if(!items.length){
-      return `<div class="zr-empty-shell">Выберите шаблон слева.</div>`;
+      return `<div class="zr-empty-shell">Выбери шаблон из списка</div>`;
     }
 
     return `

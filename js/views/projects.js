@@ -5,11 +5,101 @@ Views.Projects = (() => {
 
   let _projects = [];
   let _activeProjectId = "";
+  let _filter = "";
 
   function esc(s){
     return (s == null ? "" : String(s))
       .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
       .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  
+  function getMainPanel(){
+    return document.querySelector(".panel");
+  }
+
+  function getMainViewer(){
+    return document.querySelector(".viewer");
+  }
+
+  function closeProjectsListMode(){
+    document.body.classList.remove("zr-projects-list-open");
+  }
+
+  function enableMobileReadingMode(){
+    document.body.classList.add("zr-mobile-reading");
+    closeProjectsListMode();
+
+    if(window.innerWidth > 960) return;
+
+    const panel = getMainPanel();
+    const viewer = getMainViewer();
+
+    if(panel) panel.style.display = "none";
+
+    if(viewer){
+      viewer.style.display = "";
+      viewer.style.width = "100%";
+      viewer.style.maxWidth = "100%";
+    }
+  }
+
+  function disableMobileReadingMode(){
+    document.body.classList.remove("zr-mobile-reading");
+    closeProjectsListMode();
+
+    const panel = getMainPanel();
+    const viewer = getMainViewer();
+
+    if(panel) panel.style.display = "";
+
+    if(viewer){
+      viewer.style.display = "";
+      viewer.style.width = "";
+      viewer.style.maxWidth = "";
+    }
+  }
+
+  function bindMobileListToggle(btn){
+    if(!btn) return;
+
+    const sync = () => {
+      if(window.innerWidth > 960){
+        btn.style.display = "none";
+        return;
+      }
+
+      btn.style.display = "inline-flex";
+
+      const panel = getMainPanel();
+      const reading = !!(panel && panel.style.display === "none");
+      const listOpen = document.body.classList.contains("zr-projects-list-open");
+
+      btn.textContent = reading || !listOpen ? "Раскрыть список" : "Скрыть список";
+      btn.setAttribute("aria-expanded", listOpen ? "true" : "false");
+    };
+
+    btn.onclick = () => {
+      if(window.innerWidth > 960) return;
+
+      const panel = getMainPanel();
+      const hiddenNow = !!(panel && panel.style.display === "none");
+
+      if(hiddenNow){
+        if(panel) panel.style.display = "";
+        document.body.classList.add("zr-projects-list-open");
+      }else{
+        if(document.body.classList.contains("zr-projects-list-open")){
+          closeProjectsListMode();
+          enableMobileReadingMode();
+        }else{
+          document.body.classList.add("zr-projects-list-open");
+        }
+      }
+
+      sync();
+    };
+
+    sync();
   }
 
   function setPanelTitle(t){
@@ -58,8 +148,21 @@ Views.Projects = (() => {
       return;
     }
 
-    list.innerHTML = _projects.map(function(p){
+    const filtered = _projects.filter(function(p){
+      const title = String(p && p.title || "").toLowerCase();
+      return !_filter || title.indexOf(_filter) !== -1;
+    });
+    
+    setStatus(String(filtered.length) + "/" + String(_projects.length));    
+
+    if(!filtered.length){
+      list.innerHTML = '<div class="empty">Ничего не найдено.</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(function(p){
       const active = String(p.id) === String(_activeProjectId);
+
       return `
         <div class="item ${active ? 'zr-list-row--active' : ''}" data-project-id="${esc(p.id)}">
           <div class="item-title">${esc(p.title || "Без названия")}</div>
@@ -74,6 +177,38 @@ Views.Projects = (() => {
       };
     });
   }
+  
+  function renderProjectsHome(){
+    
+    disableMobileReadingMode();
+
+    const viewer = $("#viewer");
+    if(!viewer) return;
+
+    viewer.innerHTML = `
+      <div class="zr-card zr-card--section">
+
+        <div class="zr-stack-md">
+
+          <div>
+            <h2 class="zr-section-title">
+              Проекты
+            </h2>
+          </div>
+
+          <div class="muted">
+            Проекты помогают хранить задачи, ссылки и рабочие комментарии по каждому объекту в одном месте.
+          </div>
+
+          <div class="muted">
+            Открой проект, чтобы посмотреть связанные задачи, материалы и обсуждение команды.
+          </div>
+
+        </div>
+
+      </div>
+    `;
+  }
 
   function renderProjectShell(project){
     const viewer = $("#viewer");
@@ -81,6 +216,16 @@ Views.Projects = (() => {
 
     viewer.innerHTML = `
       <div class="zr-planner-detail zr-project-detail">
+
+        <div class="zr-inline-sm">
+          <button
+            class="btn btn-sm zr-mobile-only"
+            id="zrProjectsListBtn"
+            type="button"
+          >
+            Раскрыть список
+          </button>
+        </div>
 
         <section class="zr-card zr-card--section zr-planner-hero">
           <div class="zr-planner-hero-top">
@@ -102,13 +247,15 @@ Views.Projects = (() => {
             </div>
 
             <div class="zr-planner-actions-admin">
+
               <button
                 type="button"
                 class="btn btn--ghost"
-                id="zrProjectsReload"
+                id="zrProjectsCloseBtn"
               >
-                Обновить
+                Закрыть
               </button>
+
             </div>
 
           </div>
@@ -204,6 +351,22 @@ Views.Projects = (() => {
       </div>
     `;
 
+
+    const listBtn = document.getElementById("zrProjectsListBtn");
+    bindMobileListToggle(listBtn);
+
+    enableMobileReadingMode();
+    
+    const closeBtn = document.getElementById("zrProjectsCloseBtn");
+
+    if(closeBtn){
+      closeBtn.onclick = () => {
+        _activeProjectId = "";
+        renderProjectList();
+        renderProjectsHome();
+      };
+    }
+    
     const addLinkBtn = $("#zrProjectAddLinkBtn");
 
     if(addLinkBtn){
@@ -563,11 +726,13 @@ Views.Projects = (() => {
   async function show(param){
     setPanelTitle("Проекты");
     setStatus("0");
+    
+    disableMobileReadingMode();
 
     const list = $("#list");
     const viewer = $("#viewer");
     if(list) list.innerHTML = '<div class="empty">Загружаю проекты…</div>';
-    if(viewer) viewer.innerHTML = '<div class="empty">Выберите проект слева.</div>';
+    if(viewer) viewer.innerHTML = '<div class="empty">Выбери проект из списка</div>';
 
     try{
       if(!window.ZRBackend || !ZRBackend.projects || typeof ZRBackend.projects.list !== "function"){
@@ -575,17 +740,31 @@ Views.Projects = (() => {
       }
 
       _projects = await ZRBackend.projects.list();
-      _activeProjectId = param || (_projects[0] && _projects[0].id) || "";
+      _activeProjectId = param || "";
+
       renderProjectList();
 
-      if(_activeProjectId) await openProject(_activeProjectId);
-      else if(viewer) viewer.innerHTML = '<div class="empty">Проекты пока не созданы.</div>';
+      if(_activeProjectId){
+        await openProject(_activeProjectId);
+      }else if(_projects.length){
+        renderProjectsHome();
+      }else if(viewer){
+        viewer.innerHTML = '<div class="empty">Проекты пока не созданы.</div>';
+      }
     }catch(e){
+      disableMobileReadingMode();
       console.warn("[Projects] load failed", e);
       if(list) list.innerHTML = '<div class="empty">Не удалось загрузить проекты.</div>';
       if(viewer) viewer.innerHTML = '<div class="empty">Ошибка загрузки проектов. Проверь консоль.</div>';
     }
+    
+
   }
 
-  return { show };
+  function setFilter(q){
+    _filter = String(q || "").trim().toLowerCase();
+    renderProjectList();
+  }
+  
+  return { show, setFilter };
 })();

@@ -318,6 +318,7 @@ window.initAuth = async function(){
     if(p.section === "articles" && Views.Articles && Views.Articles.setFilter) Views.Articles.setFilter(q);
     if(p.section === "templates" && Views.Templates && Views.Templates.setFilter) Views.Templates.setFilter(q);
     if(p.section === "checklists" && Views.Checklists && Views.Checklists.setFilter) Views.Checklists.setFilter(q);
+    if(p.section === "projects" && Views.Projects && Views.Projects.setFilter) Views.Projects.setFilter(q);
   }
 
   function syncTopSearchUI(section){
@@ -325,7 +326,7 @@ window.initAuth = async function(){
     var status = $("#status");
     if(!q) return;
 
-    var searchable = section === "articles" || section === "templates" || section === "checklists";
+    var searchable = section === "articles" || section === "templates" || section === "checklists" || section === "projects";
     var pill = status ? status.closest(".pill") : null;
 
     q.disabled = !searchable;
@@ -418,7 +419,7 @@ async function render(){
     var simpleViewMap = {
       login: async function(){ await Views.Login.show(); },
       planner: async function(){ await Views.Planner.show(); },
-      projects: async function(){ await Views.Projects.show(param); },
+      projects: async function(){ await showSearchView(Views.Projects, param, searchValue); },
       articles: async function(){ await showSearchView(Views.Articles, param, searchValue); },
       templates: async function(){ await showSearchView(Views.Templates, param, searchValue); },
       checklists: async function(){ await showSearchView(Views.Checklists, param, searchValue); }

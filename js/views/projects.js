@@ -21,13 +21,8 @@ Views.Projects = (() => {
     return document.querySelector(".viewer");
   }
 
-  function closeProjectsListMode(){
-    document.body.classList.remove("zr-projects-list-open");
-  }
-
   function enableMobileReadingMode(){
     document.body.classList.add("zr-mobile-reading");
-    closeProjectsListMode();
 
     if(window.innerWidth > 960) return;
 
@@ -45,7 +40,6 @@ Views.Projects = (() => {
 
   function disableMobileReadingMode(){
     document.body.classList.remove("zr-mobile-reading");
-    closeProjectsListMode();
 
     const panel = getMainPanel();
     const viewer = getMainViewer();
@@ -72,10 +66,9 @@ Views.Projects = (() => {
 
       const panel = getMainPanel();
       const reading = !!(panel && panel.style.display === "none");
-      const listOpen = document.body.classList.contains("zr-projects-list-open");
 
-      btn.textContent = reading || !listOpen ? "Раскрыть список" : "Скрыть список";
-      btn.setAttribute("aria-expanded", listOpen ? "true" : "false");
+      btn.textContent = reading ? "Раскрыть список" : "Скрыть список";
+      btn.setAttribute("aria-expanded", reading ? "false" : "true");
     };
 
     btn.onclick = () => {
@@ -85,15 +78,9 @@ Views.Projects = (() => {
       const hiddenNow = !!(panel && panel.style.display === "none");
 
       if(hiddenNow){
-        if(panel) panel.style.display = "";
-        document.body.classList.add("zr-projects-list-open");
+        disableMobileReadingMode();
       }else{
-        if(document.body.classList.contains("zr-projects-list-open")){
-          closeProjectsListMode();
-          enableMobileReadingMode();
-        }else{
-          document.body.classList.add("zr-projects-list-open");
-        }
+        enableMobileReadingMode();
       }
 
       sync();
@@ -148,9 +135,22 @@ Views.Projects = (() => {
       return;
     }
 
+    const q = String(_filter || "").trim().toLowerCase();
+
     const filtered = _projects.filter(function(p){
-      const title = String(p && p.title || "").toLowerCase();
-      return !_filter || title.indexOf(_filter) !== -1;
+
+      if(!q) return true;
+
+      const haystack = [
+        p && p.title,
+        p && p.id
+      ]
+      .map(function(v){
+        return String(v || "").toLowerCase();
+      })
+      .join(" ");
+
+      return haystack.indexOf(q) !== -1;
     });
     
     setStatus(String(filtered.length) + "/" + String(_projects.length));    

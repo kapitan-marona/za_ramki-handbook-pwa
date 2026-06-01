@@ -857,7 +857,7 @@
                 if(afterOne && afterOne !== actorId){
                   const eventType = beforeOne ? "reassigned" : "assigned";
 
-                  if(false && typeof window.sendPlannerPush === "function"){
+                  if(typeof window.sendPlannerPush === "function"){
                     sendPlannerPush({
                       userId: afterOne,
                       title: "ZA RAMKI",

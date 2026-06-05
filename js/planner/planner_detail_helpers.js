@@ -51,12 +51,32 @@ window.PlannerDetailHelpers = (() => {
       }catch(_){}
 
       try{
+
+        const projectReturn =
+          sessionStorage.getItem("zr_project_task_return_hash");
+
+        if(projectReturn){
+
+          sessionStorage.removeItem(
+            "zr_project_task_return_hash"
+          );
+
+          location.hash = projectReturn;
+          return;
+        }
+
+      }catch(e){}
+
+      try{
         if(window.Router && typeof Router.go === "function"){
           Router.go("planner");
           return;
         }
       }catch(err){
-        console.warn("[PlannerDetailHelpers] back Router.go error", err);
+        console.warn(
+          "[PlannerDetailHelpers] back Router.go error",
+          err
+        );
       }
 
       if(typeof goTask === "function"){

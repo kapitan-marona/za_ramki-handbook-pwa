@@ -352,10 +352,10 @@ Views.Projects = (() => {
     `;
 
 
+    enableMobileReadingMode();
+
     const listBtn = document.getElementById("zrProjectsListBtn");
     bindMobileListToggle(listBtn);
-
-    enableMobileReadingMode();
     
     const closeBtn = document.getElementById("zrProjectsCloseBtn");
 
@@ -657,6 +657,15 @@ Views.Projects = (() => {
     box.querySelectorAll("[data-task-id]").forEach(function(row){
       row.onclick = function(){
         const id = row.getAttribute("data-task-id") || "";
+        try{
+          if(_activeProjectId){
+            sessionStorage.setItem(
+              "zr_project_task_return_hash",
+              "#/projects/" + encodeURIComponent(String(_activeProjectId))
+            );
+          }
+        }catch(e){}
+
         if(window.Router && typeof Router.go === "function") Router.go("planner", id);
         else location.hash = "#/planner/" + encodeURIComponent(id);
       };
@@ -665,6 +674,11 @@ Views.Projects = (() => {
 
   async function openProject(projectId){
     _activeProjectId = String(projectId || "");
+
+    if(window.innerWidth <= 960){
+      enableMobileReadingMode();
+    }
+
     const project = _projects.find(p => String(p.id) === _activeProjectId) || null;
     renderProjectList();
 
@@ -727,12 +741,20 @@ Views.Projects = (() => {
     setPanelTitle("Проекты");
     setStatus("0");
     
-    disableMobileReadingMode();
+    if(param){
+      enableMobileReadingMode();
+    }else{
+      disableMobileReadingMode();
+    }
 
     const list = $("#list");
     const viewer = $("#viewer");
+
     if(list) list.innerHTML = '<div class="empty">Загружаю проекты…</div>';
-    if(viewer) viewer.innerHTML = '<div class="empty">Выбери проект из списка</div>';
+
+    if(viewer && !param){
+      viewer.innerHTML = '<div class="empty">Выбери проект из списка</div>';
+    }
 
     try{
       if(!window.ZRBackend || !ZRBackend.projects || typeof ZRBackend.projects.list !== "function"){
@@ -758,7 +780,6 @@ Views.Projects = (() => {
       if(viewer) viewer.innerHTML = '<div class="empty">Ошибка загрузки проектов. Проверь консоль.</div>';
     }
     
-
   }
 
   function setFilter(q){

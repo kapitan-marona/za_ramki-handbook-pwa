@@ -570,29 +570,6 @@ Views.Articles = (() => {
       });
     });
 
-    toc.querySelectorAll("[data-toc]").forEach(a => {
-      const onActivate = (e) => {
-        try{
-          if(e) e.preventDefault();
-        }catch(_){}
-
-        try{
-          if(e && typeof e.stopPropagation === "function") e.stopPropagation();
-        }catch(_){}
-
-        const id = a.getAttribute("data-toc");
-        if(!id) return;
-
-        goToTocSection(id);
-      };
-
-      a.addEventListener("click", onActivate);
-
-      a.addEventListener("touchend", (e) => {
-        onActivate(e);
-      }, { passive:false });
-    });
-
     const links = new Map();
     toc.querySelectorAll("[data-toc]").forEach(a => links.set(a.getAttribute("data-toc"), a));
 

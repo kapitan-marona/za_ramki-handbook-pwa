@@ -1,4 +1,4 @@
-const ZR_CACHE_VERSION = "2026-06-19-1";
+const ZR_CACHE_VERSION = "2026-06-19-11";
 const ZR_STATIC_CACHE = "zr-static-" + ZR_CACHE_VERSION;
 
 const ZR_STATIC_ASSETS = [
@@ -15,8 +15,19 @@ const ZR_STATIC_ASSETS = [
   "./assets/favicon/apple-touch-icon.png",
   "./assets/icons/icon-push.png",
   "./assets/fonts/Manasco.woff2",
+  "./js/config.js",
   "./js/vendor/supabase-js-2.js",
   "./js/utils/supabase_client.js",
+  "./js/services/zr_backend_provider.js",
+  "./js/services/zr_backend_core.js",
+  "./js/services/zr_backend_projects.js",
+  "./js/services/zr_backend_people.js",
+  "./js/services/zr_backend_kb.js",
+  "./js/services/zr_backend_push.js",
+  "./js/services/zr_backend_task_meta.js",
+  "./js/services/zr_backend_task_checklists.js",
+  "./js/services/zr_backend_task_content.js",
+  "./js/services/zr_backend_tasks.js",
   "./js/services/zr_backend.js",
   "./js/api.js",
   "./js/router.js",

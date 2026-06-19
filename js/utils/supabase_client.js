@@ -3,8 +3,9 @@
    IMPORTANT: never put service_role here.
 */
 (function(){
-  const URL  = window.SUPABASE_URL  || "";
-  const ANON = window.SUPABASE_ANON || "";
+  const config = window.ZR_CONFIG || {};
+  const URL  = config.supabaseUrl || window.SUPABASE_URL || "";
+  const ANON = config.supabaseAnonKey || window.SUPABASE_ANON || "";
 
   if(!URL || !ANON){
     console.warn("[Supabase] Missing SUPABASE_URL / SUPABASE_ANON");

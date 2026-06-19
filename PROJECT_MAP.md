@@ -22,9 +22,14 @@ Main user flow:
 
 - `index.html`
   - App shell, tabs, search input, left list panel, right viewer panel.
-  - Loads CSS, Supabase vendor bundle, backend wrapper, router, utilities, and
-    `js/app.js`.
-  - Contains public Supabase URL, anon key, VAPID public key, and app version.
+  - Loads CSS, runtime config, Supabase vendor bundle, backend wrapper, router,
+    utilities, and `js/app.js`.
+  - Contains app version.
+
+- `js/config.js`
+  - Runtime client configuration: current backend mode, public Supabase URL,
+    anon key, VAPID public key, push function name, and future push endpoint.
+  - Public client values only; never place private service-role keys here.
 
 - `manifest.json`, `assets/favicon/`, `sw.js`
   - PWA metadata, icons, and service worker behavior.
@@ -60,6 +65,47 @@ Main user flow:
     links, knowledge base, admin areas, and push subscriptions.
   - Prefer adding Supabase calls here instead of scattering direct queries
     across views.
+
+- `js/services/zr_backend_provider.js`
+  - Backend provider boundary. Currently returns the Supabase browser client;
+    later this is the place to switch the facade toward a Russian API provider.
+
+- `js/services/zr_backend_core.js`
+  - Shared auth/db wrappers used by `zr_backend.js`; keeps session and raw
+    table/RPC access behavior isolated from feature-specific data methods.
+
+- `js/services/zr_backend_projects.js`
+  - Projects, project links, and project comments data methods exposed through
+    `ZRBackend.projects`, `ZRBackend.projectLinks`, and
+    `ZRBackend.projectComments`.
+
+- `js/services/zr_backend_people.js`
+  - Allowlist and profile methods exposed through `ZRBackend.allowlist` and
+    `ZRBackend.profiles`.
+
+- `js/services/zr_backend_kb.js`
+  - Knowledge base articles, templates, checklists, and link-search methods
+    exposed through `ZRBackend.kb`.
+
+- `js/services/zr_backend_push.js`
+  - Push subscription storage methods exposed through
+    `ZRBackend.pushSubscriptions`.
+
+- `js/services/zr_backend_task_meta.js`
+  - Task activity and task assignee methods exposed through
+    `ZRBackend.taskActivity` and `ZRBackend.taskAssignees`.
+
+- `js/services/zr_backend_task_checklists.js`
+  - Task-scoped checklist instance and runtime checklist item methods exposed
+    through `ZRBackend.checklistInstances` and `ZRBackend.taskChecklistItems`.
+
+- `js/services/zr_backend_task_content.js`
+  - Task comments, files, and links methods exposed through
+    `ZRBackend.taskComments`, `ZRBackend.taskFiles`, and `ZRBackend.taskLinks`.
+
+- `js/services/zr_backend_tasks.js`
+  - Core task list, create/update, status, snapshots, and archive methods
+    exposed through `ZRBackend.tasks`.
 
 ## Views
 
@@ -226,6 +272,22 @@ Do not edit vendor files unless the user explicitly asks for a vendor update.
   - Current readiness summary: completed production work, checks, remaining
     risks, and next stage.
 
+- `RF_ACCESS_PLAN.md`
+  - Practical plan for stable access from РФ: options, recommended migration
+    path, and near-term backend adapter tasks.
+
+- `BACKEND_API_CONTRACT.md`
+  - Minimal future backend contract for replacing Supabase gradually while
+    keeping the current PWA frontend behavior.
+
+- `SUPABASE_TO_RF_MIGRATION_MAP.md`
+  - Inventory of Supabase tables, RPC functions, and app modules that must be
+    replaced or emulated by a future Russian backend.
+
+- `SUPABASE_DIRECT_DEPENDENCIES_AUDIT.md`
+  - Current direct Supabase dependency audit after the backend facade split;
+    tracks intentionally deferred direct Supabase Functions push usage.
+
 - `STORAGE_IMAGE_OPTIMIZATION.md`
   - Notes and workflow for compressing heavy Supabase Storage images used in
     knowledge base articles.
@@ -283,6 +345,8 @@ new SQL.
 
 - `tools/local-static-server.js`
   - Local static file server for browser testing.
+  - Accepts an optional port argument, for example
+    `node tools/local-static-server.js 8097`.
 
 - `tools/publish-data.ps1`
   - Publishing helper script.

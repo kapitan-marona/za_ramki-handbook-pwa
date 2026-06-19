@@ -23,6 +23,27 @@ node --check js/app.js
 node --check sw.js
 ```
 
+For local browser testing, start the static server with an explicit port:
+
+```bash
+node tools/local-static-server.js 8097
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8097/#/planner
+```
+
+If that port is busy, use another one, for example:
+
+```bash
+node tools/local-static-server.js 8080
+```
+
+When the page shell opens but section scripts fail to load, first check that the
+local server is still running and that the browser is using the same port.
+
 ## 2. Visual Smoke-Test
 
 Check desktop and mobile width:

@@ -3,7 +3,11 @@ const fs = require("fs");
 const path = require("path");
 
 const root = path.resolve(__dirname, "..");
-const port = Number(process.env.PORT || 8080);
+const cliPort = Number(process.argv[2]);
+const envPort = Number(process.env.PORT);
+const port = Number.isFinite(cliPort) && cliPort > 0
+  ? cliPort
+  : (Number.isFinite(envPort) && envPort > 0 ? envPort : 8080);
 
 const types = {
   ".html": "text/html; charset=utf-8",

@@ -139,7 +139,8 @@
           const t = (err && (err.message || err.details || err.hint))
             ? (err.message || err.details || err.hint)
             : String(err);
-          alert("Ошибка: " + t);
+          console.warn("[PlannerComments] delete comment error", err);
+          alert("Не удалось удалить комментарий.");
           btn.disabled = false;
         }
       };
@@ -212,7 +213,8 @@
           const t = (err && (err.message || err.details || err.hint))
             ? (err.message || err.details || err.hint)
             : String(err);
-          if(msg) msg.textContent = "Ошибка: " + t;
+          console.warn("[PlannerComments] add comment error", err);
+          if(msg) msg.textContent = "Не удалось отправить комментарий.";
           send.disabled = false;
         }
       };
@@ -236,7 +238,8 @@
         : String(err);
 
       if(host){
-        host.innerHTML = `<div class="muted" style="font-size:12px;">Ошибка загрузки комментариев: ${ctx.esc(text)}</div>`;
+        console.warn("[PlannerComments] load comments error", text);
+        host.innerHTML = `<div class="muted" style="font-size:12px;">Ничего не найдено.</div>`;
       }
     }
   }

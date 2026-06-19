@@ -32,7 +32,7 @@
       return !!window.SB;
     },
 
-    mode: "supabase",
+    mode: window.ZR_BACKEND_MODE || "supabase",
 
     /* transitional provider accessor
        future-safe provider boundary
@@ -303,30 +303,38 @@
 
       async create(row){
         const r = await window.ZRBackend.db
-          .from("tasks")
-          .insert(row)
-          .select("id")
-          .single();
+          .rpc("create_task_admin", {
+            p_title: row && row.title != null ? String(row.title) : "",
+            p_body: row && row.body != null ? String(row.body) : "",
+            p_start_date: row && row.start_date ? String(row.start_date) : null,
+            p_due_date: row && row.due_date ? String(row.due_date) : null,
+            p_project_id: row && row.project_id ? row.project_id : null,
+            p_role: row && row.role ? String(row.role) : "all",
+            p_urgency: row && row.urgency ? String(row.urgency) : "normal"
+          });
 
         if(r && r.error) throw r.error;
-        return r.data || null;
+        return r.data ? { id: r.data } : null;
       },
       
       async update(id, row){
         const r = await window.ZRBackend.db
-          .from("tasks")
-          .update(row)
-          .eq("id", id)
-          .select("id")
-          .maybeSingle();
+          .rpc("update_task_admin", {
+            p_task_id: id,
+            p_title: row && row.title != null ? String(row.title) : "",
+            p_body: row && row.body != null ? String(row.body) : "",
+            p_start_date: row && row.start_date ? String(row.start_date) : null,
+            p_due_date: row && row.due_date ? String(row.due_date) : null,
+            p_project_id: row && row.project_id ? row.project_id : null,
+            p_role: row && row.role ? String(row.role) : "all",
+            p_urgency: row && row.urgency ? String(row.urgency) : "normal"
+          });
 
         if(r && r.error && r.error.code !== "PGRST116"){
           throw r.error;
         }
 
-        return (r && r.data)
-          ? r.data
-          : { id };
+        return { id: (r && r.data) ? r.data : id };
       },
 
       async getById(id){
@@ -1138,6 +1146,5 @@
     }
   };
 
-  console.log("[ZRBackend] ready: supabase adapter");
+  console.log("[ZRBackend] ready:", window.ZRBackend.mode, "adapter");
 })();
-

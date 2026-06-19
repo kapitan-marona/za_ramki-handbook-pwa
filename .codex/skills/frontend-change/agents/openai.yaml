@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Change"
+  short_description: "UI and layout change workflow"
+  default_prompt: "Use this skill for UI behavior, responsive layout, and visual consistency changes."

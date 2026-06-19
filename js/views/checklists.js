@@ -764,7 +764,7 @@ Views.Checklists = (() => {
         if(!_activeInstanceId){
           console.error("[Checklists] Missing active instance id.");
           input.checked = getItemChecked(_activeItemsState, idx);
-          setChecklistLocalStatus("Instance не найден", "error");
+          setChecklistLocalStatus("Ничего не найдено", "error");
           return;
         }
 
@@ -794,7 +794,7 @@ Views.Checklists = (() => {
     });
   }
 
-  async function loadChecklistsFromSupabase(){
+  async function loadChecklists(){
     try{
       if(!window.ZRBackend || !ZRBackend.kb || !ZRBackend.kb.checklists) return [];
       return await ZRBackend.kb.checklists.listPublished();
@@ -818,7 +818,7 @@ Views.Checklists = (() => {
       _checklistSaveTimer = null;
     }
 
-    _data = await loadChecklistsFromSupabase();
+    _data = await loadChecklists();
     renderList();
 
     if(param){
@@ -839,7 +839,7 @@ Views.Checklists = (() => {
       _activeInstanceId = "";
       _activeItemsState = {};
       disableMobileReadingMode();
-      viewer.innerHTML = `<div class="empty">Чек-лист не найден.</div>`;
+      viewer.innerHTML = `<div class="empty">Ничего не найдено.</div>`;
       return;
     }
 
@@ -868,7 +868,7 @@ Views.Checklists = (() => {
     }catch(e){
       console.error("[Checklists] Instance resolve failed:", e);
       disableMobileReadingMode();
-      viewer.innerHTML = `<div class="empty">Не удалось загрузить состояние чек-листа.</div>`;
+      viewer.innerHTML = `<div class="empty">Ничего не найдено.</div>`;
       return;
     }
 
@@ -887,7 +887,6 @@ Views.Checklists = (() => {
             <div class="zr-viewer-header-main zr-stack-sm">
               <div class="zr-viewer-title-row">
                 <h1 class="article-title">${esc(item.title || "Чек-лист")}</h1>
-                ${renderChecklistFavoriteButton(item.id)}
               </div>
               <p class="article-sub">${esc(subtitle)}</p>
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-height:28px;">
@@ -899,6 +898,7 @@ Views.Checklists = (() => {
               </div>
             </div>
             <div class="zr-viewer-header-actions">
+              ${renderChecklistFavoriteButton(item.id)}
               <button class="btn btn-sm zr-mobile-only" id="clListBtn" type="button">Показать список</button>
               <button class="btn btn-sm" id="clBackBtn" type="button">${getChecklistCloseLabel()}</button>
             </div>

@@ -213,7 +213,8 @@
               const text = (err && (err.message || err.details || err.hint))
                 ? (err.message || err.details || err.hint)
                 : String(err);
-              alert("Ошибка: " + text);
+              console.warn("[PlannerDocs] remove linked doc error", err);
+              alert("Не удалось убрать документ из задачи.");
               b.disabled = false;
             }
           };
@@ -223,7 +224,8 @@
         const text = (err && (err.message || err.details || err.hint))
           ? (err.message || err.details || err.hint)
           : String(err);
-        host.innerHTML = `<div class="muted" style="font-size:12px;">Ошибка загрузки документов: ${esc(text)}</div>`;
+        console.warn("[PlannerDocs] load documents error", text);
+        host.innerHTML = `<div class="muted" style="font-size:12px;">Ничего не найдено.</div>`;
       }
     }
 

@@ -81,7 +81,7 @@ window.handlePushToggleClick = async function(){
       var toggleRes = await ZRPush.setCurrentSubscriptionActive(targetActive);
 
       if(!toggleRes || !toggleRes.ok){
-        alert("Не удалось переключить уведомления. Проверь консоль.");
+        alert("Не удалось переключить уведомления. Попробуйте ещё раз.");
         return;
       }
 
@@ -109,7 +109,7 @@ window.handlePushToggleClick = async function(){
         return;
       }
 
-      alert("Не удалось включить уведомления. Проверь консоль.");
+      alert("Не удалось включить уведомления. Попробуйте ещё раз.");
       return;
     }
   }catch(e){
@@ -305,7 +305,104 @@ window.initAuth = async function(){
 };
 
 (() => {
+  window.Views = window.Views || {};
+
   var $ = function(s){ return document.querySelector(s); };
+  var loadedScripts = {};
+
+  var SECTION_SCRIPTS = {
+    login: [
+      "./js/views/login.js?v=20260404170000"
+    ],
+
+    articles: [
+      "https://cdn.jsdelivr.net/npm/marked/marked.min.js",
+      "./js/views/articles.js?v=202603122330"
+    ],
+
+    templates: [
+      "./js/utils/template_runtime.js?v=20260226135003",
+      "./js/utils/links_xlsx.js?v=20260226135003",
+      "./js/views/templates.js?v=202603122330"
+    ],
+
+    checklists: [
+      "./js/views/checklists.js?v=202603122330"
+    ],
+
+    projects: [
+      "./js/planner/planner_api.js?v=12",
+      "./js/planner/planner_people.js?v=20260322100000",
+      "./js/planner/planner_comments.js?v=20260330190000",
+      "./js/views/projects.js?v=20260509a"
+    ],
+
+    admin: [
+      "./js/views/admin.employees.js?v=20260315153000",
+      "./js/views/admin.projects.js?v=20260315170000",
+      "./js/views/admin.templates.js?v=20260315190000",
+      "./js/views/admin.checklists.js?v=20260315190000",
+      "./js/views/admin.articles.js?v=20260315193000",
+      "./js/views/admin.js?v=20260315190000"
+    ],
+
+    planner: [
+      "./js/planner/planner_api.js?v=12",
+      "./js/planner/planner_data.js?v=20260307220000",
+      "./js/planner/planner_state.js?v=20260307223000",
+      "./js/planner/planner_board.js?v=20260323112000",
+      "./js/planner/planner_left.js?v=20260323110000",
+      "./js/planner/planner_docs.js?v=20260322000100",
+      "./js/planner/planner_ux.js?v=20260305093117",
+      "./js/planner/planner_readonly.js?v=20260305093117",
+      "./js/planner/planner_actions.js?v=20260305093117",
+      "./js/planner/planner_presenters.js?v=20260322000100",
+      "./js/planner/planner_activity.js?v=202603220001",
+      "./js/planner/planner_checklist_runtime.js?v=20260502a",
+      "./js/planner/planner_comments.js?v=20260330190000",
+      "./js/planner/planner_people.js?v=20260322100000",
+      "./js/planner/planner_detail_helpers.js?v=20260323130000",
+      "./js/planner/planner_detail_sections.js?v=20260406160000",
+      "./js/views/planner.js?v=20260330190000"
+    ]
+  };
+
+  function loadScript(src){
+    if(loadedScripts[src]) return loadedScripts[src];
+
+    loadedScripts[src] = new Promise(function(resolve, reject){
+      var existing = Array.from(document.scripts || []).find(function(s){
+        return s.getAttribute("src") === src;
+      });
+
+      if(existing){
+        resolve();
+        return;
+      }
+
+      var script = document.createElement("script");
+      script.src = src;
+      script.async = false;
+      script.onload = function(){ resolve(); };
+      script.onerror = function(){ reject(new Error("Не удалось загрузить: " + src)); };
+      document.head.appendChild(script);
+    });
+
+    return loadedScripts[src];
+  }
+
+  async function ensureSection(section){
+    var scripts = SECTION_SCRIPTS[section] || [];
+    for(var i = 0; i < scripts.length; i++){
+      await loadScript(scripts[i]);
+    }
+  }
+
+  function showLoadError(err){
+    var v = $("#viewer");
+    console.warn("[App] section load error", err);
+    if(v) v.innerHTML = '<div class="empty">Ничего не найдено.</div>';
+  }
 
   function setActiveTab(tab){
     document.querySelectorAll(".tab").forEach(function(b){
@@ -413,8 +510,23 @@ async function render(){
       return;
     }
 
+    if(section === "checklists" && !(App.session && App.session.role === "admin")){
+      Router.go("planner");
+      return;
+    }
+
     setActiveTab(section);
     syncTopSearchUI(section);
+
+    if(section !== "admin"){
+      try{
+        await ensureSection(section);
+      }catch(loadErr){
+        console.warn("[App] section load failed", loadErr);
+        showLoadError(loadErr);
+        return;
+      }
+    }
 
     var simpleViewMap = {
       login: async function(){ await Views.Login.show(); },
@@ -434,6 +546,16 @@ async function render(){
         Router.go("planner");
         return;
       }
+
+      try{
+        await ensureSection("admin");
+      }catch(loadErr){
+        console.warn("[App] admin load failed", loadErr);
+        showLoadError(loadErr);
+        return;
+      }
+
+      adminView = Views.Admin && Views.Admin.show;
 
       if(adminView){
         await adminView(param);
@@ -488,10 +610,6 @@ async function render(){
 
   document.addEventListener("DOMContentLoaded", boot);
 })();
-
-
-
-
 
 
 

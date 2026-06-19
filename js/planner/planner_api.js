@@ -272,8 +272,53 @@
     return await ZRBackend.taskAssignees.listByTask(taskId);
   }
 
-  async function fetchAssignablePeople(){
-    return await ZRBackend.profiles.listBasic();
+  const ASSIGNABLE_PEOPLE_CACHE_TTL = 60 * 1000;
+
+  async function fetchAssignablePeople(opts){
+    const force = !!(opts && opts.force);
+
+    try{
+      const now = Date.now();
+
+      window.__plannerAssignablePeopleCache =
+        window.__plannerAssignablePeopleCache || {
+          ts: 0,
+          data: null,
+          promise: null
+        };
+
+      const cache = window.__plannerAssignablePeopleCache;
+
+      if(
+        !force &&
+        Array.isArray(cache.data) &&
+        now - Number(cache.ts || 0) < ASSIGNABLE_PEOPLE_CACHE_TTL
+      ){
+        return cache.data;
+      }
+
+      if(!force && cache.promise){
+        return await cache.promise;
+      }
+
+      cache.promise = ZRBackend.profiles.listBasic()
+        .then((rows) => {
+          const safeRows = Array.isArray(rows) ? rows : [];
+          cache.data = safeRows;
+          cache.ts = Date.now();
+          cache.promise = null;
+          return safeRows;
+        })
+        .catch((err) => {
+          cache.promise = null;
+          throw err;
+        });
+
+      return await cache.promise;
+    }catch(err){
+      console.warn("[PlannerAPI] fetchAssignablePeople error", err);
+      return [];
+    }
   }
 
   async function setTaskAssignees(taskId, userIds){

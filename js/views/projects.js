@@ -731,7 +731,7 @@ Views.Projects = (() => {
     }catch(e){
       console.warn("[Projects] task load failed", e);
       const box = $("#zrProjectsTasks");
-      if(box) box.innerHTML = '<div class="empty">Не удалось загрузить задачи проекта. Проверь консоль.</div>';
+      if(box) box.innerHTML = '<div class="empty">Ничего не найдено.</div>';
       const count = $("#zrProjectsTaskCount");
       if(count) count.textContent = "Ошибка";
     }
@@ -777,7 +777,7 @@ Views.Projects = (() => {
       disableMobileReadingMode();
       console.warn("[Projects] load failed", e);
       if(list) list.innerHTML = '<div class="empty">Не удалось загрузить проекты.</div>';
-      if(viewer) viewer.innerHTML = '<div class="empty">Ошибка загрузки проектов. Проверь консоль.</div>';
+      if(viewer) viewer.innerHTML = '<div class="empty">Ничего не найдено.</div>';
     }
     
   }

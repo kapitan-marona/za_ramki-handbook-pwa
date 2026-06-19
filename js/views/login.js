@@ -38,6 +38,13 @@ Views.Login = (() => {
 
     function setErr(t){ var e = $("#loginError"); if(e) e.textContent = t || ""; }
     function setStatus(t){ var e = $("#loginStatus"); if(e) e.textContent = t || ""; }
+    function formatLoginError(err){
+      var msg = err && err.message ? String(err.message) : String(err || "");
+      if(msg === "Failed to fetch" || msg.indexOf("Failed to fetch") >= 0){
+        return "Сервер авторизации сейчас недоступен. Проверьте интернет/VPN или доступ к Supabase.";
+      }
+      return msg || "Ошибка входа.";
+    }
 
     async function doLogin(){
       try{
@@ -59,7 +66,7 @@ Views.Login = (() => {
 
         const res = await ZRBackend.auth.signInWithPassword({ email: email, password: password });
         if(res && res.error){
-          setErr(res.error.message);
+          setErr(formatLoginError(res.error));
           return;
         }
 
@@ -75,7 +82,7 @@ Views.Login = (() => {
         setErr("Нет доступа (роль не назначена).");
       }catch(e){
         console.warn("[Login] failed", e);
-        setErr("Ошибка входа. Смотри консоль.");
+        setErr(formatLoginError(e));
       }
     }
 

@@ -161,13 +161,13 @@ Views.Admin = (() => {
 
     // Fallback (old logic)
     try{
-      const sessRes = await withTimeout(SB.auth.getSession(), 8000, "auth getSession");
+      const sessRes = await withTimeout(ZRBackend.auth.getSession(), 8000, "auth getSession");
       const session = sessRes && sessRes.data ? sessRes.data.session : null;
       if(session) return session;
     }catch(e){}
 
     try{
-      const refRes = await withTimeout(SB.auth.refreshSession(), 12000, "auth refreshSession");
+      const refRes = await withTimeout(ZRBackend.auth.refreshSession(), 12000, "auth refreshSession");
       const session2 = refRes && refRes.data ? refRes.data.session : null;
       if(session2) return session2;
     }catch(e){}
@@ -181,7 +181,7 @@ Views.Admin = (() => {
   // ===== PHASE 2 — SHARED HELPER SURFACE (bridge prep only)
     const AdminShared = {
     $,
-    SB: window.SB,
+    backend: window.ZRBackend,
     esc,
     norm,
     normLower,
@@ -662,7 +662,7 @@ Views.Admin = (() => {
         setPanelTitle("Админка");
         setStatus("—");
         renderAdminTabs();
-        showViewer(`<div class="empty">Supabase не готов.</div>`);
+        showViewer(`<div class="empty">Backend не готов.</div>`);
         return;
       }
 
@@ -683,7 +683,8 @@ Views.Admin = (() => {
         console.error(e);
         setPanelTitle("Админка");
         renderAdminTabs();
-        showViewer(`<div class="empty">Ошибка: ${esc(e.message || String(e))}</div>`);
+        console.warn("[Admin] mode load error", e);
+        showViewer(`<div class="empty">Ничего не найдено.</div>`);
         setStatus("ошибка");
       }
     }

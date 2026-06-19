@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bugfix"
+  short_description: "Narrow bug fixing workflow"
+  default_prompt: "Use this skill to diagnose, patch, and verify a bug with minimal scope."

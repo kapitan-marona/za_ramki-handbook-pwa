@@ -611,6 +611,19 @@ Views.Articles = (() => {
     setupArticleToc(viewer);
   }
 
+  function optimizeArticleImages(viewer){
+    if(!viewer) return;
+
+    viewer.querySelectorAll(".markdown img").forEach((img, index) => {
+      img.loading = index === 0 ? "eager" : "lazy";
+      img.decoding = "async";
+      img.referrerPolicy = "no-referrer";
+      if(index > 0){
+        img.setAttribute("fetchpriority", "low");
+      }
+    });
+  }
+
   function getFavApi(){
     return window.ZRFavorites || null;
   }
@@ -851,7 +864,7 @@ Views.Articles = (() => {
     const meta = INDEX.find(x => x.id === id);
     if(!meta){
       disableMobileReadingMode();
-      viewer.innerHTML = `<div class="empty">Статья не найдена: <b>${esc(id)}</b></div>`;
+      viewer.innerHTML = `<div class="empty">Ничего не найдено.</div>`;
       enhanceArticleWithToc(viewer);
       return;
     }
@@ -890,9 +903,9 @@ Views.Articles = (() => {
 
     if(!md){
       disableMobileReadingMode();
-      viewer.innerHTML = `<div class="empty">Не удалось загрузить статью</div>`;
+      viewer.innerHTML = `<div class="empty">Ничего не найдено.</div>`;
       enhanceArticleWithToc(viewer);
-      setStatus("ошибка");
+      setStatus("0");
       return;
     }
 
@@ -957,6 +970,7 @@ Views.Articles = (() => {
 
     bindArticleFavoriteButton(meta.id);
 
+    optimizeArticleImages(viewer);
     setupArticleBodyCollapse(viewer, meta.id);
     enhanceArticleWithToc(viewer);
     enableMobileReadingMode();

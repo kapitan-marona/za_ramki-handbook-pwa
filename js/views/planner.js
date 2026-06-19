@@ -226,11 +226,10 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
           });
 
         }catch(err){
-          const t = (err && (err.message || err.details || err.hint))
-            ? (err.message || err.details || err.hint)
-            : String(err);
-
-          alert("Ошибка: " + t);
+          const text = (window.PlannerActions && typeof PlannerActions.humanizePlannerError === "function")
+            ? PlannerActions.humanizePlannerError(err)
+            : "Не удалось создать задачу.";
+          alert(text);
         }
       };
 
@@ -247,10 +246,10 @@ const detailSections = (window.PlannerDetailSections && typeof PlannerDetailSect
           alert("Готово. В архив перенесено: " + String(n || 0));
           show();
         }catch(err){
-          const t = (err && (err.message || err.details || err.hint))
-            ? (err.message || err.details || err.hint)
-            : String(err);
-          alert("Ошибка: " + t);
+          const text = (window.PlannerActions && typeof PlannerActions.humanizePlannerError === "function")
+            ? PlannerActions.humanizePlannerError(err)
+            : "Не удалось перенести задачи в архив.";
+          alert(text);
           ad.disabled = false;
         }
       };

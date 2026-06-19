@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release Check"
+  short_description: "Pre-release verification workflow"
+  default_prompt: "Use this skill to review changed files, migrations, smoke checks, and release risk."

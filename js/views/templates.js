@@ -221,7 +221,7 @@ Views.Templates = (() => {
     `;
   }
 
-  async function loadTemplatesFromSupabase(){
+  async function loadTemplates(){
     try{
       if(!window.ZRBackend || !ZRBackend.kb || !ZRBackend.kb.templates) return [];
       return await ZRBackend.kb.templates.listPublished();
@@ -308,11 +308,11 @@ Views.Templates = (() => {
             <div class="zr-viewer-header-main zr-stack-sm">
               <div class="zr-viewer-title-row">
                 <h1 class="article-title">${esc(template.title || "Шаблон")}</h1>
-                ${renderTemplateFavoriteButton(template.id)}
               </div>
               ${sub}
             </div>
             <div class="zr-viewer-header-actions">
+              ${renderTemplateFavoriteButton(template.id)}
               <button class="btn btn-sm zr-mobile-only" id="tplListBtn" type="button">Показать список</button>
               <button class="btn btn-sm" id="tplBackBtn" type="button">${getTemplateCloseLabel()}</button>
             </div>
@@ -443,7 +443,7 @@ Views.Templates = (() => {
     setPanelTitle("Шаблоны");
     const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
 
-    _data = await loadTemplatesFromSupabase();
+    _data = await loadTemplates();
     _activeTemplateId = String(param || "");
 
     if(param){
@@ -462,12 +462,14 @@ Views.Templates = (() => {
 
     const viewer = $("#viewer"); if(viewer) viewer.scrollTop = 0;
     renderList();
-    const data = Array.isArray(_data) && _data.length ? _data : await loadTemplatesFromSupabase();
+    const data = Array.isArray(_data) && _data.length
+      ? _data
+      : await loadTemplates();
     const t = data.find(x => x.id === templateId);
 
     if(!t){
       disableMobileReadingMode();
-      viewer.innerHTML = `<div class="empty">Шаблон не найден.</div>`;
+      viewer.innerHTML = `<div class="empty">Ничего не найдено.</div>`;
       return;
     }
 

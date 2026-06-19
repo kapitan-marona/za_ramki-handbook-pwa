@@ -5,6 +5,28 @@
       .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
+  function humanizePlannerError(err){
+    const raw = (err && (err.message || err.details || err.hint))
+      ? String(err.message || err.details || err.hint)
+      : String(err || "");
+    const lower = raw.toLowerCase();
+
+    if(lower.includes("invalid transition from problem")){
+      return "Нельзя завершить проблемную задачу, проблема решена?";
+    }
+    if(lower.includes("row-level security") || lower.includes("violates row-level security")){
+      return "Не удалось сохранить задачу из-за настроек доступа. Обновите страницу и попробуйте ещё раз.";
+    }
+    if(lower.includes("failed to fetch") || lower.includes("err_connection_closed")){
+      return "Сервер сейчас не отвечает. Проверьте интернет/VPN и попробуйте ещё раз.";
+    }
+    if(lower.includes("not allowed")){
+      return "Недостаточно прав для этого действия.";
+    }
+
+    return raw || "Не удалось выполнить действие.";
+  }
+
   function openTaskDialog(mode, task, opts){
     opts = opts || {};
 
@@ -853,6 +875,13 @@
 
                 const beforeOne = before.length ? String(before[0]) : null;
                 const afterOne = after.length ? String(after[0]) : null;
+                
+                console.log("[PlannerPush] assignment check", {
+                  actorId,
+                  beforeOne,
+                  afterOne,
+                  willSend: !!afterOne && afterOne !== actorId
+                });
 
                 if(afterOne && afterOne !== actorId){
                   const eventType = beforeOne ? "reassigned" : "assigned";
@@ -894,8 +923,7 @@
           return result;
         }catch(err){
           console.warn("[PlannerActions] dialog submit error", err);
-          const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
-          if(msg) msg.textContent = "Ошибка: " + t;
+          if(msg) msg.textContent = humanizePlannerError(err);
           doBtn.disabled = false;
         }
       };
@@ -1542,8 +1570,7 @@
           }
         }catch(err){
           console.warn("[PlannerActions] openLinkDialog submit error", err);
-          const t = (err && (err.message || err.details || err.hint)) ? (err.message || err.details || err.hint) : String(err);
-          if(msg) msg.textContent = "Ошибка: " + t;
+          if(msg) msg.textContent = humanizePlannerError(err);
           submitBtn.disabled = false;
         }
       };
@@ -1556,6 +1583,7 @@ window.PlannerActions = {
     openEditDialog,
     openLinkDialog,
     setStatus,
+    humanizePlannerError,
     ensureInProgress
   };
 })();

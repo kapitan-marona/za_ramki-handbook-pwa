@@ -1,9 +1,13 @@
 window.ZRPush = (function(){
   const SW_URL = "./sw.js";
 
+  function isServiceWorkerSupported(){
+    return "serviceWorker" in navigator;
+  }
+
   function isSupported(){
     return !!(
-      "serviceWorker" in navigator &&
+      isServiceWorkerSupported() &&
       "PushManager" in window &&
       "Notification" in window
     );
@@ -31,12 +35,17 @@ window.ZRPush = (function(){
     return outputArray;
   }
 
-  async function ensureServiceWorker(){
-    if(!isSupported()) return null;
+  async function ensureAppServiceWorker(){
+    if(!isServiceWorkerSupported()) return null;
 
     const reg = await navigator.serviceWorker.register(SW_URL, { scope: "./" });
     await navigator.serviceWorker.ready;
     return reg;
+  }
+
+  async function ensureServiceWorker(){
+    if(!isSupported()) return null;
+    return await ensureAppServiceWorker();
   }
 
   function getCurrentUserId(){
@@ -390,8 +399,10 @@ window.ZRPush = (function(){
 
   return {
     isSupported: isSupported,
+    isServiceWorkerSupported: isServiceWorkerSupported,
     getPermissionState: getPermissionState,
     getPublicVapidKey: getPublicVapidKey,
+    ensureAppServiceWorker: ensureAppServiceWorker,
     ensureServiceWorker: ensureServiceWorker,
     requestPermissionInteractive: requestPermissionInteractive,
     subscribeCurrentUser: subscribeCurrentUser,
@@ -403,6 +414,14 @@ window.ZRPush = (function(){
     setCurrentSubscriptionActive: setCurrentSubscriptionActive
   };
 })();
+
+document.addEventListener("DOMContentLoaded", () => {
+  if(!window.ZRPush || typeof ZRPush.ensureAppServiceWorker !== "function") return;
+
+  ZRPush.ensureAppServiceWorker().catch((e) => {
+    console.warn("[SW] registration failed", e);
+  });
+});
 
 
 window.syncPushUI = async function(){

@@ -433,10 +433,10 @@ window.PlannerDetailHelpers = (() => {
         });
       }catch(err){
         console.warn("[PlannerDetailHelpers] openEditDialog error", err);
-        const t = (err && (err.message || err.details || err.hint))
-          ? (err.message || err.details || err.hint)
-          : String(err);
-        alert("Ошибка: " + t);
+        const text = (window.PlannerActions && typeof PlannerActions.humanizePlannerError === "function")
+          ? PlannerActions.humanizePlannerError(err)
+          : "Не удалось открыть редактирование задачи.";
+        alert(text);
       }
     };
   }
@@ -464,10 +464,10 @@ window.PlannerDetailHelpers = (() => {
         }
       }catch(err){
         console.warn("[PlannerDetailHelpers] archive task error", err);
-        const t = (err && (err.message || err.details || err.hint))
-          ? (err.message || err.details || err.hint)
-          : String(err);
-        alert("Ошибка: " + t);
+        const text = (window.PlannerActions && typeof PlannerActions.humanizePlannerError === "function")
+          ? PlannerActions.humanizePlannerError(err)
+          : "Не удалось перенести задачу в архив.";
+        alert(text);
         button.disabled = false;
       }
     };
@@ -621,10 +621,10 @@ window.PlannerDetailHelpers = (() => {
           }
         }catch(err){
           console.warn("[PlannerDetailHelpers] archive task error", err);
-          const t = (err && (err.message || err.details || err.hint))
-            ? (err.message || err.details || err.hint)
-            : String(err);
-          alert("Ошибка: " + t);
+          const text = (window.PlannerActions && typeof PlannerActions.humanizePlannerError === "function")
+            ? PlannerActions.humanizePlannerError(err)
+            : "Не удалось перенести задачу в архив.";
+          alert(text);
           archiveBtn.disabled = false;
         }
         return;
@@ -701,11 +701,13 @@ window.PlannerDetailHelpers = (() => {
         }
       }catch(err){
         console.warn("[PlannerDetailHelpers] set status error", err);
-        const text = (err && (err.message || err.details || err.hint))
-          ? (err.message || err.details || err.hint)
-          : String(err);
+        const text = (window.PlannerActions && typeof PlannerActions.humanizePlannerError === "function")
+          ? PlannerActions.humanizePlannerError(err)
+          : ((err && (err.message || err.details || err.hint))
+            ? (err.message || err.details || err.hint)
+            : String(err || "Не удалось изменить статус."));
 
-        if(msg) msg.textContent = "Ошибка: " + text;
+        if(msg) msg.textContent = text;
         viewerEl.querySelectorAll(".pl-status").forEach(x => x.disabled = false);
       }
     });

@@ -1,8 +1,6 @@
-/* TEST MARKER 123 */
-
 /* =========================================================
    ZA RAMKI — Color System (single source of truth)
-   Меняй оттенки ТУТ. Не пиши хексы в styles.css.
+   Меняй оттенки ТУТ. Не пиши хексы в компонентных CSS без причины.
    =========================================================
 
    Быстрые правила:
@@ -30,11 +28,12 @@
   /* Accent */
   --brand-accent: #C03A14;
 
-  /* Public tokens (используем в styles.css) */
+  /* Public tokens (used by the UI CSS layers) */
   --bg: var(--brand-bg);
   --panel: var(--brand-panel);
   --card: var(--brand-card);
   --item: var(--brand-item);
+  --surface-soft: rgba(255,243,234,.04);
 
   /* Extra surfaces (helpers) */
   --table-bg: #141210;       /* briefpro table base */
@@ -60,6 +59,25 @@
   --hero-gradient: linear-gradient(135deg, var(--accent-95), rgba(var(--accent-rgb), .25));
   --scrollbar-thumb: var(--brand-accent);
   --scrollbar-track: var(--brand-bg);
+
+  /* Shape, spacing, and motion tokens */
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --space-7: 16px;
+
+  --focus-ring: 0 0 0 3px var(--accent-12);
+  --shadow-panel: 0 10px 28px rgba(0,0,0,.22);
 }
 
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Supabase Change"
+  short_description: "Database, RLS, RPC, and Edge Function workflow"
+  default_prompt: "Use this skill for Supabase schema, policy, RPC, storage, or Edge Function changes."
